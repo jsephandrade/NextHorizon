@@ -334,6 +334,78 @@ public static class ProductData
     
     public static List<CartItem> Cart { get; } = new();
     public static List<WishlistItem> Wishlist { get; } = new();
+
+    // Persistent order store (in-memory, cleared on restart)
+    private static int _orderSeq = 3;
+    public static int NextOrderSeq() => ++_orderSeq;
+
+    public static List<MyAspNetApp.Models.OrderConfirmationViewModel> Orders { get; } = new()
+    {
+        new MyAspNetApp.Models.OrderConfirmationViewModel
+        {
+            OrderId      = "ORD-20260215-0001",
+            OrderStatus  = "Delivered",
+            FullName     = "Juan Dela Cruz",
+            Email        = "juan@nexthorizon.ph",
+            Phone        = "+63 912 345 6789",
+            Address      = "123 Rizal St",
+            City         = "Manila",
+            PostalCode   = "1000",
+            DeliveryOption   = "Standard",
+            PaymentMethod    = "Card",
+            CreatedAt        = DateTime.Now.AddDays(-15),
+            EstimatedDeliveryDate = DateTime.Now.AddDays(-10),
+            Subtotal   = 13335m,
+            ShippingFee = 150m,
+            OrderItems = new List<MyAspNetApp.Models.CheckoutItem>
+            {
+                new MyAspNetApp.Models.CheckoutItem { ProductId=1, Name="Horizon Elite Road Runner", Image="/images/Lime Shimmer-Green Lux/PUMA-x-ASTON-MARTIN-ARAMCO-F1®-TEAM-Fade-Men's-Sneakers.avif", Size="US 9", Price=8999m, Quantity=1 },
+                new MyAspNetApp.Models.CheckoutItem { ProductId=2, Name="Velocity Pro Trainer", Image="/images/Green Lux-Lime Shimmer/PUMA-x-ASTON-MARTIN-ARAMCO-F1®-TEAM-Fade-Men's-Sneakers (10).avif", Size="US 10", Price=4336m, Quantity=1 }
+            }
+        },
+        new MyAspNetApp.Models.OrderConfirmationViewModel
+        {
+            OrderId      = "ORD-20260225-0002",
+            OrderStatus  = "Shipped",
+            FullName     = "Juan Dela Cruz",
+            Email        = "juan@nexthorizon.ph",
+            Phone        = "+63 912 345 6789",
+            Address      = "123 Rizal St",
+            City         = "Manila",
+            PostalCode   = "1000",
+            DeliveryOption   = "Express",
+            PaymentMethod    = "PayPal",
+            CreatedAt        = DateTime.Now.AddDays(-5),
+            EstimatedDeliveryDate = DateTime.Now.AddDays(1),
+            Subtotal   = 7849m,
+            ShippingFee = 300m,
+            OrderItems = new List<MyAspNetApp.Models.CheckoutItem>
+            {
+                new MyAspNetApp.Models.CheckoutItem { ProductId=3, Name="Apex Carbon Racer", Image="/images/Lime Shimmer-Green Lux/PUMA-x-ASTON-MARTIN-ARAMCO-F1®-TEAM-Fade-Men's-Sneakers.avif", Size="US 8", Price=7849m, Quantity=1 }
+            }
+        },
+        new MyAspNetApp.Models.OrderConfirmationViewModel
+        {
+            OrderId      = "ORD-20260301-0003",
+            OrderStatus  = "Processing",
+            FullName     = "Juan Dela Cruz",
+            Email        = "juan@nexthorizon.ph",
+            Phone        = "+63 912 345 6789",
+            Address      = "123 Rizal St",
+            City         = "Manila",
+            PostalCode   = "1000",
+            DeliveryOption   = "Standard",
+            PaymentMethod    = "COD",
+            CreatedAt        = DateTime.Now.AddDays(-1),
+            EstimatedDeliveryDate = DateTime.Now.AddDays(4),
+            Subtotal   = 5845m,
+            ShippingFee = 150m,
+            OrderItems = new List<MyAspNetApp.Models.CheckoutItem>
+            {
+                new MyAspNetApp.Models.CheckoutItem { ProductId=2, Name="Velocity Pro Trainer", Image="/images/Green Lux-Lime Shimmer/PUMA-x-ASTON-MARTIN-ARAMCO-F1®-TEAM-Fade-Men's-Sneakers (10).avif", Size="US 11", Price=5845m, Quantity=1 }
+            }
+        }
+    };
     
     // Simulated purchase records - products that customer has received
     public static List<PurchaseRecord> PurchaseRecords { get; } = new()

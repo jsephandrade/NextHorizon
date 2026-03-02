@@ -740,7 +740,7 @@ async function pdAddToCart() {
 
 function pdBuyNow() {
     if (!pdSelectedSize) { toast.info('Please select a size'); return; }
-    pdAddToCart().then(() => { window.location.href = '/Home/Shop'; });
+    pdAddToCart().then(() => { window.location.href = '/Home/Checkout'; });
 }
 
 function pdSubmitPreOrder() {

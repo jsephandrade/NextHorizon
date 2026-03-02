@@ -16,6 +16,7 @@
     
     <!-- Styles -->
     <link rel="stylesheet" href="~/css/style.css" asp-append-version="true">
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
     <!-- Unified Header -->
@@ -34,6 +35,7 @@
                 </form>
                 
                 <div class="header-actions">
+                    <a href="/Home/MyOrders" class="my-orders-link">My Orders</a>
                     <a href="/Home/Cart" class="cart-btn" aria-label="Shopping Cart">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="9" cy="21" r="1"></circle>

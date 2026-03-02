@@ -388,17 +388,15 @@ function getRelatedProducts(productId, category, limit = 4) {
         .slice(0, limit);
 }
 
-function buyNow() {
+async function buyNow() {
     if (!selectedSize) {
         toast.info('Please select a size');
         return;
     }
-    
-    addToCartFromModal();
+
+    await addToCart(currentProduct.id, selectedSize);
     closeProductDetails();
-    setTimeout(() => {
-        toggleCart();
-    }, 300);
+    window.location.href = '/Home/Checkout';
 }
 
 // =====================================================
@@ -560,8 +558,7 @@ async function updateCartCount() {
 }
 
 function checkout() {
-    toast.success('Proceeding to checkout...');
-    // Add checkout logic here
+    window.location.href = '/Home/Checkout';
 }
 
 // =====================================================

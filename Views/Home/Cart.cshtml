@@ -19,7 +19,7 @@
             <!-- Summary column -->
             <div class="bag-summary" id="bag-summary" style="display:none;">
                 <div class="summary-row">
-                    <span>Subtotal</span>
+                    <span>Subtotal (<span id="bag-item-count">0</span> item<span id="bag-item-plural">s</span>)</span>
                     <span id="bag-subtotal">₱0.00</span>
                 </div>
                 <div class="summary-row">
@@ -32,6 +32,7 @@
                     <span id="bag-total">₱0.00</span>
                 </div>
                 <button class="bag-checkout-btn" onclick="checkout()">Proceed to Checkout</button>
+                <div class="bag-secure-note">🔒 Secure checkout &bull; SSL encrypted</div>
                 <a href="/Home/Shop" class="bag-continue-link">Continue Shopping</a>
             </div>
         </div>
@@ -113,6 +114,9 @@ function renderCartLines(items) {
         </div>
     `).join('');
 
+    const totalQty = items.reduce((s, i) => s + i.cartItem.quantity, 0);
+    document.getElementById('bag-item-count').textContent = totalQty;
+    document.getElementById('bag-item-plural').textContent = totalQty === 1 ? '' : 's';
     const subtotal = items.reduce((s, i) => s + i.product.price * i.cartItem.quantity, 0);
     document.getElementById('bag-subtotal').textContent = formatPeso(subtotal);
     document.getElementById('bag-total').textContent = formatPeso(subtotal);

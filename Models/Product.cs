@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace MyAspNetApp.Models;
 
 public class Product
@@ -62,4 +64,87 @@ public class PurchaseRecord
     public DateTime PurchaseDate { get; set; }
     public DateTime? DeliveryDate { get; set; }
     public bool IsDelivered => DeliveryDate.HasValue;
+}
+
+public class CheckoutItem
+{
+    public int ProductId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Image { get; set; } = string.Empty;
+    public string Size { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+    public int Quantity { get; set; }
+}
+
+public class CheckoutViewModel
+{
+    [Required(ErrorMessage = "Full name is required.")]
+    public string FullName { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Email is required.")]
+    [EmailAddress(ErrorMessage = "Enter a valid email.")]
+    public string Email { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Phone number is required.")]
+    public string Phone { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Address is required.")]
+    public string Address { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "City is required.")]
+    public string City { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Postal code is required.")]
+    public string PostalCode { get; set; } = string.Empty;
+
+    public string DeliveryOption { get; set; } = "Standard";
+
+    public string PaymentMethod { get; set; } = "Card";
+    public string? CardNumber { get; set; }
+    public string? CardExpiry { get; set; }
+    public string? CardCvv { get; set; }
+
+    public List<CheckoutItem> CartItems { get; set; } = new();
+    public decimal Subtotal { get; set; }
+    public decimal ShippingFee { get; set; }
+    public decimal Total => Subtotal + ShippingFee;
+}
+
+public class OrderConfirmationViewModel
+{
+    public string OrderId { get; set; } = string.Empty;
+    public string OrderStatus { get; set; } = "Placed";
+    public string FullName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    public string PostalCode { get; set; } = string.Empty;
+    public string DeliveryOption { get; set; } = string.Empty;
+    public string PaymentMethod { get; set; } = "Card";
+    public DateTime CreatedAt { get; set; }
+    public DateTime EstimatedDeliveryDate { get; set; }
+    public List<CheckoutItem> OrderItems { get; set; } = new();
+    public decimal Subtotal { get; set; }
+    public decimal ShippingFee { get; set; }
+    public decimal Total => Subtotal + ShippingFee;
+
+    public string StatusColor => OrderStatus switch
+    {
+        "Placed"      => "#f59e0b",
+        "Processing"  => "#3b82f6",
+        "Shipped"     => "#8b5cf6",
+        "Delivered"   => "#22c55e",
+        "Cancelled"   => "#ef4444",
+        _             => "#888"
+    };
+
+    public int CurrentStep => OrderStatus switch
+    {
+        "Placed"      => 0,
+        "Processing"  => 1,
+        "Shipped"     => 2,
+        "Delivered"   => 3,
+        _             => 0
+    };
 }
