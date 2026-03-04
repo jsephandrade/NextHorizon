@@ -17,6 +17,60 @@
     </div>
 </section>
 
+<!-- Popular Brands Ticker -->
+<section class="brands-ticker-section">
+    <div class="brands-ticker-header">
+        <span class="brands-ticker-title">Popular brands</span>
+        <a href="/Home/Shop" class="brands-shop-btn">SHOP BRANDS</a>
+    </div>
+    <div class="brands-ticker-track-wrap" id="brandsTicker">
+        <div class="brands-ticker-track" id="brandsTrack">
+            <div class="brands-ticker-item"><img src="/images/popular brands/nike.svg" alt="Nike" /></div>
+            <div class="brands-ticker-item"><img src="/images/popular brands/adidas.svg" alt="Adidas" /></div>
+            <div class="brands-ticker-item"><img src="/images/popular brands/the-north-face.svg" alt="The North Face" /></div>
+            <div class="brands-ticker-item"><img src="/images/popular brands/zara.svg" alt="Zara" /></div>
+            <div class="brands-ticker-item"><img src="/images/popular brands/calvin-klein.svg" alt="Calvin Klein" /></div>
+            <div class="brands-ticker-item"><img src="/images/popular brands/bench.svg" alt="Bench" /></div>
+        </div>
+    </div>
+</section>
+<script>
+(function() {
+    var track = document.getElementById('brandsTrack');
+    var wrapper = document.getElementById('brandsTicker');
+    // Clone items until track is at least 3x the wrapper width for smooth infinite feel
+    function initTicker() {
+        var items = Array.from(track.children);
+        var singleW = items.reduce(function(s, el) { return s + el.offsetWidth; }, 0);
+        var wrapW = wrapper.offsetWidth;
+        var copies = Math.ceil((wrapW * 3) / singleW) + 1;
+        for (var i = 0; i < copies; i++) {
+            items.forEach(function(item) { track.appendChild(item.cloneNode(true)); });
+        }
+        var totalW = track.scrollWidth / (copies + 1); // width of one original set
+        var pos = 0;
+        var speed = 0.08; // px per frame — moderate speed
+        var paused = false;
+        wrapper.addEventListener('mouseenter', function() { paused = true; });
+        wrapper.addEventListener('mouseleave', function() { paused = false; });
+        function tick() {
+            if (!paused) {
+                pos += speed;
+                if (pos >= totalW) pos -= totalW;
+                track.style.transform = 'translateX(-' + pos + 'px)';
+            }
+            requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initTicker);
+    } else {
+        initTicker();
+    }
+})();
+</script>
+
 <!-- ═══════════════════════════════════════════════════════
      COMING SOON / PRE-ORDER ANNOUNCEMENT
      ═══════════════════════════════════════════════════════ -->

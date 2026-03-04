@@ -67,19 +67,232 @@ const toast = new ToastManager();
 // =====================================================
 function initHeaderScroll() {
     const header = document.getElementById('main-header');
+    const promoBar = document.getElementById('promo-bar');
     let lastScroll = 0;
-    
+    let ticking = false;
+
     window.addEventListener('scroll', () => {
-        const currentScroll = window.pageYOffset;
-        
-        if (currentScroll > 50) {
-            header.classList.add('scrolled');
-        } else {
-            header.classList.remove('scrolled');
+        if (!ticking) {
+            requestAnimationFrame(() => {
+                const currentScroll = window.pageYOffset;
+                const promoH = promoBar && !promoBar.classList.contains('hidden')
+                    ? promoBar.offsetHeight : 0;
+
+                // Scroll state
+                if (currentScroll > 10) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+
+                // Hide header on fast scroll down, reveal on scroll up
+                if (currentScroll > lastScroll && currentScroll > 120) {
+                    header.classList.add('header-hidden');
+                    document.documentElement.style.setProperty('--products-header-top', '0px');
+                } else {
+                    header.classList.remove('header-hidden');
+                    document.documentElement.style.setProperty('--products-header-top', header.offsetHeight + 'px');
+                }
+
+                lastScroll = currentScroll <= 0 ? 0 : currentScroll;
+                ticking = false;
+            });
+            ticking = true;
         }
-        
-        lastScroll = currentScroll;
     }, { passive: true });
+}
+
+// =====================================================
+// PROMO BAR
+// =====================================================
+const PROMO_MESSAGES = [
+    '\uD83C\uDFC3 Free shipping on orders over \u20B13,000 &nbsp;&middot;&nbsp; New Carbon Racer 2026 dropping <strong>March 15</strong> \u2014 be ready.',
+    '\uD83D\uDD25 Sale on select running shoes \u2014 up to <strong>40% off</strong> this week only.',
+    '\u2606 Best Sellers restocked \u2014 grab yours before they\u2019re gone.',
+    '\uD83D\uDCE6 Orders placed before <strong>5PM</strong> ship same day.',
+    '\uD83E\uDD4E New Arrivals just dropped \u2014 <strong>Spring 2026 Collection</strong> is here.',
+    'Earn rewards on every purchase \u2014 Join <strong>NEXT HORIZON Members</strong> today.'
+];
+let _promoIdx = 0;
+
+function initPromoBar() {
+    const bar = document.getElementById('promo-bar');
+    const header = document.getElementById('main-header');
+    // If no promo bar on this page, header sticks at top: 0
+    if (!bar) {
+        if (header) header.style.top = '0';
+        return;
+    }
+    // Set initial message
+    const msgEl = document.getElementById('promo-bar-msg');
+    if (msgEl) {
+        msgEl.innerHTML = PROMO_MESSAGES[0];
+        startPromoRotation(msgEl);
+    }
+}
+
+function startPromoRotation(msgEl) {
+    setInterval(() => {
+        msgEl.classList.add('fade-out');
+        setTimeout(() => {
+            _promoIdx = (_promoIdx + 1) % PROMO_MESSAGES.length;
+            msgEl.innerHTML = PROMO_MESSAGES[_promoIdx];
+            msgEl.classList.remove('fade-out');
+        }, 360);
+    }, 5000);
+}
+
+// =====================================================
+// SEARCH DROPDOWN (Adidas-style)
+// =====================================================
+let _searchProducts = [];
+
+async function openSearchOverlay() {
+    const wrap = document.getElementById('hdr-search-wrap');
+    const dropdown = document.getElementById('search-dropdown');
+    const panel = dropdown ? dropdown.querySelector('.search-dropdown-panel') : null;
+    if (!wrap || !dropdown) return;
+
+    // Position dropdown container flush below the header
+    const header = document.getElementById('main-header');
+    function _positionSearchPanel() {
+        const headerRect = header.getBoundingClientRect();
+        const wrapRect = wrap.getBoundingClientRect();
+        dropdown.style.top = headerRect.bottom + 'px';
+        panel.style.top = '0';
+        // Right-align panel with the right edge of the search bar
+        // Adjust the offset value (currently 20px) to shift the panel left or right
+        const PANEL_OFFSET = 20; // increase = more left, decrease = more right, 0 = flush
+        panel.style.right = (window.innerWidth - wrapRect.right - PANEL_OFFSET) + 'px';
+        panel.style.left = 'auto';
+    }
+    if (panel && header) {
+        _positionSearchPanel();
+    }
+    // Close search when user scrolls (panel would drift otherwise)
+    const _scrollClose = () => { closeSearchOverlay(); };
+    window.addEventListener('scroll', _scrollClose, { passive: true, once: true });
+
+    wrap.classList.add('is-open');
+    dropdown.classList.add('active');
+
+    // Preload products for live search
+    if (_searchProducts.length === 0) {
+        try {
+            const res = await fetch(`${API_URL}/products`);
+            _searchProducts = await res.json();
+        } catch (e) {
+            _searchProducts = allProducts.length ? allProducts : [];
+        }
+    }
+
+    // Default state: show popular, hide results
+    const popWrap = document.getElementById('search-popular-wrap');
+    const resCols = document.getElementById('search-results-cols');
+    if (popWrap) popWrap.style.display = 'block';
+    if (resCols) resCols.style.display = 'none';
+
+    setTimeout(() => {
+        const input = document.getElementById('search-overlay-input');
+        if (input) { input.value = ''; input.focus(); }
+    }, 60);
+}
+
+function clearOrCloseSearch() {
+    const input = document.getElementById('search-overlay-input');
+    if (input && input.value.trim()) {
+        // Has text — clear it and reset to popular state
+        input.value = '';
+        handleSearchInput('');
+        input.focus();
+    } else {
+        closeSearchOverlay();
+    }
+}
+
+function closeSearchOverlay() {
+    const wrap = document.getElementById('hdr-search-wrap');
+    const dropdown = document.getElementById('search-dropdown');
+    if (wrap) wrap.classList.remove('is-open');
+    if (dropdown) dropdown.classList.remove('active');
+    const input = document.getElementById('search-overlay-input');
+    if (input) input.value = '';
+}
+
+function handleSearchInput(val) {
+    const q = val.trim().toLowerCase();
+    const popWrap = document.getElementById('search-popular-wrap');
+    const resCols = document.getElementById('search-results-cols');
+
+    if (!q) {
+        if (popWrap) popWrap.style.display = 'block';
+        if (resCols) resCols.style.display = 'none';
+        return;
+    }
+    if (popWrap) popWrap.style.display = 'none';
+    if (resCols) resCols.style.display = 'flex';
+
+    const products = _searchProducts.length ? _searchProducts : allProducts;
+    const matched = products.filter(p =>
+        (p.name || '').toLowerCase().includes(q) ||
+        (p.brand || '').toLowerCase().includes(q) ||
+        (p.subCategory || '').toLowerCase().includes(q) ||
+        (p.category || '').toLowerCase().includes(q)
+    );
+
+    // Build suggestion terms from product data
+    const seenTerms = new Set();
+    const suggestions = [];
+    matched.forEach(p => {
+        [p.name, p.subCategory, p.brand].forEach(term => {
+            if (!term) return;
+            const tl = term.toLowerCase();
+            if (tl.includes(q) && !seenTerms.has(tl)) {
+                seenTerms.add(tl);
+                const count = matched.filter(x =>
+                    (x.name || '').toLowerCase().includes(tl) ||
+                    (x.brand || '').toLowerCase() === tl ||
+                    (x.subCategory || '').toLowerCase() === tl
+                ).length;
+                suggestions.push({ term, count });
+            }
+        });
+    });
+
+    // Render suggestions
+    const sugList = document.getElementById('search-sug-list');
+    if (sugList) {
+        const rows = suggestions.slice(0, 8).map(s => {
+            const hi = s.term.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<strong>$1</strong>');
+            return `<li><a class="search-sug-item" href="/Home/Shop?q=${encodeURIComponent(s.term)}"><span class="search-sug-text">${hi}</span><span class="search-sug-count">${s.count}</span></a></li>`;
+        });
+        sugList.innerHTML = rows.length ? rows.join('') :
+            `<li><a class="search-sug-item" href="/Home/Shop?q=${encodeURIComponent(val)}">Search for &ldquo;${val}&rdquo;</a></li>`;
+    }
+
+    // Render products (up to 4)
+    const prodList = document.getElementById('search-prod-list');
+    if (prodList) {
+        const shown = matched.slice(0, 4);
+        prodList.innerHTML = shown.length
+            ? shown.map(p => `
+                <a class="search-prod-item" href="/Home/Product?id=${p.id}">
+                    <img class="search-prod-img" src="${p.image}" alt="${p.name}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2256%22 height=%2256%22%3E%3Crect width=%2256%22 height=%2256%22 fill=%22%23f5f5f5%22/%3E%3C/svg%3E'">
+                    <div class="search-prod-info">
+                        <div class="search-prod-cat">${p.category} ${p.subCategory}</div>
+                        <div class="search-prod-name">${p.name}</div>
+                        <div class="search-prod-price">${formatPeso(p.price)}</div>
+                    </div>
+                </a>`).join('')
+            : `<p style="color:#999;font-size:13px;margin:0">No products found</p>`;
+    }
+
+    // Update see-all link
+    const seeAll = document.getElementById('search-see-all');
+    if (seeAll) {
+        seeAll.href = `/Home/Shop?q=${encodeURIComponent(val)}`;
+        seeAll.textContent = `See all "${val}"`;
+    }
 }
 
 // =====================================================
@@ -87,13 +300,13 @@ function initHeaderScroll() {
 // =====================================================
 document.addEventListener('DOMContentLoaded', () => {
     initHeaderScroll();
+    initPromoBar();
     initTopNav();
     // Only load products if the grid exists (Shop page)
     if (document.getElementById('products-grid')) {
         loadProducts('all');
     }
     updateCartCount();
-    updateWishlistCount();
     
     // Category filter buttons with enhanced feedback
     document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -109,6 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Close modals on escape key
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
+            closeSearchOverlay();
             closeAllModals();
         }
     });
@@ -204,6 +418,7 @@ function closeAllModals() {
     document.querySelectorAll('.modal').forEach(modal => {
         modal.classList.remove('active');
     });
+    closeSearchOverlay();
     document.body.classList.remove('modal-open');
     currentProduct = null;
     selectedSize = null;
@@ -256,9 +471,37 @@ function displayProducts(products) {
         return;
     }
     
-    grid.innerHTML = products.map((product, index) => `
-        <article class="product-card" onclick="showProductDetails(${product.id})">
-            <img src="${product.image}" alt="${product.name}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27400%27 height=%27400%27%3E%3Crect width=%27400%27 height=%27400%27 fill=%27%23fafafa%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 dominant-baseline=%27middle%27 text-anchor=%27middle%27 font-family=%27Inter%27 font-size=%2714%27 fill=%27%23000%27%3ENo Image%3C/text%3E%3C/svg%3E'">
+    grid.innerHTML = products.map((product, index) => {
+        const colorImages = product.colorImages || {};
+        const availableColors = product.availableColors || [];
+        const swatchesHtml = availableColors.length > 0 ? `
+            <div class="card-color-swatches" onclick="event.stopPropagation()">
+                ${availableColors.map(color => {
+                    const imgs = colorImages[color];
+                    const swatchSrc = imgs && imgs.length > 0 ? imgs[0] : null;
+                    if (swatchSrc) {
+                        return `<button class="card-color-swatch card-swatch-img" title="${color}"
+                            onmouseenter="cardSwatchHover(this, '${product.id}', '${swatchSrc.replace(/'/g, "\\'")}', true)"
+                            onmouseleave="cardSwatchLeave(this, '${product.id}')"
+                            onclick="cardSwatchClick(this, '${product.id}', '${swatchSrc.replace(/'/g, "\\'")}')">
+                            <img src="${swatchSrc}" alt="${color}">
+                        </button>`;
+                    } else {
+                        const cssColor = colorNameToCss(color);
+                        return `<button class="card-color-swatch card-swatch-dot" title="${color}" style="background:${cssColor};"
+                            onmouseenter="cardSwatchHover(this, '${product.id}', null, false)"
+                            onmouseleave="cardSwatchLeave(this, '${product.id}')">
+                        </button>`;
+                    }
+                }).join('')}
+            </div>` : '';
+        return `
+        <article class="product-card" id="card-${product.id}" onclick="showProductDetails(${product.id})">
+            <div class="product-image">
+                <img src="${product.image}" alt="${product.name}" loading="lazy" id="card-img-${product.id}" data-default-src="${product.image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27400%27 height=%27400%27%3E%3Crect width=%27400%27 height=%27400%27 fill=%27%23fafafa%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 dominant-baseline=%27middle%27 text-anchor=%27middle%27 font-family=%27Inter%27 font-size=%2714%27 fill=%27%23000%27%3ENo Image%3C/text%3E%3C/svg%3E'">
+                <div class="product-overlay"><span>View Details</span></div>
+            </div>
+            ${swatchesHtml}
             <div class="product-card-content">
                 <h3>${product.name}</h3>
                 <div class="price">${formatPeso(product.price)}</div>
@@ -270,8 +513,60 @@ function displayProducts(products) {
                     <button class="btn-primary" onclick="quickAddToCart(${product.id})">Add</button>
                 </div>
             </div>
-        </article>
-    `).join('');
+        </article>`;
+    }).join('');
+}
+
+// =====================================================
+// CARD COLOR SWATCH HOVER HELPERS
+// =====================================================
+function cardSwatchHover(btn, productId, imgSrc, isImageSwatch) {
+    const img = document.getElementById('card-img-' + productId);
+    if (!img) return;
+    if (isImageSwatch && imgSrc) {
+        img.src = imgSrc;
+    }
+    btn.parentElement.querySelectorAll('.card-color-swatch').forEach(b => b.classList.remove('card-swatch-active'));
+    btn.classList.add('card-swatch-active');
+}
+
+function cardSwatchLeave(btn, productId) {
+    // Only reset if nothing is permanently selected
+    if (!btn.classList.contains('card-swatch-selected')) {
+        const img = document.getElementById('card-img-' + productId);
+        if (img) {
+            const selectedBtn = btn.parentElement.querySelector('.card-swatch-selected');
+            if (selectedBtn) {
+                // keep selected image
+            } else {
+                img.src = img.dataset.defaultSrc;
+            }
+        }
+        btn.classList.remove('card-swatch-active');
+    }
+}
+
+function cardSwatchClick(btn, productId, imgSrc) {
+    const img = document.getElementById('card-img-' + productId);
+    if (img && imgSrc) img.src = imgSrc;
+    // Mark as selected
+    btn.parentElement.querySelectorAll('.card-color-swatch').forEach(b => b.classList.remove('card-swatch-selected', 'card-swatch-active'));
+    btn.classList.add('card-swatch-selected', 'card-swatch-active');
+    // Update default so leave restores to this
+    if (img) img.dataset.defaultSrc = imgSrc;
+}
+
+const COLOR_MAP = {
+    'white': '#ffffff', 'black': '#111111', 'grey': '#9e9e9e', 'gray': '#9e9e9e',
+    'navy': '#1a237e', 'red': '#e53935', 'blue': '#1e88e5', 'green': '#43a047',
+    'yellow': '#fdd835', 'pink': '#e91e63', 'purple': '#8e24aa', 'orange': '#fb8c00',
+    'brown': '#6d4c41', 'charcoal': '#37474f', 'teal': '#00897b', 'gold': '#ffc107',
+    'silver': '#bdbdbd', 'crimson': '#c62828', 'volt': '#cddc39', 'carbon': '#455a64',
+    'light blue': '#64b5f6', 'lime': '#cddc39'
+};
+function colorNameToCss(colorName) {
+    const key = colorName.toLowerCase().split('/')[0].trim();
+    return COLOR_MAP[key] || '#cccccc';
 }
 
 // =====================================================
@@ -551,7 +846,17 @@ async function updateCartCount() {
     try {
         const response = await fetch(`${API_URL}/cart`);
         const cartItems = await response.json();
-        document.getElementById('cart-count').textContent = cartItems.length;
+        const badge = document.getElementById('cart-count');
+        if (badge) {
+            const prev = parseInt(badge.textContent) || 0;
+            badge.textContent = cartItems.length;
+            if (cartItems.length !== prev) {
+                badge.classList.remove('pop');
+                void badge.offsetWidth; // reflow
+                badge.classList.add('pop');
+                setTimeout(() => badge.classList.remove('pop'), 400);
+            }
+        }
     } catch (error) {
         console.error('Error updating cart count:', error);
     }
@@ -561,85 +866,7 @@ function checkout() {
     window.location.href = '/Home/Checkout';
 }
 
-// =====================================================
-// WISHLIST FUNCTIONS
-// =====================================================
-async function toggleWishlistProduct(productId) {
-    await addToWishlist(productId);
-}
 
-async function toggleWishlistFromModal() {
-    await addToWishlist(currentProduct.id);
-}
-
-async function addToWishlist(productId) {
-    try {
-        const response = await fetch(`${API_URL}/wishlist/${productId}`, { method: 'POST' });
-        const result = await response.json();
-        updateWishlistCount();
-        toast.success(result.message);
-    } catch (error) {
-        console.error('Error adding to wishlist:', error);
-        toast.info('Unable to update wishlist. Please try again.');
-    }
-}
-
-async function toggleWishlist() {
-    window.location.href = '/Home/Wishlist';
-}
-
-async function loadWishlist() {
-    try {
-        const response = await fetch(`${API_URL}/wishlist`);
-        const wishlistItems = await response.json();
-        
-        const wishlistDiv = document.getElementById('wishlist-items');
-        
-        if (wishlistItems.length === 0) {
-            wishlistDiv.innerHTML = '<p>Your wishlist is empty</p>';
-            return;
-        }
-        
-        wishlistDiv.innerHTML = wishlistItems.map(item => `
-            <div class="wishlist-item">
-                <img src="${item.product.image}" alt="${item.product.name}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27120%27 height=%27120%27%3E%3Crect width=%27120%27 height=%27120%27 fill=%27%23fafafa%27/%3E%3C/svg%3E'">
-                <div class="item-info">
-                    <h4>${item.product.name}</h4>
-                    <p class="price">${formatPeso(item.product.price)}</p>
-                    <div class="rating">
-                        <span class="stars">${getStars(item.product.rating)}</span>
-                        <span>${item.product.rating.toFixed(1)}</span>
-                    </div>
-                </div>
-                <button class="btn-primary" onclick="quickAddToCart(${item.product.id})">Add to Cart</button>
-                <button class="remove-btn" onclick="removeFromWishlist(${item.product.id})">Remove</button>
-            </div>
-        `).join('');
-    } catch (error) {
-        console.error('Error loading wishlist:', error);
-    }
-}
-
-async function removeFromWishlist(productId) {
-    try {
-        await fetch(`${API_URL}/wishlist/${productId}`, { method: 'DELETE' });
-        await loadWishlist();
-        updateWishlistCount();
-        toast.success('Item removed from wishlist');
-    } catch (error) {
-        console.error('Error removing from wishlist:', error);
-    }
-}
-
-async function updateWishlistCount() {
-    try {
-        const response = await fetch(`${API_URL}/wishlist`);
-        const wishlistItems = await response.json();
-        document.getElementById('wishlist-count').textContent = wishlistItems.length;
-    } catch (error) {
-        console.error('Error updating wishlist count:', error);
-    }
-}
 
 // =====================================================
 // HELPER FUNCTIONS
@@ -746,3 +973,35 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'ArrowRight')  slideshowNav(1);
     if (e.key === 'ArrowLeft')   slideshowNav(-1);
 });
+
+// =====================================================
+// FILTER DRAWER (shared across shop pages)
+// =====================================================
+function openFilterDrawer() {
+    const drawer = document.getElementById('filter-drawer');
+    const backdrop = document.getElementById('fd-backdrop');
+    if (drawer) drawer.classList.add('is-open');
+    if (backdrop) backdrop.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+}
+function closeFilterDrawer() {
+    const drawer = document.getElementById('filter-drawer');
+    const backdrop = document.getElementById('fd-backdrop');
+    if (drawer) drawer.classList.remove('is-open');
+    if (backdrop) backdrop.classList.remove('is-open');
+    document.body.style.overflow = '';
+}
+function toggleAccordion(btn) {
+    const acc = btn.closest('.fd-accordion');
+    const content = acc.querySelector('.fd-acc-content');
+    const icon = btn.querySelector('.fd-acc-icon');
+    if (acc.classList.contains('is-open')) {
+        acc.classList.remove('is-open');
+        content.style.display = 'none';
+        icon.textContent = '+';
+    } else {
+        acc.classList.add('is-open');
+        content.style.display = '';
+        icon.innerHTML = '&#8722;';
+    }
+}

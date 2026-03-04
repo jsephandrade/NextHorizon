@@ -329,6 +329,49 @@ public static class ProductData
             ExpectedReleaseDate = "March 2026",
             PreOrderNote = "Limited first-run batch. Ships March 15, 2026. Free priority shipping.",
             Reviews = new List<Review>()
+        },
+
+        // ── SALE PRODUCT ─────────────────────────────────────────────────────
+        new Product
+        {
+            Id = 13,
+            Name = "Aero Sprint V2",
+            Description = "High-performance daily trainer with responsive foam midsole and breathable engineered knit upper. Versatile enough for easy runs, tempo sessions, and everything in between. Now on sale while stocks last.",
+            Price = 3599.00m,
+            OriginalPrice = 5999.00m,
+            Image = "/images/Green Lux-Lime Shimmer/PUMA-x-ASTON-MARTIN-ARAMCO-F1®-TEAM-Fade-Men's-Sneakers (10).avif",
+            Images = new List<string> {
+                "/images/Green Lux-Lime Shimmer/PUMA-x-ASTON-MARTIN-ARAMCO-F1®-TEAM-Fade-Men's-Sneakers (10).avif",
+                "/images/Green Lux-Lime Shimmer/PUMA-x-ASTON-MARTIN-ARAMCO-F1®-TEAM-Fade-Men's-Sneakers (11).avif",
+                "/images/Green Lux-Lime Shimmer/PUMA-x-ASTON-MARTIN-ARAMCO-F1®-TEAM-Fade-Men's-Sneakers (12).avif",
+                "/images/Green Lux-Lime Shimmer/PUMA-x-ASTON-MARTIN-ARAMCO-F1®-TEAM-Fade-Men's-Sneakers (9).avif",
+                "/images/Green Lux-Lime Shimmer/PUMA-x-ASTON-MARTIN-ARAMCO-F1®-TEAM-Fade-Men's-Sneakers (8).avif",
+                "/images/Green Lux-Lime Shimmer/PUMA-x-ASTON-MARTIN-ARAMCO-F1®-TEAM-Fade-Men's-Sneakers (7).avif"
+            },
+            Sizes = new List<string> { "US 7", "US 8", "US 9", "US 10", "US 11" },
+            Category = "Men",
+            SubCategory = "Running Shoes",
+            Brand = "Adidas",
+            AvailableColors = new List<string> { "Green Lux-Lime Shimmer" },
+            ColorImages = new Dictionary<string, List<string>> {
+                ["Green Lux-Lime Shimmer"] = new List<string> {
+                    "/images/Green Lux-Lime Shimmer/PUMA-x-ASTON-MARTIN-ARAMCO-F1®-TEAM-Fade-Men's-Sneakers (10).avif",
+                    "/images/Green Lux-Lime Shimmer/PUMA-x-ASTON-MARTIN-ARAMCO-F1®-TEAM-Fade-Men's-Sneakers (11).avif",
+                    "/images/Green Lux-Lime Shimmer/PUMA-x-ASTON-MARTIN-ARAMCO-F1®-TEAM-Fade-Men's-Sneakers (12).avif",
+                    "/images/Green Lux-Lime Shimmer/PUMA-x-ASTON-MARTIN-ARAMCO-F1®-TEAM-Fade-Men's-Sneakers (9).avif",
+                    "/images/Green Lux-Lime Shimmer/PUMA-x-ASTON-MARTIN-ARAMCO-F1®-TEAM-Fade-Men's-Sneakers (8).avif",
+                    "/images/Green Lux-Lime Shimmer/PUMA-x-ASTON-MARTIN-ARAMCO-F1®-TEAM-Fade-Men's-Sneakers (7).avif"
+                }
+            },
+            Rating = 4.6,
+            ReviewCount = 89,
+            Stock = 14,
+            Reviews = new List<Review>
+            {
+                new Review { Id = 1, UserName = "Paolo R.", Rating = 5, Comment = "Incredible value at this price — feels like a premium shoe.", Date = DateTime.Now.AddDays(-4), VerifiedPurchase = true, Comfort = 5, Quality = 4, SizeFit = 2, WidthFit = 2 },
+                new Review { Id = 2, UserName = "Marco D.", Rating = 5, Comment = "Grabbed these on sale and I'm blown away. Super comfortable all day.", Date = DateTime.Now.AddDays(-9), VerifiedPurchase = true, Comfort = 5, Quality = 5, SizeFit = 2, WidthFit = 2 },
+                new Review { Id = 3, UserName = "Lena V.", Rating = 4, Comment = "Great daily trainer, runs a tiny bit narrow but otherwise excellent.", Date = DateTime.Now.AddDays(-14), VerifiedPurchase = true, Comfort = 4, Quality = 4, SizeFit = 2, WidthFit = 1 }
+            }
         }
     };
     

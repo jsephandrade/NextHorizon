@@ -8,6 +8,7 @@ public class Product
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public decimal Price { get; set; }
+    public decimal? OriginalPrice { get; set; }  // set when product is on sale
     public string Image { get; set; } = string.Empty;
     public List<string> Images { get; set; } = new(); // Multiple product images
     public List<string> Sizes { get; set; } = new();
@@ -41,8 +42,8 @@ public class Review
     // Metric ratings
     public int? Comfort { get; set; }    // 1–5: 1=Uncomfortable, 5=Comfortable
     public int? Quality { get; set; }    // 1–5: 1=Poor, 5=Perfect
-    public int? SizeFit { get; set; }    // 1=Too small, 2=Perfect, 3=Too large
-    public int? WidthFit { get; set; }   // 1=Too narrow, 2=Perfect, 3=Too wide
+    public int? SizeFit { get; set; }    // 1=Too small, 2=Slightly small, 3=Perfect, 4=Slightly big, 5=Too big
+    public int? WidthFit { get; set; }   // 1=Too narrow, 2=Slightly narrow, 3=Perfect, 4=Slightly wide, 5=Too wide
 }
 
 public class CartItem

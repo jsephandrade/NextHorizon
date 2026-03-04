@@ -204,15 +204,15 @@ function renderMetrics(reviews) {
     const avgWidthFit = avg(withMetrics, 'widthFit');
 
     function pct45(v) { return v != null ? ((v - 1) / 4 * 100).toFixed(1) : null; }
-    function pct13(v) { return v != null ? ((v - 1) / 2 * 100).toFixed(1) : null; }
+    function pct13(v) { return v != null ? ((v - 1) / 4 * 100).toFixed(1) : null; }
 
     const comfortPct = pct45(avgComfort);
     const qualityPct = pct45(avgQuality);
     const sizePct    = pct13(avgSizeFit);
     const widthPct   = pct13(avgWidthFit);
 
-    const sizeLabel  = avgSizeFit  != null ? (avgSizeFit  < 1.67 ? 0 : avgSizeFit  > 2.33 ? 2 : 1) : 1;
-    const widthLabel = avgWidthFit != null ? (avgWidthFit < 1.67 ? 0 : avgWidthFit > 2.33 ? 2 : 1) : 1;
+    const sizeLabel  = avgSizeFit  != null ? (avgSizeFit  < 2.34 ? 0 : avgSizeFit  > 3.67 ? 2 : 1) : 1;
+    const widthLabel = avgWidthFit != null ? (avgWidthFit < 2.34 ? 0 : avgWidthFit > 3.67 ? 2 : 1) : 1;
 
     function clampLeft(pct) {
         var p = parseFloat(pct);

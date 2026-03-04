@@ -29,8 +29,22 @@
         <div class="product-page-body">
             <!-- Gallery Column -->
             <div class="product-page-gallery">
-                <div class="page-gallery-thumbs" id="page-gallery-thumbs"></div>
+                <div class="thumb-col-wrap">
+                    <button class="thumb-col-arrow" id="thumb-arrow-up" onclick="scrollThumbs(-1)" type="button" aria-label="Scroll up">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                    </button>
+                    <div class="page-gallery-thumbs" id="page-gallery-thumbs"></div>
+                    <button class="thumb-col-arrow" id="thumb-arrow-dn" onclick="scrollThumbs(1)" type="button" aria-label="Scroll down">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                </div>
                 <div class="page-gallery-main" id="page-gallery-main">
+                    <button class="pg-nav-arrow pg-nav-l" id="pg-nav-l" onclick="navigateImage(-1)" type="button" aria-label="Previous image">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    <button class="pg-nav-arrow pg-nav-r" id="pg-nav-r" onclick="navigateImage(1)" type="button" aria-label="Next image">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
                     <div class="pg-zoom-wrap" id="pg-zoom-wrap">
                         <img id="page-product-image" src="" alt="" />
                         <div class="pg-zoom-hint" aria-hidden="true">
@@ -58,7 +72,11 @@
                 <!-- Colors -->
                 <div class="pd-option-section" id="pd-color-section" style="display:none;">
                     <label class="pd-option-label">COLOR: <span id="pd-color-name">—</span></label>
-                    <div class="pd-color-options" id="pd-color-options"></div>
+                    <div class="pd-color-options-wrap">
+                        <button class="pd-color-arrow pd-color-arrow-l" id="pd-color-arrow-l" onclick="scrollPdColors(-1)" type="button">&#8249;</button>
+                        <div class="pd-color-options" id="pd-color-options"></div>
+                        <button class="pd-color-arrow pd-color-arrow-r" id="pd-color-arrow-r" onclick="scrollPdColors(1)" type="button">&#8250;</button>
+                    </div>
                 </div>
 
                 <!-- Sizes -->
@@ -442,18 +460,32 @@ function renderProductPage() {
 
     // Thumbnails
     const images = (pdProduct.images && pdProduct.images.length) ? pdProduct.images : [pdProduct.image];
+    pdImageList = images;
+    pdImageIndex = 0;
     document.getElementById('page-gallery-thumbs').innerHTML = images.map((src, i) => `
         <div class="page-thumb ${i === 0 ? 'active' : ''}" data-src="${src.replace(/"/g,'&quot;')}">
             <img src="${src}" alt="View ${i+1}" onerror="this.parentElement.style.display='none'">
         </div>
     `).join('');
     wireThumbClicks();
+    const _thumbTrack = document.getElementById('page-gallery-thumbs');
+    if (_thumbTrack) _thumbTrack.addEventListener('scroll', updateThumbArrows);
+    setTimeout(updateThumbArrows, 60);
+    setTimeout(updatePgArrows, 60);
     // init zoom after image is in DOM
     setTimeout(initProductZoom, 50);
 
     document.getElementById('pd-brand').textContent = pdProduct.brand || '';
     document.getElementById('pd-name').textContent = pdProduct.name;
-    document.getElementById('pd-price').textContent = formatPeso(pdProduct.price);
+    if (pdProduct.originalPrice && pdProduct.originalPrice > pdProduct.price) {
+        const pct = Math.round((1 - pdProduct.price / pdProduct.originalPrice) * 100);
+        document.getElementById('pd-price').innerHTML =
+            `<span class="pd-price-sale">${formatPeso(pdProduct.price)}</span>` +
+            `<span class="pd-price-original">${formatPeso(pdProduct.originalPrice)}</span>` +
+            `<span class="pd-price-discount-badge">${pct}% off</span>`;
+    } else {
+        document.getElementById('pd-price').textContent = formatPeso(pdProduct.price);
+    }
     document.getElementById('pd-description').textContent = pdProduct.description || '';
 
     document.getElementById('pd-rating').innerHTML = `
@@ -473,9 +505,26 @@ function renderProductPage() {
             }
             return `<div class="pd-color-opt" onclick="pdSelectColor('${c}', this)">${c}</div>`;
         }).join('');
-        // Auto-select the first color
-        const firstBtn = document.querySelector('#pd-color-options .pd-color-swatch, #pd-color-options .pd-color-opt');
+        // Auto-select from ?color= param, then first color
+        const urlColor = decodeURIComponent(new URLSearchParams(window.location.search).get('color') || '');
+        const targetBtn = urlColor
+            ? Array.from(document.querySelectorAll('#pd-color-options .pd-color-swatch, #pd-color-options .pd-color-opt'))
+                .find(b => (b.title || b.textContent.trim()) === urlColor)
+            : null;
+        const firstBtn = targetBtn || document.querySelector('#pd-color-options .pd-color-swatch, #pd-color-options .pd-color-opt');
         if (firstBtn) firstBtn.click();
+        // Update arrows: always visible, only disable at extremes
+        const track = document.getElementById('pd-color-options');
+        const updatePdArrows = () => {
+            const lBtn = document.getElementById('pd-color-arrow-l');
+            const rBtn = document.getElementById('pd-color-arrow-r');
+            if (!track || !lBtn || !rBtn) return;
+            const canScroll = track.scrollWidth > track.clientWidth + 2;
+            lBtn.disabled = !canScroll || track.scrollLeft <= 2;
+            rBtn.disabled = !canScroll || track.scrollLeft >= track.scrollWidth - track.clientWidth - 2;
+        };
+        if (track) track.addEventListener('scroll', updatePdArrows);
+        setTimeout(updatePdArrows, 60);
     }
 
     // Sizes
@@ -607,10 +656,55 @@ function renderProductPage() {
     }
 }
 
+let pdImageIndex = 0;
+let pdImageList = [];
+
 function changePageImage(src, el) {
     document.getElementById('page-product-image').src = src;
     document.querySelectorAll('.page-thumb').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
+    // sync index
+    const idx = pdImageList.indexOf(src);
+    if (idx !== -1) pdImageIndex = idx;
+    updatePgArrows();
+}
+
+function navigateImage(dir) {
+    if (!pdImageList.length) return;
+    pdImageIndex = Math.max(0, Math.min(pdImageList.length - 1, pdImageIndex + dir));
+    const src = pdImageList[pdImageIndex];
+    document.getElementById('page-product-image').src = src;
+    // sync active thumb
+    const thumbs = document.querySelectorAll('#page-gallery-thumbs .page-thumb');
+    thumbs.forEach((t, i) => t.classList.toggle('active', i === pdImageIndex));
+    // scroll thumb into view
+    if (thumbs[pdImageIndex]) thumbs[pdImageIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    updatePgArrows();
+}
+
+function updatePgArrows() {
+    const l = document.getElementById('pg-nav-l');
+    const r = document.getElementById('pg-nav-r');
+    if (!l || !r) return;
+    l.disabled = pdImageIndex <= 0;
+    r.disabled = pdImageIndex >= pdImageList.length - 1;
+}
+
+function scrollThumbs(dir) {
+    const track = document.getElementById('page-gallery-thumbs');
+    if (track) track.scrollBy({ top: dir * 160, behavior: 'smooth' });
+    setTimeout(updateThumbArrows, 200);
+}
+function updateThumbArrows() {
+    const track = document.getElementById('page-gallery-thumbs');
+    const upBtn = document.getElementById('thumb-arrow-up');
+    const dnBtn = document.getElementById('thumb-arrow-dn');
+    if (!track || !upBtn || !dnBtn) return;
+    const canScroll = track.scrollHeight > track.clientHeight + 2;
+    upBtn.style.display = canScroll ? 'flex' : 'none';
+    dnBtn.style.display = canScroll ? 'flex' : 'none';
+    upBtn.disabled = track.scrollTop <= 2;
+    dnBtn.disabled = track.scrollTop >= track.scrollHeight - track.clientHeight - 2;
 }
 
 function wireThumbClicks() {
@@ -677,6 +771,11 @@ function pdSelectSize(size, el) {
     el.classList.add('selected');
 }
 
+function scrollPdColors(dir) {
+    const track = document.getElementById('pd-color-options');
+    if (track) track.scrollBy({ left: dir * 160, behavior: 'smooth' });
+}
+
 function pdSelectColor(color, el) {
     pdSelectedColor = color;
     document.querySelectorAll('.pd-color-opt, .pd-color-swatch').forEach(o => o.classList.remove('selected'));
@@ -695,12 +794,16 @@ function pdSelectColor(color, el) {
             mainImg.alt = color;
         }
         // Update thumbnails
+        pdImageList = imgs;
+        pdImageIndex = 0;
         document.getElementById('page-gallery-thumbs').innerHTML = imgs.map((src, i) => `
             <div class="page-thumb ${i === 0 ? 'active' : ''}" data-src="${src.replace(/"/g,'&quot;')}">
                 <img src="${src}" alt="View ${i+1}" onerror="this.parentElement.style.display='none'">
             </div>
         `).join('');
         wireThumbClicks();
+        setTimeout(updateThumbArrows, 60);
+        setTimeout(updatePgArrows, 60);
     }
 }
 
