@@ -330,7 +330,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Submit
-    document.getElementById('wr-form').addEventListener('submit', function(e) {
+    document.getElementById('wr-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         var errors = [];
         if (selectedRating === 0) errors.push('Please select a star rating.');
@@ -344,9 +344,51 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!document.getElementById('wr-email').value.trim()) errors.push('Please enter your email.');
         if (errors.length) { alert(errors.join('\n')); return; }
 
-        // Show success
-        document.getElementById('wr-form').style.display = 'none';
-        document.getElementById('wr-success').style.display = 'flex';
+        var submitBtn = document.getElementById('wr-submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+
+        var imagePayload = [];
+        var previewSrc = document.getElementById('wr-photo-img').src;
+        if (previewSrc && previewSrc.indexOf('data:image/') === 0) {
+            imagePayload.push(previewSrc);
+        }
+
+        var payload = {
+            userName: document.getElementById('wr-nickname').value.trim(),
+            rating: selectedRating,
+            shortReview: document.getElementById('wr-short').value.trim(),
+            comment: document.getElementById('wr-comment').value.trim(),
+            email: document.getElementById('wr-email').value.trim(),
+            recommend: document.querySelector('input[name="recommend"]:checked').value === 'yes',
+            comfort: parseInt(document.getElementById('wr-comfort').value),
+            quality: parseInt(document.getElementById('wr-quality').value),
+            sizeFit: parseInt(document.getElementById('wr-size').value),
+            widthFit: parseInt(document.getElementById('wr-width').value),
+            verifiedPurchase: true,
+            images: imagePayload
+        };
+
+        try {
+            var res = await fetch('/api/products/' + WR_PRODUCT_ID + '/reviews', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                var errText = await res.text();
+                throw new Error(errText || 'Could not submit review.');
+            }
+
+            document.getElementById('wr-form').style.display = 'none';
+            document.getElementById('wr-success').style.display = 'flex';
+        } catch (err) {
+            alert('Failed to submit review. Please try again.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit review';
+        }
     });
 });
 

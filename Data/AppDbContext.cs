@@ -9,5 +9,7 @@ namespace MyAspNetApp.Data
 
         public DbSet<DbProduct> Products { get; set; }
         public DbSet<DbProductColorImage> ProductColorImages { get; set; }
+        public DbSet<DbReview> Reviews { get; set; }
+        public DbSet<DbReviewImage> ReviewImages { get; set; }
     }
 }

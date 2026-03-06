@@ -377,6 +377,23 @@
                 background-color: #333;
             }
 
+        .btn-ratings {
+            margin-top: 12px;
+            width: 100%;
+            padding: 14px 0;
+            border-radius: 12px;
+            border: 1px solid #111;
+            background: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+            .btn-ratings:hover {
+                background: #f5f5f5;
+            }
+
         /* OVERLAY MODAL STYLING (For Delete Pop Up) */
         .overlay-modal {
             display: none;
@@ -547,6 +564,7 @@
                 <button class="btn-action btn-edit" id="btnEdit" onclick="window.location.href='/Seller/CreateProduct?mode=edit&id=@Model.ProductId'">Edit Product</button>
                 <button class="btn-action btn-relist" id="btnRelist" onclick="window.location.href='/Seller/CreateProduct?mode=relist&id=@Model.ProductId'">Relist Product</button>
             </div>
+            <button class="btn-ratings" onclick="window.location.href='/Seller/ViewRatings?id=@Model.ProductId'">View Ratings</button>
 
         </div>
     </div>

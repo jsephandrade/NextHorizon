@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using MyAspNetApp.Data;
 using MyAspNetApp.Models;
 
@@ -10,13 +12,44 @@ namespace MyAspNetApp.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly IMemoryCache _cache;
 
-        public ProductsController(AppDbContext db)
+        public ProductsController(AppDbContext db, IMemoryCache cache)
         {
             _db = db;
+            _cache = cache;
         }
 
-        private Product MapDbProduct(DbProduct p, List<DbProductColorImage>? colorImgs = null)
+        private static Review MapDbReview(DbReview review, List<DbReviewImage> reviewImages)
+        {
+            return new Review
+            {
+                Id = review.Id,
+                UserName = review.UserName,
+                Rating = (double)review.Rating,
+                ShortReview = review.ShortReview,
+                Comment = review.Comment,
+                Date = review.Date,
+                VerifiedPurchase = review.VerifiedPurchase,
+                Email = review.Email,
+                Recommend = review.Recommend,
+                Comfort = review.Comfort,
+                Quality = review.Quality,
+                SizeFit = review.SizeFit,
+                WidthFit = review.WidthFit,
+                ProductId = review.ProductId,
+                Images = reviewImages
+                    .Where(i => i.ReviewId == review.Id)
+                    .Select(i => i.ImageUrl)
+                    .ToList()
+            };
+        }
+
+        private Product MapDbProduct(
+            DbProduct p,
+            List<DbProductColorImage>? colorImgs = null,
+            Dictionary<int, (double Rating, int Count)>? reviewStats = null,
+            Dictionary<int, List<Review>>? reviewsByProduct = null)
         {
             var myColorImgs = colorImgs?.Where(ci => ci.ProductId == p.ProductId).ToList()
                               ?? new List<DbProductColorImage>();
@@ -49,6 +82,18 @@ namespace MyAspNetApp.Controllers
                     colorSizesDict[availColors[i]] = seg.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
             }
 
+            var rating = 0d;
+            var reviewCount = 0;
+            if (reviewStats != null && reviewStats.TryGetValue(p.ProductId, out var stats))
+            {
+                rating = stats.Rating;
+                reviewCount = stats.Count;
+            }
+
+            var mappedReviews = new List<Review>();
+            if (reviewsByProduct != null && reviewsByProduct.TryGetValue(p.ProductId, out var fullReviews))
+                mappedReviews = fullReviews;
+
             return new Product
             {
                 Id = p.ProductId,
@@ -60,8 +105,9 @@ namespace MyAspNetApp.Controllers
                 SubCategory = p.Category ?? "",
                 Brand = p.Brand ?? "",
                 Description = p.Details ?? "",
-                Rating = 0,
-                ReviewCount = 0,
+                Rating = rating,
+                ReviewCount = reviewCount,
+                Reviews = mappedReviews,
                 Stock = p.Stock,
                 Sizes = string.IsNullOrEmpty(p.Sizes) ? new List<string>() : p.Sizes.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList(),
                 AvailableColors = availColors,
@@ -75,73 +121,222 @@ namespace MyAspNetApp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllProducts()
         {
-            var dbProducts = await _db.Products
-                .Where(p => p.Status == "active")
-                .ToListAsync();
+            try
+            {
+                var result = await _cache.GetOrCreateAsync("products:all", async entry =>
+                {
+                    entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(20);
 
-            var productIds = dbProducts.Select(p => p.ProductId).ToList();
-            var colorImgs = await _db.ProductColorImages
-                .Where(ci => productIds.Contains(ci.ProductId))
-                .ToListAsync();
+                    var dbProducts = await _db.Products
+                        .AsNoTracking()
+                        .Where(p => p.Status == "active")
+                        .ToListAsync();
 
-            return Ok(dbProducts.Select(p => MapDbProduct(p, colorImgs)).ToList());
+                    var productIds = dbProducts.Select(p => p.ProductId).ToList();
+                    var colorImgs = await _db.ProductColorImages
+                        .AsNoTracking()
+                        .Where(ci => productIds.Contains(ci.ProductId))
+                        .ToListAsync();
+                    var dbReviews = await _db.Reviews
+                        .AsNoTracking()
+                        .Where(r => productIds.Contains(r.ProductId))
+                        .ToListAsync();
+                    var reviewStats = dbReviews
+                        .GroupBy(r => r.ProductId)
+                        .ToDictionary(g => g.Key, g => ((double)g.Average(x => x.Rating), g.Count()));
+
+                    return dbProducts.Select(p => MapDbProduct(p, colorImgs, reviewStats)).ToList();
+                });
+
+                if (result == null)
+                {
+                    return Ok(new List<Product>());
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex) when (IsTransientDatabaseException(ex))
+            {
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Database is temporarily unavailable." });
+            }
         }
 
         // GET: api/products/men
         [HttpGet("men")]
         public async Task<IActionResult> GetMenProducts()
         {
-            var products = await _db.Products
-                .Where(p => p.Status == "active" && p.Category == "Men")
-                .ToListAsync();
-            var productIds = products.Select(p => p.ProductId).ToList();
-            var colorImgs = await _db.ProductColorImages
-                .Where(ci => productIds.Contains(ci.ProductId))
-                .ToListAsync();
-            return Ok(products.Select(p => MapDbProduct(p, colorImgs)).ToList());
+            try
+            {
+                var result = await _cache.GetOrCreateAsync("products:men", async entry =>
+                {
+                    entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(20);
+
+                    var products = await _db.Products
+                        .AsNoTracking()
+                        .Where(p => p.Status == "active" && p.Category == "Men")
+                        .ToListAsync();
+                    var productIds = products.Select(p => p.ProductId).ToList();
+                    var colorImgs = await _db.ProductColorImages
+                        .AsNoTracking()
+                        .Where(ci => productIds.Contains(ci.ProductId))
+                        .ToListAsync();
+                    var dbReviews = await _db.Reviews
+                        .AsNoTracking()
+                        .Where(r => productIds.Contains(r.ProductId))
+                        .ToListAsync();
+                    var reviewStats = dbReviews
+                        .GroupBy(r => r.ProductId)
+                        .ToDictionary(g => g.Key, g => ((double)g.Average(x => x.Rating), g.Count()));
+                    return products.Select(p => MapDbProduct(p, colorImgs, reviewStats)).ToList();
+                });
+
+                if (result == null)
+                {
+                    return Ok(new List<Product>());
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex) when (IsTransientDatabaseException(ex))
+            {
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Database is temporarily unavailable." });
+            }
         }
 
         // GET: api/products/women
         [HttpGet("women")]
         public async Task<IActionResult> GetWomenProducts()
         {
-            var products = await _db.Products
-                .Where(p => p.Status == "active" && p.Category == "Women")
-                .ToListAsync();
-            var productIds = products.Select(p => p.ProductId).ToList();
-            var colorImgs = await _db.ProductColorImages
-                .Where(ci => productIds.Contains(ci.ProductId))
-                .ToListAsync();
-            return Ok(products.Select(p => MapDbProduct(p, colorImgs)).ToList());
+            try
+            {
+                var result = await _cache.GetOrCreateAsync("products:women", async entry =>
+                {
+                    entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(20);
+
+                    var products = await _db.Products
+                        .AsNoTracking()
+                        .Where(p => p.Status == "active" && p.Category == "Women")
+                        .ToListAsync();
+                    var productIds = products.Select(p => p.ProductId).ToList();
+                    var colorImgs = await _db.ProductColorImages
+                        .AsNoTracking()
+                        .Where(ci => productIds.Contains(ci.ProductId))
+                        .ToListAsync();
+                    var dbReviews = await _db.Reviews
+                        .AsNoTracking()
+                        .Where(r => productIds.Contains(r.ProductId))
+                        .ToListAsync();
+                    var reviewStats = dbReviews
+                        .GroupBy(r => r.ProductId)
+                        .ToDictionary(g => g.Key, g => ((double)g.Average(x => x.Rating), g.Count()));
+                    return products.Select(p => MapDbProduct(p, colorImgs, reviewStats)).ToList();
+                });
+
+                if (result == null)
+                {
+                    return Ok(new List<Product>());
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex) when (IsTransientDatabaseException(ex))
+            {
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Database is temporarily unavailable." });
+            }
         }
 
         // GET: api/products/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProductById(int id)
         {
-            var dbProduct = await _db.Products.FindAsync(id);
-            if (dbProduct != null)
+            try
             {
-                var colorImgs = await _db.ProductColorImages
-                    .Where(ci => ci.ProductId == id)
-                    .ToListAsync();
-                return Ok(MapDbProduct(dbProduct, colorImgs));
+                var dbProduct = await _db.Products.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == id);
+                if (dbProduct != null)
+                {
+                    var colorImgs = await _db.ProductColorImages
+                        .AsNoTracking()
+                        .Where(ci => ci.ProductId == id)
+                        .ToListAsync();
+                    var dbReviews = await _db.Reviews
+                        .AsNoTracking()
+                        .Where(r => r.ProductId == id)
+                        .OrderByDescending(r => r.Date)
+                        .ToListAsync();
+                    var reviewImages = await _db.ReviewImages
+                        .AsNoTracking()
+                        .Where(i => dbReviews.Select(r => r.Id).Contains(i.ReviewId))
+                        .ToListAsync();
+
+                    var mappedReviews = dbReviews
+                        .GroupBy(r => r.ProductId)
+                        .ToDictionary(
+                            g => g.Key,
+                            g => g.Select(r => MapDbReview(r, reviewImages)).ToList());
+                    var reviewStats = dbReviews
+                        .GroupBy(r => r.ProductId)
+                        .ToDictionary(g => g.Key, g => ((double)g.Average(x => x.Rating), g.Count()));
+
+                    return Ok(MapDbProduct(dbProduct, colorImgs, reviewStats, mappedReviews));
+                }
+                return NotFound();
             }
-            return NotFound();
+            catch (Exception ex) when (IsTransientDatabaseException(ex))
+            {
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Database is temporarily unavailable." });
+            }
         }
 
         // GET: api/products/seller/{sellerId}
         [HttpGet("seller/{sellerId}")]
         public async Task<IActionResult> GetProductsBySeller(int sellerId)
         {
-            var products = await _db.Products
-                .Where(p => p.Status == "active")
-                .ToListAsync();
-            var productIds = products.Select(p => p.ProductId).ToList();
-            var colorImgs = await _db.ProductColorImages
-                .Where(ci => productIds.Contains(ci.ProductId))
-                .ToListAsync();
-            return Ok(products.Select(p => MapDbProduct(p, colorImgs)).ToList());
+            try
+            {
+                var products = await _db.Products
+                    .AsNoTracking()
+                    .Where(p => p.Status == "active")
+                    .ToListAsync();
+                var productIds = products.Select(p => p.ProductId).ToList();
+                var colorImgs = await _db.ProductColorImages
+                    .AsNoTracking()
+                    .Where(ci => productIds.Contains(ci.ProductId))
+                    .ToListAsync();
+                var dbReviews = await _db.Reviews
+                    .AsNoTracking()
+                    .Where(r => productIds.Contains(r.ProductId))
+                    .ToListAsync();
+                var reviewStats = dbReviews
+                    .GroupBy(r => r.ProductId)
+                    .ToDictionary(g => g.Key, g => ((double)g.Average(x => x.Rating), g.Count()));
+                return Ok(products.Select(p => MapDbProduct(p, colorImgs, reviewStats)).ToList());
+            }
+            catch (Exception ex) when (IsTransientDatabaseException(ex))
+            {
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Database is temporarily unavailable." });
+            }
+        }
+
+        private static bool IsTransientDatabaseException(Exception ex)
+        {
+            if (ex is TimeoutException || ex is SqlException)
+            {
+                return true;
+            }
+
+            if (ex is InvalidOperationException ioe &&
+                ioe.Message.Contains("connection from the pool", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (ex.InnerException is TimeoutException || ex.InnerException is SqlException)
+            {
+                return true;
+            }
+
+            return ex.InnerException is InvalidOperationException innerIoe &&
+                   innerIoe.Message.Contains("connection from the pool", StringComparison.OrdinalIgnoreCase);
         }
     }
 

@@ -487,6 +487,20 @@ let pdSelectedColor = null;
 let pdQty = 1;
 let pdMaxStock = 0;
 
+function escHtml(v) {
+    return String(v || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function firstLetter(v) {
+    const s = String(v || '').trim();
+    return s ? s.charAt(0).toUpperCase() : '?';
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     loadProductPage(PRODUCT_ID);
 });
@@ -694,9 +708,9 @@ function renderProductPage() {
             <div class="pd-review-card">
                 <div class="pd-review-top">
                     <div class="pd-review-user">
-                        <div class="pd-review-avatar">${r.userName.charAt(0).toUpperCase()}</div>
+                        <div class="pd-review-avatar">${firstLetter(r.userName)}</div>
                         <div>
-                            <span class="pd-review-name">${r.userName}</span>
+                            <span class="pd-review-name">${escHtml(r.userName)}</span>
                             <span class="pd-review-date">${new Date(r.date).toLocaleDateString('en-PH')}</span>
                         </div>
                     </div>
@@ -705,7 +719,9 @@ function renderProductPage() {
                         ${r.verifiedPurchase ? '<span class="pd-verified">✓ Verified</span>' : ''}
                     </div>
                 </div>
-                <p class="pd-review-comment">${r.comment}</p>
+                ${r.shortReview ? `<p class="pd-review-title"><strong>${escHtml(r.shortReview)}</strong></p>` : ''}
+                <p class="pd-review-comment">${escHtml(r.comment)}</p>
+                ${r.images && r.images.length ? `<img class="pd-review-thumb" src="${escHtml(r.images[0])}" alt="Review photo" loading="lazy">` : ''}
                 ${r.images && r.images.length ? `
                 <button class="rv-view-photos-btn" onclick='openReviewSlideshow(${JSON.stringify(r.images)}, 0)'>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>

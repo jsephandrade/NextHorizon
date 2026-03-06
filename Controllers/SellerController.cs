@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using MyAspNetApp.Data;
 using MyAspNetApp.Models;
+using MyAspNetApp.Models.ViewModels;
 
 namespace MyAspNetApp.Controllers
 {
@@ -9,18 +12,28 @@ namespace MyAspNetApp.Controllers
     {
         private readonly AppDbContext _db;
         private readonly IWebHostEnvironment _env;
+        private readonly IMemoryCache _cache;
 
-        public SellerController(AppDbContext db, IWebHostEnvironment env)
+        public SellerController(AppDbContext db, IWebHostEnvironment env, IMemoryCache cache)
         {
             _db = db;
             _env = env;
+            _cache = cache;
         }
 
         // GET: /Seller - Seller Dashboard (loads products from DB)
         public async Task<IActionResult> Index()
         {
-            var products = await _db.Products.ToListAsync();
-            return View(products);
+            try
+            {
+                var products = await _db.Products.ToListAsync();
+                return View(products);
+            }
+            catch (Exception ex) when (IsTransientDatabaseException(ex))
+            {
+                TempData["SuccessMessage"] = "Database is temporarily unreachable. Showing empty product list.";
+                return View(new List<DbProduct>());
+            }
         }
 
         // GET: /Seller/CreateProduct
@@ -228,6 +241,7 @@ namespace MyAspNetApp.Controllers
             else
                 TempData["SuccessMessage"] = "Product added successfully.";
 
+            InvalidateProductCaches();
             return RedirectToAction("Index");
         }
 
@@ -263,6 +277,7 @@ namespace MyAspNetApp.Controllers
                 product.Status = "relist";
                 await _db.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Product removed.";
+                InvalidateProductCaches();
             }
             return RedirectToAction("Index");
         }
@@ -278,6 +293,7 @@ namespace MyAspNetApp.Controllers
                 product.Status = status;
                 await _db.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Status updated.";
+                InvalidateProductCaches();
             }
             return RedirectToAction("Index");
         }
@@ -312,6 +328,71 @@ namespace MyAspNetApp.Controllers
                 }
             };
             return View(model);
+        }
+
+        // GET: /Seller/ViewRatings?id=1
+        [HttpGet]
+        public async Task<IActionResult> ViewRatings(int id)
+        {
+            var product = await _db.Products.FindAsync(id);
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            var reviews = await _db.Reviews
+                .Where(r => r.ProductId == id)
+                .OrderByDescending(r => r.Date)
+                .ToListAsync();
+
+            var reviewIds = reviews.Select(r => r.Id).ToList();
+            var reviewImages = await _db.ReviewImages
+                .Where(i => reviewIds.Contains(i.ReviewId))
+                .ToListAsync();
+
+            var model = new SellerRatingsViewModel
+            {
+                Product = product,
+                Reviews = reviews.Select(r => new SellerRatingItem
+                {
+                    Review = r,
+                    Images = reviewImages
+                        .Where(i => i.ReviewId == r.Id)
+                        .Select(i => i.ImageUrl)
+                        .ToList()
+                }).ToList()
+            };
+
+            return View(model);
+        }
+
+        private static bool IsTransientDatabaseException(Exception ex)
+        {
+            if (ex is TimeoutException || ex is SqlException)
+            {
+                return true;
+            }
+
+            if (ex is InvalidOperationException ioe &&
+                ioe.Message.Contains("connection from the pool", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (ex.InnerException is TimeoutException || ex.InnerException is SqlException)
+            {
+                return true;
+            }
+
+            return ex.InnerException is InvalidOperationException innerIoe &&
+                   innerIoe.Message.Contains("connection from the pool", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void InvalidateProductCaches()
+        {
+            _cache.Remove("products:all");
+            _cache.Remove("products:men");
+            _cache.Remove("products:women");
         }
     }
 }

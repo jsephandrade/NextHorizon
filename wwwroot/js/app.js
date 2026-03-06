@@ -266,10 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initHeaderScroll();
 
     initTopNav();
-    // Only load products if the grid exists (Shop page)
-    if (document.getElementById('products-grid')) {
-        loadProducts('all');
-    }
+    // Shop page handles its own product loading in Views/Home/Shop.cshtml.
     updateCartCount();
     
     // Category filter buttons with enhanced feedback
@@ -279,7 +276,10 @@ document.addEventListener('DOMContentLoaded', () => {
             this.classList.add('active');
             const category = this.dataset.category;
             currentCategory = category;
-            loadProducts(category);
+            // Prevent duplicate /api/products fetches on Shop page where inline script controls filtering.
+            if (!document.getElementById('products-grid')) {
+                loadProducts(category);
+            }
         });
     });
 

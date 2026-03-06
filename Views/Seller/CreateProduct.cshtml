@@ -1,4 +1,4 @@
-﻿@model MyAspNetApp.Models.DbProduct
+@model MyAspNetApp.Models.DbProduct
 @{
     ViewData["Title"] = "Manage Product Listing";
     Layout = null;
@@ -13,7 +13,6 @@
     <title>NEXT HORIZON - Manage Product Listing</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
     <style>
@@ -57,7 +56,7 @@
 
         /* Main Container */
         .container {
-            max-width: 900px;
+            max-width: 950px;
             margin: 0 auto;
             padding: 40px 20px 100px 20px;
         }
@@ -66,6 +65,16 @@
             font-size: 1.8rem;
             font-weight: 700;
             margin-bottom: 30px;
+        }
+
+        /* Global Number Input Reset */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
         }
 
         /* Image Upload Section */
@@ -84,20 +93,20 @@
             transition: 0.2s;
         }
 
-            .main-upload-box:hover {
-                background-color: #a0a0a5;
-            }
+        .main-upload-box:hover {
+            background-color: #a0a0a5;
+        }
 
-            .main-upload-box i {
-                font-size: 6rem;
-                color: #444;
-            }
+        .main-upload-box i {
+            font-size: 6rem;
+            color: #444;
+        }
 
-            .main-upload-box span {
-                font-size: 1.4rem;
-                font-weight: 600;
-                color: #222;
-            }
+        .main-upload-box span {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #222;
+        }
 
         /* Thumbnail Row */
         .thumbnail-row {
@@ -108,22 +117,13 @@
             padding: 10px 0;
         }
 
-            .thumbnail-row::-webkit-scrollbar {
-                height: 6px;
-            }
-
-            .thumbnail-row::-webkit-scrollbar-track {
-                background: transparent;
-            }
-
-            .thumbnail-row::-webkit-scrollbar-thumb {
-                background: #bbb;
-                border-radius: 10px;
-            }
-
-                .thumbnail-row::-webkit-scrollbar-thumb:hover {
-                    background: #888;
-                }
+        .thumbnail-row::-webkit-scrollbar { height: 6px; }
+        .thumbnail-row::-webkit-scrollbar-track { background: transparent; }
+        .thumbnail-row::-webkit-scrollbar-thumb {
+            background: #bbb;
+            border-radius: 10px;
+        }
+        .thumbnail-row::-webkit-scrollbar-thumb:hover { background: #888; }
 
         .thumbnail {
             width: 85px;
@@ -136,11 +136,11 @@
             cursor: pointer;
         }
 
-            .thumbnail img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-            }
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
         /* Delete Button on Hover */
         .delete-btn {
@@ -159,34 +159,20 @@
             font-size: 12px;
             cursor: pointer;
             transition: 0.2s;
+            z-index: 10;
         }
 
-            .delete-btn:hover {
-                background: var(--accent-red);
-            }
-
-        .thumbnail:hover .delete-btn {
-            display: flex;
-        }
+        .delete-btn:hover { background: var(--accent-red); }
+        .thumbnail:hover .delete-btn { display: flex; }
 
         /* Form Details */
-        /* Product Details Header Layout */
-        .details-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
         h3.section-title {
             font-size: 1.4rem;
             font-weight: 700;
-            margin: 0; /* Reset margin since wrapper handles spacing */
-        }
-
-        .form-row {
             margin-bottom: 15px;
         }
+
+        .form-row { margin-bottom: 15px; }
 
         .custom-input {
             width: 100%;
@@ -201,10 +187,10 @@
             outline: none;
         }
 
-            .custom-input::placeholder {
-                color: #444;
-                font-weight: 400;
-            }
+        .custom-input::placeholder {
+            color: #444;
+            font-weight: 400;
+        }
 
         /* Price / Discount Flex Row */
         .split-input-box {
@@ -216,30 +202,17 @@
             padding: 5px 25px;
         }
 
-            .split-input-box input {
-                background: transparent;
-                border: none;
-                font-family: 'Inter', sans-serif;
-                font-size: 1.05rem;
-                padding: 15px 0;
-                outline: none;
-                color: #222;
-            }
+        .split-input-box input {
+            background: transparent;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 1.05rem;
+            padding: 15px 0;
+            outline: none;
+            color: #222;
+        }
 
-                /* Remove up/down arrows from number inputs */
-                .split-input-box input[type="number"]::-webkit-outer-spin-button,
-                .split-input-box input[type="number"]::-webkit-inner-spin-button {
-                    -webkit-appearance: none;
-                    margin: 0;
-                }
-
-                .split-input-box input[type="number"] {
-                    -moz-appearance: textfield;
-                }
-
-                .split-input-box input::placeholder {
-                    color: #444;
-                }
+        .split-input-box input::placeholder { color: #444; }
 
         .discount-wrap {
             display: flex;
@@ -247,26 +220,36 @@
             gap: 10px;
         }
 
-            .discount-wrap input {
-                width: 60px;
-                text-align: left;
-            }
+        .discount-wrap input {
+            width: 60px;
+            text-align: left;
+        }
 
-        /* Variant Row */
+        /* Variant Row Container */
+        .variant-card {
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
         .variant-row {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 15px;
         }
 
+        /* Multi-Image Button */
         .btn-plus-square {
-            width: 55px;
-            height: 55px;
+            width: 60px;
+            height: 60px;
             background-color: var(--input-bg);
             border: none;
             border-radius: 12px;
             display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            padding: 0;
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
@@ -274,34 +257,84 @@
             cursor: pointer;
             flex-shrink: 0;
             overflow: hidden;
-            padding: 0;
+            position: relative;
         }
 
-            .btn-plus-square:hover {
-                background-color: #a0a0a5;
-            }
+        .btn-plus-square:hover { background-color: #a0a0a5; }
+        .btn-plus-square:hover .delete-btn { display: flex; } /* Shows remove icon on hover */
 
-        .small-input {
+        .btn-plus-square img {
+            flex: 1 1 40%;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .btn-plus-square i.fa-plus { margin: auto; }
+
+        /* Unified Input With Persistent Labels */
+        .input-with-label {
             background-color: var(--input-bg);
-            border: none;
-            padding: 18px 15px;
             border-radius: 12px;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            flex: 1;
+            height: 60px;
+            min-width: 100px;
+        }
+
+        .input-with-label .label {
+            color: #222;
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+
+        .input-with-label .vertical-line {
+            width: 1px;
+            height: 25px;
+            background-color: #555;
+            margin: 0 10px;
+        }
+
+        .input-with-label input {
+            background: transparent;
+            border: none;
+            outline: none;
+            width: 100%;
             font-family: 'Inter', sans-serif;
             font-size: 1rem;
             color: #222;
-            outline: none;
-            flex: 1;
-            min-width: 70px;
+            height: 100%;
         }
 
-            .small-input::placeholder {
-                color: #444;
-            }
+        /* Custom Dropdown Styling for Dimensions */
+        .unit-selector {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
 
-        .availability-label {
+        .unit-selector i {
+            color: #ffffff;
+            pointer-events: none;
+            position: absolute;
+            left: 0;
+            font-size: 0.85rem;
+        }
+
+        .unit-selector select {
+            appearance: none;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
             font-weight: 700;
-            margin-left: 5px;
-            margin-right: 5px;
+            color: #111;
+            cursor: pointer;
+            padding-left: 20px; /* Space for the white caret */
         }
 
         /* Interactive Custom Radio Styling */
@@ -312,18 +345,16 @@
             cursor: pointer;
             font-weight: 500;
             user-select: none;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
         }
 
-            .custom-radio input {
-                display: none;
-            }
+        .custom-radio input { display: none; }
 
         .radio-box {
-            width: 25px;
-            height: 25px;
+            width: 22px;
+            height: 22px;
             background-color: var(--input-bg);
-            border-radius: 6px;
+            border-radius: 4px;
             transition: background-color 0.2s;
         }
 
@@ -336,7 +367,7 @@
             display: flex;
             align-items: center;
             gap: 20px;
-            margin-bottom: 15px;
+            margin-bottom: 25px;
         }
 
         .btn-add-variant {
@@ -352,9 +383,7 @@
             text-align: center;
         }
 
-            .btn-add-variant:hover {
-                background-color: #a0a0a5;
-            }
+        .btn-add-variant:hover { background-color: #a0a0a5; }
 
         .size-guide-link {
             display: flex;
@@ -369,10 +398,10 @@
             color: inherit;
         }
 
-            .size-guide-link i {
-                font-size: 1.6rem;
-                margin-top: 4px;
-            }
+        .size-guide-link i {
+            font-size: 1.6rem;
+            margin-top: 4px;
+        }
 
         /* Bottom Row Split: Text Area & Barcode */
         .bottom-details-row {
@@ -385,11 +414,11 @@
             flex: 1;
             height: 180px;
             resize: none;
-            margin-bottom: 0; /* Remove margin inside flex */
+            margin-bottom: 0;
         }
 
         .barcode-preview-box {
-            width: 220px;
+            width: 250px;
             background-color: var(--input-bg);
             border-radius: 12px;
             display: flex;
@@ -400,16 +429,16 @@
             padding: 20px;
         }
 
-            .barcode-preview-box span {
-                font-weight: 700;
-                color: #111;
-                margin-bottom: 15px;
-            }
+        .barcode-preview-box span {
+            font-weight: 700;
+            color: #111;
+            margin-bottom: 15px;
+        }
 
-            .barcode-preview-box svg {
-                width: 100%;
-                height: auto;
-            }
+        .barcode-preview-box svg {
+            width: 100%;
+            height: auto;
+        }
 
         /* Action Buttons */
         .action-buttons {
@@ -422,7 +451,7 @@
             background-color: #1a1a1a;
             color: #fff;
             border: none;
-            padding: 20px 60px;
+            padding: 20px 80px;
             border-radius: 12px;
             font-family: 'Inter', sans-serif;
             font-size: 1.1rem;
@@ -431,15 +460,13 @@
             transition: 0.2s;
         }
 
-            .btn-submit:hover {
-                background-color: #000;
-            }
+        .btn-submit:hover { background-color: #000; }
 
         .btn-cancel {
             background-color: #fff;
             color: #111;
             border: 1px solid #111;
-            padding: 20px 60px;
+            padding: 20px 80px;
             border-radius: 12px;
             font-family: 'Inter', sans-serif;
             font-size: 1.1rem;
@@ -448,18 +475,13 @@
             transition: 0.2s;
         }
 
-            .btn-cancel:hover {
-                background-color: #f5f5f5;
-            }
+        .btn-cancel:hover { background-color: #f5f5f5; }
 
         /* Modal */
         .overlay-modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.6);
             z-index: 1000;
             align-items: center;
@@ -475,10 +497,10 @@
             text-align: center;
         }
 
-            .overlay-content h3 {
-                margin-top: 0;
-                margin-bottom: 20px;
-            }
+        .overlay-content h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
 
         .grid-selector {
             display: grid;
@@ -489,77 +511,28 @@
             overflow-y: auto;
         }
 
-            .grid-selector img {
-                width: 100%;
-                aspect-ratio: 1;
-                object-fit: cover;
-                border-radius: 10px;
-                cursor: pointer;
-                border: 2px solid transparent;
-            }
+        .modal-img-container {
+            position: relative;
+            cursor: pointer;
+        }
 
-                .grid-selector img:hover {
-                    border-color: #111;
-                }
+        .modal-img-container img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 3px solid transparent;
+            transition: 0.1s;
+        }
 
-        .close-modal {
+        .btn-modal {
             background: #111;
             color: #fff;
-            padding: 10px 20px;
+            padding: 12px 25px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-        }
-
-        .close-modal-cancel {
-            background: #fff;
-            color: #111;
-            padding: 10px 20px;
-            border: 1px solid #111;
-            border-radius: 8px;
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 0.95rem;
-        }
-
-        .img-selectable {
-            position: relative;
-            cursor: pointer;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 2px solid transparent;
-        }
-
-            .img-selectable img {
-                width: 100%;
-                aspect-ratio: 1;
-                object-fit: cover;
-                display: block;
-            }
-
-            .img-selectable:hover {
-                border-color: #999;
-            }
-
-            .img-selectable.selected {
-                border-color: #111;
-            }
-
-        .img-checkmark {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            width: 22px;
-            height: 22px;
-            background: #111;
-            color: #fff;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-            pointer-events: none;
+            font-weight: 600;
         }
     </style>
 </head>
@@ -583,231 +556,163 @@
     <div class="container">
         <h2 class="page-title" id="dynamic-page-title">Create Product Listing</h2>
 
-        <form asp-action="CreateProduct" asp-controller="Seller" method="post" enctype="multipart/form-data">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="mode" value="@mode" />
-        <input type="hidden" asp-for="ProductId" />
-        <input type="hidden" asp-for="Status" value="@(mode == "relist" ? "active" : (Model.Status ?? "active"))" />
+        <form asp-action="CreateProduct" asp-controller="Seller" method="post" enctype="multipart/form-data" id="productForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="mode" value="@mode" />
+            <input type="hidden" asp-for="ProductId" />
+            <input type="hidden" asp-for="Status" value="@(mode == "relist" ? "active" : (Model.Status ?? "active"))" />
+            <input type="hidden" asp-for="Sizes" id="sizesHidden" />
+            <input type="hidden" asp-for="Stock" id="stockHidden" />
+            <input type="hidden" id="hiddenProductSku" name="SKU" value="" />
 
-        <input type="file" id="imageInput" name="imageFile" multiple accept="image/*" style="display: none;">
+            <input type="file" id="imageInput" name="imageFile" multiple accept="image/*" style="display: none;">
 
-        <div class="main-upload-box" id="uploadBox">
-            <i class="fa-solid fa-cloud-arrow-up"></i>
-            <span>Upload Photos</span>
-        </div>
+            <div class="main-upload-box" id="uploadBox">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <span>Upload Photos</span>
+            </div>
 
-        <div class="thumbnail-row" id="thumbnailRow">
-        </div>
+            <div class="thumbnail-row" id="thumbnailRow"></div>
 
-        <h3 class="section-title" style="margin-bottom: 15px;">Product Details</h3>
+            <h3 class="section-title">Product Details</h3>
 
-        <div class="form-row">
-            <input type="text" class="custom-input" placeholder="Product Name" asp-for="ProductName" value="@Model.ProductName">
-        </div>
+            <div class="form-row">
+                <input type="text" class="custom-input" placeholder="Product Name" asp-for="ProductName" value="@Model.ProductName">
+            </div>
 
-        <div class="form-row" style="margin-bottom: 5px;">
-            <div class="split-input-box">
-                <input type="number" id="basePrice" placeholder="Price" min="0" step="any" asp-for="Price" value="@(Model.Price > 0 ? Model.Price.ToString("0.##") : "")">
-                <div class="discount-wrap">
-                    <span style="color: #444;">Discount % |</span>
-                    <input type="number" id="discountPercent" placeholder="0" min="0" max="100" asp-for="Discount" value="@(Model.Discount.HasValue && Model.Discount.Value > 0 ? Model.Discount.Value.ToString("0.##") : "")">
+            <div class="form-row">
+                <input type="text" class="custom-input" placeholder="Brand" asp-for="Brand" value="@Model.Brand">
+            </div>
+
+            <div class="form-row" style="margin-bottom: 5px;">
+                <div class="split-input-box">
+                    <input type="number" id="basePrice" placeholder="Price" min="0" step="any" asp-for="Price" value="@(Model.Price > 0 ? Model.Price.ToString("0.##") : "")">
+                    <div class="discount-wrap">
+                        <span style="color: #444;">Discount |</span>
+                        <input type="number" id="discountPercent" placeholder="0" min="0" max="100" asp-for="Discount" value="@(Model.Discount.HasValue && Model.Discount.Value > 0 ? Model.Discount.Value.ToString("0.##") : "")">
+                    </div>
+                </div>
+                <div style="text-align: right; font-size: 0.95rem; color: #555; padding-right: 10px; margin-top: 8px;">
+                    Final Price: <span id="finalPriceDisplay" style="font-weight: 700; color: #111;">0.00</span>
                 </div>
             </div>
-            <div style="text-align: right; font-size: 0.95rem; color: #555; padding-right: 10px; margin-top: 8px;">
-                Final Price: <span id="finalPriceDisplay" style="font-weight: 700; color: #111;">0.00</span>
+
+            <div class="form-row">
+                <input list="category-options" class="custom-input" asp-for="Category" value="@Model.Category" placeholder="Category">
+                <datalist id="category-options">
+                    <option value="Tops"></option>
+                    <option value="Bottoms"></option>
+                    <option value="Outerwear"></option>
+                    <option value="Footwear"></option>
+                    <option value="Accessories"></option>
+                </datalist>
             </div>
-        </div>
 
-        <div class="form-row">
-            <input list="category-options" class="custom-input" asp-for="Category" value="@Model.Category" placeholder="Search or select a Category...">
-            <datalist id="category-options">
-                <option value="Tops"></option>
-                <option value="Bottoms"></option>
-                <option value="Outerwear"></option>
-                <option value="Dresses & Jumpsuits"></option>
-                <option value="Activewear"></option>
-                <option value="Footwear"></option>
-                <option value="Accessories"></option>
-            </datalist>
-        </div>
+            <div id="variants-container"></div>
 
-        <div class="form-row">
-            <input type="text" class="custom-input" asp-for="Brand" value="@Model.Brand" placeholder="Brand (e.g. Nike, Adidas, Unbranded)">
-        </div>
-
-        <input type="hidden" id="hiddenProductUpc" name="UPC" value="">
-
-        <div id="variants-container">
-            <div class="variant-row">
-                <button type="button" class="btn-plus-square"><i class="fa-solid fa-plus" style="font-weight: 300;"></i></button>
-                <input type="text" class="small-input sku-field" id="primarySkuField" placeholder="SKU |">
-                <input type="text" class="small-input" id="sizesInput" name="colorSizes" placeholder="Size |" value="@Model.Sizes">
-                <input type="text" class="small-input" name="colorNames" placeholder="Style |">
-                <input type="text" class="small-input qty-input" id="quantityInput" placeholder="Quantity |" value="@(Model.Stock > 0 ? Model.Stock.ToString() : "")">
-
-                <span class="availability-label">Availability</span>
-
-                <label class="custom-radio">
-                    <input type="radio" name="availability-0" checked>
-                    <div class="radio-box"></div>
-                    In Stock
-                </label>
-                <label class="custom-radio">
-                    <input type="radio" name="availability-0">
-                    <div class="radio-box"></div>
-                    Pre Order
-                </label>
+            <div class="add-variant-row">
+                <button type="button" class="btn-add-variant" id="btnAddVariant">Add Size & Style</button>
             </div>
-        </div>
 
-        <div class="add-variant-row">
-            <button type="button" class="btn-add-variant" id="btnAddVariant">Add Size & Style</button>
-            <a href="/Seller/SizeGuide" class="size-guide-link">
-                Size Guide
-                <i class="fa-solid fa-ruler-horizontal"></i>
-            </a>
-        </div>
-
-        <input type="hidden" asp-for="Sizes" id="sizesHidden" />
-        <input type="hidden" asp-for="Stock" id="stockHidden" />
-
-        <div class="bottom-details-row">
-            <textarea class="custom-input" placeholder="Product Details" asp-for="Details">@Model.Details</textarea>
-
-            <div class="barcode-preview-box">
-                <span>Barcode Preview</span>
-                <svg id="liveBarcodePreview"></svg>
+            <div class="bottom-details-row">
+                <textarea class="custom-input" placeholder="Product Details" asp-for="Details">@Model.Details</textarea>
+                <div class="barcode-preview-box">
+                    <span>Barcode Preview</span>
+                    <svg id="liveBarcodePreview"></svg>
+                </div>
             </div>
-        </div>
 
-        <div class="action-buttons">
-            <button type="button" class="btn-cancel" onclick="window.history.back()">Cancel</button>
-            <button type="submit" class="btn-submit" id="dynamic-submit-btn">Add Product</button>
-        </div>
-
+            <div class="action-buttons">
+                <button type="button" class="btn-cancel" onclick="window.history.back()">Cancel</button>
+                <button type="submit" class="btn-submit" id="dynamic-submit-btn">Add Product</button>
+            </div>
         </form>
     </div>
 
-    <div class="overlay-modal" id="imageModal">
-        <div class="overlay-content">
-            <h3>Select Variant Image</h3>
-            <div class="grid-selector" id="modalGrid">
-            </div>
-            <div style="display:flex; gap:10px; justify-content:center; margin-top:5px;">
-                <button type="button" class="close-modal-cancel" onclick="closeImageModal()">Cancel</button>
-                <button type="button" class="close-modal" onclick="confirmImageSelection()">Done</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // 0. Dynamic Page Logic & Live Barcode Generator
-        document.addEventListener('DOMContentLoaded', () => {
-            const mode = '@mode';
-
-            const pageTitle = document.getElementById('dynamic-page-title');
-            const submitBtn = document.getElementById('dynamic-submit-btn');
-
-            if (mode === 'edit') {
-                pageTitle.innerText = 'Edit Product Listing';
-                submitBtn.innerText = 'Update Product';
-            } else if (mode === 'renew') {
-                pageTitle.innerText = 'Renew Product Listing';
-                submitBtn.innerText = 'Renew Product';
-            } else if (mode === 'relist') {
-                pageTitle.innerText = 'Relist Product Listing';
-                submitBtn.innerText = 'Relist Product';
-            } else {
-                pageTitle.innerText = 'Create Product Listing';
-                submitBtn.innerText = 'Add Product';
-            }
-
-            // --- Auto Generate UPC and Render Barcode ---
-            const generatedUpc = generateUPC();
-            document.getElementById('hiddenProductUpc').value = generatedUpc; // Save to hidden field
-            updateBarcodePreview(generatedUpc); // Draw the barcode immediately
-
-            // Generate a starting SKU for the first variant row
-            const firstSkuField = document.getElementById('primarySkuField');
-            if(firstSkuField && !firstSkuField.value) {
-                firstSkuField.value = generateSKU();
-            }
-        });
-
-        // Function to generate the Barcode via JSBarcode
-        function updateBarcodePreview(upcValue) {
-            const svgTarget = document.getElementById("liveBarcodePreview");
-
-            if (!upcValue || upcValue.trim() === '') {
-                svgTarget.innerHTML = '';
-                return;
-            }
-
-            try {
-                JsBarcode("#liveBarcodePreview", upcValue.trim(), {
-                    format: "CODE128",
-                    lineColor: "#000000",
-                    background: "transparent",
-                    width: 2,
-                    height: 50,
-                    displayValue: true,
-                    fontSize: 14,
-                    font: "Inter",
-                    margin: 0
-                });
-            } catch (error) {
-                svgTarget.innerHTML = '';
-            }
-        }
-
-        // Generate an alphanumeric SKU for variants
-        function generateSKU() {
-            return 'SKU-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-        }
-
-        // Generate a 12-digit numeric UPC for the product barcode
-        function generateUPC() {
-            return Math.floor(100000000000 + Math.random() * 900000000000).toString();
-        }
-
-        // --- Price and Discount Logic ---
-        const priceInput = document.getElementById('basePrice');
-        const discountInput = document.getElementById('discountPercent');
-        const finalPriceDisplay = document.getElementById('finalPriceDisplay');
-
-        function blockInvalidNumberInput(e) {
-            if (['e', 'E', '+', '-'].includes(e.key)) {
-                e.preventDefault();
-            }
-        }
-
-        function calculateFinalPrice() {
-            let price = parseFloat(priceInput.value) || 0;
-            let discount = parseFloat(discountInput.value) || 0;
-
-            if (discount > 100) {
-                discount = 100;
-                discountInput.value = 100;
-            }
-
-            const finalPrice = price - (price * (discount / 100));
-            finalPriceDisplay.innerText = finalPrice.toFixed(2);
-        }
-
-        priceInput.addEventListener('keydown', blockInvalidNumberInput);
-        discountInput.addEventListener('keydown', blockInvalidNumberInput);
-        priceInput.addEventListener('input', calculateFinalPrice);
-        discountInput.addEventListener('input', calculateFinalPrice);
-
-        // 1. Image Upload & Display Logic
+        const mode = '@mode';
+        const form = document.getElementById('productForm');
+        const pageTitle = document.getElementById('dynamic-page-title');
+        const submitBtn = document.getElementById('dynamic-submit-btn');
+        const variantsContainer = document.getElementById('variants-container');
+        const btnAddVariant = document.getElementById('btnAddVariant');
         const uploadBox = document.getElementById('uploadBox');
         const imageInput = document.getElementById('imageInput');
         const thumbnailRow = document.getElementById('thumbnailRow');
+        const skuHidden = document.getElementById('hiddenProductSku');
+        const priceInput = document.getElementById('basePrice');
+        const discountInput = document.getElementById('discountPercent');
+        const finalPriceDisplay = document.getElementById('finalPriceDisplay');
+        let variantCount = 0;
         let selectedMainFiles = [];
+        let currentSku = '';
 
-        uploadBox.addEventListener('click', () => {
-            imageInput.click();
+        document.addEventListener('DOMContentLoaded', () => {
+            if (mode === 'edit') {
+                pageTitle.innerText = 'Edit Product Listing';
+                submitBtn.innerText = 'Update Product';
+            } else if (mode === 'relist') {
+                pageTitle.innerText = 'Relist Product Listing';
+                submitBtn.innerText = 'Relist Product';
+            } else if (mode === 'renew') {
+                pageTitle.innerText = 'Renew Product Listing';
+                submitBtn.innerText = 'Renew Product';
+            }
+
+            resetSku();
+            addVariantRow();
+            calculateFinalPrice();
         });
+
+        function resetSku() {
+            currentSku = generateSKU();
+            skuHidden.value = currentSku;
+            updateBarcodePreview(currentSku);
+            setSkuOnRows();
+        }
+
+        function setSkuOnRows() {
+            variantsContainer.querySelectorAll('.sku-display').forEach(input => {
+                input.value = currentSku;
+            });
+        }
+
+        function updateBarcodePreview(value) {
+            if (!value || value.trim() === '') return;
+            try {
+                JsBarcode('#liveBarcodePreview', value.trim(), {
+                    format: 'CODE128',
+                    lineColor: '#000000',
+                    background: 'transparent',
+                    width: 2,
+                    height: 60,
+                    displayValue: true,
+                    fontSize: 16,
+                    font: 'Inter',
+                    margin: 0
+                });
+            } catch { }
+        }
+
+        function generateSKU() {
+            const part = Math.random().toString(36).slice(2, 10).toUpperCase();
+            return `SKU-${part}`;
+        }
+
+        function calculateFinalPrice() {
+            const price = parseFloat(priceInput.value) || 0;
+            let discount = parseFloat(discountInput.value) || 0;
+            if (discount > 100) {
+                discount = 100;
+                discountInput.value = '100';
+            }
+            finalPriceDisplay.innerText = (price - (price * (discount / 100))).toFixed(2);
+        }
+
+        priceInput.addEventListener('input', calculateFinalPrice);
+        discountInput.addEventListener('input', calculateFinalPrice);
+
+        uploadBox.addEventListener('click', () => imageInput.click());
 
         function syncMainFileInput() {
             const dt = new DataTransfer();
@@ -818,237 +723,163 @@
         function renderMainThumbnails() {
             thumbnailRow.innerHTML = '';
             selectedMainFiles.forEach((file, index) => {
-                const imageUrl = URL.createObjectURL(file);
-                const thumbDiv = document.createElement('div');
-                thumbDiv.className = 'thumbnail';
-                thumbDiv.innerHTML = `
-                    <img src="${imageUrl}" alt="Uploaded Photo">
-                    <button type="button" class="delete-btn" onclick="removeMainThumbnail(${index})">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                `;
-                thumbnailRow.appendChild(thumbDiv);
-            });
-        }
-
-        imageInput.addEventListener('change', function(event) {
-            const files = event.target.files;
-            for (let i = 0; i < files.length; i++) {
-                selectedMainFiles.push(files[i]);
-            }
-            syncMainFileInput();
-            renderMainThumbnails();
-        });
-
-        window.removeMainThumbnail = function(index) {
-            const removedFile = selectedMainFiles[index];
-            selectedMainFiles.splice(index, 1);
-            // Remove this file from any variant that had it selected
-            for (const [row, files] of variantImageMap.entries()) {
-                if (files.has(removedFile)) {
-                    files.delete(removedFile);
-                    updateVariantButtonDisplay(row);
-                }
-            }
-            syncMainFileInput();
-            renderMainThumbnails();
-        };
-
-
-        // 2. Dynamic Variant Row Logic
-        const btnAddVariant = document.getElementById('btnAddVariant');
-        const variantsContainer = document.getElementById('variants-container');
-        let variantIdCounter = 0;
-
-        btnAddVariant.addEventListener('click', () => {
-            variantIdCounter++;
-            const newRow = document.createElement('div');
-            newRow.className = 'variant-row';
-            const newSku = generateSKU();
-
-            newRow.innerHTML = `
-                <button type="button" class="btn-plus-square"><i class="fa-solid fa-plus" style="font-weight: 300;"></i></button>
-                <input type="text" class="small-input sku-field" value="${newSku}" placeholder="SKU |">
-                <input type="text" class="small-input" name="colorSizes" placeholder="Size |">
-                <input type="text" class="small-input" name="colorNames" placeholder="Style |">
-                <input type="text" class="small-input qty-input" placeholder="Quantity |">
-
-                <span class="availability-label">Availability</span>
-
-                <label class="custom-radio">
-                    <input type="radio" name="availability-${variantIdCounter}" checked>
-                    <div class="radio-box"></div>
-                    In Stock
-                </label>
-                <label class="custom-radio">
-                    <input type="radio" name="availability-${variantIdCounter}">
-                    <div class="radio-box"></div>
-                    Pre Order
-                </label>
-
-                <button type="button" onclick="removeVariantRow(this.parentElement)" style="background:none; border:none; color:var(--accent-red); font-size:1.2rem; cursor:pointer; margin-left: 5px;">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            `;
-            variantsContainer.appendChild(newRow);
-        });
-
-        // Auto-toggle In Stock / Pre Order when quantity changes
-        variantsContainer.addEventListener('input', function(e) {
-            const qtyField = e.target.closest('.qty-input');
-            if (!qtyField) return;
-            const row = qtyField.closest('.variant-row');
-            if (!row) return;
-            const qty = parseInt(qtyField.value, 10);
-            const radios = row.querySelectorAll('input[type="radio"]');
-            if (radios.length >= 2) {
-                radios[0].checked = (qty > 0 || isNaN(qty) || qtyField.value.trim() === '');
-                radios[1].checked = (!isNaN(qty) && qty === 0 && qtyField.value.trim() !== '');
-            }
-        });
-
-        document.querySelector('form').addEventListener('submit', (e) => {
-            // Compute global Sizes as union of all per-color sizes (for backward compat)
-            const allSizeInputs = Array.from(variantsContainer.querySelectorAll('.variant-row input[name="colorSizes"]'));
-            const allSizeValues = allSizeInputs.flatMap(inp => (inp.value || '').split(',').map(s => s.trim()).filter(Boolean));
-            const uniqueSizes = [...new Set(allSizeValues)];
-            document.getElementById('sizesHidden').value = uniqueSizes.join(',');
-
-            const rows = Array.from(variantsContainer.querySelectorAll('.variant-row'));
-            const allQtys = rows.reduce((sum, row) => sum + (parseInt(row.querySelector('.qty-input')?.value || '0', 10) || 0), 0);
-            document.getElementById('stockHidden').value = allQtys;
-
-            rows.forEach((row, i) => {
-                // Append colorStocks[] hidden input
-                const qty = parseInt(row.querySelector('.qty-input')?.value || '0', 10) || 0;
-                const si = document.createElement('input');
-                si.type = 'hidden';
-                si.name = 'colorStocks';
-                si.value = qty;
-                e.target.appendChild(si);
-
-                // Attach selected color images as named file inputs
-                const files = variantImageMap.get(row) || new Set();
-                if (files.size > 0) {
-                    const dt = new DataTransfer();
-                    for (const file of files) {
-                        dt.items.add(file);
-                    }
-                    const fi = document.createElement('input');
-                    fi.type = 'file';
-                    fi.name = `colorFiles_${i}`;
-                    fi.multiple = true;
-                    fi.style.display = 'none';
-                    fi.files = dt.files;
-                    e.target.appendChild(fi);
-                }
-            });
-        });
-
-        // 3. Select Picture for specific variant Logic
-        const imageModal = document.getElementById('imageModal');
-        const modalGrid = document.getElementById('modalGrid');
-        let currentVariantBtn = null;
-        let currentVariantRow = null;
-        const variantImageMap = new Map(); // Map<rowElement, Set<File>>
-
-        variantsContainer.addEventListener('click', function(e) {
-            const btn = e.target.closest('.btn-plus-square');
-            if (btn) {
-                currentVariantBtn = btn;
-                currentVariantRow = btn.closest('.variant-row');
-                openImageSelector();
-            }
-        });
-
-        function openImageSelector() {
-            modalGrid.innerHTML = '';
-
-            if (selectedMainFiles.length === 0) {
-                modalGrid.innerHTML = '<p style="grid-column: 1 / -1; color: #555;">Please upload some photos first using the big cloud box above.</p>';
-                imageModal.style.display = 'flex';
-                return;
-            }
-
-            // Collect files already assigned to other variant rows
-            const usedByOthers = new Set();
-            for (const [row, files] of variantImageMap.entries()) {
-                if (row !== currentVariantRow) {
-                    files.forEach(f => usedByOthers.add(f));
-                }
-            }
-
-            const currentSelected = variantImageMap.get(currentVariantRow) || new Set();
-
-            selectedMainFiles.forEach((file) => {
-                if (usedByOthers.has(file)) return; // hidden — assigned to another variant
-
                 const url = URL.createObjectURL(file);
-                const wrapper = document.createElement('div');
-                wrapper.className = 'img-selectable' + (currentSelected.has(file) ? ' selected' : '');
-
-                const img = document.createElement('img');
-                img.src = url;
-
-                const checkmark = document.createElement('div');
-                checkmark.className = 'img-checkmark';
-                checkmark.textContent = '✓';
-                checkmark.style.display = currentSelected.has(file) ? 'flex' : 'none';
-
-                wrapper.onclick = () => {
-                    const sel = variantImageMap.get(currentVariantRow) || new Set();
-                    if (sel.has(file)) {
-                        sel.delete(file);
-                        wrapper.classList.remove('selected');
-                        checkmark.style.display = 'none';
-                    } else {
-                        sel.add(file);
-                        wrapper.classList.add('selected');
-                        checkmark.style.display = 'flex';
-                    }
-                    variantImageMap.set(currentVariantRow, sel);
+                const thumb = document.createElement('div');
+                thumb.className = 'thumbnail';
+                thumb.innerHTML = `<img src="${url}" alt="Uploaded Photo">`;
+                thumb.onclick = () => {
+                    selectedMainFiles.splice(index, 1);
+                    syncMainFileInput();
+                    renderMainThumbnails();
                 };
+                thumbnailRow.appendChild(thumb);
+            });
+        }
 
-                wrapper.appendChild(img);
-                wrapper.appendChild(checkmark);
-                modalGrid.appendChild(wrapper);
+        imageInput.addEventListener('change', () => {
+            for (const file of imageInput.files) {
+                selectedMainFiles.push(file);
+            }
+            syncMainFileInput();
+            renderMainThumbnails();
+        });
+
+        function renumberVariantFileInputs() {
+            const cards = variantsContainer.querySelectorAll('.variant-card');
+            cards.forEach((card, i) => {
+                const fileInput = card.querySelector('.hidden-color-input');
+                const existingPaths = card.querySelector('.existing-color-paths');
+                if (fileInput) fileInput.name = `colorFiles_${i}`;
+                if (existingPaths) existingPaths.name = `existingColorPaths_${i}`;
+            });
+        }
+
+        function addVariantRow() {
+            const availabilityGroupName = `availability-${variantCount}`;
+            const card = document.createElement('div');
+            card.className = 'variant-card';
+            card.innerHTML = `
+                <div class="variant-row">
+                    <button type="button" class="btn-plus-square" title="Upload color photos">
+                        <i class="fa-solid fa-plus" style="font-weight:300;"></i>
+                    </button>
+                    <input type="file" class="hidden-color-input" multiple accept="image/*">
+                    <input type="hidden" class="existing-color-paths" value="">
+
+                    <div class="input-with-label">
+                        <span class="label">SKU</span><div class="vertical-line"></div>
+                        <input type="text" class="sku-display" readonly>
+                    </div>
+                    <div class="input-with-label">
+                        <span class="label">Size</span><div class="vertical-line"></div>
+                        <input type="text" name="colorSizes" placeholder="Size">
+                    </div>
+                    <div class="input-with-label">
+                        <span class="label">Style</span><div class="vertical-line"></div>
+                        <input type="text" name="colorNames" placeholder="Style">
+                    </div>
+                    <div class="input-with-label">
+                        <span class="label">Quantity</span><div class="vertical-line"></div>
+                        <input type="number" name="colorStocks" class="qty-input" placeholder="0" min="0">
+                    </div>
+                </div>
+
+                <div class="variant-row">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-right: 10px;">
+                        <span style="font-weight: 700; font-size: 1.05rem;">Availability</span>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label class="custom-radio">
+                                <input type="radio" name="${availabilityGroupName}" checked>
+                                <div class="radio-box"></div> In Stock
+                            </label>
+                            <label class="custom-radio">
+                                <input type="radio" name="${availabilityGroupName}">
+                                <div class="radio-box"></div> Pre Order
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="input-with-label">
+                        <span class="label">Weight</span><div class="vertical-line"></div>
+                        <input type="number" placeholder="0">
+                        <div class="unit-selector">
+                            <i class="fa-solid fa-caret-down"></i>
+                            <select><option>Kg</option><option>lb</option><option>g</option></select>
+                        </div>
+                    </div>
+                    <div class="input-with-label">
+                        <span class="label">Length</span><div class="vertical-line"></div>
+                        <input type="number" placeholder="0">
+                        <div class="unit-selector">
+                            <i class="fa-solid fa-caret-down"></i>
+                            <select><option>in</option><option>cm</option></select>
+                        </div>
+                    </div>
+                    <div class="input-with-label">
+                        <span class="label">Height</span><div class="vertical-line"></div>
+                        <input type="number" placeholder="0">
+                        <div class="unit-selector">
+                            <i class="fa-solid fa-caret-down"></i>
+                            <select><option>in</option><option>cm</option></select>
+                        </div>
+                    </div>
+                    <div class="input-with-label">
+                        <span class="label">Width</span><div class="vertical-line"></div>
+                        <input type="number" placeholder="0">
+                        <div class="unit-selector">
+                            <i class="fa-solid fa-caret-down"></i>
+                            <select><option>in</option><option>cm</option></select>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const uploadBtn = card.querySelector('.btn-plus-square');
+            const fileInput = card.querySelector('.hidden-color-input');
+
+            uploadBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', () => {
+                const files = Array.from(fileInput.files || []);
+                if (files.length > 0) {
+                    const firstPreview = URL.createObjectURL(files[0]);
+                    uploadBtn.innerHTML = `<img src="${firstPreview}" alt="Color image">`;
+                } else {
+                    uploadBtn.innerHTML = '<i class="fa-solid fa-plus" style="font-weight:300;"></i>';
+                }
             });
 
-            imageModal.style.display = 'flex';
+            variantsContainer.appendChild(card);
+            variantCount++;
+            setSkuOnRows();
+            renumberVariantFileInputs();
         }
 
-        function closeImageModal() {
-            imageModal.style.display = 'none';
+        btnAddVariant.addEventListener('click', addVariantRow);
+
+        function computeStockAndSizes() {
+            const qtyInputs = Array.from(variantsContainer.querySelectorAll('input[name="colorStocks"]'));
+            const sizeInputs = Array.from(variantsContainer.querySelectorAll('input[name="colorSizes"]'));
+
+            const totalStock = qtyInputs.reduce((sum, input) => sum + (parseInt(input.value || '0', 10) || 0), 0);
+            document.getElementById('stockHidden').value = totalStock;
+
+            const sizes = [];
+            sizeInputs.forEach(input => {
+                const split = (input.value || '').split(',').map(s => s.trim()).filter(Boolean);
+                split.forEach(v => { if (!sizes.includes(v)) sizes.push(v); });
+            });
+            document.getElementById('sizesHidden').value = sizes.join(',');
         }
 
-        function confirmImageSelection() {
-            updateVariantButtonDisplay(currentVariantRow);
-            imageModal.style.display = 'none';
-        }
-
-        function updateVariantButtonDisplay(row) {
-            const btn = row.querySelector('.btn-plus-square');
-            const files = variantImageMap.get(row) || new Set();
-            if (files.size === 0) {
-                btn.innerHTML = '<i class="fa-solid fa-plus" style="font-weight:300;"></i>';
-                btn.style.position = '';
-                return;
+        variantsContainer.addEventListener('input', e => {
+            if (e.target.matches('input[name="colorStocks"], input[name="colorSizes"]')) {
+                computeStockAndSizes();
             }
-            const firstFile = Array.from(files)[0];
-            const url = URL.createObjectURL(firstFile);
-            const badge = files.size > 1
-                ? `<div style="position:absolute;top:3px;right:3px;background:#111;color:#fff;border-radius:50%;width:20px;height:20px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">+${files.size - 1}</div>`
-                : '';
-            btn.style.position = 'relative';
-            btn.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;">${badge}`;
-        }
+        });
 
-        function removeVariantRow(row) {
-            variantImageMap.delete(row);
-            row.remove();
-        }
+        form.addEventListener('submit', () => {
+            computeStockAndSizes();
+        });
     </script>
-
 </body>
 </html>
-

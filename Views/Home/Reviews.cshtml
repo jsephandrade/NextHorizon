@@ -87,6 +87,20 @@ let rvProduct = null;
 let activeStarFilter = null;
 let activeSortOrder = 'newest';
 
+function escHtml(v) {
+    return String(v || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function firstLetter(v) {
+    const s = String(v || '').trim();
+    return s ? s.charAt(0).toUpperCase() : '?';
+}
+
 document.addEventListener('DOMContentLoaded', () => loadReviewsPage(RV_PRODUCT_ID));
 
 async function loadReviewsPage(id) {
@@ -299,6 +313,12 @@ function renderFilteredReviews(reviews) {
 
     grid.innerHTML = list.map(function(r) {
         const d = new Date(r.date).toLocaleDateString('en-PH', {year:'numeric',month:'long',day:'numeric'});
+        const userName = escHtml(r.userName);
+        const shortReview = escHtml(r.shortReview);
+        const comment = escHtml(r.comment);
+        const thumb = (r.images && r.images.length)
+            ? '<img class="rv-review-thumb" src="' + escHtml(r.images[0]) + '" alt="Review photo" loading="lazy">'
+            : '';
         const photos = (r.images && r.images.length) ?
             '<button class="rv-view-photos-btn" onclick=\'openReviewSlideshow(' + JSON.stringify(r.images) + ', 0)\'>' +
             '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' +
@@ -306,15 +326,17 @@ function renderFilteredReviews(reviews) {
         return '<div class="rv-card">' +
             '<div class="rv-card-top">' +
             '<div class="rv-card-user">' +
-            '<div class="rv-avatar">' + r.userName.charAt(0).toUpperCase() + '</div>' +
-            '<div><div class="rv-card-name">' + r.userName + '</div>' +
+            '<div class="rv-avatar">' + firstLetter(r.userName) + '</div>' +
+            '<div><div class="rv-card-name">' + userName + '</div>' +
             '<div class="rv-card-date">' + d + '</div></div>' +
             '</div>' +
             '<div class="rv-card-right">' +
             '<span class="stars">' + getStars(r.rating) + '</span>' +
             (r.verifiedPurchase ? '<span class="pd-verified">&#10003; Verified Purchase</span>' : '') +
             '</div></div>' +
-            '<p class="rv-card-comment">' + r.comment + '</p>' +
+            (shortReview ? '<p class="rv-card-title"><strong>' + shortReview + '</strong></p>' : '') +
+            '<p class="rv-card-comment">' + comment + '</p>' +
+            thumb +
             photos +
             '</div>';
     }).join('');

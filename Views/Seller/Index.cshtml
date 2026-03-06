@@ -235,44 +235,52 @@
             margin-bottom: 30px;
         }
 
-        .filter-dropdown {
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-action-pill {
             background: #8A8888;
             color: white;
-            padding: 4px 12px;
-            border-radius: 8px;
+            padding: 6px 22px;
+            border-radius: 12px;
             font-size: 0.8rem;
             font-weight: 500;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 15px;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            transition: background 0.2s;
         }
+
+            .btn-action-pill:hover {
+                background: #737373;
+            }
 
         .filter-dropdown-select {
             background: #8A8888;
-            color: #fff;
-            padding: 6px 30px 6px 12px;
-            border-radius: 8px;
-            border: none;
-            font-size: 0.85rem;
+            color: white;
+            padding: 6px 30px 6px 16px;
+            border-radius: 12px;
+            font-size: 0.8rem;
             font-weight: 500;
+            cursor: pointer;
+            border: none;
             appearance: none;
             -webkit-appearance: none;
-            -moz-appearance: none;
-            cursor: pointer;
-            min-width: 130px;
-            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 320 512%22%3E%3Cpath fill=%22%23FFFFFF%22 d=%22M137.4 374.6c12.5 12.5 32.8 12.5 45.3 0l128-128c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8L32 192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l128 128z%22/%3E%3C/svg%3E');
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20320%20512%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M137.4%20374.6c12.5%2012.5%2032.8%2012.5%2045.3%200l128-128c9.2-9.2%2011.9-22.9%206.9-34.9s-16.6-19.8-29.6-19.8L32%20192c-12.9%200-24.6%207.8-29.6%2019.8s-2.2%2025.7%206.9%2034.9l128%20128z%22%2F%3E%3C%2Fsvg%3E');
             background-repeat: no-repeat;
             background-position: right 10px center;
             background-size: 10px auto;
             font-family: 'Inter', sans-serif;
             outline: none;
+            transition: background 0.2s;
         }
 
-        .filter-dropdown-select option {
-            color: #111;
-            background: #fff;
-        }
+            .filter-dropdown-select:hover {
+                background: #737373;
+            }
 
         /* Tab Content Logic */
         .product-group {
@@ -407,33 +415,32 @@
             border-radius: 6px;
             min-width: 130px;
             z-index: 50;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
             margin-top: 5px;
+            background: transparent; /* Changed to match image UI of stacked individual pills */
+            box-shadow: none;
         }
 
             .dropdown-menu.show {
-                display: block;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
             }
 
         .dropdown-item {
             display: block;
-            padding: 10px 15px;
+            padding: 8px 15px;
             color: #000;
             text-decoration: none;
             font-size: 0.85rem;
             font-weight: 500;
             text-align: center;
-            border-bottom: 1px solid #bfbebc;
+            background-color: #dcdcdc; /* Separate button boxes like in the UI */
+            border-radius: 6px;
             transition: background 0.2s;
         }
 
-            .dropdown-item:last-child {
-                border-bottom: none;
-            }
-
             .dropdown-item:hover {
-                background-color: #b8b6b4; /* Slightly darker on hover */
+                background-color: #c4c4c4;
             }
 
 
@@ -535,9 +542,12 @@
             <div class="product-box">
                 <div class="product-header">
                     <h3 id="display-title" style="font-weight: 700; font-size: 1.1rem; margin: 0;">Active Product</h3>
-                    <select class="filter-dropdown-select" id="categoryFilter" onchange="filterProducts()">
-                        <option value="All">All</option>
-                    </select>
+                    <div class="header-actions">
+                        <button class="btn-action-pill" onclick="window.location.href='/Promotion/Promotion'">Add Promotion</button>
+                        <select class="filter-dropdown-select" id="categoryFilter" onchange="filterProducts()">
+                            <option value="All">All</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div id="active-content" class="product-group visible">
@@ -835,4 +845,5 @@
 
 </body>
 </html>
+
 

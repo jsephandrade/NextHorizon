@@ -65,9 +65,13 @@ public class Review
     public int Id { get; set; }
     public string UserName { get; set; } = string.Empty;
     public double Rating { get; set; }
+    public string ShortReview { get; set; } = string.Empty;
     public string Comment { get; set; } = string.Empty;
     public DateTime Date { get; set; }
     public bool VerifiedPurchase { get; set; } = true;
+    public string Email { get; set; } = string.Empty;
+    public bool Recommend { get; set; }
+    public int ProductId { get; set; }
     public List<string> Images { get; set; } = new(); // Optional customer photos
     // Metric ratings
     public int? Comfort { get; set; }    // 1–5: 1=Uncomfortable, 5=Comfortable
