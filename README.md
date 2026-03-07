@@ -19,7 +19,7 @@ ASP.NET Core MVC app with pinned SDK/tool/library versions for reproducible setu
 1. Install .NET SDK `10.0.103` (or latest `10.0.10x` patch).
 2. Confirm SDK:
 
-   ```powershell
+   ```cmd
    dotnet --list-sdks
    ```
 
@@ -29,39 +29,44 @@ Run from repository root (`C:\dev\NextHorizon`):
 
 1. Restore local tools (LibMan is pinned via manifest):
 
-   ```powershell
+   ```cmd
    dotnet tool restore
    ```
 
 2. Restore frontend static libraries from `libman.json`:
 
-   ```powershell
-   Push-Location .\NextHorizon
+   ```cmd
+   cd /d .\NextHorizon
    dotnet tool run libman restore
-   Pop-Location
+   cd /d ..
    ```
 
 3. Restore NuGet packages using lock file:
 
-   ```powershell
+   ```cmd
    dotnet restore .\NextHorizon\NextHorizon.csproj --locked-mode
    ```
 
 4. Build:
 
-   ```powershell
+   ```cmd
    dotnet build .\NextHorizon.slnx -c Debug --no-restore
    ```
 
-5. Run:
+5. Run with HTTPS:
 
-   ```powershell
-   dotnet run --project .\NextHorizon\NextHorizon.csproj
+   ```cmd
+   dotnet run --project .\NextHorizon\NextHorizon.csproj --launch-profile https
    ```
 
-6. Open:
-   - `http://localhost:5000`
-   - `https://localhost:5001`
+6. Run with hot reload (recommended for development):
+
+   ```cmd
+   dotnet watch --project .\NextHorizon\NextHorizon.csproj run --launch-profile https
+   ```
+
+7. Open:
+   - `https://localhost:7172`
 
 ## Collaborator Consistency Rules
 
