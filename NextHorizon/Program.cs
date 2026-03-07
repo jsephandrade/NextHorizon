@@ -1,7 +1,15 @@
+using Microsoft.EntityFrameworkCore;
+using NextHorizon.Data;
+using NextHorizon.Services;
+
 var builder = WebApplication.CreateBuilder(args);
+var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is missing.");
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(defaultConnection));
+builder.Services.AddScoped<ICustomerStoredProcedureService, CustomerStoredProcedureService>();
 
 var app = builder.Build();
 
