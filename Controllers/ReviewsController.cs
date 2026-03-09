@@ -47,6 +47,8 @@ namespace MyAspNetApp.Controllers
                 Quality = r.Quality,
                 SizeFit = r.SizeFit,
                 WidthFit = r.WidthFit,
+                SellerReply = r.SellerReply,
+                SellerReplyDate = r.SellerReplyDate,
                 ProductId = r.ProductId,
                 Images = reviewImages
                     .Where(i => i.ReviewId == r.Id)
@@ -111,6 +113,33 @@ namespace MyAspNetApp.Controllers
             }
 
             return Ok(new { message = "Review added successfully.", reviewId = dbReview.Id });
+        }
+
+        // POST: api/products/{productId}/reviews/{reviewId}/reply
+        [HttpPost("{reviewId}/reply")]
+        public async Task<IActionResult> SaveSellerReply(int productId, int reviewId, [FromBody] SellerReplyRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Reply))
+            {
+                return BadRequest(new { message = "Reply is required." });
+            }
+
+            var review = await _db.Reviews.FirstOrDefaultAsync(r => r.Id == reviewId && r.ProductId == productId);
+            if (review == null)
+            {
+                return NotFound(new { message = "Review not found." });
+            }
+
+            review.SellerReply = request.Reply.Trim();
+            review.SellerReplyDate = DateTime.Now;
+            await _db.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Reply saved successfully.",
+                sellerReply = review.SellerReply,
+                sellerReplyDate = review.SellerReplyDate
+            });
         }
 
         private async Task<List<string>> SaveReviewImagesAsync(int reviewId, List<string> rawImages)
@@ -180,6 +209,11 @@ namespace MyAspNetApp.Controllers
             public int? SizeFit { get; set; }
             public int? WidthFit { get; set; }
             public List<string>? Images { get; set; }
+        }
+
+        public class SellerReplyRequest
+        {
+            public string Reply { get; set; } = string.Empty;
         }
     }
 }

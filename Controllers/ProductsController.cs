@@ -37,6 +37,8 @@ namespace MyAspNetApp.Controllers
                 Quality = review.Quality,
                 SizeFit = review.SizeFit,
                 WidthFit = review.WidthFit,
+                SellerReply = review.SellerReply,
+                SellerReplyDate = review.SellerReplyDate,
                 ProductId = review.ProductId,
                 Images = reviewImages
                     .Where(i => i.ReviewId == review.Id)

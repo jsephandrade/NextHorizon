@@ -78,6 +78,8 @@ public class Review
     public int? Quality { get; set; }    // 1–5: 1=Poor, 5=Perfect
     public int? SizeFit { get; set; }    // 1=Too small, 2=Slightly small, 3=Perfect, 4=Slightly big, 5=Too big
     public int? WidthFit { get; set; }   // 1=Too narrow, 2=Slightly narrow, 3=Perfect, 4=Slightly wide, 5=Too wide
+    public string? SellerReply { get; set; }
+    public DateTime? SellerReplyDate { get; set; }
 }
 
 public class CartItem

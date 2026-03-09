@@ -677,6 +677,11 @@ function openReviewsModal() {
                 <span class="stars">${getStars(review.rating)}</span>
             </div>
             <p>${review.comment}</p>
+            ${review.sellerReply ? `
+            <div class="rv-seller-reply">
+                <div class="rv-seller-reply-meta">Seller reply${review.sellerReplyDate ? ` · ${new Date(review.sellerReplyDate).toLocaleDateString('en-PH')}` : ''}</div>
+                <div class="rv-seller-reply-text">${review.sellerReply}</div>
+            </div>` : ''}
         </div>
     `).join('');
     

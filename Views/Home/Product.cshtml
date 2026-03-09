@@ -721,6 +721,11 @@ function renderProductPage() {
                 </div>
                 ${r.shortReview ? `<p class="pd-review-title"><strong>${escHtml(r.shortReview)}</strong></p>` : ''}
                 <p class="pd-review-comment">${escHtml(r.comment)}</p>
+                ${r.sellerReply ? `
+                <div class="pd-seller-reply">
+                    <div class="pd-seller-reply-meta">Seller reply${r.sellerReplyDate ? ` · ${new Date(r.sellerReplyDate).toLocaleDateString('en-PH')}` : ''}</div>
+                    <div class="pd-seller-reply-text">${escHtml(r.sellerReply)}</div>
+                </div>` : ''}
                 ${r.images && r.images.length ? `<img class="pd-review-thumb" src="${escHtml(r.images[0])}" alt="Review photo" loading="lazy">` : ''}
                 ${r.images && r.images.length ? `
                 <button class="rv-view-photos-btn" onclick='openReviewSlideshow(${JSON.stringify(r.images)}, 0)'>

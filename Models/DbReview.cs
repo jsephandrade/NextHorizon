@@ -23,6 +23,8 @@ namespace MyAspNetApp.Models
         public int? SizeFit { get; set; }
         public int? WidthFit { get; set; }
         public int ProductId { get; set; }
+        public string? SellerReply { get; set; }
+        public DateTime? SellerReplyDate { get; set; }
     }
 
     [Table("ReviewImages", Schema = "dbo")]

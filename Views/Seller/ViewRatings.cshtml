@@ -407,6 +407,23 @@
 
         .btn-send:hover { transform: scale(1.1); }
 
+        .seller-reply-box {
+            margin-top: 12px;
+            background: #f5f6f8;
+            border-left: 3px solid #111;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 0.9rem;
+            color: #222;
+        }
+
+        .seller-reply-meta {
+            font-size: 0.78rem;
+            color: #666;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
         .empty-state {
             border: 1px dashed #b9bdc2;
             border-radius: 12px;
@@ -516,7 +533,7 @@
             </div>
         </header>
 
-        <div class="content-container">
+        <div class="content-container" data-product-id="@Model.Product.ProductId">
 
             <div class="page-title-row">
                 <a href="/Seller/ViewProduct?id=@Model.Product.ProductId" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
@@ -645,9 +662,24 @@
                                     }
                                 </div>
                                 <div class="action-right">
-                                    <input type="text" class="reply-input" placeholder="Write a reply..." />
-                                    <button class="btn-send" type="button"><i class="fa-solid fa-paper-plane"></i></button>
+                                    <input type="text" class="reply-input" placeholder="Write a reply..." value="@item.Review.SellerReply" />
+                                    <button class="btn-send" type="button" data-review-id="@item.Review.Id"><i class="fa-solid fa-paper-plane"></i></button>
                                 </div>
+                            </div>
+                            <div class="review-content" style="margin-left: 330px;">
+                                @if (!string.IsNullOrWhiteSpace(item.Review.SellerReply))
+                                {
+                                    <div class="seller-reply-box">
+                                        <div class="seller-reply-meta">
+                                            Seller reply
+                                            @if (item.Review.SellerReplyDate.HasValue)
+                                            {
+                                                <text> · @item.Review.SellerReplyDate.Value.ToString("yyyy-MM-dd")</text>
+                                            }
+                                        </div>
+                                        <div class="seller-reply-text">@item.Review.SellerReply</div>
+                                    </div>
+                                }
                             </div>
                         </div>
                     }
@@ -744,7 +776,70 @@
             if (event.target === modal) {
                 closeModal();
             }
-        }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const root = document.querySelector('.content-container[data-product-id]');
+            if (!root) return;
+            const productId = root.getAttribute('data-product-id');
+
+            document.querySelectorAll('.btn-send[data-review-id]').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const reviewId = btn.getAttribute('data-review-id');
+                    const row = btn.closest('.action-right');
+                    if (!row) return;
+                    const input = row.querySelector('.reply-input');
+                    if (!input) return;
+
+                    const reply = (input.value || '').trim();
+                    if (!reply) return;
+
+                    btn.disabled = true;
+                    const icon = btn.querySelector('i');
+                    const prevClass = icon ? icon.className : '';
+                    if (icon) icon.className = 'fa-solid fa-spinner fa-spin';
+
+                    try {
+                        const res = await fetch(`/api/products/${productId}/reviews/${reviewId}/reply`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ reply })
+                        });
+
+                        if (!res.ok) throw new Error('Failed to save reply.');
+
+                        const data = await res.json();
+                        const card = btn.closest('.review-card');
+                        if (!card) return;
+
+                        let replyBox = card.querySelector('.seller-reply-box');
+                        if (!replyBox) {
+                            const contentBlocks = card.querySelectorAll('.review-content');
+                            const target = contentBlocks.length > 1 ? contentBlocks[1] : null;
+                            if (!target) return;
+                            replyBox = document.createElement('div');
+                            replyBox.className = 'seller-reply-box';
+                            target.appendChild(replyBox);
+                        }
+
+                        const dateText = data.sellerReplyDate
+                            ? new Date(data.sellerReplyDate).toLocaleDateString('en-PH')
+                            : '';
+
+                        replyBox.innerHTML =
+                            `<div class="seller-reply-meta">Seller reply${dateText ? ` · ${dateText}` : ''}</div>` +
+                            `<div class="seller-reply-text"></div>`;
+                        const textEl = replyBox.querySelector('.seller-reply-text');
+                        if (textEl) textEl.textContent = data.sellerReply || reply;
+                    } catch (err) {
+                        alert('Could not save reply. Please try again.');
+                    } finally {
+                        btn.disabled = false;
+                        if (icon) icon.className = prevClass || 'fa-solid fa-paper-plane';
+                    }
+                });
+            });
+        });
     </script>
 </body>
 </html>

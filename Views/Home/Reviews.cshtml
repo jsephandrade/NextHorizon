@@ -316,6 +316,16 @@ function renderFilteredReviews(reviews) {
         const userName = escHtml(r.userName);
         const shortReview = escHtml(r.shortReview);
         const comment = escHtml(r.comment);
+        const sellerReply = escHtml(r.sellerReply);
+        const sellerReplyDate = r.sellerReplyDate
+            ? new Date(r.sellerReplyDate).toLocaleDateString('en-PH', { year:'numeric', month:'long', day:'numeric' })
+            : '';
+        const sellerReplyHtml = r.sellerReply
+            ? '<div class="rv-seller-reply">' +
+                '<div class="rv-seller-reply-meta">Seller reply' + (sellerReplyDate ? ' · ' + sellerReplyDate : '') + '</div>' +
+                '<div class="rv-seller-reply-text">' + sellerReply + '</div>' +
+              '</div>'
+            : '';
         const thumb = (r.images && r.images.length)
             ? '<img class="rv-review-thumb" src="' + escHtml(r.images[0]) + '" alt="Review photo" loading="lazy">'
             : '';
@@ -336,6 +346,7 @@ function renderFilteredReviews(reviews) {
             '</div></div>' +
             (shortReview ? '<p class="rv-card-title"><strong>' + shortReview + '</strong></p>' : '') +
             '<p class="rv-card-comment">' + comment + '</p>' +
+            sellerReplyHtml +
             thumb +
             photos +
             '</div>';

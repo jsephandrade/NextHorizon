@@ -612,6 +612,10 @@
 
             <div class="add-variant-row">
                 <button type="button" class="btn-add-variant" id="btnAddVariant">Add Size & Style</button>
+                <a href="/Product/sizeguide" class="size-guide-link">
+                    Size Guide
+                    <i class="fa-solid fa-ruler-horizontal"></i>
+                </a>
             </div>
 
             <div class="bottom-details-row">
@@ -629,6 +633,18 @@
         </form>
     </div>
 
+    <div class="overlay-modal" id="imageModal">
+        <div class="overlay-content">
+            <h3>Select Variant Images</h3>
+            <div class="grid-selector" id="modalGrid"></div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn-modal" style="background:#fff; color:#111; border:1px solid #111;" onclick="document.getElementById('imageModal').style.display='none'">Cancel</button>
+                <button type="button" class="btn-modal" onclick="applySelectedPhotos()">Apply</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const mode = '@mode';
         const form = document.getElementById('productForm');
@@ -643,9 +659,14 @@
         const priceInput = document.getElementById('basePrice');
         const discountInput = document.getElementById('discountPercent');
         const finalPriceDisplay = document.getElementById('finalPriceDisplay');
+        const imageModal = document.getElementById('imageModal');
+        const modalGrid = document.getElementById('modalGrid');
         let variantCount = 0;
         let selectedMainFiles = [];
         let currentSku = '';
+        let currentVariantBtn = null;
+        let currentVariantFileInput = null;
+        let selectedPhotosForVariant = [];
 
         document.addEventListener('DOMContentLoaded', () => {
             if (mode === 'edit') {
@@ -744,6 +765,85 @@
             renderMainThumbnails();
         });
 
+        function isSameFile(a, b) {
+            return a && b &&
+                a.name === b.name &&
+                a.size === b.size &&
+                a.lastModified === b.lastModified;
+        }
+
+        function openImageSelector(btn, fileInput) {
+            currentVariantBtn = btn;
+            currentVariantFileInput = fileInput;
+            selectedPhotosForVariant = Array.from(fileInput.files || []);
+            modalGrid.innerHTML = '';
+
+            if (selectedMainFiles.length === 0) {
+                modalGrid.innerHTML = '<p style="grid-column: 1 / -1; color: #555;">Please upload some photos first using the big cloud box above.</p>';
+            } else {
+                selectedMainFiles.forEach(file => {
+                    const url = URL.createObjectURL(file);
+                    const imgContainer = document.createElement('div');
+                    imgContainer.className = 'modal-img-container';
+
+                    const img = document.createElement('img');
+                    img.src = url;
+                    const isSelected = selectedPhotosForVariant.some(f => isSameFile(f, file));
+                    img.style.borderColor = isSelected ? '#111' : 'transparent';
+                    imgContainer.appendChild(img);
+
+                    imgContainer.onclick = () => {
+                        const idx = selectedPhotosForVariant.findIndex(f => isSameFile(f, file));
+                        if (idx > -1) {
+                            selectedPhotosForVariant.splice(idx, 1);
+                            img.style.borderColor = 'transparent';
+                        } else {
+                            selectedPhotosForVariant.push(file);
+                            img.style.borderColor = '#111';
+                        }
+                    };
+                    modalGrid.appendChild(imgContainer);
+                });
+            }
+            imageModal.style.display = 'flex';
+        }
+
+        window.applySelectedPhotos = function () {
+            if (!currentVariantBtn || !currentVariantFileInput) {
+                imageModal.style.display = 'none';
+                return;
+            }
+
+            const dt = new DataTransfer();
+            selectedPhotosForVariant.forEach(file => dt.items.add(file));
+            currentVariantFileInput.files = dt.files;
+
+            currentVariantBtn.innerHTML = '';
+
+            if (selectedPhotosForVariant.length > 0) {
+                selectedPhotosForVariant.slice(0, 4).forEach(file => {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    currentVariantBtn.appendChild(img);
+                });
+
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'delete-btn';
+                removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                removeBtn.onclick = e => {
+                    e.stopPropagation();
+                    currentVariantFileInput.value = '';
+                    currentVariantBtn.innerHTML = '<i class="fa-solid fa-plus" style="font-weight:300;"></i>';
+                };
+                currentVariantBtn.appendChild(removeBtn);
+            } else {
+                currentVariantBtn.innerHTML = '<i class="fa-solid fa-plus" style="font-weight:300;"></i>';
+            }
+
+            imageModal.style.display = 'none';
+        };
+
         function renumberVariantFileInputs() {
             const cards = variantsContainer.querySelectorAll('.variant-card');
             cards.forEach((card, i) => {
@@ -763,7 +863,7 @@
                     <button type="button" class="btn-plus-square" title="Upload color photos">
                         <i class="fa-solid fa-plus" style="font-weight:300;"></i>
                     </button>
-                    <input type="file" class="hidden-color-input" multiple accept="image/*">
+                    <input type="file" class="hidden-color-input" multiple accept="image/*" style="display:none;">
                     <input type="hidden" class="existing-color-paths" value="">
 
                     <div class="input-with-label">
@@ -837,16 +937,7 @@
             const uploadBtn = card.querySelector('.btn-plus-square');
             const fileInput = card.querySelector('.hidden-color-input');
 
-            uploadBtn.addEventListener('click', () => fileInput.click());
-            fileInput.addEventListener('change', () => {
-                const files = Array.from(fileInput.files || []);
-                if (files.length > 0) {
-                    const firstPreview = URL.createObjectURL(files[0]);
-                    uploadBtn.innerHTML = `<img src="${firstPreview}" alt="Color image">`;
-                } else {
-                    uploadBtn.innerHTML = '<i class="fa-solid fa-plus" style="font-weight:300;"></i>';
-                }
-            });
+            uploadBtn.addEventListener('click', () => openImageSelector(uploadBtn, fileInput));
 
             variantsContainer.appendChild(card);
             variantCount++;
