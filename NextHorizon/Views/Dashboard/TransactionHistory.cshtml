@@ -1,0 +1,166 @@
+@model NextHorizon.Models.FinanceViewModel
+@{
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+<style>
+    /* Hide sidebar for this page */
+.sidebar {
+    display: none !important;
+}
+
+/* Remove space left by sidebar */
+.main-content {
+    margin-left: 0 !important;
+}
+/* Back button container */
+.page-actions {
+    margin-bottom: 16px;
+    display: flex;
+    gap: 10px;
+}
+
+/* Minimalist Back Button */
+.link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #1a1a1a;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    padding: 0;
+    transition: color 0.2s ease;
+}
+
+.link-btn i {
+    font-size: 14px;
+}
+
+.link-btn:hover {
+    color: white; /* subtle accent on hover */
+}
+
+/* Section container */
+.section {
+    margin-bottom: 30px;
+}
+
+/* Section title */
+.section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 20px;
+}
+
+/* Table wrapper */
+.table-container {
+    background-color: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Transaction table */
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* Table headers and cells */
+.orders-table th,
+.orders-table td {
+    padding: 15px 20px;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* Table header style */
+.orders-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #666;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Table body text */
+.orders-table td {
+    color: #333;
+    font-size: 14px;
+}
+
+/* Row hover effect */
+.orders-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Status badge */
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+}
+
+.badge.status {
+    background-color: #f0f0f0;
+    color: #444;
+}
+</style>
+
+@{
+    ViewData["Title"] = "Transaction History";
+    ViewData["DashboardHeading"] = "Transaction History";
+    ViewData["SellerName"] = Model.SellerName;
+}
+
+<div class="page-actions">
+    <a class="link-btn" asp-controller="Dashboard" asp-action="Finance">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
+
+<section class="section">
+    <h3 class="section-title">All Transactions</h3>
+    <div class="table-container">
+        <table class="orders-table">
+            <thead>
+                <tr>
+                    <th>Reference</th>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Method</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var tx in Model.Transactions)
+                {
+                    <tr>
+                        <td>@tx.ReferenceId</td>
+                        <td>@tx.TransactionDate.ToString("MMM dd, yyyy hh:mm tt")</td>
+                        <td>@tx.Type</td>
+                        <td>@tx.Method</td>
+                        <td>
+                            @if (tx.Amount < 0)
+                            {
+                                <span style="color:#b42318;">- &#8369;@Math.Abs(tx.Amount).ToString("N2")</span>
+                            }
+                            else
+                            {
+                                <span>&#8369;@tx.Amount.ToString("N2")</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge status">@tx.Status</span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

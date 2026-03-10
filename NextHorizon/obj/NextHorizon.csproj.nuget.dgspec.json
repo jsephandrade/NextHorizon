@@ -1,31 +1,29 @@
 {
   "format": 1,
   "restore": {
-    "C:\\dev\\NextHorizon\\NextHorizon\\NextHorizon.csproj": {}
+    "C:\\Users\\Natsumi\\Desktop\\OJT\\NextHorizon\\NextHorizon\\NextHorizon.csproj": {}
   },
   "projects": {
-    "C:\\dev\\NextHorizon\\NextHorizon\\NextHorizon.csproj": {
+    "C:\\Users\\Natsumi\\Desktop\\OJT\\NextHorizon\\NextHorizon\\NextHorizon.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\dev\\NextHorizon\\NextHorizon\\NextHorizon.csproj",
+        "projectUniqueName": "C:\\Users\\Natsumi\\Desktop\\OJT\\NextHorizon\\NextHorizon\\NextHorizon.csproj",
         "projectName": "NextHorizon",
-        "projectPath": "C:\\dev\\NextHorizon\\NextHorizon\\NextHorizon.csproj",
-        "packagesPath": "C:\\Users\\LENOVO\\.nuget\\packages\\",
-        "outputPath": "C:\\dev\\NextHorizon\\NextHorizon\\obj\\",
+        "projectPath": "C:\\Users\\Natsumi\\Desktop\\OJT\\NextHorizon\\NextHorizon\\NextHorizon.csproj",
+        "packagesPath": "C:\\Users\\Natsumi\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Natsumi\\Desktop\\OJT\\NextHorizon\\NextHorizon\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\LENOVO\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\Natsumi\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {

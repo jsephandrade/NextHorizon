@@ -1,0 +1,843 @@
+@using System.Text.Json
+@using System.Globalization
+@model NextHorizon.Models.SellerDashboardViewModel
+@{
+    ViewData["Title"] = "Analytics";
+    ViewData["DashboardHeading"] = "Analytics";
+    ViewData["SellerName"] = Model.SellerName;
+
+    var topProducts = Model.TopProducts.Take(5).ToList();
+    var totalUnits = Math.Max(topProducts.Sum(p => p.UnitsSold), 1);
+    var totalUnitSold = topProducts.Sum(p => p.UnitsSold);
+
+    var first = topProducts.Count > 0 ? topProducts[0].UnitsSold : 0;
+    var second = topProducts.Count > 1 ? topProducts[1].UnitsSold : 0;
+    var third = topProducts.Count > 2 ? topProducts[2].UnitsSold : 0;
+    var fourth = topProducts.Count > 3 ? topProducts[3].UnitsSold : 0;
+    var fifth = topProducts.Count > 4 ? topProducts[4].UnitsSold : 0;
+
+    var p1 = first * 100m / totalUnits;
+    var p2 = second * 100m / totalUnits;
+    var p3 = third * 100m / totalUnits;
+    var p4 = fourth * 100m / totalUnits;
+    var p5 = fifth * 100m / totalUnits;
+
+    var s1 = 0m;
+    var e1 = p1;
+    var s2 = e1;
+    var e2 = s2 + p2;
+    var s3 = e2;
+    var e3 = s3 + p3;
+    var s4 = e3;
+    var e4 = s4 + p4;
+    var s5 = e4;
+    var e5 = 100m;
+
+    var donutGradient = $"conic-gradient(#5f6269 {s1:0.##}% {e1:0.##}%, #767a81 {s2:0.##}% {e2:0.##}%, #8a8f97 {s3:0.##}% {e3:0.##}%, #a5aab2 {s4:0.##}% {e4:0.##}%, #c5c9cf {s5:0.##}% {e5:0.##}%)";
+    var donutPercentages = new List<decimal> { p1, p2, p3, p4, p5 };
+    var donutLabels = new List<(string Left, string Top, string Text, bool DarkText)>();
+    var cumulativePercent = 0m;
+    const double labelRadiusPercent = 37.0;
+
+    for (var i = 0; i < donutPercentages.Count; i++)
+    {
+        var segment = donutPercentages[i];
+        if (segment <= 0)
+        {
+            continue;
+        }
+
+        var midPercent = cumulativePercent + (segment / 2m);
+        var angle = (double)(midPercent * 3.6m) * (Math.PI / 180d);
+        var left = 50d + (labelRadiusPercent * Math.Sin(angle));
+        var top = 50d - (labelRadiusPercent * Math.Cos(angle));
+
+        donutLabels.Add(
+            (
+                left.ToString("0.##", CultureInfo.InvariantCulture),
+                top.ToString("0.##", CultureInfo.InvariantCulture),
+                $"{segment:0.##}%",
+                i >= 3
+            )
+        );
+
+        cumulativePercent += segment;
+    }
+
+    var monthLabels = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+    var viewedWeights = new decimal[] { 4.2m, 7.6m, 5.1m, 8.3m, 6.7m };
+    var viewedScores = topProducts
+        .Select((product, index) => product.UnitsSold * viewedWeights[Math.Min(index, viewedWeights.Length - 1)])
+        .ToList();
+    var maxViewedScore = viewedScores.Count > 0 ? viewedScores.Max() : 1m;
+    var viewedBarHeights = viewedScores
+        .Select(score => Math.Max(24m, decimal.Round((score / maxViewedScore) * 100m, 0)))
+        .ToList();
+
+    var monthlyRevenueByYear = Model.MonthlyRevenueByYear
+        .Where(entry => entry.Value is { Count: > 0 })
+        .OrderByDescending(entry => entry.Key)
+        .ToList();
+    var revenueDataJson = JsonSerializer.Serialize(
+        monthlyRevenueByYear.ToDictionary(entry => entry.Key.ToString(), entry => entry.Value));
+}
+
+@section Styles {
+<style>
+    .analytics-page {
+        display: grid;
+        gap: 22px;
+        width: min(1200px, 100%);
+        margin: 0 auto;
+    }
+
+    .analytics-breadcrumb {
+        color: #767676;
+        font-size: 17px;
+        margin: 0;
+    }
+
+    .analytics-welcome h2 {
+        margin: 0;
+        font-size: 40px;
+        line-height: 1.05;
+        color: #111111;
+    }
+
+    .analytics-panel {
+        background: #ffffff;
+        border: 1px solid #d8dadd;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    }
+
+    .revenue-panel {
+        padding: 18px;
+    }
+
+    .revenue-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 14px;
+    }
+
+    .revenue-heading {
+        margin: 0;
+        color: #161616;
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+    }
+
+    .revenue-subtext {
+        margin: 4px 0 0;
+        color: #777777;
+        font-size: 13px;
+    }
+
+    .revenue-year-filter {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .revenue-year-filter label {
+        font-size: 13px;
+        font-weight: 700;
+        color: #444444;
+    }
+
+    .revenue-year-select {
+        border: 1px solid #cfd3d8;
+        border-radius: 8px;
+        padding: 7px 12px;
+        min-width: 94px;
+        background: #ffffff;
+        color: #1f2937;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .revenue-chart-shell {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 12px 12px 10px;
+        background: linear-gradient(180deg, #fcfcfd 0%, #ffffff 100%);
+    }
+
+    .revenue-chart-svg {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    .revenue-grid-line {
+        stroke: #e8eaed;
+        stroke-width: 1;
+    }
+
+    .revenue-area {
+        fill: rgba(107, 114, 128, 0.24);
+    }
+
+    .revenue-line {
+        fill: none;
+        stroke: #111111;
+        stroke-width: 3;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+    }
+
+    .revenue-point {
+        fill: #d1d5db;
+        stroke: #111111;
+        stroke-width: 2.5;
+    }
+
+    .revenue-months {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 0;
+        margin-top: 8px;
+    }
+
+    .revenue-months span {
+        text-align: center;
+        color: #666666;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .analytics-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 18px 8px;
+    }
+
+    .analytics-panel-header h3 {
+        margin: 0;
+        color: #161616;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        font-size: 34px;
+        font-weight: 800;
+    }
+
+    .analytics-range-toggle {
+        display: flex;
+        gap: 10px;
+    }
+
+    .analytics-range-toggle button {
+        border: none;
+        background: transparent;
+        color: #909090;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+    }
+
+    .analytics-range-toggle button.active {
+        color: #222222;
+    }
+
+    .analytics-table-wrap {
+        overflow-x: auto;
+    }
+
+    .analytics-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .analytics-table th,
+    .analytics-table td {
+        border-top: 1px solid #e3e4e6;
+        border-bottom: 1px solid #e3e4e6;
+        padding: 14px 18px;
+        text-align: left;
+        color: #232323;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    .analytics-table th {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.35px;
+        color: #444444;
+        background: #fafafa;
+    }
+
+    .analytics-product-cell {
+        display: flex;
+        align-items: center;
+        flex-wrap: nowrap;
+        gap: 12px;
+    }
+
+    .analytics-product-cell img {
+        width: 62px;
+        height: 44px;
+        border-radius: 8px;
+        object-fit: cover;
+        background: #f0f1f3;
+        display: block;
+        flex: 0 0 auto;
+    }
+
+    .analytics-product-cell span {
+        display: inline-block;
+        white-space: nowrap;
+    }
+
+    .analytics-pagination {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 18px 14px;
+        color: #535353;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .analytics-pagination span,
+    .analytics-pagination button {
+        border: none;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        font-size: inherit;
+        font-weight: inherit;
+        padding: 0;
+    }
+
+    .analytics-pagination span.active {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 24px;
+        height: 24px;
+        background: #64686d;
+        color: #ffffff;
+        border-radius: 4px;
+        padding: 0 7px;
+    }
+
+    .analytics-charts-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 26px;
+    }
+
+    .analytics-chart-card {
+        background: #ffffff;
+        border: 1px solid #d8dadd;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+        padding: 20px;
+    }
+
+    .analytics-chart-layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        align-items: center;
+        gap: 18px;
+    }
+
+    .analytics-chart-card h4 {
+        margin: 0 0 10px;
+        font-size: 31px;
+        line-height: 1.05;
+        color: #222222;
+    }
+
+    .analytics-donut {
+        width: 190px;
+        height: 190px;
+        border-radius: 50%;
+        margin: 0 auto;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .analytics-donut::after {
+        content: "";
+        position: absolute;
+        width: 98px;
+        height: 98px;
+        border-radius: 50%;
+        background: #ffffff;
+        inset: 0;
+        margin: auto;
+        z-index: 1;
+    }
+
+    .analytics-donut-label {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        font-size: 11px;
+        font-weight: 700;
+        color: #f8fafc;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.28);
+        z-index: 2;
+        user-select: none;
+        pointer-events: none;
+    }
+
+    .analytics-donut-label.dark {
+        color: #374151;
+        text-shadow: none;
+    }
+
+    .analytics-legend {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .analytics-legend li {
+        position: relative;
+        padding-left: 16px;
+        margin-bottom: 8px;
+        color: #454545;
+        font-size: 22px;
+    }
+
+    .analytics-legend li::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 11px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #5f6269;
+    }
+
+    .analytics-legend li:nth-child(1)::before {
+        background: #5f6269;
+    }
+
+    .analytics-legend li:nth-child(2)::before {
+        background: #767a81;
+    }
+
+    .analytics-legend li:nth-child(3)::before {
+        background: #8a8f97;
+    }
+
+    .analytics-legend li:nth-child(4)::before {
+        background: #a5aab2;
+    }
+
+    .analytics-legend li:nth-child(5)::before {
+        background: #c5c9cf;
+    }
+
+    .bars-layout {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .analytics-bars {
+        height: 220px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 14px;
+        padding: 10px 14px;
+    }
+
+    .analytics-bars span {
+        width: 26px;
+        background: #5f6269;
+        border-radius: 4px 4px 0 0;
+    }
+
+    .analytics-bars span:nth-child(2) {
+        background: #767a81;
+    }
+
+    .analytics-bars span:nth-child(3) {
+        background: #8a8f97;
+    }
+
+    .analytics-bars span:nth-child(4) {
+        background: #a5aab2;
+    }
+
+    .analytics-bars span:nth-child(5) {
+        background: #c5c9cf;
+    }
+
+    @@media (max-width: 1200px) {
+        .revenue-heading {
+            font-size: 20px;
+        }
+
+        .analytics-panel-header h3 {
+            font-size: 24px;
+        }
+
+        .analytics-chart-card h4 {
+            font-size: 24px;
+        }
+
+        .analytics-legend li {
+            font-size: 15px;
+        }
+
+        .analytics-donut-label {
+            font-size: 10px;
+        }
+    }
+
+    @@media (max-width: 980px) {
+        .analytics-charts-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .analytics-chart-layout,
+        .bars-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .analytics-donut {
+            width: 170px;
+            height: 170px;
+        }
+
+        .analytics-donut-label {
+            font-size: 9px;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .analytics-welcome h2 {
+            font-size: 30px;
+        }
+
+        .revenue-panel {
+            padding: 14px;
+        }
+
+        .revenue-panel-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .revenue-heading {
+            font-size: 17px;
+        }
+
+        .revenue-months span {
+            font-size: 11px;
+        }
+
+        .analytics-panel-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .analytics-panel-header h3 {
+            font-size: 18px;
+        }
+
+        .analytics-table th,
+        .analytics-table td {
+            padding: 10px;
+        }
+
+        .analytics-pagination {
+            font-size: 13px;
+            gap: 8px;
+        }
+
+        .analytics-chart-card h4 {
+            font-size: 20px;
+        }
+
+        .analytics-legend li {
+            font-size: 14px;
+        }
+    }
+</style>
+}
+
+<section class="analytics-page">
+    <p class="analytics-breadcrumb">Dashboard / Analytics</p>
+
+    <div class="analytics-welcome">
+        <h2>Welcome<br />@Model.SellerName!</h2>
+    </div>
+
+    <section class="section">
+        <h2 class="section-title">Performance</h2>
+        <div class="cards-grid performance-grid">
+            <div class="card performance-card">
+                <div class="card-header">
+                    <span class="card-label">Today's Sales</span>
+                </div>
+                <div class="card-body">
+                    <div class="metric-value">&#8369;@Model.TodaySales.ToString("N2")</div>
+                    <div class="metric-growth positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>(+@Model.SalesGrowth%)</span>
+                    </div>
+                </div>
+                <div class="card-chart">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+
+            <div class="card performance-card">
+                <div class="card-header">
+                    <span class="card-label">Total Revenue</span>
+                </div>
+                <div class="card-body">
+                    <div class="metric-value">&#8369;@Model.TotalRevenue.ToString("N2")</div>
+                </div>
+            </div>
+
+            <div class="card performance-card">
+                <div class="card-header">
+                    <span class="card-label">Total Unit Sold</span>
+                </div>
+                <div class="card-body">
+                    <div class="metric-value">@totalUnitSold</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="analytics-panel revenue-panel">
+        <div class="revenue-panel-header">
+            <div>
+                <h3 class="revenue-heading">Total Revenue Per Month</h3>
+                <p class="revenue-subtext">Monthly revenue trend overview by selected year.</p>
+            </div>
+            <div class="revenue-year-filter">
+                <label for="revenueYearSelect">Year</label>
+                <select id="revenueYearSelect" class="revenue-year-select" aria-label="Revenue year selector">
+                    @foreach (var yearlyRevenue in monthlyRevenueByYear)
+                    {
+                        <option value="@yearlyRevenue.Key">@yearlyRevenue.Key</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="revenue-chart-shell">
+            <svg id="revenueLineGraph" class="revenue-chart-svg" viewBox="0 0 1080 320" role="img" aria-label="Total monthly revenue line graph">
+                <g id="revenueGridLines"></g>
+                <path id="revenueAreaPath" class="revenue-area"></path>
+                <path id="revenueLinePath" class="revenue-line"></path>
+                <g id="revenuePointGroup"></g>
+            </svg>
+            <div class="revenue-months" aria-hidden="true">
+                @foreach (var month in monthLabels)
+                {
+                    <span>@month</span>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="analytics-panel">
+        <div class="analytics-panel-header">
+            <h3>Top Performing Products</h3>
+            <div class="analytics-range-toggle" role="group" aria-label="Analytics date range">
+                <button type="button" class="active">1H</button>
+                <button type="button">1D</button>
+                <button type="button">7D</button>
+                <button type="button">1M</button>
+            </div>
+        </div>
+
+        <div class="analytics-table-wrap">
+            <table class="analytics-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Product Name</th>
+                        <th>SKU</th>
+                        <th>Category</th>
+                        <th>Unit Sold</th>
+                        <th>Revenue Generated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var product in topProducts)
+                    {
+                        <tr>
+                            <td>@product.Rank</td>
+                            <td>
+                                <div class="analytics-product-cell">
+                                    <img src="@product.ImageUrl" alt="@product.ProductName" onerror="this.src='https://via.placeholder.com/60?text=Product'" />
+                                    <span>@product.ProductName</span>
+                                </div>
+                            </td>
+                            <td>@product.Sku</td>
+                            <td>@product.Category</td>
+                            <td>@product.UnitsSold</td>
+                            <td>&#8369;@product.RevenueGenerated.ToString("N0")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="analytics-pagination" aria-label="Analytics table pages">
+            <span class="active">1</span>
+            <span>2</span>
+            <span>3</span>
+            <span>4</span>
+            <button type="button">Next</button>
+        </div>
+    </section>
+
+    <section class="analytics-charts-grid">
+        <article class="analytics-chart-card">
+            <div class="analytics-chart-layout">
+                <div class="analytics-donut" style="background:@donutGradient">
+                    @foreach (var label in donutLabels)
+                    {
+                        <span class="analytics-donut-label @(label.DarkText ? "dark" : string.Empty)" style="left:@label.Left%; top:@label.Top%;">@label.Text</span>
+                    }
+                </div>
+                <div>
+                    <h4>Most Click Product's</h4>
+                    <ul class="analytics-legend">
+                        @foreach (var product in topProducts)
+                        {
+                            <li>@product.ProductName</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </article>
+
+        <article class="analytics-chart-card">
+            <div class="analytics-chart-layout bars-layout">
+                <div class="analytics-bars" aria-hidden="true">
+                    @for (var i = 0; i < topProducts.Count; i++)
+                    {
+                        var barHeight = i < viewedBarHeights.Count ? viewedBarHeights[i] : 24m;
+                        <span style="height:@barHeight%"></span>
+                    }
+                </div>
+                <div>
+                    <h4>Most Viewed Product's</h4>
+                    <ul class="analytics-legend">
+                        @foreach (var product in topProducts)
+                        {
+                            <li>@product.ProductName</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </article>
+    </section>
+</section>
+
+@section Scripts {
+<script>
+    (() => {
+        const revenueData = @Html.Raw(revenueDataJson);
+        const yearSelect = document.getElementById('revenueYearSelect');
+        const linePath = document.getElementById('revenueLinePath');
+        const areaPath = document.getElementById('revenueAreaPath');
+        const pointsGroup = document.getElementById('revenuePointGroup');
+        const gridGroup = document.getElementById('revenueGridLines');
+
+        if (!yearSelect || !linePath || !areaPath || !pointsGroup || !gridGroup) {
+            return;
+        }
+
+        const width = 1080;
+        const height = 320;
+        const padding = { top: 18, right: 10, bottom: 16, left: 10 };
+        const innerWidth = width - padding.left - padding.right;
+        const innerHeight = height - padding.top - padding.bottom;
+        const monthCount = 12;
+        const horizontalGridLines = 5;
+
+        function sanitizeSeries(series) {
+            const values = Array.isArray(series)
+                ? series.slice(0, monthCount).map(value => Number(value) || 0)
+                : [];
+
+            while (values.length < monthCount) {
+                values.push(values.length > 0 ? values[values.length - 1] : 0);
+            }
+
+            return values;
+        }
+
+        function buildGraphForYear(yearKey) {
+            const values = sanitizeSeries(revenueData[yearKey]);
+            const maxValue = Math.max(...values, 1);
+            const minValue = Math.min(...values, 0);
+            const valueRange = Math.max(maxValue - minValue, 1);
+
+            gridGroup.innerHTML = '';
+            for (let i = 0; i < horizontalGridLines; i += 1) {
+                const y = padding.top + (i / (horizontalGridLines - 1)) * innerHeight;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', String(padding.left));
+                line.setAttribute('x2', String(width - padding.right));
+                line.setAttribute('y1', String(y));
+                line.setAttribute('y2', String(y));
+                line.setAttribute('class', 'revenue-grid-line');
+                gridGroup.appendChild(line);
+            }
+
+            const points = values.map((value, index) => {
+                const x = padding.left + (index / (monthCount - 1)) * innerWidth;
+                const y = padding.top + ((maxValue - value) / valueRange) * innerHeight;
+                return { x, y, value };
+            });
+
+            const lineD = points
+                .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+                .join(' ');
+            linePath.setAttribute('d', lineD);
+
+            const areaD = `${lineD} L ${(padding.left + innerWidth).toFixed(2)} ${(padding.top + innerHeight).toFixed(2)} L ${padding.left.toFixed(2)} ${(padding.top + innerHeight).toFixed(2)} Z`;
+            areaPath.setAttribute('d', areaD);
+
+            pointsGroup.innerHTML = '';
+            for (const point of points) {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', point.x.toFixed(2));
+                circle.setAttribute('cy', point.y.toFixed(2));
+                circle.setAttribute('r', '4.6');
+                circle.setAttribute('class', 'revenue-point');
+
+                const tooltip = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+                tooltip.textContent = `PHP ${Math.round(point.value).toLocaleString()}`;
+                circle.appendChild(tooltip);
+                pointsGroup.appendChild(circle);
+            }
+        }
+
+        yearSelect.addEventListener('change', () => {
+            buildGraphForYear(yearSelect.value);
+        });
+
+        const defaultYear = yearSelect.value || Object.keys(revenueData)[0];
+        if (defaultYear) {
+            buildGraphForYear(defaultYear);
+        }
+    })();
+</script>
+}

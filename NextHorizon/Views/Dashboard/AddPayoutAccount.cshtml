@@ -1,0 +1,311 @@
+@{
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<style>
+    /* Hide sidebar for this page */
+.sidebar {
+    display: none !important;
+}
+
+/* Remove space left by sidebar */
+.main-content {
+    margin-left: 0 !important;
+}
+
+/* General Styling */
+body {
+    font-family: 'Inter', sans-serif;
+    background: #f5f5f7;
+    color: #1a1a1a;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 25px;
+}
+
+/* Form Wrapper */
+.form-wrapper {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+/* Form Card */
+.form-card {
+    flex: 1;
+    min-width: 380px;
+    background: #fff;
+    padding: 30px 25px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+}
+
+.form-card h4 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 16px;
+}
+
+label {
+    font-size: 14px;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 6px;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #1a1a1a;
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+}
+
+/* Row Layout */
+.row {
+    display: flex;
+    gap: 12px;
+}
+
+.row .form-group {
+    flex: 1;
+}
+
+/* Checkbox */
+.checkbox {
+    margin-top: 12px;
+    font-size: 13px;
+}
+
+.note {
+    font-size: 12px;
+    color: #666;
+    margin-top: 12px;
+}
+
+/* Buttons */
+.buttons {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.btn-cancel {
+    background: #eee;
+    color: #1a1a1a;
+}
+
+.btn-cancel:hover {
+    background: #ddd;
+}
+
+.btn-submit {
+    background: #1a1a1a;
+    color: #fff;
+}
+
+.btn-submit:hover {
+    background: #333;
+}
+
+/* Page Actions */
+.page-actions {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 12px;
+}
+
+/* Minimalist Back Button */
+.link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #1a1a1a;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    padding: 0;
+    transition: color 0.2s ease;
+}
+
+.link-btn i {
+    font-size: 14px;
+}
+
+.link-btn:hover {
+    color: white; /* subtle accent on hover */
+}
+
+/* Inputs and selects placeholder styling */
+input::placeholder, select::placeholder {
+    color: #999;
+    font-weight: 400;
+}
+</style>
+
+<div class="page-actions">
+    <a class="link-btn" asp-controller="Dashboard" asp-action="PayoutAccounts">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="container mt-4">
+
+    <div class="page-title">Add New Payout Account</div>
+
+    <div class="form-wrapper">
+
+        <!-- ACCOUNT DETAILS -->
+        <div class="form-card">
+
+            <h4>ACCOUNT DETAILS</h4>
+
+            <div class="form-group">
+                <label>Account Type</label>
+                <select>
+                    <option>Bank Transfer</option>
+                    <option>GCash</option>
+                    <option>Maya</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Bank Name</label>
+                <select>
+                    <option>BDO Unibank</option>
+                    <option>BPI</option>
+                    <option>Metrobank</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Account Holder Name</label>
+                <input type="text" placeholder="Account Name">
+            </div>
+
+            <div class="form-group">
+                <label>Card Number</label>
+                <input type="text" placeholder="Card Number">
+            </div>
+
+            <div class="form-group">
+                <label>CVV Code</label>
+                <input type="text" placeholder="CVV">
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label>Expiration Month</label>
+                    <input type="text" placeholder="Month">
+                </div>
+
+                <div class="form-group">
+                    <label>Expiration Year</label>
+                    <input type="text" placeholder="Year">
+                </div>
+            </div>
+
+        </div>
+
+        <!-- BILLING ADDRESS -->
+        <div class="form-card">
+
+            <h4>BILLING ADDRESS</h4>
+
+            <div class="form-group">
+                <label>Region</label>
+                <input type="text" placeholder="Region">
+            </div>
+
+            <div class="form-group">
+                <label>Province</label>
+                <input type="text" placeholder="Province">
+            </div>
+
+            <div class="form-group">
+                <label>City</label>
+                <input type="text" placeholder="City">
+            </div>
+
+            <div class="form-group">
+                <label>Barangay</label>
+                <input type="text" placeholder="Barangay">
+            </div>
+
+            <div class="form-group">
+                <label>Street Name</label>
+                <input type="text" placeholder="Street Name">
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label>Building</label>
+                    <input type="text" placeholder="Building">
+                </div>
+
+                <div class="form-group">
+                    <label>House No.</label>
+                    <input type="text" placeholder="House No.">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Postal Code</label>
+                <input type="text" placeholder="Postal Code">
+            </div>
+
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox"> Set as default payout account
+                </label>
+            </div>
+
+            <div class="note">
+                We follow PCI DSS security standards to protect your payment information.
+            </div>
+
+            <div class="buttons">
+                <button class="btn btn-cancel">Cancel</button>
+                <button class="btn btn-submit">Add Account</button>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
