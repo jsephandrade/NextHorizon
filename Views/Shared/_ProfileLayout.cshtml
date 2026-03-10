@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - NEXT HORIZON</title>
+    <link rel="stylesheet" href="~/css/style.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/header.css" asp-append-version="true">
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="fixed-layout-body">
+
+    <partial name="_ProfileHeader" />
+
+    <div class="app-container">
+        <partial name="_ProfileSideBar" />
+
+        <main class="main-content">
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

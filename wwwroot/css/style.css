@@ -5421,42 +5421,6 @@ body.modal-open {
     opacity: 0.8;
     margin: 0;
 }
-.rv-seller-reply {
-    margin-top: 10px;
-    padding: 10px 12px;
-    border-left: 3px solid #111;
-    border-radius: 8px;
-    background: #f5f6f8;
-}
-.rv-seller-reply-meta {
-    font-size: 11px;
-    color: #666;
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-.rv-seller-reply-text {
-    font-size: 13px;
-    color: #222;
-    line-height: 1.45;
-}
-.pd-seller-reply {
-    margin: 10px 0 14px 0;
-    padding: 10px 12px;
-    border-left: 3px solid #111;
-    border-radius: 8px;
-    background: #f5f6f8;
-}
-.pd-seller-reply-meta {
-    font-size: 11px;
-    color: #666;
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-.pd-seller-reply-text {
-    font-size: 13px;
-    color: #222;
-    line-height: 1.45;
-}
 .rv-empty {
     grid-column: 1 / -1;
     text-align: center;

@@ -1,0 +1,32 @@
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+}
+
+<div class="profile-sidebar" id="sidebar">
+    <nav class="sidebar-menu">
+        <a asp-controller="AccountProfile" asp-action="ProfileView"
+           class="sidebar-link @(currentAction == "ProfileView" ? "active" : "")">
+            <i class="bi bi-speedometer2"></i> Fitness Overview
+        </a>
+        <a asp-controller="AccountProfile" asp-action="UpdateProfile"
+           class="sidebar-link @(currentAction == "UpdateProfile" ? "active" : "")">
+            <i class="bi bi-person-gear"></i> Update Profile
+        </a>
+        <a asp-controller="AccountProfile" asp-action="UploadActivity"
+           class="sidebar-link @(currentAction == "UploadActivity" ? "active" : "")">
+            <i class="bi bi-cloud-arrow-up"></i> Upload Activity
+        </a>
+        <a asp-controller="AccountProfile" asp-action="ShippingAddress"
+           class="sidebar-link @(currentAction == "ShippingAddress" ? "active" : "")">
+            <i class="bi bi-geo-alt"></i> Shipping Address
+        </a>
+        <a asp-controller="AccountProfile" asp-action="PaymentMethods"
+           class="sidebar-link @(currentAction == "PaymentMethods" ? "active" : "")">
+            <i class="bi bi-credit-card"></i> Payment Methods
+        </a>
+        <a asp-controller="AccountProfile" asp-action="MyPurchases"
+           class="sidebar-link @(currentAction == "MyPurchases" ? "active" : "")">
+            <i class="bi bi-bag-check"></i> My Purchases
+        </a>
+    </nav>
+</div>

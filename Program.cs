@@ -10,6 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add MVC services
 builder.Services.AddControllersWithViews();
 builder.Services.AddMemoryCache();
+// Register profile-related services
+builder.Services.AddScoped<MyAspNetApp.Services.OrderService>();
 
 // Add database context
 var rawConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")

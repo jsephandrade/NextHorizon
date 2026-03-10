@@ -326,9 +326,8 @@ function renderFilteredReviews(reviews) {
                 '<div class="rv-seller-reply-text">' + sellerReply + '</div>' +
               '</div>'
             : '';
-        const thumb = (r.images && r.images.length)
-            ? '<img class="rv-review-thumb" src="' + escHtml(r.images[0]) + '" alt="Review photo" loading="lazy">'
-            : '';
+        // Hide inline thumbnail — require user to click the View Photos button to see images
+        const thumb = '';
         const photos = (r.images && r.images.length) ?
             '<button class="rv-view-photos-btn" onclick=\'openReviewSlideshow(' + JSON.stringify(r.images) + ', 0)\'>' +
             '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' +

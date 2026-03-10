@@ -283,6 +283,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Enhance main navigation Shop links: capture visible label text (including dropdown items)
+    // and append it as a `label` query param when navigating to the Shop page so the
+    // shop hero can reflect the clicked item immediately after navigation.
+    document.querySelectorAll('#main-nav a').forEach(a => {
+        const href = (a.getAttribute('href') || '').toLowerCase();
+        if (!href.includes('/home/shop')) return;
+        a.addEventListener('click', function(evt) {
+            try {
+                const rawText = (this.textContent || '').trim();
+                // Prefer the immediate link text (sub-item like "Road Running"),
+                // fall back to data-label attribute if present.
+                const labelText = rawText || (this.dataset && this.dataset.label) || '';
+                if (!labelText) return; // let navigation proceed as-is
+
+                evt.preventDefault();
+                const dest = new URL(this.href, window.location.origin);
+                // Preserve any existing params, but ensure `label` is set
+                dest.searchParams.set('label', labelText);
+                window.location.href = dest.toString();
+            } catch (e) {
+                // Fallback: allow default navigation
+            }
+        });
+    });
+
     // Close modals on escape key
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {

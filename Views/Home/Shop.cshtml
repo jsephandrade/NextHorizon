@@ -444,6 +444,7 @@ function updateProductCount(count) {
     // Derive label from active filters + live search
     const checkedSubs = Array.from(document.querySelectorAll('input[name="subcategory"]:checked')).map(cb => cb.value);
     const checkedBrands = Array.from(document.querySelectorAll('input[name="brand"]:checked')).map(cb => cb.value);
+    const labelParam = (new URLSearchParams(window.location.search).get('label') || '').trim();
     const urlQ = (new URLSearchParams(window.location.search).get('q') || '').trim();
     const liveQ = (document.getElementById('header-search-input')?.value || '').trim();
     const activeQ = liveQ || urlQ;
@@ -456,8 +457,15 @@ function updateProductCount(count) {
     let label = 'All Products';
     let subtitle = '';
     let logoBrand = null;
-
-    if (activeQ && activeQ.toLowerCase() === 'sale') {
+    // If a header link set a `label` param, prefer it (this comes from header clicks)
+    if (labelParam) {
+        if (labelParam.toLowerCase() === 'sale') {
+            subtitle = 'Now On';
+            label = 'Sale';
+        } else {
+            label = labelParam;
+        }
+    } else if (activeQ && activeQ.toLowerCase() === 'sale') {
         subtitle = 'Now On';
         label = 'Sale';
     } else if (activeQ) {
