@@ -197,7 +197,7 @@
                     "Placed"     => "📋",
                     "Processing" => "⚙️",
                     "Shipped"    => "🚚",
-                    "Delivered"  => "✅",
+                    "Delivered" => "",
                     _            => "📦"
                 };
 
@@ -205,7 +205,17 @@
                    data-status="@order.OrderStatus"
                    href="/Home/OrderDetail?id=@order.OrderId">
 
-                    <div class="order-status-icon">@icon</div>
+                    <div class="order-status-icon">
+                        @if (order.OrderStatus == "Delivered")
+                        {
+                             <img src="@Url.Content("~/images/delivery.png")"
+                               width="36" height="36" alt="Delivered" style="object-fit:contain;" />
+                        }
+                        else
+                        { 
+                            @icon
+                        }
+                    </div>
 
                     <div class="order-info">
                         <div class="order-id">@order.OrderId</div>

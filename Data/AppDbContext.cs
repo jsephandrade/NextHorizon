@@ -11,5 +11,7 @@ namespace MyAspNetApp.Data
         public DbSet<DbProductColorImage> ProductColorImages { get; set; }
         public DbSet<DbOrder> Orders { get; set; }
         public DbSet<DbOrderItem> OrderItems { get; set; }
+        public DbSet<DbConsumer> Consumers { get; set; }
+        public DbSet<DbUser> Users { get; set; }
     }
 }

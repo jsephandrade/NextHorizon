@@ -6,7 +6,7 @@ using MyAspNetApp.Data;
 // we find the folder that contains wwwroot, and use that as the project root.
 static string FindProjectRoot()
 {
-    var dir = new DirectoryInfo(AppContext.BaseDirectory);
+    var dir = new DirectoryInfo(AppContext.BaseDirectory); 
     while (dir != null)
     {
         if (Directory.Exists(Path.Combine(dir.FullName, "wwwroot")))
@@ -42,6 +42,15 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.Cookie.Name     = ".NextHorizon.Session";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.IdleTimeout     = TimeSpan.FromHours(8);
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -55,6 +64,7 @@ if (!app.Environment.IsDevelopment())
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors();
+app.UseSession();
 app.UseAuthorization();
 
 // MVC routing

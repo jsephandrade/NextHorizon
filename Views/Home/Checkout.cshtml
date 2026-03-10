@@ -115,6 +115,90 @@
     .place-order-btn:hover { background: #333; }
     .secure-note { text-align: center; font-size: 11px; color: #888; margin-top: 8px; }
 
+    /* ── Use Saved Address – Left Drawer ── */
+    .saved-addr-btn {
+        float: right; display: inline-flex; align-items: center; gap: 6px;
+        border: 1.5px solid #0a0a0a; background: #fff; color: #0a0a0a;
+        border-radius: 6px; padding: 5px 12px; font-size: 12px; font-weight: 600;
+        cursor: pointer; font-family: 'Inter', sans-serif; transition: all .2s;
+        vertical-align: middle;
+    }
+    .saved-addr-btn:hover { background: #0a0a0a; color: #fff; }
+
+    /* Backdrop */
+    .sa-overlay {
+        position: fixed; inset: 0; z-index: 1000;
+        background: rgba(0,0,0,0);
+        pointer-events: none;
+        transition: background .3s ease;
+    }
+    .sa-overlay.open {
+        background: rgba(0,0,0,.50);
+        pointer-events: auto;
+    }
+
+    /* Drawer — slides in from the LEFT */
+    .sa-box {
+        position: fixed; top: 0; left: 0;
+        height: 100vh; width: min(420px, 92vw);
+        background: #fff;
+        transform: translateX(-100%);
+        transition: transform .32s cubic-bezier(.4, 0, .2, 1);
+        display: flex; flex-direction: column;
+        box-shadow: 6px 0 40px rgba(0,0,0,.14);
+        z-index: 1001;
+    }
+    .sa-overlay.open .sa-box { transform: translateX(0); }
+
+    .sa-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 20px 22px 14px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0;
+    }
+    .sa-title { font-size: 16px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; }
+    .sa-close {
+        background: none; border: none; cursor: pointer; color: #888;
+        padding: 4px; border-radius: 4px; transition: color .15s;
+    }
+    .sa-close:hover { color: #0a0a0a; }
+    .sa-search-wrap { padding: 14px 22px 10px; flex-shrink: 0; }
+    .sa-search {
+        width: 100%; border: 1.5px solid #d4d4d4; border-radius: 7px;
+        padding: 10px 12px; font-size: 13px; font-family: 'Inter', sans-serif;
+        outline: none; transition: border-color .15s; box-sizing: border-box;
+    }
+    .sa-search:focus { border-color: #0a0a0a; }
+    .sa-list { overflow-y: auto; flex: 1; padding: 0 22px; }
+    .sa-item {
+        display: flex; align-items: flex-start; justify-content: space-between;
+        gap: 14px; padding: 16px 0; border-bottom: 1px solid #f5f5f5;
+    }
+    .sa-item:last-child { border-bottom: none; }
+    .sa-item-body { flex: 1; min-width: 0; }
+    .sa-item-name {
+        font-size: 14px; font-weight: 700; color: #0a0a0a;
+        display: flex; align-items: center; gap: 10px; margin-bottom: 4px;
+    }
+    .sa-item-phone { font-size: 12px; font-weight: 400; color: #888; }
+    .sa-item-addr { font-size: 13px; color: #444; margin-bottom: 3px; line-height: 1.5; }
+    .sa-item-email { font-size: 12px; color: #aaa; }
+    .sa-deliver-btn {
+        flex-shrink: 0; background: #fff; color: #0a0a0a;
+        border: 1.5px solid #0a0a0a; border-radius: 5px;
+        padding: 7px 14px; font-size: 12px; font-weight: 700;
+        cursor: pointer; font-family: 'Inter', sans-serif; transition: all .2s;
+        white-space: nowrap; margin-top: 2px;
+    }
+    .sa-deliver-btn:hover { background: #0a0a0a; color: #fff; }
+    .sa-state { text-align: center; padding: 40px 22px; color: #888; font-size: 13px; line-height: 1.7; }
+    .sa-state svg { margin-bottom: 12px; opacity: .35; }
+    .sa-footer { padding: 14px 22px; border-top: 1px solid #f0f0f0; flex-shrink: 0; }
+    .sa-new-btn {
+        width: 100%; border: 1.5px dashed #d4d4d4; background: #fff; color: #555;
+        border-radius: 7px; padding: 11px; font-size: 13px; font-weight: 600;
+        cursor: pointer; font-family: 'Inter', sans-serif; transition: all .2s;
+    }
+    .sa-new-btn:hover { border-color: #0a0a0a; color: #0a0a0a; }
+
     @@media (max-width: 700px) {
         .checkout-layout { flex-direction: column; }
         .checkout-summary { width: 100%; position: static; }
@@ -152,7 +236,13 @@
 
                 <!-- Shipping Info -->
                 <div class="form-section">
-                    <div class="form-section-title">Shipping Information</div>
+                    <div class="form-section-title">
+                        <button type="button" class="saved-addr-btn" onclick="openSavedAddress()">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            Use Saved Address
+                        </button>
+                        Shipping Information
+                    </div>
 
                     <div class="form-row">
                         <div class="form-group" style="flex:1 1 100%;">
@@ -342,8 +432,138 @@
     const subtotal = @Model.Subtotal;
 
     function updateShipping(fee) {
-        document.getElementById('shipping-display').textContent = '₱' + fee.toLocaleString('en-PH', { minimumFractionDigits: 0 });
-        document.getElementById('total-display').textContent = '₱' + (subtotal + fee).toLocaleString('en-PH', { minimumFractionDigits: 0 });
+        document.getElementById('shipping-display').textContent = '\u20b1' + fee.toLocaleString('en-PH', { minimumFractionDigits: 0 });
+        document.getElementById('total-display').textContent = '\u20b1' + (subtotal + fee).toLocaleString('en-PH', { minimumFractionDigits: 0 });
+    }
+
+    // ── Saved Address ──
+    let _allAddresses = [];
+
+    function openSavedAddress() {
+        document.getElementById('sa-overlay').classList.add('open');
+        document.getElementById('sa-search').value = '';
+        loadMyAddresses();
+    }
+    function closeSavedAddress() {
+        document.getElementById('sa-overlay').classList.remove('open');
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('sa-overlay').addEventListener('click', e => {
+            if (e.target === e.currentTarget) closeSavedAddress();
+        });
+    });
+
+    async function loadMyAddresses() {
+        const listEl = document.getElementById('sa-list');
+        listEl.innerHTML = '<div class="sa-state">Loading…</div>';
+        try {
+            const res  = await fetch('/api/consumer/my-addresses');
+            const data = await res.json();
+
+            if (data.status === 'not_logged_in') {
+                listEl.innerHTML = `
+                    <div class="sa-state">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <div style="font-weight:600;color:#0a0a0a;margin-bottom:4px;">Not logged in</div>
+                        Please log in to view your saved addresses.
+                    </div>`;
+                return;
+            }
+            if (data.status === 'no_address' || !data.addresses.length) {
+                listEl.innerHTML = `
+                    <div class="sa-state">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <div style="font-weight:600;color:#0a0a0a;margin-bottom:4px;">No saved address</div>
+                        Add an address in your profile first.
+                    </div>`;
+                return;
+            }
+
+            _allAddresses = data.addresses;
+            renderAddressList(_allAddresses);
+
+        } catch {
+            listEl.innerHTML = '<div class="sa-state">Could not load addresses. Please try again.</div>';
+        }
+    }
+
+    function filterAddresses() {
+        const q = document.getElementById('sa-search').value.toLowerCase();
+        const filtered = q
+            ? _allAddresses.filter(a =>
+                a.fullName.toLowerCase().includes(q) ||
+                a.address.toLowerCase().includes(q))
+            : _allAddresses;
+        renderAddressList(filtered);
+    }
+
+    function renderAddressList(list) {
+        const listEl = document.getElementById('sa-list');
+        if (!list.length) {
+            listEl.innerHTML = '<div class="sa-state">No addresses match your search.</div>';
+            return;
+        }
+        listEl.innerHTML = list.map((a, i) => `
+            <div class="sa-item">
+                <div class="sa-item-body">
+                    <div class="sa-item-name">
+                        ${a.fullName}
+                        ${a.phone ? `<span class="sa-item-phone">${a.phone}</span>` : ''}
+                    </div>
+                    <div class="sa-item-addr">${a.address}</div>
+                    <div class="sa-item-email">${a.email}</div>
+                </div>
+                <button type="button" class="sa-deliver-btn" onclick="selectAddress(${i})">Deliver Here</button>
+            </div>
+        `).join('');
+    }
+
+    function selectAddress(i) {
+        const a = _allAddresses[i];
+        document.getElementById('FullName').value = a.fullName;
+        document.getElementById('Email').value    = a.email;
+        document.getElementById('Phone').value    = a.phone || '';
+        document.getElementById('Address').value  = a.address;
+        closeSavedAddress();
+    }
+
+    function enterNewAddress() {
+        document.getElementById('FullName').value   = '';
+        document.getElementById('Email').value      = '';
+        document.getElementById('Phone').value      = '';
+        document.getElementById('Address').value    = '';
+        document.getElementById('City').value       = '';
+        document.getElementById('PostalCode').value = '';
+        closeSavedAddress();
+        document.getElementById('FullName').focus();
     }
 </script>
 }
+
+<!-- Saved Address Modal -->
+<div class="sa-overlay" id="sa-overlay">
+    <div class="sa-box">
+        <div class="sa-header">
+            <span class="sa-title">Select Delivery Address</span>
+            <button type="button" class="sa-close" onclick="closeSavedAddress()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="sa-search-wrap">
+            <input type="text" id="sa-search" class="sa-search"
+                   placeholder="Search by name, address, or email…"
+                   oninput="filterAddresses()" />
+        </div>
+
+        <div id="sa-list" class="sa-list"></div>
+
+        <div class="sa-footer">
+            <button type="button" class="sa-new-btn" onclick="enterNewAddress()">
+                + Enter a New Address
+            </button>
+        </div>
+    </div>
+</div>
