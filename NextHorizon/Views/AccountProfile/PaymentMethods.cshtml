@@ -1,0 +1,350 @@
+﻿@model NextHorizon.ViewModels.PaymentMethodViewModel
+@{
+    ViewData["Title"] = "Payment Methods";
+    Layout = "_ProfileLayout";
+}
+  
+@{
+    bool hasMethods = Model.ExistingMethods.Any();
+}
+
+
+<div class="profile-layout-container">
+    <div class="main-content-wrapper">
+        <div class="profile-card-content">
+
+            @* --- VIEW SECTION --- *@
+            <div id="payment-view-section">
+                @if (hasMethods)
+                {
+                    <div class="section-header-row mb-4">
+                        <h2 class="section-title">SAVED PAYMENT METHODS</h2>
+                        <button class="btn-primary-action" onclick="prepareAddForm()">
+                            <i class="bi bi-plus-lg"></i> ADD PAYMENT METHOD
+                        </button>
+                    </div>
+
+                @foreach (var method in Model.ExistingMethods)
+                {
+                    <div class="saved-card-item @(method.IsDefault ? "active-selection" : "")" id="method-@method.PayoutAccountId">
+                        <div class="card-info-left">
+                            <i class="bi @(method.AccountType == "Card" ? "bi-credit-card-2-front" : "bi-wallet2")"></i>
+                            <div class="card-details">
+                                @if (method.AccountType == "Card")
+                                {
+                                    <span class="card-brand">@(method.BankName ?? "Card") Ending in @(method.CardNumber?.Length >= 4 ? method.CardNumber.Substring(method.CardNumber.Length - 4) : "****")</span>
+                                    <span class="card-expiry">Expires @method.ExpirationMonth/@method.ExpirationYear</span>
+                                }
+                                else
+                                {
+                                    <span class="card-brand">@method.BankName</span>
+                                    <span class="card-expiry">@method.AccountNumber</span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="card-actions-right">
+                            <button class="btn-edit-card" title="Edit" onclick='prepareEditForm(@Html.Raw(Json.Serialize(new {
+                                payoutAccountId = method.PayoutAccountId,
+                                accountType = method.AccountType,
+                                accountName = method.AccountName,
+                                cardNumber = method.CardNumber,
+                                expirationMonth = method.ExpirationMonth,
+                                expirationYear = method.ExpirationYear,
+                                bankName = method.BankName,
+                                accountNumber = method.AccountNumber,
+                                isDefault = method.IsDefault,
+                                region = method.Region,
+                                province = method.Province,
+                                city = method.City,
+                                barangay = method.Barangay,
+                                postalCode = method.PostalCode,
+                                streetName = method.StreetName,
+                                building = method.Building,
+                                houseNo = method.HouseNo
+                            })))'>
+                                <i class="bi bi-pencil"></i>
+                            </button>
+
+                            @if (method.IsDefault)
+                            {
+                                <span class="badge-default">DEFAULT</span>
+                            }
+                            else
+                            {
+                                <button class="btn-set-default" onclick="setDefault(@method.PayoutAccountId)">SET DEFAULT</button>
+                            }
+                            <button class="btn-remove" onclick="removeCard(@method.PayoutAccountId)">Remove</button>
+                        </div>
+                    </div>
+                }
+                }
+                else
+                {
+                    <h2 class="page-title">Payment Methods</h2>
+                    <div class="empty-state-container">
+                        <div class="empty-state-icon">
+                            <i class="bi bi-credit-card-2-front"></i>
+                            <div class="plus-badge"><i class="bi bi-plus"></i></div>
+                        </div>
+                        <h3 class="empty-state-title">NO PAYMENT METHODS</h3>
+                        <p class="empty-state-text">Save your cards or e-wallets for a faster checkout experience.</p>
+                        <button class="btn-primary-action empty-state-btn" onclick="prepareAddForm()">
+                            <i class="bi bi-plus-lg"></i> ADD PAYMENT METHOD
+                        </button>
+                    </div>
+                }
+            </div>
+
+            <div id="payment-form-section" style="display: none;">
+                <div class="form-navigation">
+                    <a href="javascript:void(0)" onclick="toggleView()" class="back-link">
+                        <i class="bi bi-chevron-left"></i> BACK TO SAVED METHODS
+                    </a>
+                </div>
+
+                <form id="paymentForm">
+                    <input type="hidden" id="methodId" name="PayoutAccountId" />
+                    <input type="hidden" name="UserId" value="@Model.UserId" />
+                    @Html.AntiForgeryToken()
+                    
+                    @* Payment Type Selector *@
+                    <div class="payment-type-toggle mb-4">
+                        <button type="button" id="type-card" class="btn-toggle active" onclick="setPaymentType('Card')">
+                            <i class="bi bi-credit-card"></i> DEBIT/CREDIT CARD
+                        </button>
+                        <button type="button" id="type-ewallet" class="btn-toggle" onclick="setPaymentType('EWallet')">
+                            <i class="bi bi-wallet2"></i> E-WALLET
+                        </button>
+                        <input type="hidden" id="selectedPaymentType" name="AccountType" value="Card" />
+                    </div>
+
+                    <div class="payment-form-grid">
+                      
+                        @* --- LEFT COLUMN (Only shows for Card) --- *@
+                        <div class="form-column" id="card-left-column">
+                            <div id="card-fields">
+                                <h3 class="form-section-header">CARD DETAILS</h3>
+                                
+                                <div class="input-group">
+                                    <label>ACCOUNT HOLDER NAME</label>
+                                    <input type="text" name="AccountName" placeholder="Full Name" class="form-control">
+                                </div>
+                                
+                                <div class="input-group">
+                                    <label>CARD NUMBER</label>
+                                    <input type="text" name="CardNumber" placeholder="0000 0000 0000 0000" class="form-control">
+                                </div>
+                                
+                                <div class="input-row-split">
+                                    <div class="input-group">
+                                        <label>EXPIRATION</label>
+                                        <div class="expiry-dropdown-container">
+                                            <select class="form-select-custom" name="ExpirationMonth">
+                                                <option value="" disabled selected>MM</option>
+                                                @for (int i = 1; i <= 12; i++)
+                                                {
+                                                    <option value="@i.ToString("D2")">@i.ToString("D2")</option>
+                                                }
+                                            </select>
+                                            <select class="form-select-custom" name="ExpirationYear">
+                                                <option value="" disabled selected>YYYY</option>
+                                                @for (int i = 0; i <= 10; i++)
+                                                {
+                                                    var year = (DateTime.Now.Year + i).ToString();
+                                                    <option value="@year">@year</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>CVV</label>
+                                        <input type="password" name="CvvCode" placeholder="***" class="form-control" maxlength="4">
+                                    </div>
+                                </div>
+
+                                <div class="security-notice card-only-element">
+                                    <i class="bi bi-lock-fill"></i>
+                                    <p>Secure SSL encrypted processing.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        @* --- E-WALLET SECTION --- *@
+                        <div id="ewallet-fields" style="display:none;">
+                            <h3 class="form-section-header">E-WALLET DETAILS</h3>
+                            
+                            <div class="input-group">
+                                <label>PROVIDER</label>
+                                <select class="form-select-custom" name="BankName">
+                                    <option value="GCash">GCash</option>
+                                    <option value="Maya">Maya</option>
+                                    <option value="PayPal">PayPal</option>
+                                </select>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label>ACCOUNT NUMBER</label>
+                                <input type="text" name="AccountNumber" placeholder="0917 XXX XXXX" class="form-control">
+                            </div>
+                            
+                            <div class="input-group">
+                                <label>ACCOUNT HOLDER NAME</label>
+                                <input type="text" name="AccountName" placeholder="Full Name" class="form-control">
+                            </div>
+                        </div>
+
+                        @* --- RIGHT COLUMN: Billing Address (For both Card and E-Wallet) --- *@
+                        <div class="form-column" id="billing-address-section">
+                            <h3 class="form-section-header">BILLING ADDRESS</h3>
+                            
+                            <div class="input-row-split">
+                                <div class="input-group">
+                                    <label>REGION</label>
+                                    <input type="text" name="Region" placeholder="Select Region" class="form-control">
+                                </div>
+                                <div class="input-group">
+                                    <label>POSTAL CODE</label>
+                                    <input type="text" name="PostalCode" placeholder="0000" class="form-control">
+                                </div>
+                            </div>
+                            
+                            <div class="input-row-split">
+                                <div class="input-group">
+                                    <label>PROVINCE</label>
+                                    <input type="text" name="Province" placeholder="Select Province" class="form-control">
+                                </div>
+                                <div class="input-group">
+                                    <label>CITY</label>
+                                    <input type="text" name="City" placeholder="Select City" class="form-control">
+                                </div>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label>BARANGAY</label>
+                                <input type="text" name="Barangay" placeholder="Select Barangay" class="form-control">
+                            </div>
+                            
+                            <div class="input-row-split">
+                                <div class="input-group">
+                                    <label>HOUSE NO.</label>
+                                    <input type="text" name="HouseNo" placeholder="e.g. 123" class="form-control">
+                                </div>
+                                <div class="input-group">
+                                    <label>BUILDING (OPTIONAL)</label>
+                                    <input type="text" name="Building" placeholder="e.g. Tower A" class="form-control">
+                                </div>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label>STREET NAME</label>
+                                <input type="text" name="StreetName" placeholder="e.g. Maple Street" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="toggle-container" style="margin-top: 30px;">
+                        <span class="toggle-label">Set as Default Payment Method</span>
+                        <label class="ios-switch">
+                            <input type="checkbox" name="IsDefault" id="defaultToggle" value="true">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit">SAVE PAYMENT METHOD</button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/paymentMethods.css" asp-append-version="true" />
+    
+    <style>
+        /* Additional styles for form elements */
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #000;
+        }
+        
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .toggle-label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .ios-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+        
+        .ios-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #000;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/paymentMethods.js" asp-append-version="true"></script>
+}

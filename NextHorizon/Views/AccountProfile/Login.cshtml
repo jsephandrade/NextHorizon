@@ -1,0 +1,437 @@
+@model NextHorizon.ViewModels.LoginViewModel
+@{
+    ViewData["Title"] = "Log In - Next Horizon";
+}
+
+<!-- Auth Page -->
+<div class="auth-page">
+    <div class="auth-container">
+
+        <!-- Image Side -->
+        <div class="auth-image">
+            <img src="~/images/hero-runner.jpg" alt="Runner">
+            <div class="auth-image-overlay">
+                <h2>Welcome Back</h2>
+                <p>Log in to continue your running journey</p>
+            </div>
+        </div>
+
+        <!-- Form Side -->
+        <div class="auth-form-container">
+            <div class="auth-header">
+                <a asp-controller="Home" asp-action="Index" class="logo">
+                    <img src="~/images/Next Horizon Logo.png" alt="Next Horizon" class="logo-image">
+                    <span class="logo-text">Next Horizon</span>
+                </a>
+                <h2>Log In</h2>
+                <p>Enter your credentials to access your account</p>
+            </div>
+
+           <form class="auth-form" id="loginForm" asp-controller="AccountProfile" asp-action="Login" method="post">
+                @Html.AntiForgeryToken()
+
+                <!-- Display summary errors -->
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                <!-- Email -->
+                <div class="form-group">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" class="form-input" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+
+                <!-- Password -->
+                <div class="form-group password-field">
+                    <label asp-for="Password" class="form-label"></label>
+                    <input asp-for="Password" id="loginPassword" class="form-input" placeholder="Enter your password" type="password" />
+                    <button type="button" class="password-toggle" onclick="togglePassword('loginPassword')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+
+                <!-- Remember Me / Forgot Password -->
+                <div class="auth-options">
+                    <label class="remember-me">
+                        <input asp-for="RememberMe" class="form-check-input" />
+                        <span>Remember me</span>
+                    </label>
+                    <a asp-controller="Account" asp-action="ForgotPassword" class="forgot-password">Forgot password?</a>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-primary auth-submit">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Log In
+                </button>
+
+                <!-- Social Login -->
+                <div class="auth-divider">or continue with</div>
+                <button type="button" class="btn btn-secondary" style="width: 100%;">
+                    <i class="fab fa-google"></i>
+                    Google
+                </button>
+
+                <!-- Signup link -->
+                <div class="auth-footer">
+                    <p>Don't have an account? <a asp-controller="Account" asp-action="Register">Sign up</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Password toggle script -->
+<script>
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const icon = input.nextElementSibling.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+</script>
+
+
+<script>
+    function goBack() {
+        if (document.referrer && document.referrer !== window.location.href) {
+            window.history.back();
+        } else {
+            window.location.href = '@Url.Action("Index", "Home")';
+        }
+    }
+    
+    function togglePassword(inputId) {
+        // Robust toggle supporting different DOM structures
+        const input = document.getElementById(inputId);
+        if (!input) return;
+
+        // Prefer the .password-field container
+        const container = input.closest('.password-field');
+        let button = container ? container.querySelector('.password-toggle') : null;
+        if (!button) {
+            // fallback: next sibling
+            const sibling = input.nextElementSibling;
+            if (sibling && sibling.classList && sibling.classList.contains('password-toggle')) button = sibling;
+        }
+
+        const icon = button ? button.querySelector('i') : null;
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            if (icon) {
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
+        } else {
+            input.type = 'password';
+            if (icon) {
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    }
+
+    // Hide loading screen on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }, 1500);
+    });
+</script>
+
+
+<style>
+    /* Auth Page */
+    .auth-page {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--color-off-white);
+        padding: 2rem;
+    }
+
+    .auth-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        max-width: 1000px;
+        width: 100%;
+        background: var(--color-white);
+        border-radius: var(--border-radius-xl);
+        overflow: hidden;
+        box-shadow: var(--shadow-xl);
+    }
+
+    /* Auth Image Side */
+    .auth-image {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .auth-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .auth-image-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 2rem;
+        background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        color: var(--color-white);
+    }
+
+    .auth-image-overlay h2 {
+        font-size: 1.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .auth-image-overlay p {
+        font-size: 0.95rem;
+        opacity: 0.9;
+    }
+
+    /* Auth Form Side */
+    .auth-form-container {
+        padding: 3rem;
+    }
+
+    .auth-header {
+        margin-bottom: 2rem;
+    }
+
+    .auth-header .logo {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 2rem;
+    }
+
+    .logo-image {
+        width: 40px;
+        height: 40px;
+        object-fit: contain;
+    }
+
+    .logo-text {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--color-black);
+    }
+
+    .auth-header h2 {
+        font-size: 1.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .auth-header p {
+        color: var(--color-gray);
+    }
+
+    /* Form Styles */
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+        color: var(--color-black);
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 1rem 1.25rem;
+        border: 2px solid var(--color-lighter-gray);
+        border-radius: var(--border-radius-md);
+        font-size: 1rem;
+        transition: var(--transition-fast);
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--color-black);
+    }
+
+    /* Password Field */
+    .password-field {
+        position: relative;
+    }
+
+    .password-field .form-input {
+        padding-right: 3rem;
+    }
+
+    .password-toggle {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--color-gray);
+        font-size: 1rem;
+    }
+
+    /* Auth Options */
+    .auth-options {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .remember-me {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: var(--color-medium-gray);
+        cursor: pointer;
+    }
+
+    .remember-me input {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+
+    .forgot-password {
+        font-size: 0.9rem;
+        color: var(--color-black);
+        font-weight: 500;
+    }
+
+    .forgot-password:hover {
+        text-decoration: underline;
+    }
+
+    /* Auth Submit */
+    .auth-submit {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1rem;
+    }
+
+    /* Auth Divider */
+    .auth-divider {
+        display: flex;
+        align-items: center;
+        margin: 1.5rem 0;
+        color: var(--color-gray);
+        font-size: 0.875rem;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--color-lighter-gray);
+    }
+
+    .auth-divider span {
+        padding: 0 1rem;
+    }
+
+    /* Auth Footer */
+    .auth-footer {
+        text-align: center;
+        margin-top: 1.5rem;
+        color: var(--color-gray);
+        font-size: 0.9rem;
+    }
+
+    .auth-footer a {
+        color: var(--color-black);
+        font-weight: 600;
+    }
+
+    .auth-footer a:hover {
+        text-decoration: underline;
+    }
+
+    /* Buttons */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.875rem 1.75rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        border-radius: var(--border-radius-md);
+        cursor: pointer;
+        transition: var(--transition-normal);
+        border: none;
+    }
+
+    .btn-primary {
+        background: var(--color-black);
+        color: var(--color-white);
+    }
+
+    .btn-primary:hover {
+        background: var(--color-dark-gray);
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+        background: transparent;
+        color: var(--color-black);
+        border: 2px solid var(--color-black);
+    }
+
+    .btn-secondary:hover {
+        background: var(--color-black);
+        color: var(--color-white);
+    }
+
+    
+
+    /* Loading Overlay moved to wwwroot/css/loading.css */
+    /* Toast Container */
+    .toast-container {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 1000;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .auth-container {
+            grid-template-columns: 1fr;
+        }
+
+        .auth-image {
+            display: none;
+        }
+
+        .auth-form-container {
+            padding: 2rem;
+        }
+
+        .back-button {
+            top: 1rem;
+            left: 1rem;
+        }
+    }
+</style>

@@ -1,0 +1,308 @@
+﻿@model IEnumerable<NextHorizon.Models.OrderViewModel>
+@{
+    ViewData["Title"] = "My Purchases";
+    Layout = "_ProfileLayout";
+
+    var activeOrders = Model?.Where(o =>
+        o.Status == "To Pay" ||
+        o.Status == "To Ship" ||
+        o.Status == "To Receive").ToList();
+}
+
+<div class="profile-layout-container">
+    <main class="main-content-wrapper">
+        <div class="account-details-full-width">
+
+            @* Header Section: Title and History Link on opposite sides *@
+            <div class="purchase-header-top d-flex justify-content-between align-items-center">
+                <h2 class="page-title main-title-left">My Purchases</h2>
+                <div class="purchase-history-link-wrapper">
+                    <a asp-controller="Order" asp-action="MyPurchasesOptions" asp-route-status="All" class="history-link">
+                        View Purchase History <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <hr class="section-divider" />
+
+            @* Black Background Navbar *@
+            <div class="order-status-navbar-black">
+                <a asp-controller="Order" asp-action="MyPurchasesOptions" asp-route-status="To Pay" class="status-item-bold">
+                    <i class="bi bi-credit-card"></i>
+                    <span>To Pay</span>
+                </a>
+                <a asp-controller="Order" asp-action="MyPurchasesOptions" asp-route-status="To Ship" class="status-item-bold">
+                    <i class="bi bi-box-seam"></i>
+                    <span>To Ship</span>
+                </a>
+                <a asp-controller="Order" asp-action="MyPurchasesOptions" asp-route-status="To Receive" class="status-item-bold">
+                    <i class="bi bi-truck"></i>
+                    <span>To Receive</span>
+                </a>
+                <a asp-controller="Order" asp-action="MyPurchasesOptions" asp-route-status="To Review" class="status-item-bold">
+                    <i class="bi bi-star"></i>
+                    <span>To Review</span>
+                </a>
+                <a asp-controller="Order" asp-action="MyPurchasesOptions" asp-route-status="Returns" class="status-item-bold">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    <span>Returns</span>
+                </a>
+            </div>
+
+            @if (activeOrders != null && activeOrders.Any())
+            {
+                <div class="orders-list-container">
+                    @foreach (var order in activeOrders)
+                    {
+                        <div class="order-card-refined shadow-sm">
+                            <div class="order-card-header-slim">
+                                <div class="header-left">
+                                    <span class="status-tag-refined @order.Status.Replace(" ", "-").ToLower()">
+                                        @order.Status.ToUpper()
+                                    </span>
+                                    <span class="order-id-display">#@order.OrderNumber</span>
+                                </div>
+                                <div class="header-right">
+                                    <span class="order-date">@order.OrderDate.ToString("MMM dd, yyyy")</span>
+                                </div>
+                            </div>
+
+                            <div class="order-card-body-refined">
+                                <div class="product-info-horizontal">
+                                    <img src="@order.ProductImage" class="order-img-thumb" alt="@order.ProductName" />
+                                    <div class="product-details-content">
+                                        <h4 class="product-name-text">@order.ProductName</h4>
+                                        <p class="product-meta-text">
+                                            @order.Color | @order.Size | Qty: @order.Quantity
+                                        </p>
+                                        <span class="payment-method-text">Paid via @order.PaymentMethod</span>
+                                    </div>
+                                </div>
+                                <div class="order-pricing-aligned">
+                                    <p class="price-label">TOTAL AMOUNT</p>
+                                    <h3 class="price-value">₱@order.TotalAmount.ToString("N2")</h3>
+                                </div>
+                            </div>
+
+                            <div class="order-card-footer-refined">
+                                <button class="btn-action-minimal"
+                                        onclick="viewOrderDetails(
+                                                    '@order.OrderNumber',
+                                                    '@order.Status',
+                                                    '@order.PaymentMethod',
+                                                    '@order.SellerName.Replace("'", "\\'")',
+                                                    '@order.ReceiverName.Replace("'", "\\'")',
+                                                    '@order.PhoneNumber',
+                                                    '@order.ShippingAddress.Replace("'", "\\'")',
+                                                    '₱@order.TotalAmount.ToString("N2")',
+                                                    '@order.Color',
+                                                    '@order.Size',
+                                                    '@order.Quantity')">
+                                    VIEW DETAILS
+                                </button>
+
+                                @if (order.Status == "To Pay")
+                                {
+                                    <button class="btn-action-primary">COMPLETE PAYMENT</button>
+                                }
+
+                                @if (order.Status == "To Ship" || order.Status == "To Receive")
+                                {
+                                    <button class="btn-action-outline track-btn"
+                                            onclick="trackOrder(
+                                        '@order.OrderNumber',
+                                        '@order.Status',
+                                        '@order.PaymentMethod',
+                                        '@order.SellerName.Replace("'", "\\'")',
+                                        '@order.ReceiverName.Replace("'", "\\'")',
+                                        '@order.PhoneNumber',
+                                        '@order.ShippingAddress.Replace("'", "\\'")',
+                                        '₱@order.TotalAmount.ToString("N2")',
+                                        '@order.Color',
+                                        '@order.Size',
+                                        '@order.Quantity',
+                                        '@order.OrderDate.ToString("MMM dd, yyyy")')">
+                                        TRACK ORDER
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-orders-container">
+                    <div class="empty-state-content">
+                        <i class="bi bi-bag-x"></i>
+                        <h3>No Orders Yet</h3>
+                        <p>It looks like you haven't placed any orders in this category.</p>
+                        <a href="/Shop" class="btn-mono-outline-wide">CONTINUE SHOPPING</a>
+                    </div>
+                </div>
+            }
+        </div>
+    </main>
+</div>
+
+
+<div id="customOrderOverlay" class="custom-overlay">
+    <div class="overlay-backdrop" onclick="closeOrderDetails()"></div>
+    <div class="custom-modal-content">
+
+        <div id="modalStatusBanner" class="mono-status-banner">
+            <div class="banner-left">
+                <h4 id="modalStatusText" class="m-0">STATUS</h4>
+                <p id="modalStatusSubtext" class="m-0 small">Updating information...</p>
+            </div>
+            <i id="modalStatusIcon" class="bi bi-box-seam"></i>
+        </div>
+
+        <div class="app-modal-scrollable">
+            <div id="deliverySection" class="app-section">
+                <div class="section-title">
+                    <span><i class="bi bi-geo-alt"></i> DELIVERY & PAYMENT</span>
+                    <button id="editOrderBtn" class="mono-edit-link" onclick="toggleOrderEdit()">Edit</button>
+                </div>
+
+                <div id="orderDetailsDisplay">
+                    <p id="displayReceiver" class="fw-bold mb-1"></p>
+                    <p id="displayPhone" class="small mb-1"></p>
+                    <p id="displayAddress" class="small text-muted mb-2"></p>
+                    <div class="payment-display-box">
+                        <span id="displayPayment" class="fw-bold small ms-1">Payment: GCash</span>
+                    </div>
+                </div>
+
+                <div id="orderEditForm" class="d-none mt-2">
+                    <label class="mono-label">Receiver Name</label>
+                    <input type="text" id="inputReceiver" class="mono-input">
+
+                    <div class="d-flex gap-2">
+                        <div class="w-100">
+                            <label class="mono-label">Phone</label>
+                            <input type="text" id="inputPhone" class="mono-input">
+                        </div>
+                        <div class="w-100">
+                            <label class="mono-label">Payment</label>
+                            <select id="inputPayment" class="mono-select">
+                                <option value="GCash">GCash</option>
+                                <option value="COD">COD</option>
+                                <option value="Credit Card">Credit Card</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <label class="mono-label">Shipping Address</label>
+                    <textarea id="inputAddress" class="mono-input" rows="2"></textarea>
+
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="btn-mono-save w-100" onclick="saveOrderChanges()">SAVE</button>
+                        <button class="btn-mono-cancel w-100" onclick="toggleOrderEdit()">CANCEL</button>
+                    </div>
+                </div>
+
+                <div id="editLockNote" class="mono-lock-note d-none mt-2">
+                    <i class="bi bi-lock-fill"></i> Changes locked while in transit.
+                </div>
+            </div>
+
+            <div id="trackingSection" class="app-section d-none">
+                <div class="section-title">
+                    <span><i class="bi bi-truck"></i> SHIPPING JOURNEY</span>
+                </div>
+
+                <div class="tracking-timeline-container">
+                    <div class="timeline-item completed" id="step-placed">
+                        <div class="timeline-marker">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-line"></div>
+                        </div>
+                        <div class="timeline-content">
+                            <p class="timeline-title">Order Placed</p>
+                            <p class="timeline-date" id="date-placed">Mar 04, 2026</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item active" id="step-shipped">
+                        <div class="timeline-marker">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-line"></div>
+                        </div>
+                        <div class="timeline-content">
+                            <p class="timeline-title">Packed & Shipped</p>
+                            <p class="timeline-date" id="date-shipped">Packed and ready for pickup</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item pending" id="step-transit">
+                        <div class="timeline-marker">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-line"></div>
+                        </div>
+                        <div class="timeline-content">
+                            <p class="timeline-title">In Transit</p>
+                            <p class="timeline-date">Pending</p>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item pending last" id="step-delivery">
+                        <div class="timeline-marker">
+                            <div class="timeline-dot"></div>
+                        </div>
+                        <div class="timeline-content">
+                            <p class="timeline-title">Out for Delivery</p>
+                            <p class="timeline-date">Pending</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="productDetailsDisplay" class="app-section border-top mt-3 pt-3">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="small text-muted">Color:</span>
+                    <span id="displayColor" class="fw-bold small">-</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="small text-muted">Size:</span>
+                    <span id="displaySize" class="fw-bold small">-</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="small text-muted">Quantity:</span>
+                    <span id="displayQty" class="fw-bold small">0</span>
+                </div>
+            </div>
+
+            <div class="app-section border-top pt-3">
+                <div class="app-row">
+                    <span class="label">Order Number</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span id="modalOrderNumber" class="value fw-bold"></span>
+                        <button class="mono-copy-btn" onclick="copyOrderId()">Copy</button>
+                    </div>
+                </div>
+                <div class="app-row mt-3">
+                    <span class="label">Order Total</span>
+                    <span id="modalTotalAmount" class="total-price-mono">₱0.00</span>
+                </div>
+            </div>
+        </div>
+
+        
+
+        <div class="app-modal-footer">
+            <button class="btn-mono-close" onclick="closeOrderDetails()">CLOSE</button>
+        </div>
+    </div>
+</div>
+
+
+
+<div id="toastContainer" class="toast-container"></div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/myPurchases.css" asp-append-version="true" />
+}
+@section Scripts {
+    <script src="~/js/myPurchases.js" asp-append-version="true"></script>
+}
