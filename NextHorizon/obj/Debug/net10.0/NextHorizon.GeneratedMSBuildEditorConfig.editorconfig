@@ -19,97 +19,105 @@ build_property.TargetFrameworkIdentifier = .NETCoreApp
 build_property.TargetFrameworkVersion = v10.0
 build_property.RootNamespace = NextHorizon
 build_property.RootNamespace = NextHorizon
-build_property.ProjectDir = C:\Users\Lenovo\NextHorizon\NextHorizon\
+build_property.ProjectDir = C:\Users\Divine Quijano\NextHorizon\NextHorizon\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 9.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = C:\Users\Lenovo\NextHorizon\NextHorizon
+build_property.MSBuildProjectDirectory = C:\Users\Divine Quijano\NextHorizon\NextHorizon
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 10.0
 build_property.EnableCodeStyleSeverity = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Dashboard/AddPayoutAccount.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Dashboard/AddPayoutAccount.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFzaGJvYXJkXEFkZFBheW91dEFjY291bnQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Dashboard/Analytics.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Dashboard/Analytics.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFzaGJvYXJkXEFuYWx5dGljcy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Dashboard/Finance.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Dashboard/Finance.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFzaGJvYXJkXEZpbmFuY2UuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Dashboard/MyBalance.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Dashboard/MyBalance.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFzaGJvYXJkXE15QmFsYW5jZS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Dashboard/OrderDetails.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Dashboard/OrderDetails.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFzaGJvYXJkXE9yZGVyRGV0YWlscy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Dashboard/OrderManagement.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Dashboard/OrderManagement.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFzaGJvYXJkXE9yZGVyTWFuYWdlbWVudC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Dashboard/PayoutAccounts.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Dashboard/PayoutAccounts.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFzaGJvYXJkXFBheW91dEFjY291bnRzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Dashboard/SellerDashboard.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Dashboard/SellerDashboard.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFzaGJvYXJkXFNlbGxlckRhc2hib2FyZC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Dashboard/TransactionHistory.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Dashboard/TransactionHistory.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFzaGJvYXJkXFRyYW5zYWN0aW9uSGlzdG9yeS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Dashboard/_ViewStart.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Dashboard/_ViewStart.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFzaGJvYXJkXF9WaWV3U3RhcnQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Home/Index.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Home/MyPurchases.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Home/MyPurchases.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxNeVB1cmNoYXNlcy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Home/PaymentMethods.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Home/PaymentMethods.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQYXltZW50TWV0aG9kcy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Home/Privacy.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Home/Privacy.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Home/ViewPurchaseHistory.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Home/ViewPurchaseHistory.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxWaWV3UHVyY2hhc2VIaXN0b3J5LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Shared/Error.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Seller/SellerDashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2VsbGVyXFNlbGxlckRhc2hib2FyZC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Seller/SellerMessenger.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2VsbGVyXFNlbGxlck1lc3Nlbmdlci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Shared/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Shared/_DashboardLayout.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Shared/_DashboardLayout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9EYXNoYm9hcmRMYXlvdXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Shared/_ValidationScriptsPartial.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/_ViewImports.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/_ViewImports.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/_ViewStart.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/_ViewStart.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Lenovo/NextHorizon/NextHorizon/Views/Shared/_Layout.cshtml]
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Shared/_Layout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = b-9j8hf7xmco

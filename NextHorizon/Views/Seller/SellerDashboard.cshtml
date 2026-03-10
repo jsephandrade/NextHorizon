@@ -1,0 +1,255 @@
+@model NextHorizon.Models.SellerDashboardViewModel
+@{
+    ViewData["Title"] = "Seller Dashboard";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Next Horizon</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/seller.css" asp-append-version="true" />
+</head>
+
+<body>
+    <div class="dashboard-container">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <a asp-controller="Seller" asp-action="SellerDashboard">
+                    <img src="~/images/logo.png" alt="NEXT HORIZON" class="header-logo-img">
+                    </a>
+                </div>
+
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li class="active">
+                            <a asp-controller="Dashboard" asp-action="SellerDashboard">
+                                <i class="fas fa-home"></i> Dashboard
+                            </a>
+                        </li>
+
+                        <li>
+                            <a asp-controller="Dashboard" asp-action="OrderManagement">
+                                <i class="fas fa-shopping-bag"></i> Orders
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="#">
+                                <i class="fas fa-box"></i> Products
+                            </a>
+                        </li>
+
+                        <li>
+                            <a asp-controller="Seller" asp-action="Messenger">
+                                <i class="fas fa-envelope"></i> Message
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="#">
+                                <i class="fas fa-wallet"></i> Finances
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="#">
+                                <i class="fas fa-chart-bar"></i> Analytics
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+
+                <!-- Header -->
+                <header class="top-header">
+                    <div class="header-right">
+                        <button class="icon-btn">
+                            <i class="fas fa-bell"></i>
+                        </button>
+                        <button class="icon-btn">
+                            <i class="fas fa-user-circle"></i>
+                        </button>
+                    </div>
+                </header>
+
+                <div class="dashboard-content">
+
+                    <!-- Greeting -->
+                    <div class="greeting">
+                        <h1>Good Morning, @Model.SellerName!</h1>
+                        <p>@Model.CurrentDate.ToString("dddd, MMMM dd, yyyy")</p>
+                    </div>
+
+                    <!-- Critical Action -->
+                    <section class="section">
+                        <h2 class="section-title">Critical Action</h2>
+
+                        <div class="cards-grid">
+
+                            <div class="card critical-card">
+                                <div class="card-content">
+                                    <span class="card-label">Orders to Ship (Urgent)</span>
+                                    <div class="card-badge urgent">
+                                        @Model.OrdersToShip
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card critical-card">
+                                <div class="card-content">
+                                    <span class="card-label">Pending Orders</span>
+                                    <div class="card-badge pending">
+                                        @Model.PendingOrders
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card critical-card">
+                                <div class="card-content">
+                                    <span class="card-label">Low Stock Alerts</span>
+                                    <div class="card-badge alert">
+                                        @Model.LowStockAlerts
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card critical-card">
+                                <div class="card-content">
+                                    <span class="card-label">Withdraw Summary</span>
+                                    <span class="card-value">
+                                        &#8369;@Model.WithdrawAmount.ToString("N2")
+                                        <small>(@Model.WithdrawStatus)</small>
+                                    </span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </section>
+
+                    <!-- Performance -->
+                    <section class="section">
+                        <h2 class="section-title">Performance</h2>
+
+                        <div class="cards-grid performance-grid">
+
+                            <div class="card performance-card">
+                                <div class="card-header">
+                                    <span class="card-label">Today's Sales</span>
+                                </div>
+                                <div class="card-body">
+                                    <div class="metric-value">
+                                        &#8369;@Model.TodaySales.ToString("N2")
+                                    </div>
+                                    <div class="metric-growth positive">
+                                        <i class="fas fa-arrow-up"></i>
+                                        <span>(+@Model.SalesGrowth%)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card performance-card">
+                                <div class="card-header">
+                                    <span class="card-label">Total Revenue</span>
+                                </div>
+                                <div class="card-body">
+                                    <div class="metric-value">
+                                        &#8369;@Model.TotalRevenue.ToString("N2")
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card performance-card">
+                                <div class="card-header">
+                                    <span class="card-label">Total Visit</span>
+                                </div>
+                                <div class="card-body">
+                                    <div class="metric-value">
+                                        @Model.TotalVisits
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </section>
+
+                    <!-- Bottom Section -->
+                    <div class="bottom-grid">
+
+                        <!-- Recent Orders -->
+                        <section class="section">
+                            <h2 class="section-title">Recent Orders</h2>
+
+                            <div class="table-container">
+                                <table class="orders-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Order ID</th>
+                                            <th>Customer</th>
+                                            <th>Status</th>
+                                            <th>Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var order in Model.RecentOrders)
+                                        {
+                                            <tr>
+                                                <td>@order.OrderId</td>
+                                                <td>@order.Customer</td>
+                                                <td>
+                                                    <span class="status-badge @order.Status.ToLower().Replace(" ", "-")">
+                                                        @order.Status
+                                                    </span>
+                                                </td>
+                                                <td>&#8369;@order.Amount.ToString("N2")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+
+                        <!-- Top Products -->
+                        <section class="section">
+                            <h2 class="section-title">Your Top Selling Products</h2>
+
+                            <div class="products-list">
+                                @foreach (var product in Model.TopProducts)
+                                {
+                                    <div class="product-item">
+                                        <div class="product-rank">
+                                            @product.Rank
+                                        </div>
+
+                                        <div class="product-image">
+                                            <img src="@product.ImageUrl" alt="@product.ProductName"
+                                                 onerror="this.src='https://via.placeholder.com/60?text=Product'">
+                                        </div>
+
+                                        <div class="product-info">
+                                            <h4>@product.ProductName</h4>
+                                            <span>@product.UnitsSold units sold</span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </section>
+
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </body>
+
+</html>

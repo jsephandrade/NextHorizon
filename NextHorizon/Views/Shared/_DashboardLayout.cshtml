@@ -11,180 +11,285 @@
 
     <!-- EMBEDDED CSS -->
     <style>
-        /* ===== RESET & BASE ===== */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Poppins', sans-serif; background-color: #f5f7fa; color: #1a1a1a; }
+            /* ===== RESET & BASE ===== */
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                font-family: 'Poppins', sans-serif;
+                background-color: #f5f7fa;
+                color: #1a1a1a;
+            }
 
-        /* ===== LAYOUT ===== */
-        .dashboard-container { display: flex; min-height: 100vh; }
+            /* ===== LAYOUT ===== */
+            .dashboard-container {
+                display: flex;
+                min-height: 100vh;
+            }
 
-        /* ===== SIDEBAR ===== */
-        .sidebar {
-            width: 260px;
-            background-color: #fff; /* changed to white */
-            color: #1a1a1a; /* black text */
-            padding: 20px 0;
-            position: fixed;
-            height: 100vh;
-            overflow-y: auto;
-            transition: all 0.3s ease;
-        }
-        .logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 0;
-            margin-bottom: 40px;
-            font-size: 24px;
-            font-weight: 700;
-        }
-        .logo i { font-size: 28px; }
-        .seller-logo-img { height: 30px; width: auto; display: block; object-fit: contain; }
-        .sidebar-nav ul { list-style: none; }
-        .sidebar-nav li { margin-bottom: 5px; }
+            /* ===== SIDEBAR ===== */
+            .sidebar {
+                width: 260px;
+                background-color: #fff;
+                /* changed to white */
+                color: #1a1a1a;
+                /* black text */
+                padding: 20px 0;
+                position: fixed;
+                height: 100vh;
+                overflow-y: auto;
+                transition: all 0.3s ease;
+            }
+            .logo {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                padding: 0;
+                margin-bottom: 40px;
+                font-size: 24px;
+                font-weight: 700;
+            }
+            .logo i {
+                font-size: 28px;
+            }
 
-        /* Sidebar links */
-        .sidebar-nav a {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px 25px;
-            color: #1a1a1a; /* black text */
-            text-decoration: none;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            border-radius: 8px;
-        }
-        .sidebar-nav a i { width: 20px; text-align: center; }
+            .seller-logo-img {
+                height: 30px;
+                width: auto;
+                display: block;
+                object-fit: contain;
+            }
 
-        /* Hover effect: invert colors */
-        .sidebar-nav a:hover,
-        .sidebar-nav li.active a {
-            background-color: #1a1a1a; /* black background on hover/active */
-            color: #fff; /* white text and icons */
-        }
+            .sidebar-nav ul {
+                list-style: none;
+            }
 
-        /* ===== MAIN CONTENT ===== */
-        .main-content { flex: 1; margin-left: 260px; background-color: #f5f7fa; }
+            .sidebar-nav li {
+                margin-bottom: 5px;
+            }
 
-        /* ===== TOP HEADER ===== */
-        .top-header {
-            background-color: white;
-            padding: 20px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #e1e4e8;
-            position: sticky;
-            top: 0;
-            z-index: 50;
-        }
-        .section-title {
-            font-size: 22px;
-            font-weight: 600;
-            color: #1a1a2e;
-        }
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        .icon-btn {
-            background: none;
-            border: none;
-            font-size: 20px;
-            color: #666;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 8px;
-            transition: all 0.3s;
-        }
-        .icon-btn:hover { background-color: #f0f0f0; color: #1a1a1a; }
+            /* Sidebar links */
+            .sidebar-nav a {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                padding: 15px 25px;
+                color: #1a1a1a;
+                /* black text */
+                text-decoration: none;
+                transition: all 0.3s ease;
+                font-weight: 500;
+                border-radius: 8px;
+            }
 
-        .seller-dropdown {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background-color: #f5f7fa;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-        .seller-dropdown i { font-size: 12px; }
+            .sidebar-nav a i {
+                width: 20px;
+                text-align: center;
+            }
 
-        /* ===== DASHBOARD CONTENT ===== */
-        .dashboard-content { padding: 40px; font-family: 'Poppins', sans-serif; }
+            /* Hover effect: invert colors */
+            .sidebar-nav a:hover,
+            .sidebar-nav li.active a {
+                background-color: #1a1a1a;
+                /* black background on hover/active */
+                color: #fff;
+                /* white text and icons */
+            }
 
-        /* ===== CARDS / BOXES STYLE ===== */
-        .card {
-            background: #fff;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 25px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-        }
+            /* ===== MAIN CONTENT ===== */
+            .main-content {
+                flex: 1;
+                margin-left: 260px;
+                background-color: #f5f7fa;
+            }
 
-        /* ===== TABLE ===== */
-        table { width: 100%; border-collapse: separate; border-spacing: 0; font-family: 'Poppins', sans-serif; }
-        thead { background: #f1f1f1; }
-        th, td { padding: 14px 16px; text-align: left; font-size: 14px; }
-        th { font-weight: 600; }
-        tbody tr:hover { background: #fafafa; }
+            /* ===== TOP HEADER ===== */
+            .top-header {
+                background-color: white;
+                padding: 20px 40px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid #e1e4e8;
+                position: sticky;
+                top: 0;
+                z-index: 50;
+            }
+            .section-title {
+                font-size: 22px;
+                font-weight: 600;
+                color: #1a1a2e;
+            }
 
-        /* ===== BADGES & BUTTONS ===== */
-        .badge { background: #1a1a1a; color: #fff; padding: 6px 14px; border-radius: 50px; font-size: 12px; font-weight: 600; }
-        .text-danger { color: #dc3545; text-decoration: none; font-size: 13px; }
-        .text-danger:hover { text-decoration: underline; }
-        .set-default { color: #1a1a1a; text-decoration: none; font-size: 13px; font-weight: 500; }
-        .set-default:hover { text-decoration: underline; }
-        .add-btn {
-            border: 1px solid #1a1a1a;
-            background: #fff;
-            padding: 10px 18px;
-            border-radius: 50px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-        .add-btn:hover { background: #1a1a1a; color: #fff; }
+            .header-right {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+            }
 
-        /* ===== PAGE ACTIONS ===== */
-        .page-actions { margin-bottom: 20px; display: flex; gap: 12px; }
-        .link-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            border: 1px solid #1a1a1a;
-            color: #1a1a1a;
-            text-decoration: none;
-            padding: 10px 16px;
-            border-radius: 50px;
-            font-size: 14px;
-            font-weight: 600;
-            background: #fff;
-            transition: all 0.3s ease;
-        }
-        .link-btn:hover { background: #1a1a1a; color: #fff; }
+            .icon-btn {
+                background: none;
+                border: none;
+                font-size: 20px;
+                color: #666;
+                cursor: pointer;
+                padding: 8px;
+                border-radius: 8px;
+                transition: all 0.3s;
+            }
+            .icon-btn:hover {
+                background-color: #f0f0f0;
+                color: #1a1a1a;
+            }
 
-        /* ===== RESPONSIVE ===== */
-        @@media (max-width: 768px) {
-            .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
-            .main-content { margin-left: 0; }
-            .dashboard-content { padding: 20px; }
-        }
+            .seller-dropdown {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 16px;
+                background-color: #f5f7fa;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: 500;
+            }
+            .seller-dropdown i {
+                font-size: 12px;
+            }
+
+            /* ===== DASHBOARD CONTENT ===== */
+            .dashboard-content {
+                padding: 40px;
+                font-family: 'Poppins', sans-serif;
+            }
+
+            /* ===== CARDS / BOXES STYLE ===== */
+            .card {
+                background: #fff;
+                border-radius: 16px;
+                padding: 20px;
+                margin-bottom: 25px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+            .card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            }
+
+            /* ===== TABLE ===== */
+            table {
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
+                font-family: 'Poppins', sans-serif;
+            }
+            thead {
+                background: #f1f1f1;
+            }
+            th,
+            td {
+                padding: 14px 16px;
+                text-align: left;
+                font-size: 14px;
+            }
+            th {
+                font-weight: 600;
+            }
+            tbody tr:hover {
+                background: #fafafa;
+            }
+
+            /* ===== BADGES & BUTTONS ===== */
+            .badge {
+                background: #1a1a1a;
+                color: #fff;
+                padding: 6px 14px;
+                border-radius: 50px;
+                font-size: 12px;
+                font-weight: 600;
+            }
+
+            .text-danger {
+                color: #dc3545;
+                text-decoration: none;
+                font-size: 13px;
+            }
+            .text-danger:hover {
+                text-decoration: underline;
+            }
+            .set-default {
+                color: #1a1a1a;
+                text-decoration: none;
+                font-size: 13px;
+                font-weight: 500;
+            }
+            .set-default:hover {
+                text-decoration: underline;
+            }
+
+            .add-btn {
+                border: 1px solid #1a1a1a;
+                background: #fff;
+                padding: 10px 18px;
+                border-radius: 50px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 600;
+                text-decoration: none;
+                transition: all 0.3s ease;
+            }
+            .add-btn:hover {
+                background: #1a1a1a;
+                color: #fff;
+            }
+
+            /* ===== PAGE ACTIONS ===== */
+            .page-actions {
+                margin-bottom: 20px;
+                display: flex;
+                gap: 12px;
+            }
+            .link-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                border: 1px solid #1a1a1a;
+                color: #1a1a1a;
+                text-decoration: none;
+                padding: 10px 16px;
+                border-radius: 50px;
+                font-size: 14px;
+                font-weight: 600;
+                background: #fff;
+                transition: all 0.3s ease;
+            }
+            .link-btn:hover {
+                background: #1a1a1a;
+                color: #fff;
+            }
+
+            /* ===== RESPONSIVE ===== */
+            @@media (max-width: 768px) {
+                .sidebar {
+                    transform: translateX(-100%);
+                    transition: transform 0.3s;
+                }
+                .main-content {
+                    margin-left: 0;
+                }
+
+                .dashboard-content {
+                    padding: 20px;
+                }
+            }
     </style>
 
     @RenderSection("Styles", required: false)
 </head>
+
 <body>
     @{
         var currentAction = (ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty).ToLowerInvariant();
@@ -193,6 +298,7 @@
 
         var isDashboard = currentAction == "sellerdashboard";
         var isOrders = currentAction == "ordermanagement" || currentAction == "orderdetails";
+        var isMessenger = currentAction == "messenger";
         var isFinance = currentAction == "finance" || currentAction == "transactionhistory";
         var isAnalytics = currentAction == "analytics";
     }
@@ -205,50 +311,54 @@
             <nav class="sidebar-nav">
                 <ul>
                     <li class="@(isDashboard ? "active" : string.Empty)">
-                        <a asp-controller="Dashboard" asp-action="SellerDashboard"><i class="fas fa-home"></i> Dashboard</a>
-                    </li>
-                    <li class="@(isOrders ? "active" : string.Empty)">
-                        <a asp-controller="Dashboard" asp-action="OrderManagement"><i class="fas fa-shopping-bag"></i> Orders</a>
-                    </li>
-                    <li>
-                        <a href="#"><i class="fas fa-box"></i> Products</a>
-                    </li>
-                    <li>
-                        <a href="#"><i class="fas fa-envelope"></i> Message</a>
-                    </li>
-                    <li class="@(isFinance ? "active" : string.Empty)">
-                        <a asp-controller="Dashboard" asp-action="Finance"><i class="fas fa-wallet"></i> Finances</a>
-                    </li>
-                    <li class="@(isAnalytics ? "active" : string.Empty)">
-                        <a asp-controller="Dashboard" asp-action="Analytics"><i class="fas fa-chart-bar"></i> Analytics</a>
-                    </li>
-                </ul>
-            </nav>
-        </aside>
+                        <a asp-controller="Dashboard" asp-action="SellerDashboard"><i class="fas fa-home"></i>
+                            Dashboard</a>
+                        </li>
+                        <li class="@(isOrders ? "active" : string.Empty)">
+                            <a asp-controller="Dashboard" asp-action="OrderManagement"><i class="fas fa-shopping-bag"></i>
+                                Orders</a>
+                            </li>
+                            <li>
+                                <a href="#"><i class="fas fa-box"></i> Products</a>
+                            </li>
+                            <li class="@(isMessenger ? "active" : string.Empty)">
+                                <a asp-controller="Seller" asp-action="Messenger"><i class="fas fa-envelope"></i> Message</a>
+                            </li>
+                            <li class="@(isFinance ? "active" : string.Empty)">
+                                <a asp-controller="Dashboard" asp-action="Finance"><i class="fas fa-wallet"></i> Finances</a>
+                            </li>
+                            <li class="@(isAnalytics ? "active" : string.Empty)">
+                                <a asp-controller="Dashboard" asp-action="Analytics"><i class="fas fa-chart-bar"></i>
+                                    Analytics</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </aside>
 
-        <main class="main-content">
-            <header class="top-header order-header">
-                <h2 class="section-title">@pageHeading</h2>
-                <div class="header-right">
-                    <button class="icon-btn" type="button" aria-label="Notifications">
-                        <i class="fas fa-bell"></i>
-                    </button>
-                    <button class="icon-btn" type="button" aria-label="Profile">
-                        <i class="fas fa-user-circle"></i>
-                    </button>
-                    <div class="seller-dropdown">
-                        <span>@sellerName</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
+                    <main class="main-content">
+                        <header class="top-header order-header">
+                            <h2 class="section-title">@pageHeading</h2>
+                            <div class="header-right">
+                                <button class="icon-btn" type="button" aria-label="Notifications">
+                                    <i class="fas fa-bell"></i>
+                                </button>
+                                <button class="icon-btn" type="button" aria-label="Profile">
+                                    <i class="fas fa-user-circle"></i>
+                                </button>
+                                <div class="seller-dropdown">
+                                    <span>@sellerName</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                            </div>
+                        </header>
+
+                        <div class="dashboard-content">
+                            @RenderBody()
+                        </div>
+                    </main>
                 </div>
-            </header>
 
-            <div class="dashboard-content">
-                @RenderBody()
-            </div>
-        </main>
-    </div>
+                @await RenderSectionAsync("Scripts", required: false)
+            </body>
 
-    @await RenderSectionAsync("Scripts", required: false)
-</body>
-</html>
+        </html>

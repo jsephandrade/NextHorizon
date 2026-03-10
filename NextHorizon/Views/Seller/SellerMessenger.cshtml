@@ -1,0 +1,132 @@
+@{
+    ViewData["Title"] = "Messenger";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    ViewData["DashboardHeading"] = "Messages";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="/css/messenger.css" />
+}
+
+<style>
+    html,
+    body {
+        height: 100%;
+    }
+
+    .dashboard-content {
+        padding: 0;
+        height: calc(100vh - 80px);
+        display: flex;
+        background: #f5f7fa;
+    }
+
+    .messenger-container {
+        flex: 1;
+        display: flex;
+        background: #f5f7fa;
+    }
+
+    .main-content {
+        background: #f5f7fa;
+    }
+</style>
+
+<div class="messenger-container">
+
+    <!-- Conversations Panel -->
+    <aside class="conversations-panel">
+        <div class="search-conversations">
+            <input type="text" placeholder="Search conversations..." class="search-input">
+        </div>
+
+        <div class="conversations-list">
+            <!-- Conversation Items -->
+            <div class="conversation-item active">
+                <div class="conversation-avatar">
+                    <div class="avatar-placeholder">JD</div>
+                </div>
+                <div class="conversation-info">
+                    <div class="conversation-name">John Doe</div>
+                    <div class="last-message">Thanks for the quick response!</div>
+                </div>
+                <div class="conversation-time">2:30 PM</div>
+            </div>
+
+            <div class="conversation-item">
+                <div class="conversation-avatar">
+                    <div class="avatar-placeholder">SM</div>
+                </div>
+                <div class="conversation-info">
+                    <div class="conversation-name">Sarah Miller</div>
+                    <div class="last-message">Can you update the inventory?</div>
+                </div>
+                <div class="conversation-time">1:15 PM</div>
+            </div>
+
+            <div class="conversation-item">
+                <div class="conversation-avatar">
+                    <div class="avatar-placeholder">MC</div>
+                </div>
+                <div class="conversation-info">
+                    <div class="conversation-name">Mike Chen</div>
+                    <div class="last-message">Great product! When's the next batch?</div>
+                </div>
+                <div class="conversation-time">10:45 AM</div>
+            </div>
+        </div>
+
+        <!-- No Results -->
+        <div class="no-results">No conversations found</div>
+    </aside>
+
+    <!-- Chat Panel -->
+    <div class="chat-panel">
+        <div class="chat-header">
+            <div class="chat-user-info">
+                <div class="chat-avatar">
+                    <div class="avatar-placeholder">JD</div>
+                </div>
+                <div>
+                    <h3>John Doe</h3>
+                    <p class="status-online">Online</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="messages-container">
+            <div class="message received">
+                <div class="message-content">
+                    <p>Hi! I have a question about the order</p>
+                </div><span class="message-time">10:30 AM</span>
+            </div>
+            <div class="message sent">
+                <div class="message-content">
+                    <p>Sure! What can I help you with?</p>
+                </div><span class="message-time">10:32 AM</span>
+            </div>
+            <div class="message received">
+                <div class="message-content">
+                    <p>When will my order arrive?</p>
+                </div><span class="message-time">10:33 AM</span>
+            </div>
+            <div class="message sent">
+                <div class="message-content">
+                    <p>Your order is expected to arrive by Friday</p>
+                </div><span class="message-time">10:35 AM</span>
+            </div>
+            <div class="message received">
+                <div class="message-content">
+                    <p>Thanks for the quick response!</p>
+                </div><span class="message-time">10:36 AM</span>
+            </div>
+        </div>
+
+        <div class="message-input-area">
+            <input type="text" class="message-input" placeholder="Type a message...">
+            <button class="send-btn" title="Send"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/messenger.js"></script>
