@@ -1,11 +1,18 @@
-// messenger.js
+// messenger.js (hot-reload safe)
 
-document.addEventListener('DOMContentLoaded', function () {
+function initMessenger() {
   const messageInput = document.querySelector('.message-input');
-  const sendBtn = document.querySelector('.send-btn');
   const messagesContainer = document.querySelector('.messages-container');
   const searchInput = document.querySelector('.search-input');
   const conversationContainer = document.querySelector('.conversations-list');
+
+  if (
+    !messageInput ||
+    !messagesContainer ||
+    !searchInput ||
+    !conversationContainer
+  )
+    return;
 
   // =========================
   // TIME FUNCTION
@@ -80,19 +87,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // =========================
-  // SEND EVENTS
-  // =========================
-  sendBtn.addEventListener('click', sendMessage);
-
-  messageInput.addEventListener('keypress', function (e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  });
-
-  // =========================
-  // CONVERSATION CLICK
+  // CONVERSATION CLICK (Delegated)
   // =========================
   function handleConversationClick(item) {
     const conversationItems =
@@ -109,10 +104,27 @@ document.addEventListener('DOMContentLoaded', function () {
     updateExistingMessageTimes();
   }
 
-  const conversationItems =
-    conversationContainer.querySelectorAll('.conversation-item');
-  conversationItems.forEach((item) => {
-    item.addEventListener('click', () => handleConversationClick(item));
+  conversationContainer.addEventListener('click', function (e) {
+    const item = e.target.closest('.conversation-item');
+    if (item) handleConversationClick(item);
+  });
+
+  // =========================
+  // SEND BUTTON & ENTER KEY (Delegated)
+  // =========================
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('.send-btn')) sendMessage();
+  });
+
+  document.addEventListener('keypress', function (e) {
+    if (
+      e.target.closest('.message-input') &&
+      e.key === 'Enter' &&
+      !e.shiftKey
+    ) {
+      e.preventDefault();
+      sendMessage();
+    }
   });
 
   // =========================
@@ -135,17 +147,16 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape regex characters
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   function filterConversations() {
     const searchValue = searchInput.value.trim().toLowerCase();
-    const conversationItems =
-      conversationContainer.querySelectorAll('.conversation-item');
+    const items = conversationContainer.querySelectorAll('.conversation-item');
     let visibleCount = 0;
     let firstMatch = null;
 
-    conversationItems.forEach((item) => {
+    items.forEach((item) => {
       const nameElement = item.querySelector('.conversation-name');
       const lastMessageElement = item.querySelector('.last-message');
 
@@ -155,7 +166,6 @@ document.addEventListener('DOMContentLoaded', function () {
         lastMessageElement.dataset.originalText ||
         lastMessageElement.textContent;
 
-      // Store original text
       if (!nameElement.dataset.originalText)
         nameElement.dataset.originalText = originalName;
       if (!lastMessageElement.dataset.originalText)
@@ -171,7 +181,6 @@ document.addEventListener('DOMContentLoaded', function () {
         item.style.display = 'flex';
         visibleCount++;
 
-        // Highlight matched text
         if (searchValue !== '') {
           const regex = new RegExp(`(${escapeRegExp(searchValue)})`, 'gi');
           nameElement.innerHTML = originalName.replace(
@@ -197,13 +206,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
     noResults.style.display = visibleCount === 0 ? 'block' : 'none';
 
-    // Scroll first matched conversation into view
-    if (firstMatch) {
-      firstMatch.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      // Also highlight as active
-      handleConversationClick(firstMatch);
-    }
+    if (firstMatch) handleConversationClick(firstMatch);
   }
 
   searchInput.addEventListener('input', debounce(filterConversations, 200));
-});
+}
+
+// =========================
+// INITIALIZE ON LOAD
+// =========================
+document.addEventListener('DOMContentLoaded', initMessenger);
+
+// =========================
+// HOT RELOAD SUPPORT
+// =========================
+if (module.hot) {
+  module.hot.accept(initMessenger);
+}

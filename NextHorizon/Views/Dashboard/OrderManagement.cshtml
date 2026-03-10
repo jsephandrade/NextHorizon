@@ -745,7 +745,9 @@
                                         data-address="@customerAddress">
                                     Process Order
                                 </button>
-                                <button type="button" class="action-menu-item">Contact Customer</button>
+                                <button type="button" class="action-menu-item" onclick="window.location.href='@Url.Action("Messenger", "Seller")'">
+    Contact Customer
+</button>
                                 <button type="button" class="action-menu-item add-note-btn" data-order-id="@order.OrderId" data-customer="@order.Customer">Add Note</button>
                             </div>
                         </div>

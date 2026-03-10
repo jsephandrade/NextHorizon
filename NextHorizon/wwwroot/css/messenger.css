@@ -1,6 +1,5 @@
 :root {
     --dark-bg: #1a1a1a;
-    --light-bg: #f5f7fa;
     --text-dark: #1a1a1a;
     --text-light: #ffffff;
     --border-color: #e5e5e5;
@@ -9,10 +8,11 @@
     --primary: #000000;
 }
 
+/* Messenger Container */
 .messenger-container {
     display: flex;
     height: 100%;
-    background: var(--light-bg);
+    background: #f5f7fa; /* updated background */
     font-family: 'Poppins', sans-serif;
 }
 
@@ -22,7 +22,8 @@
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    background: var(--light-bg);
+    background: #f5f7fa; /* updated background */
+    position: relative;
 }
 
 .conversations-header {
@@ -57,15 +58,6 @@
 
 .search-input:focus {
     border-color: var(--primary);
-}
-
-.conversations-panel {
-    width: 320px;
-    border-right: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    background: var(--light-bg);
-    position: relative; /* Add this */
 }
 
 .no-results {
@@ -148,7 +140,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: var(--light-bg);
+    background: #f5f7fa; /* updated background */
     overflow: hidden;
     height: 100%;
 }
@@ -202,6 +194,7 @@
     flex-direction: column;
     gap: 12px;
     min-height: 0;
+    background: #f5f7fa; /* updated background */
 }
 
 .message {
@@ -259,7 +252,7 @@
     gap: 10px;
     padding: 15px 20px;
     border-top: 1px solid var(--border-color);
-    background: var(--light-bg);
+    background: #f5f7fa; /* updated background */
     flex-shrink: 0;
     position: sticky;
     bottom: 0;
@@ -315,6 +308,7 @@
         border-right: none;
         border-bottom: 1px solid var(--border-color);
         max-height: 200px;
+        background: #f5f7fa; /* updated background */
     }
     .conversations-list { display: flex; gap: 0; overflow-x: auto; }
     .conversation-item {
