@@ -10,6 +10,9 @@ public sealed class AppDbContext : DbContext
     }
 
     public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<Seller> Sellers { get; set; }
+    public DbSet<User> Users { get; set; }
+    public DbSet<ShippingAddress> ShippingAddresses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -24,5 +27,7 @@ public sealed class AppDbContext : DbContext
             entity.HasIndex(x => x.Email).IsUnique();
             entity.Property(x => x.CreatedUtc).HasDefaultValueSql("SYSUTCDATETIME()");
         });
+       
     }
+    
 }
