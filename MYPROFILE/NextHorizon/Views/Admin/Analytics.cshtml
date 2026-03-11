@@ -1,0 +1,215 @@
+﻿@model NextHorizon.ViewModels.AnalyticsViewModel
+
+@{
+    ViewData["Title"] = "Admin Portal - Analytics Overview";
+    Layout = "_AdminLayout";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-5 bg-white p-3 rounded-3 border shadow-sm">
+    <div class="d-flex gap-2 align-items-center">
+        <select class="form-select form-select-sm border shadow-sm" style="width: 160px;">
+            <option>All Segments</option>
+            <option>Marathoners</option>
+            <option>Casual Walkers</option>
+        </select>
+
+        <select id="datePreset" class="form-select form-select-sm border shadow-sm" style="width: 150px;">
+            <option value="7">Last 7 Days</option>
+            <option value="30" selected>Last 30 Days</option>
+            <option value="90">Last Quarter</option>
+            <option value="custom">Custom Range...</option>
+        </select>
+
+        <div id="customDateContainer" class="d-none d-flex gap-2 align-items-center">
+            <input type="date" class="form-control form-control-sm" id="startDate">
+            <span class="text-muted small">to</span>
+            <input type="date" class="form-control form-control-sm" id="endDate">
+        </div>
+    </div>
+
+    <button class="btn btn-dark btn-sm px-4 fw-bold">
+        <i class="bi bi-download me-2"></i>Export Report
+    </button>
+</div>
+
+<div class="row g-3 mb-5">
+    <div class="col-md-3">
+        <div class="analytics-card bg-white border shadow-sm h-100">
+            <p class="text-muted small fw-bold mb-1">TOTAL CONSUMERS</p>
+            <h2 class="fw-800 text-dark">@Model.TotalConsumers.ToString("N0")</h2>
+            <p class="text-success small fw-bold mb-0"><i class="bi bi-graph-up-arrow"></i> +12% Growth</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="analytics-card bg-white border shadow-sm h-100">
+            <p class="text-muted small fw-bold mb-1">TOTAL SELLERS</p>
+            <h2 class="fw-800 text-dark">@Model.TotalSellers.ToString("N0")</h2>
+            <p class="text-primary small fw-bold mb-0">Active Brands</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="analytics-card bg-white border shadow-sm h-100">
+            <p class="text-muted small fw-bold mb-1">AVG. KM PER PURCHASE</p>
+            <h2 class="fw-800 text-dark">@Model.AvgKmPerPurchase.ToString("F1") KM</h2>
+            <p class="text-muted tiny mb-0">Activity Engagement</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="analytics-card card-dark h-100">
+            <p class="text-white-50 small fw-bold mb-1">CONVERSION RATE</p>
+            <h2 class="text-white fw-800">@Model.ChallengeToSaleConversionRate.ToString("F1")%</h2>
+            <div class="progress bg-secondary" style="height: 4px;">
+                <div class="progress-bar bg-white" style="width: @Model.ChallengeToSaleConversionRate%"></div>
+            </div>
+            <p class="text-white-50 tiny mt-2 mb-0">+5.2% vs last month</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-5">
+    <div class="col-12">
+        <div class="bg-white border p-4 rounded-4 shadow-sm">
+            <h6 class="fw-bold small text-uppercase mb-4">Segment Engagement Scores</h6>
+            <div class="row">
+                @foreach (var segment in Model.SegmentScores)
+                {
+                    <div class="col-md-3">
+                        <label class="small fw-bold mb-1 d-flex justify-content-between">
+                            @segment.CategoryName.ToUpper()
+                            <span>@segment.ProgressPercentage%</span>
+                        </label>
+                        <div class="progress mb-3" style="height: 8px;">
+                            <div class="progress-bar bg-dark" style="width: @segment.ProgressPercentage%"></div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-5">
+    <div class="col-md-8">
+        <div class="chart-box bg-white border p-4 rounded-4 shadow-sm h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="fw-bold small text-uppercase m-0">Activity vs. Sales Correlation</h6>
+                <span class="badge bg-light text-dark border fw-bold" style="font-size: 10px;">LIVE TREND</span>
+            </div>
+            <div style="height: 350px; position: relative;">
+                <canvas id="activitySalesChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="chart-box bg-white border p-4 rounded-4 shadow-sm h-100">
+            <h6 class="fw-bold small text-uppercase mb-4">Top Challenge Rewards</h6>
+            <div class="reward-list">
+                @foreach (var reward in Model.TopChallengeRewards)
+                {
+                    <div class="reward-item d-flex align-items-center gap-3 mb-3 p-2 rounded-3 border-bottom pb-3">
+                        <div class="reward-img-placeholder">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <p class="mb-0 fw-bold small">@reward.ProductName</p>
+                            <p class="text-muted tiny mb-0">Via @reward.LinkedChallengeName</p>
+                        </div>
+                        <div class="text-end">
+                            <span class="fw-800 text-dark d-block">@reward.UnitsSold</span>
+                            <span class="tiny text-uppercase fw-bold text-muted">SOLD</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-5">
+    <div class="col-md-5">
+        <div class="bg-white border p-4 rounded-4 shadow-sm h-100">
+            <h6 class="fw-bold small text-uppercase mb-4">Conversion Funnel</h6>
+            <div class="funnel-container d-flex flex-column align-items-center">
+                <div class="funnel-stage bg-dark text-white p-2 mb-2 rounded text-center w-100"
+                     data-bs-toggle="tooltip" data-bs-placement="right"
+                     title="Total users who clicked 'Join' on any active challenge.">
+                    Started: @Model.UsersStartedChallenge
+                </div>
+
+                <div class="funnel-stage bg-secondary text-white p-2 mb-2 rounded text-center" style="width: 85%"
+                     data-bs-toggle="tooltip" data-bs-placement="right"
+                     title="Users who successfully logged enough Strava activity.">
+                    Completed: @Model.UsersCompletedGoal
+                </div>
+
+                <div class="funnel-stage bg-primary text-white p-2 mb-2 rounded text-center" style="width: 65%"
+                     data-bs-toggle="tooltip" data-bs-placement="right"
+                     title="Users who generated a discount code.">
+                    Claimed: @Model.UsersClaimedReward
+                </div>
+
+                <div class="funnel-stage bg-success text-white p-2 mb-2 rounded text-center" style="width: 45%"
+                     data-bs-toggle="tooltip" data-bs-placement="right"
+                     title="Users who completed a purchase.">
+                    Purchased: @Model.UsersPurchased
+                </div>
+            </div>
+            <p class="text-muted tiny mt-3 text-center italic">User journey from Strava activity to Checkout</p>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="bg-white border p-4 rounded-4 shadow-sm h-100">
+            <h6 class="fw-bold small text-uppercase mb-4">Peak Activity Times (Hourly)</h6>
+            <div style="height: 250px;">
+                <canvas id="peakActivityChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-5">
+    <div class="col-12">
+        <div class="bg-white border p-4 rounded-4 shadow-sm">
+            <h6 class="fw-bold small text-uppercase mb-3">Top Performing Sellers</h6>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Seller Name</th>
+                            <th>Orders</th>
+                            <th>Revenue</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var seller in Model.TopSellers)
+                        {
+                            <tr>
+                                <td class="fw-bold">@seller.SellerName</td>
+                                <td>@seller.OrdersFulfilled</td>
+                                <td>₱@seller.RevenueGenerated.ToString("N2")</td>
+                                <td><span class="badge bg-success">Active</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_css/analytics.css" asp-append-version="true" />
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    @* Hidden fields for Chart.js bridge *@
+    <input type="hidden" id="jsonLabels" value='@Json.Serialize(Model.PerformanceTrends.Select(x => x.DateLabel))' />
+    <input type="hidden" id="jsonKm" value='@Json.Serialize(Model.PerformanceTrends.Select(x => x.TotalKm))' />
+    <input type="hidden" id="jsonRev" value='@Json.Serialize(Model.PerformanceTrends.Select(x => x.TotalRevenue))' />
+
+    <script src="~/js/admin_js/analytics.js" asp-append-version="true"></script>
+}

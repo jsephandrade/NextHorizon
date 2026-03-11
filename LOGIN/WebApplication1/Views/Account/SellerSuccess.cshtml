@@ -1,0 +1,127 @@
+@{
+    ViewData["Title"] = "Application Submitted";
+}
+
+<div class="success-wrapper">
+    <div class="success-card">
+        <div class="checkmark-circle">
+            <div class="background"></div>
+            <div class="checkmark draw"></div>
+        </div>
+
+        <h2>Application Submitted</h2>
+        <p>Your application for <strong>Seller</strong> has been submitted.</p>
+        <p>Redirecting to home in <span id="countdown">5</span> seconds...</p>
+
+        <a href="/" class="continue-btn">Back to Home</a>
+    </div>
+</div>
+
+<script>
+    let seconds = 5;
+    let timer = setInterval(function () {
+        seconds--;
+        document.getElementById("countdown").innerText = seconds;
+
+        if (seconds <= 0) {
+            clearInterval(timer);
+            window.location.href = "/"; // Redirect to Home
+        }
+    }, 1000);
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const loader = document.getElementById("loadingOverlay");
+        if (loader) {
+            loader.style.display = "none";
+        }
+    });
+</script>
+
+<style>
+    /* Reusing your exact styles for consistency */
+    .success-wrapper {
+        height: 100vh;
+        display: flex;
+        justify-content: center; 
+        align-items: center;     
+        background: #f4f6fb;
+        font-family: 'Segoe UI', Arial, sans-serif;
+        margin: 0;
+    }
+
+    .success-card {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        text-align: center;
+        width: 340px; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    .success-card h2 {
+        color: #333;
+        margin: 25px 0 10px;
+        font-size: 1.6rem;
+    }
+
+    .success-card p {
+        color: #777;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin-bottom: 20px;
+    }
+
+    .continue-btn {
+        display: inline-block;
+        padding: 12px 40px;
+        background: #4CAF50;
+        color: white;
+        border-radius: 30px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .continue-btn:hover {
+        background: #45a049;
+        transform: translateY(-2px);
+    }
+
+    .checkmark-circle {
+        width: 80px;
+        height: 80px;
+        position: relative;
+        display: inline-block;
+    }
+
+    .background {
+        display: none; 
+    }
+
+    .checkmark:after {
+        opacity: 1;
+        height: 40px;
+        width: 20px;
+        transform-origin: left top;
+        border-right: 5px solid #4CAF50; 
+        border-top: 5px solid #4CAF50;   
+        content: '';
+        left: 28px;
+        top: 45px;
+        position: absolute;
+    }
+
+    .checkmark.draw:after {
+        animation-duration: 0.8s;
+        animation-timing-function: ease;
+        animation-name: checkmark;
+        transform: scaleX(-1) rotate(135deg);
+    }
+
+    @@keyframes checkmark {
+        0% { height: 0; width: 0; opacity: 1; }
+        20% { height: 0; width: 20px; opacity: 1; }
+        40% { height: 40px; width: 20px; opacity: 1; }
+        100% { height: 40px; width: 20px; opacity: 1; }
+    }
+</style>

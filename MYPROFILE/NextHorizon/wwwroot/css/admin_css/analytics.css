@@ -1,0 +1,148 @@
+﻿﻿/* --- Container and Layout Styling --- */
+.analytics-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    height: 100%;
+    background-color: #ffffff; /* Ensure background is solid for shadow effect */
+}
+
+    .analytics-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+
+/* --- Dark Card Styling (For Conversion Rate/Primary KPI) --- */
+.card-dark {
+    background: linear-gradient(135deg, #212529 0%, #343a40 100%);
+    color: white;
+    border: none;
+}
+
+/* --- Typography Enhancements --- */
+.fw-800 {
+    font-weight: 800;
+}
+
+.tiny {
+    font-size: 0.7rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* --- Reward List Items (Right Sidebar) --- */
+.reward-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 5px; /* Space for custom scrollbar */
+}
+
+.reward-item {
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    cursor: default;
+}
+
+    .reward-item:hover {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+    }
+
+.reward-img-placeholder {
+    background-color: #e9ecef;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    color: #6c757d;
+}
+
+/* --- Conversion Funnel Stages --- */
+.funnel-container {
+    padding: 20px 0;
+}
+
+.funnel-stage {
+    cursor: help;
+    transition: all 0.2s ease;
+    font-weight: 600;
+    font-size: 0.85rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+    .funnel-stage:hover {
+        filter: brightness(1.1);
+        transform: scale(1.02);
+    }
+
+/* --- Progress Bars Customization --- */
+.progress {
+    background-color: #e9ecef;
+    overflow: visible;
+    border-radius: 10px;
+}
+
+.progress-bar {
+    border-radius: 10px;
+    transition: width 1s ease-in-out;
+}
+
+/* --- Chart Container Styling --- */
+.chart-box {
+    min-height: 450px;
+}
+
+/* --- Custom Scrollbar for the Reward List --- */
+.reward-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.reward-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.reward-list::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 10px;
+}
+
+/* --- Seller Table Enhancements --- */
+.table thead th {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6c757d;
+    border-top: none;
+    padding: 1rem;
+    background-color: #f8f9fa;
+}
+
+.table tbody td {
+    padding: 1rem;
+    font-size: 0.9rem;
+    color: #2d3436;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.badge-soft-success {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 768px) {
+    .analytics-card h2 {
+        font-size: 1.5rem;
+    }
+
+    .chart-box {
+        min-height: 300px;
+    }
+}

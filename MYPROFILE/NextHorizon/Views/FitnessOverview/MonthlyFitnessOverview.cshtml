@@ -1,0 +1,292 @@
+﻿@model NextHorizon.ViewModels.MonthlyFitnessViewModel
+@{
+    ViewData["Title"] = "Monthly Fitness Overview";
+}
+
+<div class="centered-layout-container">
+    <div class="fitness-content-wrapper">
+        <div class="fitness-container">
+            <div class="back-navigation">
+                <a asp-controller="AccountProfile" asp-action="ProfileView"><i class="bi bi-chevron-left"></i> Back</a>
+            </div>
+
+            <div class="fitness-header">
+                <h1>FITNESS OVERVIEW <span>(This Month)</span></h1>
+            </div>
+
+            <div class="period-navbar">
+                <a asp-controller="FitnessOverview" asp-action="DailyFitnessOverview" class="period-btn">DAILY</a>
+                <a asp-controller="FitnessOverview" asp-action="WeeklyFitnessOverview" class="period-btn">WEEKLY</a>
+                <a asp-controller="FitnessOverview" asp-action="MonthlyFitnessOverview" class="period-btn active">MONTHLY</a>
+                <a asp-controller="FitnessOverview" asp-action="YearlyFitnessOverview" class="period-btn">YEARLY</a>
+            </div>
+
+            <div class="fitness-charts-grid">
+                <!-- Distance Card -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <small>Daily Average Distance</small>
+                        <h3>@(Model.Averages?.AvgDailyDistance.ToString("0") ?? "0") KM</h3>
+                    </div>
+                    <div class="chart-body">
+                        <div class="chart-y-axis">
+                            <span>12.00</span><span>8.00</span><span>4.00</span><span>0.00</span>
+                        </div>
+                        <div class="chart-placeholder">
+                            <div class="mock-grid"></div>
+                            <div class="bar-container monthly-bars">
+                                @{
+                                    var maxDistance = Model.MonthlyData.Any() ? Model.MonthlyData.Max(d => d.TotalDistance) : 1;
+                                    var dayPositions = new[] { 2, 15, 30, 45, 65, 85 };
+                                    var dayValues = new[] { 2, 8, 15, 20, 25, 28 }; // Sample days - adjust based on actual data
+                                }
+                                @for (int i = 0; i < Math.Min(6, Model.MonthlyData.Count); i++)
+                                {
+                                    var data = Model.MonthlyData.ElementAtOrDefault(i);
+                                    var height = data != null && maxDistance > 0 
+                                        ? (data.TotalDistance / maxDistance) * 80 
+                                        : 30 + (i * 10);
+                                    <div class="bar" style="height: @(height)%; left: @(dayPositions[i])%;" 
+                                         title="Day @(data?.DayOfMonth ?? dayValues[i]): @(data?.TotalDistance.ToString("0.0") ?? "0") KM"></div>
+                                }
+                            </div>
+                        </div>
+                        <div class="chart-labels">
+                            <span>1</span><span>8</span><span>15</span><span>20</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Time Card -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <small>Daily Average Time</small>
+                        <h3>@Model.FormattedAvgTime</h3>
+                    </div>
+                    <div class="chart-body">
+                        <div class="chart-y-axis">
+                            <span>12</span><span>8</span><span>4</span><span>0</span>
+                        </div>
+                        <div class="chart-placeholder">
+                            <div class="mock-grid"></div>
+                            <div class="bar-container monthly-bars">
+                                @{
+                                    var maxTime = Model.MonthlyData.Any() ? Model.MonthlyData.Max(d => d.TotalTimeSec) : 1;
+                                    var timePositions = new[] { 5, 30, 55, 80 };
+                                }
+                                @for (int i = 0; i < Math.Min(4, Model.MonthlyData.Count); i++)
+                                {
+                                    var data = Model.MonthlyData.ElementAtOrDefault(i * 7);
+                                    var height = data != null && maxTime > 0 
+                                        ? ((decimal)data.TotalTimeSec / maxTime) * 75 
+                                        : 35 + (i * 15);
+                                    <div class="bar" style="height: @(height)%; left: @(timePositions[i])%;" 
+                                         title="Day @(data?.DayOfMonth ?? (i * 7 + 1)): @(data != null ? TimeSpan.FromSeconds(data.TotalTimeSec).ToString(@"hh\:mm") : "00:00")"></div>
+                                }
+                            </div>
+                        </div>
+                        <div class="chart-labels">
+                            <span>1</span><span>8</span><span>15</span><span>20</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Steps Card -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <small>Daily Average Steps</small>
+                        <h3>@Model.FormattedAvgSteps</h3>
+                    </div>
+                    <div class="chart-body">
+                        <div class="chart-y-axis">
+                            <span>12,000</span><span>8,000</span><span>4,000</span><span>0</span>
+                        </div>
+                        <div class="chart-placeholder">
+                            <div class="mock-grid"></div>
+                            <div class="bar-container monthly-bars">
+                                @{
+                                    var maxSteps = Model.MonthlyData.Any() ? Model.MonthlyData.Max(d => d.TotalSteps) : 1;
+                                    var stepsPositions = new[] { 10, 40, 75 };
+                                }
+                                @for (int i = 0; i < Math.Min(3, Model.MonthlyData.Count); i++)
+                                {
+                                    var data = Model.MonthlyData.ElementAtOrDefault(i * 10);
+                                    var height = data != null && maxSteps > 0 
+                                        ? ((decimal)data.TotalSteps / maxSteps) * 85 
+                                        : 50 + (i * 20);
+                                    <div class="bar" style="height: @(height)%; left: @(stepsPositions[i])%;" 
+                                         title="Day @(data?.DayOfMonth ?? (i * 10 + 1)): @(data?.TotalSteps.ToString("N0") ?? "0") steps"></div>
+                                }
+                            </div>
+                        </div>
+                        <div class="chart-labels">
+                            <span>1</span><span>8</span><span>15</span><span>20</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Your EXACT original Monthly styles - preserved completely -->
+<style>
+    /* Updated for full-width expansion */
+    .centered-layout-container {
+        display: block;
+        width: 100%;
+        min-height: 100vh;
+        background-color: #fff;
+    }
+
+    .fitness-content-wrapper {
+        width: 100%;
+        max-width: 100%; /* Expanded */
+        margin: 0;
+        padding: 20px 60px 40px 60px; /* Matches Weekly/Daily padding */
+    }
+
+    .back-navigation a {
+        text-decoration: none;
+        color: #000;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .fitness-header h1 {
+        font-size: 1.8rem;
+        font-weight: 800;
+        margin: 15px 0;
+    }
+
+        .fitness-header h1 span {
+            font-weight: 400;
+            font-size: 1.2rem;
+            color: #444;
+        }
+
+    .period-navbar {
+        display: flex;
+        background-color: #000;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 30px;
+        width: 100%;
+    }
+
+    .period-btn {
+        flex: 1;
+        background: transparent;
+        color: #fff;
+        border: none;
+        padding: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+        border-right: 1px solid #444;
+    }
+
+        .period-btn.active {
+            background-color: #777;
+        }
+
+    .fitness-charts-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        width: 100%;
+    }
+
+    .chart-card {
+        background-color: #f0f0f0;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .chart-header {
+        background-color: #000;
+        color: #fff;
+        padding: 12px 15px;
+    }
+
+        .chart-header small {
+            display: block;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+
+        .chart-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+    .chart-body {
+        padding: 15px;
+        position: relative;
+    }
+
+    .chart-y-axis {
+        position: absolute;
+        right: 10px;
+        top: 15px;
+        height: 180px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        font-size: 0.65rem;
+        color: #666;
+    }
+
+    .chart-placeholder {
+        height: 180px;
+        width: calc(100% - 45px);
+        position: relative;
+        border: 1px solid #000;
+        background: #e8e8e8;
+    }
+
+    .mock-grid {
+        height: 100%;
+        width: 100%;
+        background-image: linear-gradient(#ccc 1px, transparent 1px), linear-gradient(90deg, #ccc 1px, transparent 1px);
+        background-size: 25% 25%;
+    }
+
+    .bar-container {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Slightly thinner bars for monthly view to look cleaner */
+    .bar {
+        position: absolute;
+        bottom: 0;
+        width: 8px;
+        background-color: #000;
+    }
+
+    .chart-labels {
+        display: flex;
+        justify-content: space-between;
+        padding-right: 45px;
+        margin-top: 5px;
+        font-size: 0.65rem;
+        color: #666;
+    }
+
+    @@media (max-width: 1200px) {
+        .fitness-charts-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .fitness-content-wrapper {
+            padding: 20px 20px;
+        }
+    }
+</style>

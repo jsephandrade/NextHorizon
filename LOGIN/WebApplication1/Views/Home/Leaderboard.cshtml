@@ -1,0 +1,84 @@
+@{
+    ViewData["Title"] = "Leaderboard";
+}
+
+<!-- Leaderboard Section -->
+<section class="leaderboard" style="padding-top: 120px;">
+    <div class="leaderboard-container">
+        <div class="section-header">
+            <span class="section-label">Top Runners</span>
+            <h2 class="section-title">Leaderboard</h2>
+            <p class="section-description">See who's leading the pack this month</p>
+        </div>
+        
+        <div class="leaderboard-grid">
+            <!-- First Place -->
+            <div class="leaderboard-card first">
+                <div class="rank-badge">1</div>
+                <div class="runner-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="runner-name">Sarah Johnson</div>
+                <div class="runner-username">@@sarah_runner</div>
+                <div class="runner-stats">
+                    <div class="runner-stat">
+                        <div class="runner-stat-value">245</div>
+                        <div class="runner-stat-label">Miles</div>
+                    </div>
+                    <div class="runner-stat">
+                        <div class="runner-stat-value">18</div>
+                        <div class="runner-stat-label">Runs</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Second Place -->
+            <div class="leaderboard-card second">
+                <div class="rank-badge">2</div>
+                <div class="runner-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="runner-name">Mike Chen</div>
+                <div class="runner-username">@@mike_runs</div>
+                <div class="runner-stats">
+                    <div class="runner-stat">
+                        <div class="runner-stat-value">198</div>
+                        <div class="runner-stat-label">Miles</div>
+                    </div>
+                    <div class="runner-stat">
+                        <div class="runner-stat-value">22</div>
+                        <div class="runner-stat-label">Runs</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Third Place -->
+            <div class="leaderboard-card third">
+                <div class="rank-badge">3</div>
+                <div class="runner-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="runner-name">Emily Davis</div>
+                <div class="runner-username">@@emily_trails</div>
+                <div class="runner-stats">
+                    <div class="runner-stat">
+                        <div class="runner-stat-value">176</div>
+                        <div class="runner-stat-label">Miles</div>
+                    </div>
+                    <div class="runner-stat">
+                        <div class="runner-stat-value">15</div>
+                        <div class="runner-stat-label">Runs</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="leaderboard-cta">
+            <div class="login-prompt">
+                <i class="fas fa-lock"></i>
+                <p>Log in to track your runs and compete on the leaderboard!</p>
+                <a href="/login" class="btn btn-primary btn-sm">Log In</a>
+            </div>
+        </div>
+    </div>
+</section>

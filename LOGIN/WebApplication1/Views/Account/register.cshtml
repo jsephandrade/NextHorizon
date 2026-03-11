@@ -1,0 +1,353 @@
+@model WebApplication1.ViewModels.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Sign Up - Next Horizon";
+}
+
+
+<div class="auth-page">
+    <div class="auth-container">
+        <div class="auth-image">
+            <img src="~/images/hero-runner.jpg" alt="Runner">
+            <div class="auth-image-overlay">
+                <h2>Join the Community</h2>
+                <p>Create an account and start your running journey</p>
+            </div>
+        </div>
+
+        <div class="auth-form-container">
+            <div class="auth-header">
+                <a asp-controller="Home" asp-action="Index" class="logo">
+                    <img src="~/images/Next Horizon Logo.png" alt="Next Horizon" class="logo-image">
+                    <span class="logo-text">Next Horizon</span>
+                </a>
+                <h2>Sign Up</h2>
+                <p>Create your account to get started</p>
+            </div>
+
+            <form class="auth-form" asp-controller="Account" asp-action="Register" method="post">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="FirstName" class="form-label"></label>
+                        <input asp-for="FirstName" class="form-input" placeholder="John" />
+                        <span asp-validation-for="FirstName" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="MiddleName" class="form-label"></label>
+                        <input asp-for="MiddleName" class="form-input" placeholder="John" />
+                        <span asp-validation-for="MiddleName" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="LastName" class="form-label"></label>
+                        <input asp-for="LastName" class="form-input" placeholder="Doe" />
+                        <span asp-validation-for="LastName" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Username" class="form-label"></label>
+                    <input asp-for="Username" class="form-input" placeholder="Choose a username" />
+                    <span asp-validation-for="Username" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" class="form-input" placeholder="your@email.com" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Address" class="form-label"></label>
+                    <input asp-for="Address" class="form-input" placeholder="123 Main Street, City" />
+                    <span asp-validation-for="Address" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                        <label asp-for="PhoneNumber" class="form-label"></label>
+                        <input asp-for="PhoneNumber" class="form-input" placeholder="09984086632" />
+                        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                    </div>
+
+                <div class="form-group">
+                    <label asp-for="Password" class="form-label"></label>
+                    <div class="password-field">
+                        <input asp-for="Password" class="form-input" placeholder="Create a password" />
+                        <button type="button" class="password-toggle" onclick="togglePassword('Password')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <span asp-validation-for="Password" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ConfirmPassword" class="form-label"></label>
+                    <div class="password-field">
+                        <input asp-for="ConfirmPassword" class="form-input" placeholder="Confirm your password" />
+                        <button type="button" class="password-toggle" onclick="togglePassword('ConfirmPassword')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="terms-checkbox" style="margin-bottom: 1.5rem;">
+    <input asp-for="AgreeTerms" type="checkbox" id="agreeCheckbox" />
+    <label for="agreeCheckbox">
+        I agree to the <a href="@Url.Action("Terms", "Home")">Terms of Service</a> and <a href="#">Privacy Policy</a>
+    </label>
+    <div>
+        <span asp-validation-for="AgreeTerms" class="text-danger"></span>
+    </div>
+            </div>
+
+                <button type="submit" class="btn btn-primary auth-submit">
+                    <i class="fas fa-user-plus"></i>
+                    Create Account
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+    function goBack() {
+        if (document.referrer && document.referrer !== window.location.href) {
+            window.history.back();
+        } else {
+            window.location.href = '@Url.Action("Index", "Home")';
+        }
+    }
+
+    function togglePassword(inputId) {
+        const input = document.getElementById(inputId);
+        const icon = input.nextElementSibling.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+
+    // Hide loading screen on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }, 1500);
+    });
+</script>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+
+<style>
+    /* Auth Page Styles */
+    .auth-page {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--color-off-white);
+        padding: 2rem;
+    }
+
+    .auth-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        max-width: 1000px;
+        background: var(--color-white);
+        border-radius: var(--border-radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow-xl);
+    }
+
+    .auth-image {
+        position: relative;
+        height: 100%;
+        min-height: 600px;
+    }
+
+    .auth-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    .auth-image-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 2rem;
+        background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        color: var(--color-white);
+    }
+
+    .auth-image-overlay h2 {
+        color: var(--color-white);
+        font-size: 1.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .auth-image-overlay p {
+        color: var(--color-silver);
+        font-size: 0.95rem;
+    }
+
+    .auth-form-container {
+        padding: 3rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .auth-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .auth-header h2 {
+        font-size: 1.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .auth-header p {
+        color: var(--color-gray);
+    }
+
+    .auth-form .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .password-field {
+        position: relative;
+    }
+
+    .password-toggle {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--color-gray);
+    }
+
+    .auth-submit {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1rem;
+    }
+
+    .auth-divider {
+        text-align: center;
+        margin: 1.5rem 0;
+        position: relative;
+    }
+
+    .auth-divider::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: var(--color-lighter-gray);
+    }
+
+    .auth-divider span {
+        background: var(--color-white);
+        padding: 0 1rem;
+        color: var(--color-gray);
+        font-size: 0.875rem;
+        position: relative;
+    }
+
+    .auth-footer {
+        text-align: center;
+        margin-top: 1.5rem;
+    }
+
+    .auth-footer p {
+        color: var(--color-gray);
+        font-size: 0.875rem;
+    }
+
+    .auth-footer a {
+        color: var(--color-black);
+        font-weight: 600;
+    }
+
+    .back-button {
+        position: fixed;
+        top: 2rem;
+        left: 2rem;
+        padding: 0.75rem 1.5rem;
+        background: var(--color-white);
+        border: none;
+        border-radius: var(--border-radius-md);
+        cursor: pointer;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: var(--shadow-md);
+        transition: var(--transition-normal);
+    }
+
+    .back-button:hover {
+        transform: translateX(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .terms-checkbox {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .terms-checkbox input {
+        margin-top: 0.25rem;
+    }
+
+    .terms-checkbox label {
+        font-size: 0.875rem;
+        color: var(--color-medium-gray);
+    }
+
+    .terms-checkbox a {
+        color: var(--color-black);
+        font-weight: 500;
+    }
+
+    @@media (max-width: 768px) {
+        .auth-container {
+            grid-template-columns: 1fr;
+        }
+
+        .auth-image {
+            display: none;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

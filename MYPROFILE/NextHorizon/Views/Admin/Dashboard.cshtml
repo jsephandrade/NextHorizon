@@ -1,0 +1,194 @@
+﻿@model NextHorizon.Models.Admin_Models.SuperAdminDashboardViewModel
+
+@{
+    ViewData["Title"] = "Admin Portal - Platform Overview";
+    Layout = "_AdminLayout";
+}
+
+<div class="row g-3 mb-5">
+    <div class="col-md-3">
+        <div class="stat-card d-flex align-items-center justify-content-between p-3">
+            <div>
+                <p class="stat-label mb-1">Platform Revenue (Net)</p>
+                <div class="d-flex align-items-center">
+                    <h2 class="stat-value mb-0">₱17.2K</h2>
+                    <span class="ms-2 tiny text-muted">5% Commission</span>
+                </div>
+            </div>
+            <div class="stat-icon-wrapper text-success">
+                <i class="bi bi-piggy-bank fs-3"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card d-flex align-items-center justify-content-between p-3">
+            <div>
+                <p class="stat-label mb-1">Low Stock Alerts</p>
+                <h2 class="stat-value mb-0">04</h2>
+                <span class="text-warning tiny fw-bold">Items < 5 Units</span>
+            </div>
+            <div class="stat-icon-wrapper text-warning">
+                <i class="bi bi-box-seam fs-3"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card d-flex align-items-center justify-content-between p-3 border-danger shadow-sm">
+            <div>
+                <p class="stat-label mb-1 text-danger">Flagged Activities</p>
+                <h2 class="stat-value mb-0 text-danger">08</h2>
+                <span class="tiny fw-bold">Suspected Spoofing</span>
+            </div>
+            <div class="stat-icon-wrapper text-danger">
+                <i class="bi bi-exclamation-octagon fs-3"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card d-flex align-items-center justify-content-between p-3">
+            <div>
+                <p class="stat-label mb-1">Strava API Health</p>
+                <h2 class="stat-value mb-0 text-success">99.9%</h2>
+                <span class="tiny text-muted">Sync Latency: 1.2s</span>
+            </div>
+            <div class="stat-icon-wrapper text-success">
+                <i class="bi bi-cpu fs-3"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-5 g-4">
+    <div class="col-md-8">
+        <div class="bg-white border rounded-4 shadow-sm mb-4">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-light rounded-top-4">
+                <h6 class="m-0 fw-bold small text-uppercase"><i class="bi bi-shield-shaded me-2"></i>Integrity Alert: Suspicious Paces</h6>
+                <span class="badge bg-danger">Requires Review</span>
+            </div>
+            <div class="p-0">
+                <table class="table table-sm align-middle mb-0" style="font-size: 0.85rem;">
+                    <thead class="bg-white">
+                        <tr class="text-muted">
+                            <th class="ps-4">User</th>
+                            <th>Recorded Pace</th>
+                            <th>Global Avg</th>
+                            <th>Reason</th>
+                            <th class="text-end pe-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="ps-4 fw-bold">Juan_Runner99</td>
+                            <td class="text-danger">1:45 /km</td>
+                            <td>5:30 /km</td>
+                            <td><span class="badge bg-soft-danger text-danger">Impossible Speed</span></td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-outline-danger py-0" style="font-size: 10px;">Void Activity</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="ps-4 fw-bold">FitnessPro_2026</td>
+                            <td class="text-danger">2:10 /km</td>
+                            <td>6:00 /km</td>
+                            <td><span class="badge bg-soft-danger text-danger">Vehicle Pattern</span></td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-outline-danger py-0" style="font-size: 10px;">Void Activity</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="leaderboard-container shadow-sm border rounded-4 overflow-hidden">
+            <div class="leaderboard-header bg-dark p-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 fw-bold small text-uppercase text-white">Live Global Leaderboard</h6>
+                <span class="badge bg-success small" style="font-size: 10px;">REAL-TIME SYNC</span>
+            </div>
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Rank</th>
+                        <th>User</th>
+                        <th>Distance</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var runner in Model.ConsumerLeaderboard.Take(5))
+                    {
+                        <tr>
+                            <td class="ps-4">#@runner.Rank</td>
+                            <td class="fw-bold">@runner.UserName</td>
+                            <td>@runner.StravaKM KM</td>
+                            <td><span class="badge rounded-pill bg-soft-success text-success border border-success" style="font-size: 9px;">VERIFIED</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="side-card bg-white p-4 rounded-4 border shadow-sm mb-4">
+            <h6 class="fw-bold small text-uppercase mb-3">Critical Stock Levels</h6>
+            <div class="d-flex flex-column gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-light p-2 rounded text-danger"><i class="bi bi-exclamation-triangle"></i></div>
+                    <div class="flex-grow-1">
+                        <p class="mb-0 small fw-bold">Ultra Boost v2</p>
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar bg-danger" style="width: 10%"></div>
+                        </div>
+                    </div>
+                    <span class="tiny fw-bold text-danger">2 Left</span>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-light p-2 rounded text-warning"><i class="bi bi-exclamation-triangle"></i></div>
+                    <div class="flex-grow-1">
+                        <p class="mb-0 small fw-bold">Hydration Gels</p>
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar bg-warning" style="width: 25%"></div>
+                        </div>
+                    </div>
+                    <span class="tiny fw-bold text-warning">12 Left</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="side-card bg-white p-4 rounded-4 border shadow-sm">
+            <h6 class="fw-bold small text-uppercase mb-3 text-muted">System Audit Log</h6>
+            <ul class="list-unstyled tiny">
+                <li class="mb-2 border-bottom pb-1">
+                    <i class="bi bi-check-circle-fill text-success me-1"></i> <strong>16:40</strong> - New Seller 'TrailMasters' Auto-Approved.
+                </li>
+                <li class="mb-2 border-bottom pb-1">
+                    <i class="bi bi-clock me-1"></i> <strong>16:15</strong> - Admin 'Gemini' updated Commission Rates.
+                </li>
+                <li class="mb-2">
+                    <i class="bi bi-clock me-1"></i> <strong>15:50</strong> - Bulk Sync completed (4,202 users).
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_css/dashboard.css" asp-append-version="true" />
+    <style>
+        .bg-soft-danger {
+            background-color: #fee2e2;
+        }
+
+        .bg-soft-success {
+            background-color: #e8f5e9;
+        }
+
+        .tiny {
+            font-size: 0.75rem;
+        }
+    </style>
+}

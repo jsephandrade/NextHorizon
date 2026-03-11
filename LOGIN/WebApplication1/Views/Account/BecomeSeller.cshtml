@@ -1,0 +1,753 @@
+@model WebApplication1.ViewModels.BecomeSellerViewModel
+
+@{
+    ViewData["Title"] = "Become a Seller - Next Horizon";
+}
+
+<div class="seller-signup-container">
+
+    <!-- Sidebar -->
+    <div class="seller-signup-sidebar">
+        <div class="seller-signup-brand">
+            <a asp-controller="Home" asp-action="Index" class="logo">
+                <img src="~/images/Next Horizon Logo.png" alt="Next Horizon" class="logo-image">
+                <span class="logo-text">Next Horizon</span>
+            </a>
+        </div>
+
+        <div class="seller-signup-info">
+            <h2>Start Selling Today</h2>
+            <p>Join our marketplace and reach thousands of passionate runners worldwide.</p>
+
+            <div class="seller-signup-steps">
+                <div class="seller-signup-step active"><div class="seller-signup-step-number">1</div><div>Choose Business Type</div></div>
+                <div class="seller-signup-step"><div class="seller-signup-step-number">2</div><div>Upload Logo</div></div>
+                <div class="seller-signup-step"><div class="seller-signup-step-number">3</div><div>Upload Documents</div></div>
+                <div class="seller-signup-step"><div class="seller-signup-step-number">4</div><div>Create Login</div></div>
+            </div>
+        </div>
+
+        <div class="seller-signup-footer">
+            <p style="color: var(--color-light-gray); font-size: 0.875rem;">
+                <i class="fas fa-shield-alt"></i> Your documents are secure and encrypted
+            </p>
+        </div>
+    </div>
+
+    <!-- FORM -->
+    <div class="seller-signup-main">
+
+        <div class="seller-signup-header">
+            <h1>Become a Seller</h1>
+            <p>Complete the form below to start your seller journey</p>
+        </div>
+
+        <form asp-controller="Account"
+              asp-action="BecomeSeller"
+              method="post"
+              enctype="multipart/form-data"
+              class="seller-signup-form">
+
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="All" class="text-danger"></div>
+
+            <!-- BUSINESS TYPE -->
+            <div class="business-type-selection">
+
+                <label class="business-type-card">
+                    <input asp-for="BusinessType" id="sole" type="radio" value="Sole Proprietor" hidden>
+                    <div class="business-type-icon"><i class="fas fa-user"></i></div>
+                    <h3>Sole Proprietor</h3>
+                    <p>Individual business owner with DTI registration</p>
+                </label>
+
+                <label class="business-type-card">
+                    <input asp-for="BusinessType" id="corporation" type="radio" value="Corporation" hidden>
+                    <div class="business-type-icon"><i class="fas fa-building"></i></div>
+                    <h3>Corporation / Partnership</h3>
+                    <p>Registered corporation with SEC registration</p>
+                </label>
+
+            </div>
+
+            <span asp-validation-for="BusinessType" class="text-danger"></span>
+
+
+            <!-- BRAND LOGO -->
+            <div class="form-section" style="margin-top:1rem;">
+                <h3 class="form-section-title">Upload Brand Logo</h3>
+
+                <div class="document-upload-grid">
+                    <div class="document-upload-item">
+
+                        <input asp-for="BrandLogo"
+                               id="BrandLogo"
+                               type="file"
+                               class="document-upload-input"
+                               accept=".png,.jpg,.jpeg,.svg">
+
+                        <label for="BrandLogo" class="document-upload-label">
+                            <div class="document-upload-icon">
+                                <i class="fas fa-image"></i>
+                            </div>
+                            <div class="document-upload-text">Brand Logo</div>
+                            <div class="document-upload-hint">PNG, JPG, SVG</div>
+                        </label>
+
+                        <span asp-validation-for="BrandLogo" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- DOCUMENTS -->
+            <div class="document-upload-section">
+
+                <h3>Upload Business Documents</h3>
+
+                <div class="document-upload-grid">
+
+                    <div class="document-upload-item">
+                        <input asp-for="DtiCertificate" id="DtiCertificate" type="file" class="document-upload-input" accept=".pdf,.jpg,.jpeg,.png" required>
+
+                        <label for="DtiCertificate" class="document-upload-label">
+                            <div class="document-upload-icon"><i class="fas fa-file-alt"></i></div>
+                            <div class="document-upload-text">DTI Certificate</div>
+                        </label>
+
+                        <span asp-validation-for="DtiCertificate" class="text-danger"></span>
+                    </div>
+
+
+                    <div class="document-upload-item">
+                        <input asp-for="BirCertificate" id="BirCertificate" type="file" class="document-upload-input" accept=".pdf,.jpg,.jpeg,.png" required>
+
+                        <label for="BirCertificate" class="document-upload-label">
+                            <div class="document-upload-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                            <div class="document-upload-text">BIR Certificate</div>
+                        </label>
+
+                        <span asp-validation-for="BirCertificate" class="text-danger"></span>
+                    </div>
+
+
+                    <div class="document-upload-item">
+                        <input asp-for="BusinessPermit" id="BusinessPermit" type="file" class="document-upload-input" accept=".pdf,.jpg,.jpeg,.png" required>
+
+                        <label for="BusinessPermit" class="document-upload-label">
+                            <div class="document-upload-icon"><i class="fas fa-file-contract"></i></div>
+                            <div class="document-upload-text">Business Permit</div>
+                        </label>
+
+                        <span asp-validation-for="BusinessPermit" class="text-danger"></span>
+                    </div>
+
+
+                    <div class="document-upload-item">
+                        <input asp-for="AdditionalDocument" id="AdditionalDocument" type="file" class="document-upload-input" accept=".pdf,.jpg,.jpeg,.png">
+
+                        <label for="AdditionalDocument" class="document-upload-label">
+                            <div class="document-upload-icon"><i class="fas fa-file-plus"></i></div>
+                            <div class="document-upload-text">Additional Document</div>
+                        </label>
+
+                        <span asp-validation-for="AdditionalDocument" class="text-danger"></span>
+                    </div>
+
+                </div>
+            </div>
+
+
+            <!-- BUSINESS INFO -->
+            <div class="form-section">
+
+                <h3 class="form-section-title">Business Information</h3>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label asp-for="BusinessName"></label>
+                        <input asp-for="BusinessName" class="form-input" />
+                        <span asp-validation-for="BusinessName" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="BusinessEmail"></label>
+                        <input asp-for="BusinessEmail" class="form-input" />
+                        <span asp-validation-for="BusinessEmail" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+
+                    <div class="form-group">
+                        <label asp-for="BusinessPhone"></label>
+                        <input asp-for="BusinessPhone" class="form-input" />
+                        <span asp-validation-for="BusinessPhone" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="TaxId"></label>
+                        <input asp-for="TaxId" class="form-input" />
+                        <span asp-validation-for="TaxId" class="text-danger"></span>
+                    </div>
+
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="BusinessAddress"></label>
+                    <input asp-for="BusinessAddress" class="form-input" />
+                    <span asp-validation-for="BusinessAddress" class="text-danger"></span>
+                </div>
+
+            </div>
+
+
+            <!-- LOGIN -->
+            <div class="form-section">
+
+                <h3 class="form-section-title">Login Credentials</h3>
+
+                <div class="form-group">
+                    <label asp-for="FirstName"></label>
+                    <input asp-for="FirstName" class="form-input"/>
+                    <span asp-validation-for="FirstName" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="MiddleName"></label>
+                    <input asp-for="MiddleName" class="form-input"/>
+                    <span asp-validation-for="MiddleName" class="text-danger"></span>
+                </div>        
+
+                <div class="form-group">
+                    <label asp-for="LastName"></label>
+                    <input asp-for="LastName" class="form-input"/>
+                    <span asp-validation-for="LastName" class="text-danger"></span>
+                </div>        
+
+                <div class="form-group">
+                    <label asp-for="Username"></label>
+                    <input asp-for="Username" class="form-input"/>
+                    <span asp-validation-for="Username" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="PhoneNumber"></label>
+                    <input asp-for="PhoneNumber" class="form-input"/>
+                    <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Password"></label>
+                    <input asp-for="Password" type="password" class="form-input"/>
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ConfirmPassword"></label>
+                    <input asp-for="ConfirmPassword" type="password" class="form-input"/>
+                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                </div>
+
+            </div>
+
+
+            <!-- TERMS -->
+            <div class="terms-checkbox">
+                <input asp-for="AgreeTerms" type="checkbox" required />
+                <label asp-for="AgreeTerms">
+                    I agree to the Terms of Service
+                </label>
+                <span asp-validation-for="AgreeTerms" class="text-danger"></span>
+            </div>
+
+
+            <button type="submit" class="btn btn-primary auth-submit" style="width:100%">
+                <i class="fas fa-store"></i> Submit Application
+            </button>
+
+        </form>
+    </div>
+</div>
+
+
+<script>
+
+document.querySelectorAll('.document-upload-input').forEach(input => {
+
+    input.addEventListener('change', function () {
+
+        const file = this.files[0];
+        if (!file) return;
+
+        const parent = this.closest('.document-upload-item');
+        const label = parent.querySelector('.document-upload-label');
+
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+
+            label.innerHTML = "";
+
+            if (file.type.startsWith("image/")) {
+
+                const img = document.createElement("img");
+                img.src = e.target.result;
+                img.style.width = "100%";
+                img.style.height = "120px";
+                img.style.objectFit = "cover";
+                img.style.borderRadius = "6px";
+
+                label.appendChild(img);
+
+            } else {
+
+                label.innerHTML = `<i class="fas fa-file-pdf" style="font-size:40px;color:red"></i>`;
+            }
+
+            const text = document.createElement("div");
+            text.style.fontSize = "12px";
+            text.innerText = file.name;
+
+            label.appendChild(text);
+        };
+
+        reader.readAsDataURL(file);
+    });
+
+});
+
+</script>
+</script>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+
+<style>
+    /* Seller Signup Container */
+    .seller-signup-container {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .seller-signup-sidebar {
+        background: var(--color-black);
+        color: var(--color-white);
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+    }
+
+    .seller-signup-brand {
+        margin-bottom: 2rem;
+    }
+
+    .seller-signup-brand .logo {
+        color: var(--color-white);
+    }
+
+    .seller-signup-info h2 {
+        color: var(--color-white);
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .seller-signup-info p {
+        color: var(--color-light-gray);
+        margin-bottom: 2rem;
+    }
+
+    .seller-signup-steps {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .seller-signup-step {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        opacity: 0.6;
+        transition: var(--transition-normal);
+    }
+
+    .seller-signup-step.active {
+        opacity: 1;
+    }
+    .password-field {
+        position: relative;
+    }
+
+    .password-toggle {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--color-gray);
+    }
+    .seller-signup-step-number {
+        width: 32px;
+        height: 32px;
+        background: var(--neon-red);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .seller-signup-step-text {
+        font-size: 0.9rem;
+    }
+
+    .seller-signup-footer {
+        margin-top: auto;
+        padding-top: 2rem;
+    }
+
+    /* Main Form */
+    .seller-signup-main {
+        padding: 3rem;
+        background: var(--color-off-white);
+        overflow-y: auto;
+    }
+
+    .seller-signup-header {
+        margin-bottom: 2rem;
+    }
+
+    .seller-signup-header h1 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .seller-signup-header p {
+        color: var(--color-gray);
+    }
+
+    /* Form Sections */
+    .form-section {
+        background: var(--color-white);
+        padding: 2rem;
+        border-radius: var(--border-radius-lg);
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .form-section-title {
+        font-size: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .required-badge {
+        background: var(--neon-red);
+        color: var(--color-white);
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: var(--border-radius-sm);
+        margin-left: 0.5rem;
+    }
+
+    /* Business Type Selection */
+    .business-type-selection {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .business-type-card {
+        border: 2px solid var(--color-lighter-gray);
+        border-radius: var(--border-radius-md);
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: var(--transition-normal);
+        text-align: center;
+    }
+
+    .business-type-card:hover {
+        border-color: var(--color-black);
+    }
+
+    .business-type-card input {
+        display: none;
+    }
+
+    .business-type-card input:checked + .business-type-icon {
+        background: var(--neon-red);
+    }
+
+    .business-type-icon {
+        width: 60px;
+        height: 60px;
+        background: var(--color-black);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+        color: var(--color-white);
+        transition: var(--transition-normal);
+    }
+
+    .business-type-card h3 {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .business-type-card p {
+        font-size: 0.8rem;
+        color: var(--color-gray);
+    }
+
+    /* Document Requirements */
+    .document-requirements {
+        background: var(--color-white);
+        padding: 1.5rem;
+        border-radius: var(--border-radius-md);
+        margin-bottom: 2rem;
+        border-left: 4px solid var(--neon-red);
+    }
+
+    .document-requirements h4 {
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .document-requirements-list {
+        list-style: none;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+
+    .document-requirements-list li {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: var(--color-medium-gray);
+    }
+
+    .document-requirements-list li i {
+        color: #22c55e;
+    }
+
+    /* Document Upload */
+    .document-upload-section {
+        background: var(--color-white);
+        padding: 2rem;
+        border-radius: var(--border-radius-lg);
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .document-upload-section h3 {
+        margin-bottom: 1.5rem;
+    }
+
+    .document-upload-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .document-upload-item {
+        position: relative;
+    }
+
+    .document-upload-input {
+        display: none;
+    }
+
+    .document-upload-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        border: 2px dashed var(--color-lighter-gray);
+        border-radius: var(--border-radius-md);
+        cursor: pointer;
+        transition: var(--transition-normal);
+    }
+
+    .document-upload-label:hover {
+        border-color: var(--color-black);
+        background: var(--color-off-white);
+    }
+
+    .document-upload-icon {
+        font-size: 2rem;
+        color: var(--color-gray);
+        margin-bottom: 0.5rem;
+    }
+
+    .document-upload-text {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .document-upload-hint {
+        font-size: 0.8rem;
+        color: var(--color-gray);
+    }
+
+    /* Form Styles */
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+        color: var(--color-black);
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        border: 2px solid var(--color-lighter-gray);
+        border-radius: var(--border-radius-md);
+        font-size: 1rem;
+        transition: var(--transition-fast);
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--color-black);
+    }
+
+    /* Terms Checkbox */
+    .terms-checkbox {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .terms-checkbox input {
+        margin-top: 0.25rem;
+    }
+
+    .terms-checkbox label {
+        font-size: 0.9rem;
+        color: var(--color-medium-gray);
+    }
+
+    .terms-checkbox a {
+        color: var(--color-black);
+        font-weight: 500;
+    }
+
+    .auth-submit {
+        padding: 1rem;
+        font-size: 1rem;
+    }
+
+    .auth-footer p {
+        color: var(--color-gray);
+        font-size: 0.9rem;
+    }
+
+    .auth-footer a {
+        color: var(--color-black);
+        font-weight: 600;
+    }
+
+    /* Back Button */
+    .back-button {
+        position: fixed;
+        top: 2rem;
+        left: 2rem;
+        padding: 0.75rem 1.5rem;
+        background: var(--color-white);
+        border: none;
+        border-radius: var(--border-radius-md);
+        cursor: pointer;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: var(--shadow-md);
+        transition: var(--transition-normal);
+        z-index: 100;
+    }
+
+    .back-button:hover {
+        transform: translateX(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .form-error {
+        color: #dc2626;
+        font-size: 0.875rem;
+        display: none;
+    }
+
+    /* removed sidebar-specific back button shift since navbar is no longer fixed */
+
+    @@media (max-width: 1024px) {
+        .seller-signup-container {
+            grid-template-columns: 1fr;
+        }
+
+        .seller-signup-sidebar {
+            display: none;
+        }
+
+        .business-type-selection {
+            grid-template-columns: 1fr;
+        }
+
+        .document-requirements-list {
+            grid-template-columns: 1fr;
+        }
+
+        .document-upload-grid {
+            grid-template-columns: 1fr;
+        }
+        /* reset back button on smaller screens where sidebar is hidden */
+        .seller-signup-container .back-button {
+            left: 2rem;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .seller-signup-main {
+            padding: 1.5rem;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .form-section {
+            padding: 1.5rem;
+        }
+    }
+</style>
+

@@ -1,0 +1,239 @@
+@{
+    ViewData["Title"] = "Seller Shop";
+    var sellerId = ViewData["SellerId"];
+}
+
+<div class="seller-shop-page" id="seller-shop-page">
+
+    <!-- Loading State -->
+    <div class="seller-shop-loading" id="seller-shop-loading">
+        <div class="loading-spinner"></div>
+        <p>Loading shop…</p>
+    </div>
+
+    <!-- Shop Content -->
+    <div id="seller-shop-content" style="display:none;">
+
+        <!-- Unified Profile Bar (avatar + info + stats + actions in one row) -->
+        <div class="seller-profile-bar">
+            <div class="container">
+                <div class="seller-profile-bar-inner">
+                    <!-- Left: Avatar + Identity -->
+                    <div class="seller-profile-left">
+                        <img class="seller-profile-avatar" id="seller-shop-avatar" src="" alt="" />
+                        <div class="seller-profile-identity">
+                            <h1 class="seller-profile-name" id="seller-shop-name"></h1>
+                            <div class="seller-profile-meta">
+                                <span class="seller-profile-meta-item">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                    <span id="seller-shop-loc-text"></span>
+                                </span>
+                                <span class="seller-profile-meta-dot">·</span>
+                                <span class="seller-profile-meta-item">Joined <span id="seller-shop-joined-text"></span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Center: Inline Stats -->
+                    <div class="seller-profile-stats">
+                        <div class="seller-profile-stat">
+                            <span class="seller-profile-stat-num" id="ss-products-count"></span>
+                            <span class="seller-profile-stat-lbl">Products</span>
+                        </div>
+                        <div class="seller-profile-stat">
+                            <span class="seller-profile-stat-num" id="ss-followers-count"></span>
+                            <span class="seller-profile-stat-lbl">Followers</span>
+                        </div>
+                        <div class="seller-profile-stat">
+                            <span class="seller-profile-stat-num" id="ss-rating-value"></span>
+                            <span class="seller-profile-stat-lbl">Rating</span>
+                        </div>
+                        <div class="seller-profile-stat">
+                            <span class="seller-profile-stat-num" id="ss-ratings-count"></span>
+                            <span class="seller-profile-stat-lbl">Ratings</span>
+                        </div>
+                        <div class="seller-profile-stat">
+                            <span class="seller-profile-stat-num" id="ss-response-rate"></span>
+                            <span class="seller-profile-stat-lbl">Response</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: Actions -->
+                    <div class="seller-profile-actions">
+                        <button class="seller-profile-btn seller-profile-btn-chat" onclick="sellerShopChat()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            Chat Now
+                        </button>
+                        <button class="seller-profile-btn seller-profile-btn-follow" id="seller-shop-follow-btn" onclick="toggleFollow()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                            Follow
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Description -->
+        <div class="seller-shop-about container">
+            <div class="seller-shop-about-card">
+                <h3>About This Shop</h3>
+                <p id="seller-shop-description"></p>
+            </div>
+        </div>
+
+        <!-- Promotions Banner -->
+        <div class="seller-promo-section container">
+            <a href="#" class="seller-promo-banner" id="seller-promo-banner">
+                <img id="seller-promo-img" src="" alt="Shop Promotion" />
+            </a>
+        </div>
+
+        <!-- Products -->
+        <div class="seller-shop-products container">
+            <div class="seller-shop-products-header">
+                <h2>All Products</h2>
+                <span class="seller-shop-products-count" id="ss-products-total"></span>
+            </div>
+            <div class="seller-shop-products-grid" id="seller-shop-products-grid">
+                <!-- Filled by JS -->
+            </div>
+            <div class="seller-shop-empty" id="seller-shop-empty" style="display:none;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                <p>This shop doesn't have any products yet.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+const SELLER_ID = @sellerId;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadSellerShop(SELLER_ID);
+});
+
+async function loadSellerShop(id) {
+    try {
+        const [sellerRes, productsRes] = await Promise.all([
+            fetch(`/api/sellers/${id}`),
+            fetch(`/api/products/seller/${id}`)
+        ]);
+        if (!sellerRes.ok) throw new Error('Seller not found');
+        const seller = await sellerRes.json();
+        const products = await productsRes.json();
+        renderSellerShop(seller, products);
+    } catch(e) {
+        document.getElementById('seller-shop-loading').innerHTML =
+            '<p style="color:#888;text-align:center;padding:4rem;">Shop not found. <a href="/Home/Shop">Back to Shop</a></p>';
+    }
+}
+
+function renderSellerShop(seller, products) {
+    document.getElementById('seller-shop-loading').style.display = 'none';
+    document.getElementById('seller-shop-content').style.display = 'block';
+    document.title = `${seller.shopName} - NEXT HORIZON`;
+
+    // Promo banner
+    document.getElementById('seller-promo-img').src = seller.coverImage;
+    document.getElementById('seller-promo-img').alt = seller.shopName + ' promotion';
+
+    // Profile
+    document.getElementById('seller-shop-avatar').src = seller.avatar;
+    document.getElementById('seller-shop-avatar').alt = seller.shopName;
+    document.getElementById('seller-shop-name').textContent = seller.shopName;
+    document.getElementById('seller-shop-loc-text').textContent = seller.location;
+    document.getElementById('seller-shop-joined-text').textContent = seller.joinedAgo;
+    document.getElementById('seller-shop-description').textContent = seller.description;
+
+    // Stats
+    document.getElementById('ss-products-count').textContent = seller.totalProducts;
+    document.getElementById('ss-followers-count').textContent = formatShopCount(seller.followers);
+    document.getElementById('ss-rating-value').textContent = seller.rating.toFixed(1);
+    document.getElementById('ss-ratings-count').textContent = formatShopCount(seller.totalRatings);
+    document.getElementById('ss-response-rate').textContent = seller.responseRate + '%';
+
+    // Products
+    document.getElementById('ss-products-total').textContent = `(${products.length} items)`;
+
+    if (products.length === 0) {
+        document.getElementById('seller-shop-empty').style.display = 'flex';
+        return;
+    }
+
+    const grid = document.getElementById('seller-shop-products-grid');
+    grid.innerHTML = products.map(p => {
+        const hasDiscount = p.originalPrice && p.originalPrice > p.price;
+        const discountPct = hasDiscount ? Math.round((1 - p.price / p.originalPrice) * 100) : 0;
+        return `
+        <div class="ss-product-card" onclick="window.location.href='/Home/Product?id=${p.id}'">
+            <div class="ss-product-card-img">
+                <img src="${p.image}" alt="${p.name}" loading="lazy"
+                    onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27300%27 height=%27300%27%3E%3Crect width=%27300%27 height=%27300%27 fill=%27%23fafafa%27/%3E%3C/svg%3E'">
+                ${hasDiscount ? `<span class="ss-product-badge-sale">-${discountPct}%</span>` : ''}
+                ${p.stock === 0 && !p.isPreOrder && !p.isRestockPreOrder ? '<span class="ss-product-badge-soldout">Sold Out</span>' : ''}
+                ${p.isPreOrder ? '<span class="ss-product-badge-preorder">Pre-Order</span>' : ''}
+                <div class="ss-product-card-overlay">View Product</div>
+            </div>
+            <div class="ss-product-card-body">
+                <p class="ss-product-brand">${p.brand}</p>
+                <h4 class="ss-product-name">${p.name}</h4>
+                <div class="ss-product-price-row">
+                    ${hasDiscount
+                        ? `<span class="ss-product-price-sale">${formatShopPeso(p.price)}</span><span class="ss-product-price-original">${formatShopPeso(p.originalPrice)}</span>`
+                        : `<span class="ss-product-price">${formatShopPeso(p.price)}</span>`
+                    }
+                </div>
+                <div class="ss-product-rating">
+                    <span class="stars">${getShopStars(p.rating)}</span>
+                    <span class="ss-product-rating-count">(${p.reviewCount})</span>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function formatShopCount(n) {
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    return n.toString();
+}
+
+function formatShopPeso(amount) {
+    return '₱' + Number(amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function getShopStars(rating) {
+    let html = '';
+    for (let i = 1; i <= 5; i++) {
+        if (rating >= i) html += '<span class="star filled">★</span>';
+        else if (rating >= i - 0.5) html += '<span class="star half">★</span>';
+        else html += '<span class="star">★</span>';
+    }
+    return html;
+}
+
+function sellerShopChat() {
+    if (typeof toast !== 'undefined') toast.info('Chat feature coming soon!');
+    else alert('Chat feature coming soon!');
+}
+
+let isFollowing = false;
+function toggleFollow() {
+    isFollowing = !isFollowing;
+    const btn = document.getElementById('seller-shop-follow-btn');
+    if (isFollowing) {
+        btn.classList.add('following');
+        btn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            Following`;
+        if (typeof toast !== 'undefined') toast.success('You are now following this shop!');
+    } else {
+        btn.classList.remove('following');
+        btn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+            Follow`;
+        if (typeof toast !== 'undefined') toast.info('Unfollowed this shop');
+    }
+}
+</script>
+}
