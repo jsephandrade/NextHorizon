@@ -189,46 +189,112 @@ namespace NextHorizon.Controllers
 
             try
             {
-                model.UserId = userId.Value;
-
-                // Ensure null values are handled
-                var parameters = new[]
+                if (!Request.HasFormContentType)
                 {
-                    new SqlParameter("@UserId", userId.Value),
-                    new SqlParameter("@Region", model.Region ?? ""),
-                    new SqlParameter("@Province", model.Province ?? ""),
-                    new SqlParameter("@CityMunicipality", model.CityMunicipality ?? ""),
-                    new SqlParameter("@Barangay", model.Barangay ?? ""),
-                    new SqlParameter("@PostalCode", model.PostalCode ?? ""),
-                    new SqlParameter("@HouseNumber", model.HouseNumber ?? ""),
-                    new SqlParameter("@Building", string.IsNullOrEmpty(model.Building) ? DBNull.Value : (object)model.Building),
-                    new SqlParameter("@StreetName", model.StreetName ?? ""),
-                    new SqlParameter("@IsDefault", model.IsDefault)
-                };
+                    return Json(new { success = false, message = "Invalid form submission." });
+                }
 
-                if (model.ShippingAddressId.HasValue && model.ShippingAddressId > 0)
+                var form = Request.Form;
+                var shippingAddressIdRaw = form["ShippingAddressId"].ToString();
+                var region = form["Region"].ToString().Trim();
+                var province = form["Province"].ToString().Trim();
+                var cityMunicipality = form["CityMunicipality"].ToString().Trim();
+                var barangay = form["Barangay"].ToString().Trim();
+                var postalCode = form["PostalCode"].ToString().Trim();
+                var houseNumber = form["HouseNumber"].ToString().Trim();
+                var building = string.IsNullOrWhiteSpace(form["Building"].ToString()) ? null : form["Building"].ToString().Trim();
+                var streetName = form["StreetName"].ToString().Trim();
+                var isDefault = string.Equals(form["IsDefault"].ToString(), "true", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(form["IsDefault"].ToString(), "on", StringComparison.OrdinalIgnoreCase);
+
+                int? shippingAddressId = null;
+                if (int.TryParse(shippingAddressIdRaw, out var parsedShippingAddressId) && parsedShippingAddressId > 0)
                 {
-                    // Add ID parameter for update
-                    var updateParams = new List<SqlParameter>
+                    shippingAddressId = parsedShippingAddressId;
+                }
+
+                var missingFields = new List<string>();
+                if (string.IsNullOrWhiteSpace(region)) missingFields.Add("Region");
+                if (string.IsNullOrWhiteSpace(province)) missingFields.Add("Province");
+                if (string.IsNullOrWhiteSpace(cityMunicipality)) missingFields.Add("City / Municipality");
+                if (string.IsNullOrWhiteSpace(barangay)) missingFields.Add("Barangay");
+                if (string.IsNullOrWhiteSpace(postalCode)) missingFields.Add("Postal Code");
+                if (string.IsNullOrWhiteSpace(houseNumber)) missingFields.Add("House No. / Unit / Floor");
+                if (string.IsNullOrWhiteSpace(streetName)) missingFields.Add("Street Name");
+
+                if (missingFields.Count > 0)
+                {
+                    return Json(new
                     {
-                        new SqlParameter("@ShippingAddressId", model.ShippingAddressId)
-                    };
-                    updateParams.AddRange(parameters);
-                    
-                    await _db.Database.ExecuteSqlRawAsync(
-                        "EXEC dbo.sp_ShippingAddress_Update @ShippingAddressId, @UserId, @Region, @Province, @CityMunicipality, @Barangay, @PostalCode, @HouseNumber, @Building, @StreetName, @IsDefault",
-                        updateParams.ToArray());
+                        success = false,
+                        message = $"Please complete these required fields: {string.Join(", ", missingFields)}."
+                    });
+                }
 
+                if (postalCode.Length < 4 || postalCode.Length > 10)
+                {
+                    return Json(new { success = false, message = "Postal Code must be between 4 and 10 characters." });
+                }
+
+                var activeAddresses = await _db.ShippingAddresses
+                    .Where(x => x.UserId == userId.Value && x.IsActive)
+                    .ToListAsync();
+
+                var shouldBeDefault = isDefault || !activeAddresses.Any(x => x.IsDefault);
+
+                if (shouldBeDefault)
+                {
+                    foreach (var address in activeAddresses.Where(x => x.IsDefault))
+                    {
+                        address.IsDefault = false;
+                        address.UpdatedAt = DateTime.UtcNow;
+                    }
+                }
+
+                if (shippingAddressId.HasValue)
+                {
+                    var existing = activeAddresses.FirstOrDefault(x => x.ShippingAddressId == shippingAddressId.Value);
+                    if (existing == null)
+                    {
+                        return Json(new { success = false, message = "Address not found." });
+                    }
+
+                    existing.Region = region;
+                    existing.Province = province;
+                    existing.CityMunicipality = cityMunicipality;
+                    existing.Barangay = barangay;
+                    existing.PostalCode = postalCode;
+                    existing.HouseNumber = houseNumber;
+                    existing.Building = building;
+                    existing.StreetName = streetName;
+                    existing.IsDefault = shouldBeDefault;
+                    existing.UpdatedAt = DateTime.UtcNow;
+
+                    await _db.SaveChangesAsync();
                     return Json(new { success = true, message = "Address updated successfully!" });
                 }
-                else
-                {
-                    await _db.Database.ExecuteSqlRawAsync(
-                        "EXEC dbo.sp_ShippingAddress_Insert @UserId, @Region, @Province, @CityMunicipality, @Barangay, @PostalCode, @HouseNumber, @Building, @StreetName, @IsDefault",
-                        parameters);
 
-                    return Json(new { success = true, message = "Address added successfully!" });
-                }
+                var newAddress = new ShippingAddress
+                {
+                    UserId = userId.Value,
+                    Region = region,
+                    Province = province,
+                    CityMunicipality = cityMunicipality,
+                    Barangay = barangay,
+                    PostalCode = postalCode,
+                    HouseNumber = houseNumber,
+                    Building = building,
+                    StreetName = streetName,
+                    IsDefault = shouldBeDefault,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _db.ShippingAddresses.Add(newAddress);
+                await _db.SaveChangesAsync();
+
+                return Json(new { success = true, message = "Address added successfully!" });
             }
             catch (Exception ex)
             {
@@ -278,7 +344,7 @@ namespace NextHorizon.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteShippingAddress(int id)
+        public async Task<IActionResult> DeleteShippingAddress([FromForm] int id)
         {
             var userId = HttpContext.Session.GetInt32("UserId");
             if (!userId.HasValue)
@@ -288,15 +354,34 @@ namespace NextHorizon.Controllers
 
             try
             {
-                var parameters = new[]
-                {
-                    new SqlParameter("@ShippingAddressId", id),
-                    new SqlParameter("@UserId", userId.Value)
-                };
+                var address = await _db.ShippingAddresses
+                    .FirstOrDefaultAsync(x => x.ShippingAddressId == id && x.UserId == userId.Value && x.IsActive);
 
-                await _db.Database.ExecuteSqlRawAsync(
-                    "EXEC dbo.sp_ShippingAddress_Delete @ShippingAddressId, @UserId",
-                    parameters);
+                if (address == null)
+                {
+                    return Json(new { success = false, message = "Address not found." });
+                }
+
+                var wasDefault = address.IsDefault;
+                address.IsActive = false;
+                address.IsDefault = false;
+                address.UpdatedAt = DateTime.UtcNow;
+                await _db.SaveChangesAsync();
+
+                if (wasDefault)
+                {
+                    var nextAddress = await _db.ShippingAddresses
+                        .Where(x => x.UserId == userId.Value && x.IsActive)
+                        .OrderByDescending(x => x.CreatedAt)
+                        .FirstOrDefaultAsync();
+
+                    if (nextAddress != null)
+                    {
+                        nextAddress.IsDefault = true;
+                        nextAddress.UpdatedAt = DateTime.UtcNow;
+                        await _db.SaveChangesAsync();
+                    }
+                }
 
                 return Json(new { success = true, message = "Address deleted successfully" });
             }
@@ -309,7 +394,7 @@ namespace NextHorizon.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SetDefaultShippingAddress(int id)
+        public async Task<IActionResult> SetDefaultShippingAddress([FromForm] int id)
         {
             var userId = HttpContext.Session.GetInt32("UserId");
             if (!userId.HasValue)
@@ -319,15 +404,23 @@ namespace NextHorizon.Controllers
 
             try
             {
-                var parameters = new[]
-                {
-                    new SqlParameter("@ShippingAddressId", id),
-                    new SqlParameter("@UserId", userId.Value)
-                };
+                var addresses = await _db.ShippingAddresses
+                    .Where(x => x.UserId == userId.Value && x.IsActive)
+                    .ToListAsync();
 
-                await _db.Database.ExecuteSqlRawAsync(
-                    "EXEC dbo.sp_ShippingAddress_SetDefault @ShippingAddressId, @UserId",
-                    parameters);
+                var target = addresses.FirstOrDefault(x => x.ShippingAddressId == id);
+                if (target == null)
+                {
+                    return Json(new { success = false, message = "Address not found." });
+                }
+
+                foreach (var address in addresses)
+                {
+                    address.IsDefault = address.ShippingAddressId == id;
+                    address.UpdatedAt = DateTime.UtcNow;
+                }
+
+                await _db.SaveChangesAsync();
 
                 return Json(new { success = true, message = "Default address updated successfully" });
             }

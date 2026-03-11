@@ -252,11 +252,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             formData.append('__RequestVerificationToken', token);
         }
         
-        // Add editing ID if present
-        if (editingId) {
-            formData.append('ShippingAddressId', editingId);
-        }
-        
         try {
             const response = await fetch('/AccountProfile/SaveShippingAddress', {
                 method: 'POST',
@@ -357,12 +352,15 @@ document.addEventListener('DOMContentLoaded', async function () {
 
             if (result.isConfirmed) {
                 try {
-                    const response = await fetch(`/AccountProfile/DeleteShippingAddress/${addressId}`, {
+                    const formData = new FormData();
+                    formData.append('id', addressId);
+                    if (token) {
+                        formData.append('__RequestVerificationToken', token);
+                    }
+
+                    const response = await fetch('/AccountProfile/DeleteShippingAddress', {
                         method: 'POST',
-                        headers: {
-                            'RequestVerificationToken': token,
-                            'Content-Type': 'application/json'
-                        }
+                        body: formData
                     });
 
                     const data = await response.json();
@@ -437,12 +435,15 @@ document.addEventListener('DOMContentLoaded', async function () {
             if (!result.isConfirmed) return;
             
             try {
-                const response = await fetch(`/AccountProfile/SetDefaultShippingAddress/${addrId}`, {
+                const formData = new FormData();
+                formData.append('id', addrId);
+                if (token) {
+                    formData.append('__RequestVerificationToken', token);
+                }
+
+                const response = await fetch('/AccountProfile/SetDefaultShippingAddress', {
                     method: 'POST',
-                    headers: {
-                        'RequestVerificationToken': token,
-                        'Content-Type': 'application/json'
-                    }
+                    body: formData
                 });
 
                 if (!response.ok) {

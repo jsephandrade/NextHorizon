@@ -17,7 +17,7 @@ namespace WebApplication1.Controllers
     public class AccountController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private const string CustomerAppUrl = "http://localhost:5296/Home/Shop";
+        private const string CustomerAppUrl = "http://localhost:5296/";
         private const string SellerAppUrl = "http://localhost:5134";
         private const string SharedUserIdCookie = "NextHorizon.SharedUserId";
         private const string SharedUserEmailCookie = "NextHorizon.SharedUserEmail";

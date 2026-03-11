@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "D:\\NextHorizon\\NextHorizon.csproj": {}
+    "C:\\Users\\helen\\BOOSTING SITE\\NEXTHORIZON\\MYPROFILE\\NextHorizon\\NextHorizon.csproj": {}
   },
   "projects": {
-    "D:\\NextHorizon\\NextHorizon.csproj": {
+    "C:\\Users\\helen\\BOOSTING SITE\\NEXTHORIZON\\MYPROFILE\\NextHorizon\\NextHorizon.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\NextHorizon\\NextHorizon.csproj",
+        "projectUniqueName": "C:\\Users\\helen\\BOOSTING SITE\\NEXTHORIZON\\MYPROFILE\\NextHorizon\\NextHorizon.csproj",
         "projectName": "NextHorizon",
-        "projectPath": "D:\\NextHorizon\\NextHorizon.csproj",
-        "packagesPath": "C:\\Users\\kenne\\.nuget\\packages\\",
-        "outputPath": "D:\\NextHorizon\\obj\\",
+        "projectPath": "C:\\Users\\helen\\BOOSTING SITE\\NEXTHORIZON\\MYPROFILE\\NextHorizon\\NextHorizon.csproj",
+        "packagesPath": "C:\\Users\\helen\\.nuget\\packages",
+        "outputPath": "C:\\Users\\helen\\BOOSTING SITE\\NEXTHORIZON\\MYPROFILE\\NextHorizon\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\kenne\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\helen\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
@@ -46,11 +46,7 @@
           "dependencies": {
             "Microsoft.EntityFrameworkCore.SqlServer": {
               "target": "Package",
-              "version": "[10.0.0, )"
-            },
-            "Microsoft.EntityFrameworkCore.Tools": {
-              "target": "Package",
-              "version": "[10.0.0, )"
+              "version": "[10.0.3, )"
             }
           },
           "imports": [
