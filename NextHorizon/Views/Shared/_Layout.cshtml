@@ -2,7 +2,11 @@
 @inject IConfiguration Configuration
 @{
     var controllerName = ViewContext.RouteData.Values["controller"]?.ToString();
+    var actionName = ViewContext.RouteData.Values["action"]?.ToString();
     var isStorefrontPage = string.Equals(controllerName, "Home", StringComparison.OrdinalIgnoreCase);
+    var isMemberTrackerPage = string.Equals(controllerName, "Member", StringComparison.OrdinalIgnoreCase)
+        && (string.Equals(actionName, "UploadActivity", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(actionName, "MyActivity", StringComparison.OrdinalIgnoreCase));
     var showDevMessagingLink = WebHostEnvironment.IsDevelopment() &&
         Configuration.GetValue("Features:EnableDevMessaging", false);
     var bodyClass = isStorefrontPage ? "app-shell storefront-shell" : "app-shell member-shell";
@@ -148,7 +152,10 @@
 
     @RenderBody()
 
-    @await Html.PartialAsync("_Footer")
+    @if (!isMemberTrackerPage)
+    {
+        @await Html.PartialAsync("_Footer")
+    }
 
     <script src="~/js/Header.js" asp-append-version="true"></script>
     @if (isStorefrontPage)
