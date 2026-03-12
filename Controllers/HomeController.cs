@@ -6,6 +6,14 @@ using System.Text.Json;
 
 namespace MyAspNetApp.Controllers
 {
+    public record UpdateShippingRequest(
+        string OrderNumber,
+        string? ReceiverName,
+        string? Phone,
+        string? Address,
+        string? PaymentMethod
+    );
+
     public class HomeController : Controller
     {
         private readonly AppDbContext _db;
@@ -85,7 +93,7 @@ namespace MyAspNetApp.Controllers
             // ── Save order header to dbo.Orders ──
             var dbOrder = new DbOrder
             {
-                UserID               = "guest",
+                ConsumerID           = HttpContext.Session.GetInt32("ConsumerId"),
                 OrderDate            = DateTime.Now,
                 Quantity             = vm.CartItems.Sum(i => i.Quantity),
                 SubTotal             = vm.Subtotal,
@@ -144,11 +152,74 @@ namespace MyAspNetApp.Controllers
         // GET: /Home/MyOrders
         public async Task<IActionResult> MyOrders()
         {
-            var dbOrders = await _db.Orders
-                .OrderByDescending(o => o.OrderDate)
-                .ToListAsync();
+            var consumerId = HttpContext.Session.GetInt32("ConsumerId");
+            var dbOrders = consumerId.HasValue
+                ? await _db.Orders
+                    .Where(o => o.ConsumerID == consumerId.Value)
+                    .OrderByDescending(o => o.OrderDate)
+                    .ToListAsync()
+                : new List<DbOrder>();
 
             var orders = dbOrders.Select(o => MapDbOrderToVm(o, new List<CheckoutItem>())).ToList();
+            return View(orders);
+        }
+
+        // GET: /Home/MyPurchases
+        public async Task<IActionResult> MyPurchases(string? status)
+        {
+            var consumerId = HttpContext.Session.GetInt32("ConsumerId");
+            var dbOrders = consumerId.HasValue
+                ? await _db.Orders
+                    .Where(o => o.ConsumerID == consumerId.Value)
+                    .OrderByDescending(o => o.OrderDate)
+                    .ToListAsync()
+                : new List<DbOrder>();
+
+            var orderIds = dbOrders.Select(o => o.OrderID).ToList();
+            var allItems = await _db.OrderItems
+                .Where(i => orderIds.Contains(i.OrderID))
+                .ToListAsync();
+
+            var productIds = allItems.Select(i => i.ProductId).Distinct().ToList();
+            var products   = await _db.Products
+                .Where(p => productIds.Contains(p.ProductId))
+                .ToListAsync();
+
+            var orders = dbOrders.Select(o =>
+            {
+                var firstItem = allItems.FirstOrDefault(i => i.OrderID == o.OrderID);
+                var product   = firstItem != null ? products.FirstOrDefault(p => p.ProductId == firstItem.ProductId) : null;
+
+                var mappedStatus = o.Status switch
+                {
+                    "Placed"     => "To Pay",
+                    "Processing" => "To Ship",
+                    "Shipped"    => "To Receive",
+                    "Delivered"  => "Completed",
+                    _            => o.Status
+                };
+
+                return new OrderViewModel
+                {
+                    OrderNumber     = "ORD-" + o.OrderID,
+                    Status          = mappedStatus,
+                    ProductName     = product?.ProductName ?? "Product",
+                    ProductImage    = product?.ImagePath ?? "",
+                    PaymentMethod   = o.PaymentMethod,
+                    SellerName      = "Official Store",
+                    ReceiverName    = o.FullName,
+                    PhoneNumber     = o.PhoneNumber,
+                    ShippingAddress = $"{o.StreetAddress}, {o.City} {o.PostalCode}",
+                    OrderDate       = o.OrderDate,
+                    Size            = firstItem?.Size,
+                    Quantity        = o.Quantity,
+                    TotalAmount     = o.TotalAmount
+                };
+            }).ToList();
+
+            if (!string.IsNullOrEmpty(status))
+                orders = orders.Where(o => o.Status == status).ToList();
+
             return View(orders);
         }
 
@@ -226,6 +297,34 @@ namespace MyAspNetApp.Controllers
 
             TempData["ErrorMessage"] = "Order not found.";
             return RedirectToAction("MyOrders");
+        }
+
+        // POST: /Home/UpdateOrderShipping
+        [HttpPost]
+        public async Task<IActionResult> UpdateOrderShipping(
+            [FromBody] UpdateShippingRequest req)
+        {
+            if (req == null || string.IsNullOrEmpty(req.OrderNumber))
+                return BadRequest(new { success = false, message = "Invalid request." });
+
+            if (!req.OrderNumber.StartsWith("ORD-") ||
+                !int.TryParse(req.OrderNumber["ORD-".Length..], out int numericId))
+                return BadRequest(new { success = false, message = "Invalid order number." });
+
+            var dbOrder = await _db.Orders.FindAsync(numericId);
+            if (dbOrder == null)
+                return NotFound(new { success = false, message = "Order not found." });
+
+            if (dbOrder.Status != "Placed")
+                return BadRequest(new { success = false, message = "Shipping details cannot be changed once the order is being processed." });
+
+            dbOrder.FullName      = req.ReceiverName?.Trim() ?? dbOrder.FullName;
+            dbOrder.PhoneNumber   = req.Phone?.Trim()        ?? dbOrder.PhoneNumber;
+            dbOrder.StreetAddress = req.Address?.Trim()      ?? dbOrder.StreetAddress;
+            dbOrder.PaymentMethod = req.PaymentMethod?.Trim() ?? dbOrder.PaymentMethod;
+
+            await _db.SaveChangesAsync();
+            return Ok(new { success = true, message = "Shipping details updated successfully." });
         }
 
         // GET: /Home/Wishlist

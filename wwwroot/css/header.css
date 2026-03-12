@@ -151,7 +151,7 @@ header.header-hidden {
 
 
 /* =====================================================
-   6. PROFILE DROPDOWN — Hover-reveal profile menu
+   6. PROFILE DROPDOWN — Click-triggered minimal menu
    ===================================================== */
 .profile-dropdown-wrap {
     position: relative;
@@ -159,31 +159,33 @@ header.header-hidden {
 }
 .profile-dropdown {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 8px);
     right: 0;
     min-width: 160px;
     background: #fff;
     border: 1px solid #e5e5e5;
     border-radius: 6px;
-    box-shadow: 0 4px 16px rgba(0,0,0,.1);
+    box-shadow: 0 4px 20px rgba(0,0,0,.10);
     padding: 6px 0;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(4px);
-    transition: opacity .15s, visibility .15s, transform .15s;
+    transform: translateY(6px);
+    transition: opacity .18s ease, visibility .18s, transform .18s ease;
     z-index: 1200;
+    pointer-events: none;
 }
-.profile-dropdown-wrap:hover .profile-dropdown {
+.profile-dropdown.open {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
+    pointer-events: auto;
 }
 .profile-dropdown-item {
     display: block;
-    padding: 10px 18px;
+    padding: 11px 20px;
     font-size: 13px;
     font-weight: 500;
-    color: #333;
+    color: #222;
     text-decoration: none;
     transition: background .12s, color .12s;
     font-family: var(--font-primary);
@@ -193,6 +195,8 @@ header.header-hidden {
     background: #f5f5f5;
     color: #000;
 }
+.profile-dd-logout { color: #222; }
+.profile-dd-logout:hover { background: #f5f5f5; color: #000; }
 
 
 /* =====================================================

@@ -10,7 +10,7 @@ namespace MyAspNetApp.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int OrderID { get; set; }
 
-        public string? UserID { get; set; }   // nvarchar, nullable — set from login session when available
+        public int? ConsumerID { get; set; }  // FK → Consumers.consumer_id (nullable for guest orders)
 
         public DateTime OrderDate { get; set; }
 
