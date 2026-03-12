@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 
 using System.Buffers.Binary;
+using System.Text;
 
 namespace MemberTracker.Models;
 
@@ -51,6 +52,38 @@ public static class UploadValidationRules
         [".jpeg"] = "image/jpeg",
         [".png"] = "image/png",
         [".webp"] = "image/webp",
+    };
+
+    public static readonly HashSet<string> AllowedMessageAttachmentExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".webp",
+        ".mp4",
+        ".webm",
+        ".mov",
+    };
+
+    public static readonly HashSet<string> AllowedMessageAttachmentContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "video/mp4",
+        "video/webm",
+        "video/quicktime",
+    };
+
+    private static readonly Dictionary<string, string> MessageAttachmentExtensionToContentType = new(StringComparer.OrdinalIgnoreCase)
+    {
+        [".jpg"] = "image/jpeg",
+        [".jpeg"] = "image/jpeg",
+        [".png"] = "image/png",
+        [".webp"] = "image/webp",
+        [".mp4"] = "video/mp4",
+        [".webm"] = "video/webm",
+        [".mov"] = "video/quicktime",
     };
 
     public static bool BeAllowedActivity(string activityName)
@@ -125,6 +158,85 @@ public static class UploadValidationRules
 
     public static bool HaveConsistentDistanceAndTime(decimal distanceKm, int movingTimeSec)
         => distanceKm > 0 && movingTimeSec > 0;
+
+    public static bool HaveAllowedMessageAttachmentExtension(IFormFile attachment)
+    {
+        var extension = Path.GetExtension(attachment.FileName);
+        return !string.IsNullOrWhiteSpace(extension) && AllowedMessageAttachmentExtensions.Contains(extension);
+    }
+
+    public static bool HaveAllowedMessageAttachmentContentType(IFormFile attachment)
+    {
+        var contentType = NormalizeContentType(attachment.ContentType);
+        return !string.IsNullOrWhiteSpace(contentType) && AllowedMessageAttachmentContentTypes.Contains(contentType);
+    }
+
+    public static bool HaveMatchingMessageAttachmentExtensionAndContentType(IFormFile attachment)
+    {
+        var extension = NormalizeExtension(attachment.FileName);
+        var contentType = NormalizeContentType(attachment.ContentType);
+
+        if (string.IsNullOrWhiteSpace(extension) || string.IsNullOrWhiteSpace(contentType))
+        {
+            return false;
+        }
+
+        return MessageAttachmentExtensionToContentType.TryGetValue(extension, out var expectedContentType) &&
+               string.Equals(contentType, expectedContentType, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static bool HaveMatchingMessageAttachmentSignature(IFormFile attachment)
+    {
+        var extension = NormalizeExtension(attachment.FileName);
+        if (string.IsNullOrWhiteSpace(extension))
+        {
+            return false;
+        }
+
+        using var stream = attachment.OpenReadStream();
+
+        return extension switch
+        {
+            ".jpg" or ".jpeg" => IsJpegSignature(stream),
+            ".png" => IsPngSignature(stream),
+            ".webp" => IsWebpSignature(stream),
+            ".mp4" => IsMp4Signature(stream),
+            ".webm" => IsWebmSignature(stream),
+            ".mov" => IsQuickTimeSignature(stream),
+            _ => false,
+        };
+    }
+
+    public static bool HaveValidMessageAttachmentStructure(IFormFile attachment)
+    {
+        var extension = NormalizeExtension(attachment.FileName);
+        if (string.IsNullOrWhiteSpace(extension))
+        {
+            return false;
+        }
+
+        using var stream = attachment.OpenReadStream();
+
+        return extension switch
+        {
+            ".jpg" or ".jpeg" => HasValidJpegStructure(stream),
+            ".png" => HasValidPngStructure(stream),
+            ".webp" => HasValidWebpStructure(stream),
+            ".mp4" => HasValidMp4Structure(stream),
+            ".webm" => HasValidWebmStructure(stream),
+            ".mov" => HasValidQuickTimeStructure(stream),
+            _ => false,
+        };
+    }
+
+    public static bool BeValidMessageAttachment(IFormFile attachment)
+        => attachment.Length > 0 &&
+           attachment.Length <= MaxProofSizeBytes &&
+           HaveAllowedMessageAttachmentExtension(attachment) &&
+           HaveAllowedMessageAttachmentContentType(attachment) &&
+           HaveMatchingMessageAttachmentExtensionAndContentType(attachment) &&
+           HaveMatchingMessageAttachmentSignature(attachment) &&
+           HaveValidMessageAttachmentStructure(attachment);
 
     public static decimal? ResolveDistanceKm(decimal? distanceKm, decimal? distanceMi)
     {
@@ -244,6 +356,56 @@ public static class UploadValidationRules
         return header[12..16].SequenceEqual("VP8 "u8) ||
                header[12..16].SequenceEqual("VP8L"u8) ||
                header[12..16].SequenceEqual("VP8X"u8);
+    }
+
+    private static bool IsMp4Signature(Stream stream)
+        => HasIsoBaseMediaFileType(stream, "isom", "iso2", "avc1", "mp41", "mp42", "M4V ", "MSNV", "dash");
+
+    private static bool IsQuickTimeSignature(Stream stream)
+        => HasIsoBaseMediaFileType(stream, "qt  ");
+
+    private static bool IsWebmSignature(Stream stream)
+    {
+        Span<byte> header = stackalloc byte[4];
+        return TryReadAtStart(stream, header) &&
+               header[0] == 0x1A &&
+               header[1] == 0x45 &&
+               header[2] == 0xDF &&
+               header[3] == 0xA3;
+    }
+
+    private static bool HasValidMp4Structure(Stream stream)
+        => HasIsoBaseMediaFileType(stream, "isom", "iso2", "avc1", "mp41", "mp42", "M4V ", "MSNV", "dash");
+
+    private static bool HasValidQuickTimeStructure(Stream stream)
+        => HasIsoBaseMediaFileType(stream, "qt  ");
+
+    private static bool HasValidWebmStructure(Stream stream)
+        => IsWebmSignature(stream) && stream.Length >= 32;
+
+    private static bool HasIsoBaseMediaFileType(Stream stream, params string[] allowedBrands)
+    {
+        Span<byte> header = stackalloc byte[12];
+        if (!TryReadAtStart(stream, header) || stream.Length < 12)
+        {
+            return false;
+        }
+
+        if (!header[4..8].SequenceEqual("ftyp"u8))
+        {
+            return false;
+        }
+
+        var majorBrand = Encoding.ASCII.GetString(header[8..12]);
+        foreach (var brand in allowedBrands)
+        {
+            if (string.Equals(brand, majorBrand, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool TryReadAtStart(Stream stream, Span<byte> buffer)

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using MemberTracker.Models;
 using MemberTracker.Models.Messaging;
+using NextHorizon.Models;
 
 namespace MemberTracker.Data;
 
@@ -16,6 +17,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<MessageConversation> MessageConversations => Set<MessageConversation>();
 
     public DbSet<ConversationMessage> ConversationMessages => Set<ConversationMessage>();
+
+    public DbSet<Customer> Customers => Set<Customer>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -41,6 +44,20 @@ public class ApplicationDbContext : DbContext
         seller.Property(x => x.SellerId)
             .HasColumnName("seller_id")
             .ValueGeneratedNever();
+
+        var customer = builder.Entity<Customer>();
+        customer.ToTable("Customers", "dbo", table => table.ExcludeFromMigrations());
+        customer.HasKey(x => x.Id);
+        customer.Property(x => x.FullName)
+            .HasMaxLength(200)
+            .IsRequired();
+        customer.Property(x => x.Email)
+            .HasMaxLength(320)
+            .IsRequired();
+        customer.HasIndex(x => x.Email)
+            .IsUnique();
+        customer.Property(x => x.CreatedUtc)
+            .HasDefaultValueSql("SYSUTCDATETIME()");
 
         var upload = builder.Entity<MemberUpload>();
 

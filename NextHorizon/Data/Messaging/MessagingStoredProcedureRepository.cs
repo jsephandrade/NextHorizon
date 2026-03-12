@@ -18,7 +18,11 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
     public Task<MessageConversationSummary> CreateOrGetGeneralAsync(int buyerUserId, int sellerUserId, CancellationToken cancellationToken)
         => WithOpenConnectionAsync(async connection =>
         {
-            await EnsureUserRowsAsync(connection, buyerUserId, sellerUserId, cancellationToken);
+            await EnsureUserRowsAsync(
+                connection,
+                (buyerUserId, "Consumer"),
+                (sellerUserId, "Seller"),
+                cancellationToken);
             await EnsureParticipantRowsAsync(connection, buyerUserId, sellerUserId, cancellationToken);
 
             await using var command = connection.CreateCommand();
@@ -35,7 +39,11 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
     public Task<MessageConversationSummary> CreateOrGetOrderAsync(int orderId, int buyerUserId, int sellerUserId, CancellationToken cancellationToken)
         => WithOpenConnectionAsync(async connection =>
         {
-            await EnsureUserRowsAsync(connection, buyerUserId, sellerUserId, cancellationToken);
+            await EnsureUserRowsAsync(
+                connection,
+                (buyerUserId, "Consumer"),
+                (sellerUserId, "Seller"),
+                cancellationToken);
             await EnsureParticipantRowsAsync(connection, buyerUserId, sellerUserId, cancellationToken);
 
             await using var command = connection.CreateCommand();
@@ -100,7 +108,11 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
     public Task<MessageItem?> SendMessageAsync(int conversationId, int senderUserId, string body, string? attachmentUrl, CancellationToken cancellationToken)
         => WithOpenConnectionAsync(async connection =>
         {
-            await EnsureUserRowsAsync(connection, senderUserId, null, cancellationToken);
+            await EnsureUserRowsAsync(
+                connection,
+                (senderUserId, "Messaging"),
+                null,
+                cancellationToken);
 
             await using var command = connection.CreateCommand();
             command.CommandText = "dbo.sp_Message_Send";
@@ -205,13 +217,169 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
             IF OBJECT_ID(N'[dbo].[Consumers]', N'U') IS NOT NULL
             BEGIN
                 IF NOT EXISTS (SELECT 1 FROM dbo.Consumers WHERE consumer_id = @BuyerUserID)
-                    INSERT INTO dbo.Consumers (consumer_id) VALUES (@BuyerUserID);
+                BEGIN
+                    IF EXISTS
+                    (
+                        SELECT 1
+                        FROM sys.identity_columns ic
+                        WHERE ic.object_id = OBJECT_ID(N'[dbo].[Consumers]', N'U')
+                          AND ic.name = N'consumer_id'
+                    )
+                    BEGIN
+                        BEGIN TRY
+                            SET IDENTITY_INSERT dbo.Consumers ON;
+
+                            INSERT INTO dbo.Consumers
+                            (
+                                consumer_id,
+                                user_id,
+                                first_name,
+                                last_name,
+                                address,
+                                phone_number,
+                                created_at,
+                                username
+                            )
+                            VALUES
+                            (
+                                @BuyerUserID,
+                                @BuyerUserID,
+                                CONCAT(N'Consumer ', @BuyerUserID),
+                                N'Messaging',
+                                CONCAT(N'Placeholder address for consumer ', @BuyerUserID),
+                                NULL,
+                                SYSUTCDATETIME(),
+                                CONCAT(N'consumer', @BuyerUserID)
+                            );
+
+                            SET IDENTITY_INSERT dbo.Consumers OFF;
+                        END TRY
+                        BEGIN CATCH
+                            BEGIN TRY
+                                SET IDENTITY_INSERT dbo.Consumers OFF;
+                            END TRY
+                            BEGIN CATCH
+                            END CATCH;
+
+                            THROW;
+                        END CATCH
+                    END
+                    ELSE
+                    BEGIN
+                        INSERT INTO dbo.Consumers
+                        (
+                            user_id,
+                            first_name,
+                            last_name,
+                            address,
+                            phone_number,
+                            created_at,
+                            username
+                        )
+                        VALUES
+                        (
+                            @BuyerUserID,
+                            CONCAT(N'Consumer ', @BuyerUserID),
+                            N'Messaging',
+                            CONCAT(N'Placeholder address for consumer ', @BuyerUserID),
+                            NULL,
+                            SYSUTCDATETIME(),
+                            CONCAT(N'consumer', @BuyerUserID)
+                        );
+                    END
+                END
             END;
 
             IF OBJECT_ID(N'[dbo].[Sellers]', N'U') IS NOT NULL
             BEGIN
                 IF NOT EXISTS (SELECT 1 FROM dbo.Sellers WHERE seller_id = @SellerUserID)
-                    INSERT INTO dbo.Sellers (seller_id) VALUES (@SellerUserID);
+                BEGIN
+                    IF EXISTS
+                    (
+                        SELECT 1
+                        FROM sys.identity_columns ic
+                        WHERE ic.object_id = OBJECT_ID(N'[dbo].[Sellers]', N'U')
+                          AND ic.name = N'seller_id'
+                    )
+                    BEGIN
+                        BEGIN TRY
+                            SET IDENTITY_INSERT dbo.Sellers ON;
+
+                            INSERT INTO dbo.Sellers
+                            (
+                                seller_id,
+                                user_id,
+                                business_type,
+                                business_name,
+                                business_email,
+                                business_phone,
+                                tax_id,
+                                business_address,
+                                logo_path,
+                                document_path,
+                                seller_status,
+                                created_at
+                            )
+                            VALUES
+                            (
+                                @SellerUserID,
+                                @SellerUserID,
+                                N'Demo Storefront',
+                                CONCAT(N'Storefront Seller ', @SellerUserID),
+                                CONCAT(N'seller', @SellerUserID, N'@placeholder.local'),
+                                CONCAT(N'09', RIGHT(CONCAT(N'000000000', @SellerUserID), 9)),
+                                NULL,
+                                CONCAT(N'Placeholder business address for seller ', @SellerUserID),
+                                NULL,
+                                NULL,
+                                N'active',
+                                SYSUTCDATETIME()
+                            );
+
+                            SET IDENTITY_INSERT dbo.Sellers OFF;
+                        END TRY
+                        BEGIN CATCH
+                            BEGIN TRY
+                                SET IDENTITY_INSERT dbo.Sellers OFF;
+                            END TRY
+                            BEGIN CATCH
+                            END CATCH;
+
+                            THROW;
+                        END CATCH
+                    END
+                    ELSE
+                    BEGIN
+                        INSERT INTO dbo.Sellers
+                        (
+                            user_id,
+                            business_type,
+                            business_name,
+                            business_email,
+                            business_phone,
+                            tax_id,
+                            business_address,
+                            logo_path,
+                            document_path,
+                            seller_status,
+                            created_at
+                        )
+                        VALUES
+                        (
+                            @SellerUserID,
+                            N'Demo Storefront',
+                            CONCAT(N'Storefront Seller ', @SellerUserID),
+                            CONCAT(N'seller', @SellerUserID, N'@placeholder.local'),
+                            CONCAT(N'09', RIGHT(CONCAT(N'000000000', @SellerUserID), 9)),
+                            NULL,
+                            CONCAT(N'Placeholder business address for seller ', @SellerUserID),
+                            NULL,
+                            NULL,
+                            N'active',
+                            SYSUTCDATETIME()
+                        );
+                    END
+                END
             END;
             """;
         command.CommandType = CommandType.Text;
@@ -219,28 +387,56 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
         AddParameter(command, "@BuyerUserID", buyerUserId, DbType.Int32);
         AddParameter(command, "@SellerUserID", sellerUserId, DbType.Int32);
 
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        try
+        {
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                $"Failed to bootstrap messaging participants for buyerUserId={buyerUserId} and sellerUserId={sellerUserId}.",
+                ex);
+        }
     }
 
-    private static async Task EnsureUserRowsAsync(DbConnection connection, int firstUserId, int? secondUserId, CancellationToken cancellationToken)
+    private static async Task EnsureUserRowsAsync(
+        DbConnection connection,
+        (int UserId, string UserType) firstUser,
+        (int UserId, string UserType)? secondUser,
+        CancellationToken cancellationToken)
     {
         await using var command = connection.CreateCommand();
         command.CommandText =
             """
             IF OBJECT_ID(N'[dbo].[Users]', N'U') IS NOT NULL
             BEGIN
-                DECLARE @UserIds TABLE (user_id INT NOT NULL PRIMARY KEY);
-                INSERT INTO @UserIds (user_id)
-                SELECT @FirstUserID
-                WHERE @FirstUserID IS NOT NULL AND @FirstUserID > 0;
+                DECLARE @UserSeeds TABLE
+                (
+                    user_id INT NOT NULL PRIMARY KEY,
+                    email VARCHAR(255) NOT NULL,
+                    password_hash VARCHAR(255) NOT NULL,
+                    user_type VARCHAR(20) NULL
+                );
 
-                INSERT INTO @UserIds (user_id)
-                SELECT @SecondUserID
+                INSERT INTO @UserSeeds (user_id, email, password_hash, user_type)
+                SELECT
+                    @FirstUserID,
+                    CONCAT(LOWER(@FirstUserType), @FirstUserID, '@placeholder.local'),
+                    CONCAT('placeholder-hash-', LOWER(@FirstUserType), '-', @FirstUserID),
+                    @FirstUserType
+                WHERE @FirstUserID > 0;
+
+                INSERT INTO @UserSeeds (user_id, email, password_hash, user_type)
+                SELECT
+                    @SecondUserID,
+                    CONCAT(LOWER(@SecondUserType), @SecondUserID, '@placeholder.local'),
+                    CONCAT('placeholder-hash-', LOWER(@SecondUserType), '-', @SecondUserID),
+                    @SecondUserType
                 WHERE @SecondUserID IS NOT NULL
                   AND @SecondUserID > 0
-                  AND NOT EXISTS (SELECT 1 FROM @UserIds x WHERE x.user_id = @SecondUserID);
+                  AND NOT EXISTS (SELECT 1 FROM @UserSeeds x WHERE x.user_id = @SecondUserID);
 
-                IF EXISTS (SELECT 1 FROM @UserIds)
+                IF EXISTS (SELECT 1 FROM @UserSeeds)
                 BEGIN
                     IF EXISTS
                     (
@@ -253,9 +449,25 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                         BEGIN TRY
                             SET IDENTITY_INSERT dbo.Users ON;
 
-                            INSERT INTO dbo.Users (user_id)
-                            SELECT src.user_id
-                            FROM @UserIds src
+                            INSERT INTO dbo.Users
+                            (
+                                user_id,
+                                email,
+                                password_hash,
+                                is_active,
+                                created_at,
+                                updated_at,
+                                user_type
+                            )
+                            SELECT
+                                src.user_id,
+                                src.email,
+                                src.password_hash,
+                                1,
+                                SYSUTCDATETIME(),
+                                SYSUTCDATETIME(),
+                                src.user_type
+                            FROM @UserSeeds src
                             WHERE NOT EXISTS (SELECT 1 FROM dbo.Users target WHERE target.user_id = src.user_id);
 
                             SET IDENTITY_INSERT dbo.Users OFF;
@@ -272,9 +484,23 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                     END
                     ELSE
                     BEGIN
-                        INSERT INTO dbo.Users (user_id)
-                        SELECT src.user_id
-                        FROM @UserIds src
+                        INSERT INTO dbo.Users
+                        (
+                            email,
+                            password_hash,
+                            is_active,
+                            created_at,
+                            updated_at,
+                            user_type
+                        )
+                        SELECT
+                            src.email,
+                            src.password_hash,
+                            1,
+                            SYSUTCDATETIME(),
+                            SYSUTCDATETIME(),
+                            src.user_type
+                        FROM @UserSeeds src
                         WHERE NOT EXISTS (SELECT 1 FROM dbo.Users target WHERE target.user_id = src.user_id);
                     END
                 END
@@ -282,8 +508,10 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
             """;
         command.CommandType = CommandType.Text;
 
-        AddParameter(command, "@FirstUserID", firstUserId, DbType.Int32);
-        AddParameter(command, "@SecondUserID", secondUserId, DbType.Int32);
+        AddParameter(command, "@FirstUserID", firstUser.UserId, DbType.Int32);
+        AddParameter(command, "@FirstUserType", firstUser.UserType, DbType.String);
+        AddParameter(command, "@SecondUserID", secondUser?.UserId, DbType.Int32);
+        AddParameter(command, "@SecondUserType", secondUser?.UserType, DbType.String);
 
         await command.ExecuteNonQueryAsync(cancellationToken);
     }

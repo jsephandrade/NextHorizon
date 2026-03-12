@@ -1,14 +1,14 @@
 using Microsoft.EntityFrameworkCore;
-using NextHorizon.Data;
+using MemberTracker.Data;
 using NextHorizon.Models;
 
 namespace NextHorizon.Services;
 
 public sealed class CustomerStoredProcedureService : ICustomerStoredProcedureService
 {
-    private readonly AppDbContext _dbContext;
+    private readonly ApplicationDbContext _dbContext;
 
-    public CustomerStoredProcedureService(AppDbContext dbContext)
+    public CustomerStoredProcedureService(ApplicationDbContext dbContext)
     {
         _dbContext = dbContext;
     }

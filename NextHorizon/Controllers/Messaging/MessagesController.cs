@@ -162,15 +162,9 @@ public sealed class MessagesController : ControllerBase
         (string AbsolutePath, string AttachmentUrl)? savedAttachment = null;
         if (request.Attachment is not null)
         {
-            if (!UploadValidationRules.HaveAllowedExtension(request.Attachment) ||
-                !UploadValidationRules.HaveAllowedContentType(request.Attachment) ||
-                !UploadValidationRules.HaveMatchingExtensionAndContentType(request.Attachment) ||
-                !UploadValidationRules.HaveMatchingSignature(request.Attachment) ||
-                !UploadValidationRules.HaveValidImageStructure(request.Attachment) ||
-                request.Attachment.Length <= 0 ||
-                request.Attachment.Length > UploadValidationRules.MaxProofSizeBytes)
+            if (!UploadValidationRules.BeValidMessageAttachment(request.Attachment))
             {
-                return BadRequest("Attachment must be a valid image (jpg, jpeg, png, webp) and 5MB or smaller.");
+                return BadRequest("Attachment must be a valid image or video (jpg, jpeg, png, webp, mp4, webm, mov) and 5MB or smaller.");
             }
 
             savedAttachment = await SaveAttachmentAsync(request.Attachment, cancellationToken);

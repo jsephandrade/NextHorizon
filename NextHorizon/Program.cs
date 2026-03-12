@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using NextHorizon.Security;
-using NextHorizon.Data;
 using NextHorizon.Services;
 using System.Threading.RateLimiting;
 
@@ -18,7 +17,6 @@ var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnec
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(defaultConnection));
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(defaultConnection));
 builder.Services.AddScoped<ICustomerStoredProcedureService, CustomerStoredProcedureService>();
 builder.Services.AddScoped<IMemberUploadRepository, MemberUploadStoredProcedureRepository>();

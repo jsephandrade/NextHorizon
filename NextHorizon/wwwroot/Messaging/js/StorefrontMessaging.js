@@ -2,9 +2,25 @@
   const DEFAULT_ERROR = 'Could not load messages right now.';
   const AUTH_ERROR = 'Messaging is not available for this session.';
   const NOT_FOUND_ERROR = 'Conversation is not available right now.';
+  const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
+  const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov'];
   let csrfTokenPromise = null;
 
   function byId(id) { return id ? document.getElementById(id) : null; }
+
+  function getFileExtension(value) {
+    if (typeof value !== 'string' || !value.trim()) return '';
+    const sanitized = value.split('#')[0].split('?')[0].trim().toLowerCase();
+    const dotIndex = sanitized.lastIndexOf('.');
+    return dotIndex >= 0 ? sanitized.slice(dotIndex) : '';
+  }
+
+  function getAttachmentKind(value) {
+    const extension = getFileExtension(value);
+    if (IMAGE_EXTENSIONS.indexOf(extension) >= 0) return 'image';
+    if (VIDEO_EXTENSIONS.indexOf(extension) >= 0) return 'video';
+    return '';
+  }
 
   function formatMessageTime(value) {
     const date = new Date(value);
@@ -13,7 +29,14 @@
   }
 
   function parseJson(response) {
-    return response.json().catch(function () { return null; });
+    return response.text().then(function (text) {
+      if (!text) return null;
+      try {
+        return JSON.parse(text);
+      } catch (_) {
+        return text;
+      }
+    }).catch(function () { return null; });
   }
 
   function toast(message, type) {
@@ -27,6 +50,7 @@
   function friendlyError(status, payload) {
     if (status === 401 || status === 403) return AUTH_ERROR;
     if (status === 404) return NOT_FOUND_ERROR;
+    if (typeof payload === 'string' && payload.trim()) return payload;
     if (typeof payload?.title === 'string' && payload.title.trim()) return payload.title;
     if (typeof payload?.message === 'string' && payload.message.trim()) return payload.message;
     return DEFAULT_ERROR;
@@ -89,6 +113,29 @@
     return request(url, Object.assign({}, options || {}, { headers: headers }));
   }
 
+  function buildAttachmentNode(url, kind, classNamePrefix) {
+    if (kind === 'image') {
+      const image = document.createElement('img');
+      image.className = classNamePrefix + '-image';
+      image.src = url;
+      image.alt = 'Attachment preview';
+      image.loading = 'lazy';
+      return image;
+    }
+
+    if (kind === 'video') {
+      const video = document.createElement('video');
+      video.className = classNamePrefix + '-video';
+      video.src = url;
+      video.controls = true;
+      video.preload = 'metadata';
+      video.playsInline = true;
+      return video;
+    }
+
+    return null;
+  }
+
   function renderBubble(message, buyerUserId) {
     const senderClass = message.senderUserId === buyerUserId ? 'buyer' : 'seller';
     const senderLabel = senderClass === 'buyer' ? 'You' : 'Seller';
@@ -101,16 +148,21 @@
     if (message.isDeleted) {
       bubble.textContent = '[message deleted]';
     } else if (message.body) {
-      bubble.textContent = message.body;
+      const body = document.createElement('div');
+      body.className = 'bubble-body';
+      body.textContent = message.body;
+      bubble.appendChild(body);
     }
 
     if (!message.isDeleted && message.attachmentUrl) {
-      const image = document.createElement('img');
-      image.className = 'bubble-attachment-image';
-      image.src = message.attachmentUrl;
-      image.alt = 'Message attachment';
-      image.loading = 'lazy';
-      bubble.appendChild(image);
+      const mediaKind = getAttachmentKind(message.attachmentUrl);
+      const media = buildAttachmentNode(message.attachmentUrl, mediaKind, 'bubble-attachment');
+      if (media) {
+        if (mediaKind === 'image') {
+          media.alt = 'Message attachment';
+        }
+        bubble.appendChild(media);
+      }
 
       const link = document.createElement('a');
       link.className = 'bubble-attachment-link';
@@ -141,24 +193,120 @@
       headElement: null,
       isLoading: false,
       lastError: '',
+      previewObjectUrl: '',
     };
 
     function modal() { return byId(config.modalId); }
     function thread() { return byId(config.threadId); }
     function input() { return byId(config.inputId); }
     function sendButton() { return byId(config.sendButtonId); }
+    function attachmentInput() { return byId(config.attachmentInputId); }
+    function attachmentPreview() { return byId(config.attachmentPreviewId); }
+    function attachmentStatus() { return byId(config.attachmentStatusId); }
+    function clearAttachmentButton() { return byId(config.clearAttachmentButtonId); }
     function titleEl() { return byId(config.titleId); }
     function avatarEl() { return byId(config.avatarId); }
     function headContainer() { return byId(config.headContainerId); }
 
+    function getAttachmentFile() {
+      return attachmentInput()?.files?.[0] || null;
+    }
+
+    function revokePreviewUrl() {
+      if (!state.previewObjectUrl) return;
+      URL.revokeObjectURL(state.previewObjectUrl);
+      state.previewObjectUrl = '';
+    }
+
+    function resizeComposer() {
+      const inputNode = input();
+      if (!inputNode || inputNode.tagName !== 'TEXTAREA') return;
+      inputNode.style.height = 'auto';
+      const maxHeight = Number.parseFloat(window.getComputedStyle(inputNode).maxHeight);
+      if (Number.isFinite(maxHeight) && maxHeight > 0) {
+        inputNode.style.height = Math.min(inputNode.scrollHeight, maxHeight) + 'px';
+        inputNode.style.overflowY = inputNode.scrollHeight > maxHeight ? 'auto' : 'hidden';
+        return;
+      }
+
+      inputNode.style.height = inputNode.scrollHeight + 'px';
+      inputNode.style.overflowY = 'hidden';
+    }
+
+    function renderAttachmentPreview() {
+      const preview = attachmentPreview();
+      const file = getAttachmentFile();
+
+      revokePreviewUrl();
+
+      if (!preview) return;
+
+      preview.innerHTML = '';
+      preview.hidden = true;
+
+      if (!file) return;
+
+      const mediaKind = getAttachmentKind(file.name);
+      if (!mediaKind) return;
+
+      state.previewObjectUrl = URL.createObjectURL(file);
+      const media = buildAttachmentNode(state.previewObjectUrl, mediaKind, 'chat-attachment-preview');
+      if (!media) return;
+
+      if (mediaKind === 'image') {
+        media.alt = 'Selected attachment preview';
+      } else if (mediaKind === 'video') {
+        media.muted = true;
+      }
+
+      preview.appendChild(media);
+      preview.hidden = false;
+    }
+
+    function updateAttachmentUi() {
+      const file = getAttachmentFile();
+      const status = attachmentStatus();
+      const clearButton = clearAttachmentButton();
+      const attachmentNode = attachmentInput();
+
+      if (status) {
+        if (file) {
+          status.textContent = file.name;
+          status.classList.add('is-active');
+          status.hidden = false;
+        } else {
+          status.textContent = '';
+          status.classList.remove('is-active');
+          status.hidden = true;
+        }
+      }
+
+      if (clearButton) {
+        clearButton.hidden = !file;
+        clearButton.disabled = !file || Boolean(attachmentNode?.disabled);
+      }
+
+      renderAttachmentPreview();
+    }
+
+    function clearAttachment() {
+      const inputNode = attachmentInput();
+      if (inputNode) inputNode.value = '';
+      updateAttachmentUi();
+    }
+
     function setComposer(enabled, placeholder) {
       const inputNode = input();
       const button = sendButton();
+      const attachmentNode = attachmentInput();
+      const clearButton = clearAttachmentButton();
       if (inputNode) {
         inputNode.disabled = !enabled;
         inputNode.placeholder = placeholder || inputNode.placeholder;
       }
       if (button) button.disabled = !enabled;
+      if (attachmentNode) attachmentNode.disabled = !enabled;
+      if (clearButton) clearButton.disabled = !enabled || !getAttachmentFile();
     }
 
     function updateHeader() {
@@ -293,7 +441,8 @@
       if (!inputNode || inputNode.disabled) return;
 
       const body = inputNode.value.trim();
-      if (!body) return;
+      const attachment = getAttachmentFile();
+      if (!body && !attachment) return;
 
       const button = sendButton();
       if (button) button.disabled = true;
@@ -301,12 +450,15 @@
       try {
         const conversationId = await ensureConversation();
         const form = new FormData();
-        form.append('body', body);
+        if (body) form.append('body', body);
+        if (attachment) form.append('attachment', attachment);
         await requestWithCsrf('/api/messages/conversations/' + conversationId + '/messages', {
           method: 'POST',
           body: form,
         });
         inputNode.value = '';
+        resizeComposer();
+        clearAttachment();
         await loadMessages();
       } catch (error) {
         state.lastError = error.message || DEFAULT_ERROR;
@@ -355,6 +507,7 @@
         state.buyerUserId = null;
         state.messages = [];
         state.lastError = '';
+        clearAttachment();
       }
     }
 
@@ -393,6 +546,19 @@
 
     updateHeader();
     setComposer(false, 'Chat unavailable');
+    attachmentInput()?.addEventListener('change', updateAttachmentUi);
+    input()?.addEventListener('input', resizeComposer);
+    input()?.addEventListener('keydown', function (event) {
+      if (event.key !== 'Enter' || event.shiftKey) return;
+      event.preventDefault();
+      send();
+    });
+    clearAttachmentButton()?.addEventListener('click', function () {
+      clearAttachment();
+      input()?.focus();
+    });
+    resizeComposer();
+    updateAttachmentUi();
 
     return {
       setSeller: setSeller,
