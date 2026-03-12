@@ -1,0 +1,179 @@
+@{
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+@section Styles{
+    <link rel="stylesheet" href="~/css/addPayoutAccount.css" />
+}
+
+    <div class="page-actions">
+        <a class="link-btn" asp-controller="Dashboard" asp-action="PayoutAccounts">
+            ← Back
+        </a>
+    </div>
+    <div class="container mt-4">
+        <div class="page-title">Add New Payout Account</div>
+        <div class="form-wrapper">
+            <!-- ACCOUNT DETAILS -->
+            <div class="form-card">
+                
+                <h4>ACCOUNT DETAILS</h4>
+
+                <div class="form-group">
+                    <label>Account Type</label>
+                    <select id="accountType">
+                        <option value="">Select Account Type</option>
+                        <option value="bank">Online Bank</option>
+                        <option value="ewallet">E-Wallet</option>
+                        <option value="card">Card</option>
+                    </select>
+                </div>
+
+                <!-- CARD -->
+                <div id="cardFields" style="display:none;">
+
+                    <div class="form-group">
+                        <label>Card Number</label>
+                        <input type="text" placeholder="Card Number">
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group">
+                            <label>Expiry Date</label>
+                            <input type="text" placeholder="MM/YY">
+                        </div>
+
+                        <div class="form-group">
+                            <label>CVV</label>
+                            <input type="text" placeholder="CVV">
+                        </div>
+                    </div>
+                    <!-- BILLING ADDRESS -->
+                    <div class="form-card">
+
+                        <h4>BILLING ADDRESS</h4>
+
+                        <div class="form-group">
+                            <label>Region</label>
+                            <input type="text" placeholder="Region">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Province</label>
+                            <input type="text" placeholder="Province">
+                        </div>
+
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" placeholder="City">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Barangay</label>
+                            <input type="text" placeholder="Barangay">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Street Name</label>
+                            <input type="text" placeholder="Street Name">
+                        </div>
+
+                        <div class="row">
+                            <div class="form-group">
+                                <label>Building</label>
+                                <input type="text" placeholder="Building">
+                            </div>
+
+                            <div class="form-group">
+                                <label>House No.</label>
+                                <input type="text" placeholder="House No">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Postal Code</label>
+                            <input type="text" placeholder="Postal Code">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EWALLET -->
+                <div id="ewalletFields" style="display:none;">
+
+                    <div class="form-group">
+                        <label>E-Wallet Type</label>
+                        <select>
+                            <option>GCash</option>
+                            <option>PayMaya</option>
+                            <option>Coins.ph</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Account Name</label>
+                        <input type="text" placeholder="Account Name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Account Number</label>
+                        <input id="ewalletNumber"
+                            type="text"
+                            placeholder="09XXXXXXXXX"
+                            maxlength="11"
+                            required>
+                    </div>
+        
+                </div>
+
+                <!-- ONLINE BANK -->
+                <div id="bankFields" style="display:none;">
+
+                    <div class="form-group">
+                        <label>Bank Name</label>
+                        <select>
+                            <option>BDO</option>
+                            <option>BPI</option>
+                            <option>Metrobank</option>
+                            <option>UnionBank</option>
+                            <option>GoTyme Bank</option>
+                            <option>Tonik Bank</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Account Holder Name</label>
+                        <input type="text" placeholder="Account Holder Name">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Account Number</label>
+                        <input type="text" placeholder="Account Number">
+                    </div>
+
+                </div>
+                <div class="checkbox">
+                    <label class="checkbox-inline">
+                        <input type="checkbox" name="IsDefault" value="true"> 
+                        Set as default payout account
+                    </label>
+                </div>
+
+                <div class="note">
+                    We follow PCI DSS security standards to protect your payment information.
+                </div>
+
+                <div class="buttons">
+                    <button class="btn btn-cancel">Cancel</button>
+                    <button type="button" class="btn btn-submit" id="addAccountBtn">Add Account</button>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    
+ @section Scripts{
+    <script src="~/js/addPayoutAccount.js"></script>
+}

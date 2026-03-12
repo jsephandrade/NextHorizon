@@ -1,0 +1,118 @@
+    /* Hide sidebar for this page 
+.sidebar {
+    display: none !important;
+}
+
+/* Remove space left by sidebar 
+    margin-left: 0 !important;
+}
+/* Back button container */
+.page-actions {
+    margin-bottom: 16px;
+    display: flex;
+    gap: 10px;
+}
+
+/* Minimalist Back Button */
+.link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #1a1a1a;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    padding: 0;
+    transition: color 0.2s ease;
+}
+
+.link-btn i {
+    font-size: 14px;
+}
+
+.link-btn:hover {
+    color: white; /* subtle accent on hover */
+}
+
+/* Section container */
+.section {
+    margin-bottom: 30px;
+}
+
+/* Section title */
+.section-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 20px;
+}
+
+/* Table wrapper */
+.table-container {
+    background-color: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 2px solid #000;
+}
+
+/* Transaction table */
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* Table header style */
+.orders-table thead th {
+    background-color: #000000; /* black background */
+    color: #ffffff;            /* white text */
+    font-weight: 600;
+    border-bottom: 2px solid #000000; /* border under header row */
+}
+
+/* Table body cells */
+.orders-table tbody td {
+    background-color: #ffffff; /* white background for rows */
+    color: #000000;            /* black text */
+    font-size: 14px;
+}
+
+/* Table body text */
+.orders-table td {
+    color: #333;
+    font-size: 14px;
+}
+
+/* Row hover effect */
+.orders-table tr:hover {
+    background-color: #f0f0f0; /* subtle gray hover */
+}
+
+/* Status badge */
+.badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* Default / neutral status */
+.badge.status {
+    background-color: #f0f0f0;
+    color: #444;
+}
+
+/* Process status - yellow */
+.badge.status.process {
+    background-color: #facc15; /* yellow */
+    color: #1a1a1a;            /* dark text for contrast */
+}
+
+/* Complete status - green */
+.badge.status.complete {
+    background-color: #27ae60; /* green */
+    color: #fff;               /* white text */
+}

@@ -1,0 +1,75 @@
+﻿=== SOURCE-ONLY SUMMARY (bin/obj excluded) ===
+MineFileCount: 122
+MateFileCount: 137
+OnlyInMineCount: 15
+OnlyInMateCount: 30
+ModifiedCount: 18
+
+=== ONLY IN MINE ===
+Controllers\AccountController.cs
+Database\StoredProcedures\sp_GetSellerPerformanceMetrics.sql
+Models\Consumer.cs
+Models\LoginViewModel.cs
+Models\SellerAccount.cs
+Models\SellerContextInfo.cs
+Models\SellerPerformanceMetrics.cs
+Models\User.cs
+Services\ISellerContextService.cs
+Services\ISellerPerformanceService.cs
+Services\SellerContextService.cs
+Services\SellerPerformanceService.cs
+Views\Account\Login.cshtml
+wwwroot\css\analytics.css
+wwwroot\js\analytics.js
+
+=== ONLY IN TEAMMATE ===
+Database\StoredProcedures\sp_GetLatestCustomers.sql
+NextHorizon.csproj.user
+Services\CustomerStoredProcedureService.cs
+Services\ICustomerStoredProcedureService.cs
+Views\Dashboard\AccountSettings.cshtml
+Views\Dashboard\PendingPayout.cshtml
+Views\Dashboard\Withdraw.cshtml
+Views\Home\Index.cshtml
+Views\Home\MyPurchases.cshtml
+Views\Home\PaymentMethods.cshtml
+Views\Home\Privacy.cshtml
+Views\Home\ViewPurchaseHistory.cshtml
+wwwroot\css\accountsettings.css
+wwwroot\css\addPayoutAccount.css
+wwwroot\css\finance.css
+wwwroot\css\mybalance.css
+wwwroot\css\orderdetails.css
+wwwroot\css\ordermanagement.css
+wwwroot\css\payoutAccounts.css
+wwwroot\css\pendingpayout.css
+wwwroot\css\sellerdashboard.css
+wwwroot\css\transactionhistory.css
+wwwroot\css\withdraw.css
+wwwroot\js\accountsettings.js
+wwwroot\js\addPayoutAccount.js
+wwwroot\js\mybalance.js
+wwwroot\js\ordermanagement.js
+wwwroot\js\payoutAccounts.js
+wwwroot\js\pendingpayout.js
+wwwroot\js\withdraw.js
+
+=== MODIFIED IN BOTH ===
+appsettings.Development.json
+appsettings.json
+Controllers\DashboardController.cs
+Controllers\HomeController.cs
+Data\AppDbContext.cs
+Models\SellerDashboardViewModel.cs
+Program.cs
+Views\Dashboard\AddPayoutAccount.cshtml
+Views\Dashboard\Analytics.cshtml
+Views\Dashboard\Finance.cshtml
+Views\Dashboard\MyBalance.cshtml
+Views\Dashboard\OrderDetails.cshtml
+Views\Dashboard\OrderManagement.cshtml
+Views\Dashboard\PayoutAccounts.cshtml
+Views\Dashboard\SellerDashboard.cshtml
+Views\Dashboard\TransactionHistory.cshtml
+Views\Shared\_DashboardLayout.cshtml
+Views\Shared\_Layout.cshtml

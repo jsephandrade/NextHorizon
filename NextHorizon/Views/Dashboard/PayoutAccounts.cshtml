@@ -1,0 +1,78 @@
+@{
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+@section Styles{
+    <link rel="stylesheet" href="~/css/payoutAccounts.css" />
+}
+
+<div class="page-actions">
+        <a class="link-btn" asp-controller="Dashboard" asp-action="Finance">
+            ← Back
+        </a>
+    </div>
+
+<div class="container mt-4">
+    <h2>Payout Accounts</h2>
+
+    <div class="card mt-3">
+        <div class="card-body p-0">
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Account Type</th>
+                        <th>Account Name/Number</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    <tr>
+                        <td>🏦 Bank Transfer (GCash)</td>
+                        <td>[John Doe]</td>
+
+                        <td class="status-cell">
+                            <span class="badge">Default</span>
+                        </td>
+
+                        <td style="text-align:right">
+                            <a href="#" class="text-danger remove-account">Remove</a>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>💳 Maya</td>
+                        <td>[Jane Smith]</td>
+
+                        <td class="status-cell">
+                            <a href="#" class="set-default">Set as Default</a>
+                        </td>
+
+                        <td style="text-align:right">
+                            <a href="#" class="text-danger remove-account">Remove</a>
+                        </td>
+                    </tr>
+
+                </tbody>
+            </table>
+
+            <div style="padding:16px;">
+                <a href="/Dashboard/AddPayoutAccount" class="add-btn">
+                    ➕ Add New Account
+                </a>
+
+                <div class="accounts-count">
+                    Showing 2 accounts
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+ @section Scripts{
+    <script src="~/js/payoutAccounts.js"></script>
+}

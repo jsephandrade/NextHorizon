@@ -1,0 +1,65 @@
+@model NextHorizon.Models.FinanceViewModel
+@{
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+@section Styles{
+    <link rel="stylesheet" href="~/css/transactionhistory.css" />
+}
+
+@{
+    ViewData["Title"] = "Transaction History";
+    ViewData["DashboardHeading"] = "Transaction History";
+    ViewData["SellerName"] = Model.SellerName;
+}
+
+<div class="page-actions">
+    <a class="link-btn" asp-controller="Dashboard" asp-action="Finance">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
+
+<section class="section">
+    <h3 class="section-title">All Transactions</h3>
+    <div class="table-container">
+        <table class="orders-table">
+            <thead>
+                <tr>
+                    <th>Reference</th>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Method</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var tx in Model.Transactions)
+                {
+                    <tr>
+                        <td>@tx.ReferenceId</td>
+                        <td>@tx.TransactionDate.ToString("MMM dd, yyyy hh:mm tt")</td>
+                        <td>@tx.Type</td>
+                        <td>@tx.Method</td>
+                        <td>
+                            @if (tx.Amount < 0)
+                            {
+                                <span style="color:#b42318;">- &#8369;@Math.Abs(tx.Amount).ToString("N2")</span>
+                            }
+                            else
+                            {
+                                <span>&#8369;@tx.Amount.ToString("N2")</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge status @(tx.Status.Equals("Processing", StringComparison.OrdinalIgnoreCase) ? "process" : 
+                                                    tx.Status.Equals("Completed", StringComparison.OrdinalIgnoreCase) ? "complete" : "")">
+                                @tx.Status
+                            </span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

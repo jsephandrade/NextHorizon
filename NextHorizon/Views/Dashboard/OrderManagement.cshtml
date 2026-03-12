@@ -1,0 +1,639 @@
+@model NextHorizon.Models.SellerDashboardViewModel
+@{
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+@section Styles{
+    <link rel="stylesheet" href="~/css/ordermanagement.css" />
+}
+
+@{
+    ViewData["Title"] = "Order Management";
+    ViewData["DashboardHeading"] = "Order Management";
+    ViewData["SellerName"] = Model.SellerName;
+}
+
+
+<div class="order-filters" role="tablist" aria-label="Order status filters">
+    <button type="button" class="order-filter-btn active" data-filter="all">All Orders</button>
+    <button type="button" class="order-filter-btn" data-filter="pending">Pending</button>
+    <button type="button" class="order-filter-btn" data-filter="to-ship">To Ship</button>
+    <button type="button" class="order-filter-btn" data-filter="ship">Shipped</button>
+    <button type="button" class="order-filter-btn" data-filter="delivered">Delivered</button>
+    <button type="button" class="order-filter-btn" data-filter="cancelled">Cancelled</button>
+    <button type="button" class="order-filter-btn" data-filter="return">Return</button>
+</div>
+
+<div class="order-toolbar">
+    <select id="categoryFilter" class="order-category-select">
+        <option value="all">All Categories</option>
+        <option value="footwear">Footwear</option>
+        <option value="apparel">Apparel</option>
+        <option value="accessories">Accessories</option>
+    </select>
+    <input type="search" id="orderSearch" class="order-search-input" placeholder="Search order ID, customer, product..." />
+    <div class="order-date-filters">
+        <label for="dateFrom">From</label>
+        <input type="date" id="dateFrom" class="order-date-input" />
+        <label for="dateTo">To</label>
+        <input type="date" id="dateTo" class="order-date-input" />
+        <button type="button" id="clearDates" class="clear-date-btn">Clear</button>
+    </div>
+</div>
+
+<table class="order-table">
+    <thead>
+        <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Date &amp; Time</th>
+            <th>Products</th>
+            <th>Qty</th>
+            <th>Total</th>
+            <th>Payment</th>
+            <th>Status</th>
+            <th>Courier</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var order in Model.Orders)
+        {
+            var category =
+                order.ProductName.Contains("Shoe", StringComparison.OrdinalIgnoreCase) ? "footwear" :
+                order.ProductName.Contains("Shirt", StringComparison.OrdinalIgnoreCase) ? "apparel" :
+                order.ProductName.Contains("Top", StringComparison.OrdinalIgnoreCase) ? "apparel" :
+                order.ProductName.Contains("Short", StringComparison.OrdinalIgnoreCase) ? "apparel" :
+                "accessories";
+            var customerContact = order.Customer switch
+            {
+                "Kiboy" => "+63 917 100 1001",
+                "Loyd" => "+63 917 100 1002",
+                "Sarah" => "+63 917 100 1003",
+                "Discaya" => "+63 917 100 1004",
+                "Romualdez" => "+63 917 100 1005",
+                "Kenneth" => "+63 917 100 1006",
+                _ => "+63 917 000 0000"
+            };
+            var customerAddress = order.Customer switch
+            {
+                "Kiboy" => "1208 Horizon Heights, BGC, Taguig City",
+                "Loyd" => "22 Riverside St., Quezon City",
+                "Sarah" => "88 Maple Ave., Cebu City",
+                "Discaya" => "14 Seaside Drive, Davao City",
+                "Romualdez" => "10 Aurora Blvd., Pasig City",
+                "Kenneth" => "5 Summit Road, Makati City",
+                _ => "Address not available"
+            };
+            <tr class="order-row"
+                data-status="@order.FulfillmentStatus.ToLower().Replace(" ", "-")"
+                data-date="@order.DateTime.ToString("yyyy-MM-dd")"
+                data-category="@category">
+                <td>@order.OrderId</td>
+                <td>@order.Customer</td>
+                <td>@order.DateTime.ToString("MMM dd, yyyy hh:mm tt")</td>
+                <td>
+                    <img src="@order.ProductImage" width="40" alt="@order.ProductName" />
+                    @order.ProductName
+                </td>
+                <td>x@order.Quantity</td>
+                <td>&#8369;@order.TotalAmount.ToString("N2")</td>
+                <td>
+                    <span class="badge payment @order.PaymentStatus.ToLower()">
+                        @order.PaymentStatus
+                    </span>
+                </td>
+                <td>
+                    <span class="badge status">
+                        @order.FulfillmentStatus
+                    </span>
+                </td>
+                <td>
+                    @(string.Equals(order.FulfillmentStatus, "Pending", StringComparison.OrdinalIgnoreCase)
+                        ? string.Empty
+                        : order.Courier)
+                </td>
+                <td>
+                    @if (string.Equals(order.FulfillmentStatus, "Pending", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <div class="action-menu-wrap">
+                            <button type="button" class="action-icon-btn" aria-label="Order actions" onclick="toggleOrderMenu(this)">
+                                &#8942;
+                            </button>
+                            <div class="action-menu">
+                                <a class="action-menu-item" asp-controller="Dashboard" asp-action="OrderDetails" asp-route-id="@order.OrderId">View Details</a>
+                                <button type="button"
+                                        class="action-menu-item accept-order-btn"
+                                        data-order-id="@order.OrderId"
+                                        data-customer="@order.Customer"
+                                        data-order-date="@order.DateTime.ToString("MMM dd, yyyy hh:mm tt")"
+                                        data-product="@order.ProductName"
+                                        data-quantity="@order.Quantity"
+                                        data-total="@order.TotalAmount.ToString("N2")"
+                                        data-payment="@order.PaymentStatus"
+                                        data-contact="@customerContact"
+                                        data-address="@customerAddress">
+                                    Process Order
+                                </button>
+                                <button type="button" class="action-menu-item">Contact Customer</button>
+                                <button type="button" class="action-menu-item add-note-btn" data-order-id="@order.OrderId" data-customer="@order.Customer">Add Note</button>
+                            </div>
+                        </div>
+                    }
+                    else if (string.Equals(order.FulfillmentStatus, "To Ship", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <div class="action-menu-wrap">
+                            <button type="button" class="action-icon-btn" aria-label="Order actions" onclick="toggleOrderMenu(this)">
+                                &#8942;
+                            </button>
+                            <div class="action-menu">
+                                <a class="action-menu-item" asp-controller="Dashboard" asp-action="OrderDetails" asp-route-id="@order.OrderId">View Details</a>
+                                <button type="button" class="action-menu-item">Contact Customer</button>
+                                <button type="button" class="action-menu-item add-note-btn" data-order-id="@order.OrderId" data-customer="@order.Customer">Add Note</button>
+                            </div>
+                        </div>
+                    }
+                    else if (string.Equals(order.FulfillmentStatus, "Ship", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <div class="action-menu-wrap">
+                            <button type="button" class="action-icon-btn" aria-label="Order actions" onclick="toggleOrderMenu(this)">
+                                &#8942;
+                            </button>
+                            <div class="action-menu">
+                                <a class="action-menu-item" asp-controller="Dashboard" asp-action="OrderDetails" asp-route-id="@order.OrderId">View Details</a>
+                                <button type="button" class="action-menu-item">Contact Customer</button>
+                                <button type="button" class="action-menu-item add-note-btn" data-order-id="@order.OrderId" data-customer="@order.Customer">Add Note</button>
+                            </div>
+                        </div>
+                    }
+                    else if (string.Equals(order.FulfillmentStatus, "Delivered", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <div class="action-menu-wrap">
+                            <button type="button" class="action-icon-btn" aria-label="Order actions" onclick="toggleOrderMenu(this)">
+                                &#8942;
+                            </button>
+                            <div class="action-menu">
+                                <a class="action-menu-item" asp-controller="Dashboard" asp-action="OrderDetails" asp-route-id="@order.OrderId">View Details</a>
+                                <button type="button" class="action-menu-item">Download Receipt</button>
+                                <button type="button" class="action-menu-item">Contact Customer</button>
+                                <button type="button" class="action-menu-item add-note-btn" data-order-id="@order.OrderId" data-customer="@order.Customer">Add Note</button>
+                            </div>
+                        </div>
+                    }
+                    else if (string.Equals(order.FulfillmentStatus, "Cancelled", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <div class="action-menu-wrap">
+                            <button type="button" class="action-icon-btn" aria-label="Order actions" onclick="toggleOrderMenu(this)">
+                                &#8942;
+                            </button>
+                            <div class="action-menu">
+                                <a class="action-menu-item" asp-controller="Dashboard" asp-action="OrderDetails" asp-route-id="@order.OrderId">View Details</a>
+                                <button type="button" class="action-menu-item">Download Receipt</button>
+                                <button type="button" class="action-menu-item">Contact Customer</button>
+                            </div>
+                        </div>
+                    }
+                    else if (string.Equals(order.FulfillmentStatus, "Return", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <div class="action-menu-wrap">
+                            <button type="button" class="action-icon-btn" aria-label="Order actions" onclick="toggleOrderMenu(this)">
+                                &#8942;
+                            </button>
+                            <div class="action-menu">
+                                <button type="button"
+                                        class="action-menu-item review-request-btn"
+                                        data-order-id="@order.OrderId"
+                                        data-buyer="@order.Customer"
+                                        data-product="@order.ProductName"
+                                        data-order-date="@order.DateTime.ToString("MMM dd, yyyy hh:mm tt")"
+                                        data-delivery-date="@order.DateTime.AddDays(2).ToString("MMM dd, yyyy")"
+                                        data-payment="@order.PaymentStatus">
+                                    Review Request
+                                </button>
+                                <a class="action-menu-item" asp-controller="Dashboard" asp-action="OrderDetails" asp-route-id="@order.OrderId">View Details</a>
+                                <button type="button" class="action-menu-item">Contact Customer</button>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <button type="button" class="action-icon-btn" aria-label="Order actions" disabled>
+                            &#8942;
+                        </button>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div id="addNotesModal" class="notes-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="addNotesTitle">
+    <div class="notes-modal-container">
+        <div class="notes-modal-header">
+            <h3 class="notes-modal-title" id="addNotesTitle">Add Notes for <span id="addNotesOrderIdText"></span></h3>
+            <button type="button" class="notes-modal-close-btn" id="addNotesCloseBtn" aria-label="Close">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="notes-modal-body">
+            <div class="notes-profile-card">
+                <div class="notes-profile-header">Customer</div>
+                <div class="notes-profile-name" id="addNotesCustomerText"></div>
+            </div>
+
+            <label class="notes-text-label" for="addNotesTextarea">Reason / Notes</label>
+            <textarea id="addNotesTextarea" class="notes-textarea" rows="5" maxlength="300" placeholder="Type your notes here..."></textarea>
+            <div class="notes-char-count"><span id="addNotesCharCount">0</span>/300</div>
+            <p class="notes-error" id="addNotesError">Please enter notes before saving.</p>
+        </div>
+        <div class="notes-modal-footer">
+            <button type="button" class="notes-btn notes-btn-cancel" id="addNotesCancelBtn">Cancel</button>
+            <button type="button" class="notes-btn notes-btn-primary" id="addNotesSaveBtn">Save Note</button>
+        </div>
+    </div>
+</div>
+
+<div id="addNotesToast" class="notes-toast" role="status" aria-live="polite">
+    <span id="addNotesToastMessage"></span>
+</div>
+
+<div id="reviewRequestModal" class="review-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="reviewRequestTitle">
+    <div class="review-modal-container">
+        <div class="review-modal-header">
+            <h3 class="review-modal-title" id="reviewRequestTitle">Review Return Request</h3>
+            <button type="button" class="review-close-btn" id="reviewRequestCloseBtn" aria-label="Close">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        <div class="review-modal-body">
+            <section class="review-section">
+                <h4>Order Details</h4>
+                <div class="review-grid">
+                    <div><span>Order ID</span><strong id="reviewOrderId"></strong></div>
+                    <div><span>Buyer's Username</span><strong id="reviewBuyer"></strong></div>
+                    <div><span>Product</span><strong id="reviewProduct"></strong></div>
+                    <div><span>Order Date</span><strong id="reviewOrderDate"></strong></div>
+                    <div><span>Delivery Date</span><strong id="reviewDeliveryDate"></strong></div>
+                    <div><span>Payment Method</span><strong id="reviewPaymentMethod"></strong></div>
+                </div>
+            </section>
+
+            <section class="review-section">
+                <h4>Return Request Information</h4>
+                <label for="reviewReturnReason">Return Reason</label>
+                <select id="reviewReturnReason" class="review-input">
+                    <option>Damaged/Defective item</option>
+                    <option>Wrong item received</option>
+                    <option>Missing parts/accessories</option>
+                    <option>Not as described</option>
+                    <option>Changed mind (if applicable)</option>
+                    <option>Other</option>
+                </select>
+
+                <label for="reviewBuyerDescription">Buyer's Description</label>
+                <textarea id="reviewBuyerDescription" class="review-input review-textarea" readonly>Received item has visible scratches and packaging appears compressed on one side. Buyer requests return and refund.</textarea>
+
+                <div class="review-evidence">
+                    <span>Photos/Videos Evidence:</span>
+                    <ul>
+                        <li>Received product photo</li>
+                        <li>Damage/defect close-up</li>
+                        <li>Packaging condition photo</li>
+                        <li>Comparison with order details screenshot</li>
+                    </ul>
+                    <div class="review-evidence-gallery">
+                        <figure class="review-evidence-item">
+                            <img src="https://picsum.photos/seed/received-product/180/120" alt="Received product photo" />
+                            <figcaption>Received product photo</figcaption>
+                        </figure>
+                        <figure class="review-evidence-item">
+                            <img src="https://picsum.photos/seed/damage-closeup/180/120" alt="Damage or defect close-up" />
+                            <figcaption>Damage/defect close-up</figcaption>
+                        </figure>
+                        <figure class="review-evidence-item">
+                            <img src="https://picsum.photos/seed/packaging-condition/180/120" alt="Packaging condition photo" />
+                            <figcaption>Packaging condition photo</figcaption>
+                        </figure>
+                        <figure class="review-evidence-item">
+                            <img src="https://picsum.photos/seed/comparison-screenshot/180/120" alt="Comparison with order details screenshot" />
+                            <figcaption>Order details comparison</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </section>
+
+            <section class="review-section">
+                <h4>Timeline</h4>
+                <div class="review-grid">
+                    <div><span>Requested At</span><strong id="reviewRequestedAt"></strong></div>
+                    <div><span>Seller Response Deadline</span><strong id="reviewDeadline"></strong></div>
+                </div>
+            </section>
+
+            <section class="review-section">
+                <h4>Seller Response Options</h4>
+                <div class="review-choice-row">
+                    <label><input type="radio" name="reviewDecision" value="approve" /> Approve Return/Refund</label>
+                    <label><input type="radio" name="reviewDecision" value="reject" /> Reject Return/Refund</label>
+                </div>
+
+                <div id="reviewApproveSection" class="review-decision-block">
+                    <label for="reviewRefundMethod">Refund Method</label>
+                    <select id="reviewRefundMethod" class="review-input">
+                        <option>Original payment method</option>
+                        <option>ShopeePay</option>
+                    </select>
+                    <label for="reviewApproveComment">Optional Comments</label>
+                    <textarea id="reviewApproveComment" class="review-input review-textarea" placeholder="Add optional notes for buyer..."></textarea>
+                </div>
+
+                <div id="reviewRejectSection" class="review-decision-block">
+                    <label for="reviewRejectReason">Reason for Rejection</label>
+                    <select id="reviewRejectReason" class="review-input">
+                        <option value="">Select rejection reason</option>
+                        <option>Product not defective/damaged</option>
+                        <option>Return period expired</option>
+                        <option>Product was used/altered</option>
+                        <option>Not the seller's fault</option>
+                        <option>Incomplete return package</option>
+                        <option>Other</option>
+                    </select>
+
+                    <div class="review-evidence">
+                        <span>Supporting Evidence:</span>
+                        <label><input type="checkbox" /> Photos of product before shipping</label>
+                        <label><input type="checkbox" /> Packaging photos</label>
+                        <label><input type="checkbox" /> Product quality certificates</label>
+                        <label><input type="checkbox" /> Communication screenshots with buyer</label>
+                        <label><input type="checkbox" /> Video evidence</label>
+                    </div>
+
+                    <label for="reviewRejectComment">Comments/Explanation</label>
+                    <textarea id="reviewRejectComment" class="review-input review-textarea" placeholder="Explain your response to the buyer's claims..."></textarea>
+                </div>
+                <p id="reviewRequestError" class="review-error">Please complete required response details before submitting.</p>
+            </section>
+        </div>
+
+        <div class="review-modal-footer">
+            <button type="button" class="notes-btn notes-btn-cancel" id="reviewRequestCancelBtn">Cancel</button>
+            <button type="button" class="notes-btn notes-btn-primary" id="reviewRequestSubmitBtn">Submit Response</button>
+        </div>
+    </div>
+</div>
+
+<div id="reviewRequestToast" class="notes-toast" role="status" aria-live="polite">
+    <span id="reviewRequestToastMessage"></span>
+</div>
+
+<div id="courierSelectionModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="courierSelectionTitle">
+    <div class="modal-content modal-content-wide">
+        <h3 class="modal-title" id="courierSelectionTitle">Choose Delivery Courier</h3>
+        <p class="modal-message">
+            Select a courier for order <strong id="courierSelectionOrderIdText"></strong>.
+        </p>
+        <div class="courier-grid">
+            <button type="button" class="courier-option" data-courier="J&amp;T Express">
+                <img class="courier-logo" src="https://picsum.photos/seed/courier-jt/80/80" alt="J&amp;T Express" />
+                <span class="courier-name">J&amp;T Express</span>
+            </button>
+            <button type="button" class="courier-option" data-courier="LBC Express">
+                <img class="courier-logo" src="https://picsum.photos/seed/courier-lbc/80/80" alt="LBC Express" />
+                <span class="courier-name">LBC Express</span>
+            </button>
+            <button type="button" class="courier-option" data-courier="Ninja Van">
+                <img class="courier-logo" src="https://picsum.photos/seed/courier-ninja/80/80" alt="Ninja Van" />
+                <span class="courier-name">Ninja Van</span>
+            </button>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="modal-btn modal-btn-cancel" id="courierSelectionCancelBtn">Cancel</button>
+            <button type="button" class="modal-btn modal-btn-confirm" id="courierSelectionConfirmBtn" disabled>Confirm Courier</button>
+        </div>
+    </div>
+</div>
+
+<div id="shipmentSummaryModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="shipmentSummaryTitle">
+    <div class="modal-content modal-content-waybill">
+        <div class="waybill-modal-header">
+            <h3 class="modal-title" id="shipmentSummaryTitle">Shipment Waybill Preview</h3>
+            <button type="button" class="waybill-close-btn" id="shipmentSummaryCloseBtn" aria-label="Close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        <div class="waybill-preview-container">
+            <div id="shipmentSummaryPrintContent" class="jt-waybill">
+                <div class="jt-waybill-header">
+                    <div class="jt-brand-section">
+                        <div class="jt-waybill-header">
+    <div class="jt-brand-section">
+        <div class="jt-platform-logo">
+            <!-- Removed TikTok SVG icon -->
+            <span style="font-weight: 700; font-size: 18px;">Next Horizon</span>
+        </div>
+        <div class="jt-express-logo">
+            <span class="jt-logo-text">J&amp;T</span>
+            <span class="jt-express-text">EXPRESS</span>
+        </div>
+    </div>
+    <div class="jt-waybill-number">
+        <div class="jt-barcode">
+            <div class="barcode-lines">
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+        </div>
+        <span class="jt-tracking-num" id="waybillTrackingNum">632898929512</span>
+    </div>
+</div>
+                        <div class="jt-express-logo">
+                            <span class="jt-logo-text">J&amp;T</span>
+                            <span class="jt-express-text">EXPRESS</span>
+                        </div>
+                    </div>
+                    <div class="jt-waybill-number">
+                        <div class="jt-barcode">
+                            <div class="barcode-lines">
+                                <span></span><span></span><span></span><span></span><span></span>
+                                <span></span><span></span><span></span><span></span><span></span>
+                                <span></span><span></span><span></span><span></span><span></span>
+                                <span></span><span></span><span></span><span></span><span></span>
+                            </div>
+                        </div>
+                        <span class="jt-tracking-num" id="waybillTrackingNum">632898929512</span>
+                    </div>
+                </div>
+
+                <div class="jt-sorting-code">
+                    <span id="waybillSortingCode">320-A019 00</span>
+                </div>
+
+                <div class="jt-waybill-body">
+                    <div class="jt-receiver-section">
+                        <div class="jt-section-label">
+                            <span class="jt-label-icon">📦</span>
+                            <span>Receiver</span>
+                        </div>
+                        <div class="jt-receiver-info">
+                            <div class="jt-receiver-name">
+                                <span id="waybillCustomerName">Customer Name</span>
+                                <span class="jt-phone" id="waybillContact">(+63)0000000000</span>
+                            </div>
+                            <div class="jt-receiver-address" id="waybillAddress">
+                                Address
+                            </div>
+                        </div>
+                        <div class="jt-route-code">
+                            <span id="waybillRouteCode">047</span>
+                        </div>
+                    </div>
+
+                    <div class="jt-sender-section">
+                        <div class="jt-section-label">
+                            <span class="jt-label-icon">🏪</span>
+                            <span>Sender</span>
+                        </div>
+                        <div class="jt-sender-info">
+                            <span class="jt-sender-name" id="waybillSellerName">NextHorizon Seller</span>
+                            <span class="jt-seller-address">NextHorizon Store, Bonifacio Global City, Taguig</span>
+                        </div>
+                    </div>
+
+                    <div class="jt-qr-section">
+                        <div class="jt-qr-code">
+                            <svg width="100" height="100" viewBox="0 0 100 100" fill="currentColor">
+                                <rect x="0" y="0" width="30" height="30" fill="#000" />
+                                <rect x="70" y="0" width="30" height="30" fill="#000" />
+                                <rect x="0" y="70" width="30" height="30" fill="#000" />
+                                <rect x="40" y="40" width="20" height="20" fill="#000" />
+                                <rect x="10" y="10" width="10" height="10" fill="#fff" />
+                                <rect x="80" y="10" width="10" height="10" fill="#fff" />
+                                <rect x="10" y="80" width="10" height="10" fill="#fff" />
+                            </svg>
+                        </div>
+                        <div class="jt-service-code">
+                            <span id="waybillServiceCode">PH-LM-JT-notcod</span>
+                        </div>
+                        <div class="jt-delivery-code">
+                            <span id="waybillDeliveryCode">SC-TT-DG</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="jt-payment-section">
+                    <div class="jt-payment-label">
+                        <span>PAYMENT METHOD</span>
+                    </div>
+                    <div class="jt-payment-value">
+                        <span id="waybillPaymentMethod">CASHLESS</span>
+                    </div>
+                </div>
+
+                <div class="jt-items-section">
+                    <div class="jt-items-header">
+                        <span class="jt-col-sku">SKU ID</span>
+                        <span class="jt-col-name">SKU Name</span>
+                        <span class="jt-col-qty">QTY</span>
+                    </div>
+                    <div class="jt-items-body">
+                        <div class="jt-item-row">
+                            <span class="jt-item-sku" id="waybillSkuId">1731230236913404758</span>
+                            <span class="jt-item-name" id="waybillProductName">Product Name</span>
+                            <span class="jt-item-qty" id="waybillQuantity">1</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="jt-waybill-footer">
+                    <div class="jt-order-info">
+                        <span>Order ID: <strong id="waybillOrderId">582744070884712415</strong></span>
+                    </div>
+                    <div class="jt-print-info">
+                        <span>Print Time: <strong id="waybillPrintTime">2026-02-26 23:31</strong></span>
+                    </div>
+                    <div class="jt-waybill-code">
+                        <span id="waybillCode">P003</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-actions">
+            <button type="button" class="modal-btn modal-btn-cancel" id="shipmentSummaryCloseBtn2">Close</button>
+            <button type="button" class="modal-btn modal-btn-confirm" id="shipmentSummaryPrintBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                    <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                Print Waybill
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="declineOrderModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="declineOrderTitle">
+    <div class="modal-content">
+        <div class="modal-icon modal-icon-danger" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </div>
+        <h3 class="modal-title" id="declineOrderTitle">Decline This Order?</h3>
+        <p class="modal-message">
+            You are about to decline order <strong id="declineOrderIdText"></strong>.
+        </p>
+        <div class="modal-actions">
+            <button type="button" class="modal-btn modal-btn-cancel" id="declineOrderCancelBtn">Cancel</button>
+            <button type="button" class="modal-btn modal-btn-danger" id="declineOrderConfirmBtn">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<div id="declineReasonModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="declineReasonTitle">
+    <div class="modal-content">
+        <h3 class="modal-title" id="declineReasonTitle">Add Reason for Declining</h3>
+        <p class="modal-message">
+            Please add a note for order <strong id="declineReasonOrderIdText"></strong>.
+        </p>
+        <textarea id="declineReasonInput" class="modal-textarea" rows="4" placeholder="Type your reason here..."></textarea>
+        <p id="declineReasonError" class="modal-error" style="display:none;">Please enter a reason before submitting.</p>
+        <div class="modal-actions">
+            <button type="button" class="modal-btn modal-btn-cancel" id="declineReasonCancelBtn">Cancel</button>
+            <button type="button" class="modal-btn modal-btn-danger" id="declineReasonSubmitBtn">Submit Decline</button>
+        </div>
+    </div>
+</div>
+
+<div id="declineSuccessModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="declineSuccessTitle">
+    <div class="modal-content">
+        <div class="modal-icon modal-icon-danger" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </div>
+        <h3 class="modal-title" id="declineSuccessTitle">Order Declined</h3>
+        <p class="modal-message" id="declineSuccessMessage"></p>
+        <div class="modal-actions">
+            <button type="button" class="modal-btn modal-btn-confirm" id="declineSuccessOkBtn">OK</button>
+        </div>
+    </div>
+</div>
+
+ @section Scripts{
+    <script src="~/js/ordermanagement.js"></script>
+}

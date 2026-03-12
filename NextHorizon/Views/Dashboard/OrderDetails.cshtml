@@ -1,0 +1,111 @@
+@model NextHorizon.Models.OrderDetailsViewModel
+
+@section Styles{
+    <link rel="stylesheet" href="~/css/orderdetails.css" />
+}
+
+@{
+    ViewData["Title"] = "Order Details";
+    ViewData["DashboardHeading"] = "Order Details";
+    ViewData["SellerName"] = Model.SellerName;
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="page-actions">
+    <a class="link-btn" asp-controller="Dashboard" asp-action="OrderManagement">
+        <i class="fas fa-arrow-left"></i> Back to Orders
+    </a>
+</div>
+
+<div class="order-details-grid">
+    <section>
+        <div class="detail-card">
+            <h3 class="section-title">Order Information</h3>
+            <div class="detail-row">
+                <div class="detail-label">Order ID</div>
+                <div class="detail-value">@Model.OrderId</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Order Date</div>
+                <div class="detail-value">@Model.OrderDateTime.ToString("MMM dd, yyyy hh:mm tt")</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Payment Status</div>
+                <div class="detail-value">
+                    <span class="badge payment @Model.PaymentStatus.ToLower()">@Model.PaymentStatus</span>
+                </div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Fulfillment Status</div>
+                <div class="detail-value"><span class="badge status">@Model.FulfillmentStatus</span></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Courier</div>
+                <div class="detail-value">@Model.Courier</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Tracking Number</div>
+                <div class="detail-value">@Model.TrackingNumber</div>
+            </div>
+        </div>
+
+        <div class="detail-card">
+            <h3 class="section-title">Items</h3>
+            @foreach (var item in Model.Items)
+            {
+                <div class="item-row">
+                    <div class="item-left">
+                        <img src="@item.ProductImage" alt="@item.ProductName" />
+                        <div>
+                            <div class="detail-value">@item.ProductName</div>
+                            <div class="detail-label">Qty: @item.Quantity x &#8369;@item.UnitPrice.ToString("N2")</div>
+                        </div>
+                    </div>
+                    <div class="detail-value">&#8369;@item.LineTotal.ToString("N2")</div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <aside>
+        <div class="detail-card">
+            <h3 class="section-title">Buyer</h3>
+            <div class="detail-row">
+                <div class="detail-label">Name</div>
+                <div class="detail-value">@Model.BuyerName</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Contact</div>
+                <div class="detail-value">@Model.ContactNumber</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Address</div>
+                <div class="detail-value">@Model.ShippingAddress</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Notes</div>
+                <div class="detail-value">@Model.Notes</div>
+            </div>
+        </div>
+
+        <div class="detail-card">
+            <h3 class="section-title">Payment Summary</h3>
+            <div class="summary-row">
+                <span>Subtotal</span>
+                <span>&#8369;@Model.Subtotal.ToString("N2")</span>
+            </div>
+            <div class="summary-row">
+                <span>Shipping Fee</span>
+                <span>&#8369;@Model.ShippingFee.ToString("N2")</span>
+            </div>
+            <div class="summary-row">
+                <span>Discount</span>
+                <span>- &#8369;@Model.Discount.ToString("N2")</span>
+            </div>
+            <div class="summary-row summary-total">
+                <span>Total</span>
+                <span>&#8369;@Model.Total.ToString("N2")</span>
+            </div>
+        </div>
+    </aside>
+</div>
