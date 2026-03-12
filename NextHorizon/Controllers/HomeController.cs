@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using NextHorizon.Models;
 using System.Diagnostics;
+using NextHorizon.Models;
 
 namespace NextHorizon.Controllers
 {
@@ -8,12 +8,7 @@ namespace NextHorizon.Controllers
     {
         public IActionResult Index()
         {
-            return View();
-        }
-
-        public IActionResult Privacy()
-        {
-            return View();
+            return RedirectToAction("Login", "Account");
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

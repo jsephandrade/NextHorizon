@@ -1,0 +1,334 @@
+
+
+/* ===== GLOBAL STYLE ===== */
+
+body{
+    background:#f6f7fb;
+}
+
+/* ===== GREETING ===== */
+
+.greeting{
+    margin-bottom:35px;
+}
+
+.greeting h1{
+    font-size:32px;
+    font-weight:700;
+    color:#111;
+    margin-bottom:6px;
+}
+
+.greeting p{
+    color:#8a8a8a;
+    font-size:14px;
+}
+
+
+/* ===== SECTION ===== */
+
+.section{
+    margin-bottom:35px;
+}
+
+.dashboard-section-title{
+    font-size:20px;
+    font-weight:700;
+    color:#111;
+    margin-bottom:20px;
+}
+
+
+/* ===== GRID ===== */
+
+.cards-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:22px;
+}
+
+
+/* ===== CARD DESIGN ===== */
+
+.card{
+    background:#ffffff;
+    border-radius:14px;
+    padding:22px;
+    border:1px solid #f0f0f0;
+
+    box-shadow:
+        0 2px 6px rgba(0,0,0,0.04),
+        0 8px 24px rgba(0,0,0,0.06);
+
+    transition:all .25s ease;
+}
+
+.card:hover{
+    transform:translateY(-4px);
+    box-shadow:
+        0 6px 16px rgba(0,0,0,0.08),
+        0 16px 36px rgba(0,0,0,0.10);
+}
+
+
+/* ===== CARD CONTENT ===== */
+
+.card-content{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.card-label{
+    font-size:13px;
+    color:#888;
+    margin-bottom:6px;
+}
+
+.card-value{
+    font-size:20px;
+    font-weight:700;
+    color:#111;
+}
+
+.card-value small{
+    font-size:12px;
+    color:#aaa;
+}
+
+
+/* ===== BADGES ===== */
+
+.card-badge{
+    min-width:36px;
+    height:36px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    font-weight:700;
+    font-size:14px;
+}
+
+.card-badge.urgent{
+    background:#ff4d4f;
+    color:white;
+}
+
+.card-badge.pending{
+    background:#ffd666;
+    color:#333;
+}
+
+.card-badge.alert{
+    background:#ffa940;
+    color:white;
+}
+
+
+/* ===== PERFORMANCE CARDS ===== */
+
+.performance-card{
+    position:relative;
+    overflow:hidden;
+}
+
+.metric-value{
+    font-size:30px;
+    font-weight:800;
+    color:#111;
+    margin-bottom:4px;
+}
+
+.metric-growth{
+    font-size:14px;
+    font-weight:600;
+}
+
+.metric-growth.positive{
+    color:#2ecc71;
+}
+
+
+/* ===== CHART ICON ===== */
+
+.card-chart{
+    position:absolute;
+    right:20px;
+    bottom:20px;
+    font-size:60px;
+    color:rgba(0,0,0,0.05);
+}
+
+
+/* ===== BOTTOM GRID ===== */
+
+.bottom-grid{
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:30px;
+}
+
+
+/* ===== TABLE ===== */
+
+.table-container{
+    background:white;
+    border-radius:14px;
+    overflow:hidden;
+
+    box-shadow:
+        0 2px 6px rgba(0,0,0,0.04),
+        0 8px 24px rgba(0,0,0,0.06);
+}
+
+.orders-table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.orders-table th{
+    background:#fafafa;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.8px;
+    color:#888;
+    padding:16px 20px;
+}
+
+.orders-table td{
+    padding:16px 20px;
+    font-size:14px;
+    color:#333;
+}
+
+.orders-table tr{
+    border-bottom:1px solid #f2f2f2;
+}
+
+.orders-table tr:hover{
+    background:#f8f9fb;
+}
+
+
+/* ===== STATUS BADGE ===== */
+
+.status-badge{
+    padding:6px 14px;
+    border-radius:30px;
+    font-size:11px;
+    font-weight:700;
+}
+
+.status-badge.paid{
+    background:#e6f7ee;
+    color:#27ae60;
+}
+
+.status-badge.to-ship{
+    background:#e8f1ff;
+    color:#2f6bff;
+}
+
+.status-badge.pending{
+    background:#fff4e6;
+    color:#d48806;
+}
+
+
+/* ===== PRODUCT LIST ===== */
+
+.products-list{
+    background:white;
+    border-radius:14px;
+    padding:22px;
+
+    box-shadow:
+        0 2px 6px rgba(0,0,0,0.04),
+        0 8px 24px rgba(0,0,0,0.06);
+}
+
+.product-item{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    padding:16px 0;
+    border-bottom:1px solid #f2f2f2;
+}
+
+.product-item:last-child{
+    border-bottom:none;
+}
+
+.product-rank{
+    font-size:24px;
+    font-weight:800;
+    color:#111;
+}
+
+.product-image{
+    width:64px;
+    height:64px;
+    border-radius:10px;
+    overflow:hidden;
+    background:#f3f3f3;
+}
+
+.product-image img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
+.product-info h4{
+    font-size:14px;
+    font-weight:700;
+    color:#111;
+    margin-bottom:3px;
+}
+
+.product-info span{
+    font-size:12px;
+    color:#888;
+}
+
+
+/* ===== ANIMATION ===== */
+
+@keyframes fadeIn{
+    from{
+        opacity:0;
+        transform:translateY(8px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+.card{
+    animation:fadeIn .4s ease;
+}
+
+
+/* ===== RESPONSIVE ===== */
+
+@media(max-width:1024px){
+
+    .bottom-grid{
+        grid-template-columns:1fr;
+    }
+
+    .performance-grid{
+        grid-template-columns:1fr;
+    }
+
+}
+
+@media(max-width:768px){
+
+    .cards-grid{
+        grid-template-columns:1fr;
+    }
+
+}

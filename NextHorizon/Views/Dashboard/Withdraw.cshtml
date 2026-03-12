@@ -1,0 +1,78 @@
+@model FinanceViewModel
+
+@{
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+@section Styles{
+<link rel="stylesheet" href="~/css/withdraw.css" />
+}
+
+@{
+    ViewData["Title"] = "Withdraw";
+}
+
+<div class="page-actions">
+    <a class="link-btn" asp-controller="Dashboard" asp-action="Finance">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="withdraw-page">
+
+    <div class="withdraw-card">
+
+        <h2 class="withdraw-title">Withdraw</h2>
+        <p class="withdraw-subtitle">
+            Fill out the form below to make a withdrawal.
+        </p>
+
+        <form>
+
+            <!-- Available Balance -->
+            <div class="form-group">
+                <label>Available Balance</label>
+                <div class="balance-display">
+                    &#8369;@Model.AvailableBalance.ToString("N2")
+                </div>
+            </div>
+
+            <!-- Withdraw Amount -->
+            <div class="form-group">
+                <label>Amount to Withdraw</label>
+
+                <div class="amount-input">
+                    <span class="peso">&#8369;</span>
+                    <input type="number" placeholder="Enter amount" />
+                    <button type="button" class="max-btn">MAX</button>
+                </div>
+
+            </div>
+
+            <!-- Payment Method -->
+            <div class="form-group">
+                <label>Payment Method</label>
+
+                <select class="payment-select">
+                    <option>Select payout account</option>
+                    <option>GCash</option>
+                    <option>Maya</option>
+                    <option>GoTyme</option>
+                    <option>Bank Transfer</option>
+                </select>
+
+            </div>
+
+            <button type="submit" class="withdraw-btn">
+                Submit Withdrawal
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+@section Scripts{
+<script src="~/js/withdraw.js"></script>
+}

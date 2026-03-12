@@ -1,0 +1,144 @@
+@model NextHorizon.Models.FinanceViewModel
+
+<div class="page-actions">
+    <a class="link-btn" asp-controller="Dashboard" asp-action="Finance">
+        <i class="fas fa-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="balance-page">
+
+    <!-- Balance Header -->
+    <div class="balance-box">
+        <h2 class="balance-page-title">My Balance</h2>
+        <p class="balance-description">
+            Check your available and pending balance
+        </p>
+    </div>
+
+    <!-- Balance Cards -->
+    <section class="section">
+        <div class="cards-grid performance-grid">
+
+            <div class="card performance-card clickable-card"
+                 onclick="window.location.href='@Url.Action("PendingPayout","Dashboard")'">
+
+                <div class="card-header">
+                    <span class="card-label">Pending Payout</span>
+                </div>
+
+                <div class="card-body">
+                    <div class="metric-value">&#8369;@Model.PendingPayout.ToString("N2")</div>
+                    <div class="metric-growth">
+                        <i class="fas fa-clock"></i>
+                        <span>Under review</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="card performance-card">
+
+                <div class="card-header">
+                    <span class="card-label">Total Withdrawn</span>
+                </div>
+
+                <div class="card-body">
+                    <div class="metric-value">&#8369;@Model.TotalWithdrawn.ToString("N2")</div>
+                    <div class="metric-growth">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Completed payouts</span>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Transaction Table -->
+    <section class="section">
+
+        <div class="table-container">
+
+            <!-- Total Gross -->
+            <div class="total-gross">
+                <h3>
+                    Total Gross:
+                    &#8369;@((Model.AvailableBalance + Model.PendingPayout + Model.TotalWithdrawn).ToString("N2"))
+                </h3>
+            </div>
+
+            <!-- Tabs -->
+            <div class="balance-tabs">
+                <button class="tab active" data-type="all">All</button>
+                <button class="tab" data-type="balance">Balance Records</button>
+                <button class="tab" data-type="earnings">Earnings</button>
+                <button class="tab" data-type="adjustment">Adjustments</button>
+                <button class="tab" data-type="hold">Holds</button>
+            </div>
+
+            <!-- Table -->
+            <table class="order-table">
+
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Change</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @if (Model.Transactions != null && Model.Transactions.Any())
+                    {
+                        decimal runningBalance = 0;
+
+                        foreach (var txn in Model.Transactions.OrderBy(t => t.TransactionDate))
+                        {
+                            runningBalance += txn.Amount;
+
+                            <tr data-type="@txn.Type.ToLower()">
+
+                                <td>@txn.TransactionDate.ToString("MMM dd, yyyy")</td>
+
+                                <td>
+                                    <span class="txn-description">
+                                        @txn.Type - @txn.Method
+                                    </span>
+                                </td>
+
+                                <td class="@(txn.Amount >= 0 ? "amount-positive" : "amount-negative")">
+                                    @(txn.Amount >= 0 ? "+" : "-")
+                                    &#8369;@Math.Abs(txn.Amount).ToString("N2")
+                                </td>
+
+                                <td>
+                                    &#8369;@runningBalance.ToString("N2")
+                                </td>
+
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="empty-state">
+                                No transactions available
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</div>
+
+<script src="~/js/mybalance.js"></script>
