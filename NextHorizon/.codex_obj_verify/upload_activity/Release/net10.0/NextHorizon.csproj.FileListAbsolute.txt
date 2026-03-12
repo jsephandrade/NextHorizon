@@ -1,0 +1,10 @@
+C:\dev\NextHorizon\NextHorizon\.codex_obj_verify\upload_activity\Release\net10.0\NextHorizon.csproj.AssemblyReference.cache
+C:\dev\NextHorizon\NextHorizon\.codex_obj_verify\upload_activity\Release\net10.0\rpswa.dswa.cache.json
+C:\dev\NextHorizon\NextHorizon\.codex_obj_verify\upload_activity\Release\net10.0\NextHorizon.GeneratedMSBuildEditorConfig.editorconfig
+C:\dev\NextHorizon\NextHorizon\.codex_obj_verify\upload_activity\Release\net10.0\NextHorizon.AssemblyInfoInputs.cache
+C:\dev\NextHorizon\NextHorizon\.codex_obj_verify\upload_activity\Release\net10.0\NextHorizon.AssemblyInfo.cs
+C:\dev\NextHorizon\NextHorizon\.codex_obj_verify\upload_activity\Release\net10.0\NextHorizon.csproj.CoreCompileInputs.cache
+C:\dev\NextHorizon\NextHorizon\.codex_obj_verify\upload_activity\Release\net10.0\NextHorizon.MvcApplicationPartsAssemblyInfo.cache
+C:\dev\NextHorizon\NextHorizon\.codex_obj_verify\upload_activity\Release\net10.0\NextHorizon.RazorAssemblyInfo.cache
+C:\dev\NextHorizon\NextHorizon\.codex_obj_verify\upload_activity\Release\net10.0\NextHorizon.RazorAssemblyInfo.cs
+C:\dev\NextHorizon\NextHorizon\.codex_obj_verify\upload_activity\Release\net10.0\NextHorizon.sourcelink.json

@@ -1,0 +1,530 @@
+@{
+    ViewData["Title"] = "Seller Shop";
+    var sellerId = ViewData["SellerId"];
+}
+
+<div class="seller-shop-page" id="seller-shop-page">
+
+    <!-- Loading State -->
+    <div class="seller-shop-loading" id="seller-shop-loading">
+        <div class="loading-spinner"></div>
+        <p>Loading shop…</p>
+    </div>
+
+    <!-- Shop Content -->
+    <div id="seller-shop-content" style="display:none;">
+
+        <!-- Unified Profile Bar (avatar + info + stats + actions in one row) -->
+        <div class="seller-profile-bar">
+            <div class="container">
+                <div class="seller-profile-bar-inner">
+                    <!-- Left: Avatar + Identity -->
+                    <div class="seller-profile-left">
+                        <img class="seller-profile-avatar" id="seller-shop-avatar" src="" alt="" />
+                        <div class="seller-profile-identity">
+                            <h1 class="seller-profile-name" id="seller-shop-name"></h1>
+                            <div class="seller-profile-meta">
+                                <span class="seller-profile-meta-item">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                    <span id="seller-shop-loc-text"></span>
+                                </span>
+                                <span class="seller-profile-meta-dot">·</span>
+                                <span class="seller-profile-meta-item">Joined <span id="seller-shop-joined-text"></span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Center: Inline Stats -->
+                    <div class="seller-profile-stats">
+                        <div class="seller-profile-stat">
+                            <span class="seller-profile-stat-num" id="ss-products-count"></span>
+                            <span class="seller-profile-stat-lbl">Products</span>
+                        </div>
+                        <div class="seller-profile-stat">
+                            <span class="seller-profile-stat-num" id="ss-followers-count"></span>
+                            <span class="seller-profile-stat-lbl">Followers</span>
+                        </div>
+                        <div class="seller-profile-stat">
+                            <span class="seller-profile-stat-num" id="ss-rating-value"></span>
+                            <span class="seller-profile-stat-lbl">Rating</span>
+                        </div>
+                        <div class="seller-profile-stat">
+                            <span class="seller-profile-stat-num" id="ss-ratings-count"></span>
+                            <span class="seller-profile-stat-lbl">Ratings</span>
+                        </div>
+                        <div class="seller-profile-stat">
+                            <span class="seller-profile-stat-num" id="ss-response-rate"></span>
+                            <span class="seller-profile-stat-lbl">Response</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: Actions -->
+                    <div class="seller-profile-actions">
+                        <button class="seller-profile-btn seller-profile-btn-chat" onclick="sellerShopChat()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            Chat Now
+                        </button>
+                        <button class="seller-profile-btn seller-profile-btn-follow" id="seller-shop-follow-btn" onclick="toggleFollow()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                            Follow
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Description -->
+        <div class="seller-shop-about container">
+            <div class="seller-shop-about-card">
+                <h3>About This Shop</h3>
+                <p id="seller-shop-description"></p>
+            </div>
+        </div>
+
+        <!-- Promotions Banner -->
+        <div class="seller-promo-section container">
+            <a href="#" class="seller-promo-banner" id="seller-promo-banner">
+                <img id="seller-promo-img" src="" alt="Shop Promotion" />
+            </a>
+        </div>
+
+        <!-- Products -->
+        <div class="seller-shop-products container">
+            <div class="seller-shop-products-header">
+                <h2>All Products</h2>
+                <span class="seller-shop-products-count" id="ss-products-total"></span>
+            </div>
+            <div class="seller-shop-products-grid" id="seller-shop-products-grid">
+                <!-- Filled by JS -->
+            </div>
+            <div class="seller-shop-empty" id="seller-shop-empty" style="display:none;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                <p>This shop doesn't have any products yet.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Seller Chat Modal -->
+<div class="seller-chat-modal" id="seller-chat-modal">
+    <div class="seller-chat-box">
+
+        <!-- Header -->
+        <div class="seller-chat-header">
+    <div class="seller-chat-header-left">
+        <img id="seller-chat-avatar" src="" />
+        <span id="seller-chat-name"></span>
+    </div>
+
+    <div class="seller-chat-actions">
+        <!-- Minimize -->
+        <button onclick="minimizeSellerChat()" title="Minimize">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        </button>
+
+        <!-- Close -->
+        <button class="seller-chat-close" onclick="closeSellerChat()">✕</button>
+    </div>
+</div>
+
+        <!-- Messages -->
+        <div class="seller-chat-messages" id="seller-chat-messages">
+            <!-- Messages dynamically inserted -->
+        </div>
+
+        <!-- Input -->
+        <div class="seller-chat-input">
+            <input type="text" id="seller-chat-text" placeholder="Type a message..."
+                   onkeypress="if(event.key==='Enter'){sendSellerMessage()}" />
+            <button id="seller-chat-send-btn" onclick="sendSellerMessage()" class="seller-chat-send">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </div>
+
+    </div>
+</div>
+<div id="seller-chat-head-container" class="seller-chat-head-container"></div>
+
+@section Scripts {
+<script src="~/Messaging/js/StorefrontMessaging.js" asp-append-version="true"></script>
+<script>
+const SELLER_ID = "@sellerId";
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadSellerShop(SELLER_ID);
+});
+
+async function loadSellerShop(id) {
+    try {
+        const [sellerRes, productsRes] = await Promise.all([
+            fetch(`/api/sellers/${id}`),
+            fetch(`/api/products/seller/${id}`)
+        ]);
+        if (!sellerRes.ok) throw new Error('Seller not found');
+        const seller = await sellerRes.json();
+        const products = await productsRes.json();
+        renderSellerShop(seller, products);
+    } catch(e) {
+        document.getElementById('seller-shop-loading').innerHTML =
+            '<p style="color:#888;text-align:center;padding:4rem;">Shop not found. <a href="/Home/Shop">Back to Shop</a></p>';
+    }
+}
+
+function renderSellerShop(seller, products) {
+    document.getElementById('seller-shop-loading').style.display = 'none';
+    document.getElementById('seller-shop-content').style.display = 'block';
+    document.title = `${seller.shopName} - NEXT HORIZON`;
+
+    // Promo banner
+    document.getElementById('seller-promo-img').src = seller.coverImage;
+    document.getElementById('seller-promo-img').alt = seller.shopName + ' promotion';
+
+    // Profile
+    document.getElementById('seller-shop-avatar').src = seller.avatar;
+    document.getElementById('seller-shop-avatar').alt = seller.shopName;
+    document.getElementById('seller-shop-name').textContent = seller.shopName;
+    document.getElementById('seller-shop-loc-text').textContent = seller.location;
+    document.getElementById('seller-shop-joined-text').textContent = seller.joinedAgo;
+    document.getElementById('seller-shop-description').textContent = seller.description;
+    window.sellerShopMessaging?.setSeller({
+        sellerUserId: seller.id,
+        sellerName: seller.shopName,
+        sellerAvatarUrl: seller.avatar
+    });
+
+    // Stats
+    document.getElementById('ss-products-count').textContent = seller.totalProducts;
+    document.getElementById('ss-followers-count').textContent = formatShopCount(seller.followers);
+    document.getElementById('ss-rating-value').textContent = seller.rating.toFixed(1);
+    document.getElementById('ss-ratings-count').textContent = formatShopCount(seller.totalRatings);
+    document.getElementById('ss-response-rate').textContent = seller.responseRate + '%';
+
+    // Products
+    document.getElementById('ss-products-total').textContent = `(${products.length} items)`;
+
+    if (products.length === 0) {
+        document.getElementById('seller-shop-empty').style.display = 'flex';
+        return;
+    }
+
+    const grid = document.getElementById('seller-shop-products-grid');
+    grid.innerHTML = products.map(p => {
+        const hasDiscount = p.originalPrice && p.originalPrice > p.price;
+        const discountPct = hasDiscount ? Math.round((1 - p.price / p.originalPrice) * 100) : 0;
+        return `
+        <div class="ss-product-card" onclick="window.location.href='/Home/Product?id=${p.id}'">
+            <div class="ss-product-card-img">
+                <img src="${p.image}" alt="${p.name}" loading="lazy"
+                    onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27300%27 height=%27300%27%3E%3Crect width=%27300%27 height=%27300%27 fill=%27%23fafafa%27/%3E%3C/svg%3E'">
+                ${hasDiscount ? `<span class="ss-product-badge-sale">-${discountPct}%</span>` : ''}
+                ${p.stock === 0 && !p.isPreOrder && !p.isRestockPreOrder ? '<span class="ss-product-badge-soldout">Sold Out</span>' : ''}
+                ${p.isPreOrder ? '<span class="ss-product-badge-preorder">Pre-Order</span>' : ''}
+                <div class="ss-product-card-overlay">View Product</div>
+            </div>
+            <div class="ss-product-card-body">
+                <p class="ss-product-brand">${p.brand}</p>
+                <h4 class="ss-product-name">${p.name}</h4>
+                <div class="ss-product-price-row">
+                    ${hasDiscount
+                        ? `<span class="ss-product-price-sale">${formatShopPeso(p.price)}</span><span class="ss-product-price-original">${formatShopPeso(p.originalPrice)}</span>`
+                        : `<span class="ss-product-price">${formatShopPeso(p.price)}</span>`
+                    }
+                </div>
+                <div class="ss-product-rating">
+                    <span class="stars">${getShopStars(p.rating)}</span>
+                    <span class="ss-product-rating-count">(${p.reviewCount})</span>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function formatShopCount(n) {
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    return n.toString();
+}
+
+function formatShopPeso(amount) {
+    return '₱' + Number(amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function getShopStars(rating) {
+    let html = '';
+    for (let i = 1; i <= 5; i++) {
+        if (rating >= i) html += '<span class="star filled">★</span>';
+        else if (rating >= i - 0.5) html += '<span class="star half">★</span>';
+        else html += '<span class="star">★</span>';
+    }
+    return html;
+}
+
+let currentSeller = null;
+let sellerChatHistory = [];
+function openSellerChat() {
+
+    const modal = document.getElementById('seller-chat-modal');
+    modal.classList.add('active');
+
+    document.getElementById('seller-chat-avatar').src =
+        document.getElementById('seller-shop-avatar').src;
+
+    document.getElementById('seller-chat-name').textContent =
+        document.getElementById('seller-shop-name').textContent;
+
+    renderChatHistory();
+    loadSellerMessages();
+}
+
+function closeSellerChat() {
+    document.getElementById('seller-chat-modal').classList.remove('active');
+}
+
+async function loadSellerMessages() {
+
+    if (sellerChatHistory.length > 0) return;
+
+    const quickMessages = [
+        "Is this item available?",
+        "What sizes are available?",
+        "How long is the delivery?",
+        "Can I see more photos?",
+        "Is there a discount?"
+    ];
+
+    const loadingMessages = [
+        "Seller is preparing a reply...",
+        "Checking product availability...",
+        "Looking for the best answer for you...",
+        "Please wait while we contact the seller...",
+        "Good things take time... the seller will reply soon!"
+    ];
+
+    const container = document.getElementById("seller-chat-messages");
+
+    // QUICK MESSAGE SUGGESTIONS
+    const suggestionBox = document.createElement("div");
+    suggestionBox.classList.add("quick-message-container");
+
+    quickMessages.forEach(msg => {
+
+        const btn = document.createElement("button");
+        btn.classList.add("quick-message-btn");
+        btn.innerText = msg;
+
+        btn.onclick = () => {
+
+            appendMessage("buyer", msg);
+            suggestionBox.remove();
+
+            showLoadingMessage(); // show entertaining loading message
+        };
+
+        suggestionBox.appendChild(btn);
+    });
+
+    container.appendChild(suggestionBox);
+
+
+    // LOADING MESSAGE FUNCTION
+    function showLoadingMessage() {
+
+        const loadingDiv = document.createElement("div");
+        loadingDiv.classList.add("seller-loading-message");
+
+        let index = 0;
+        loadingDiv.innerText = loadingMessages[index];
+
+        container.appendChild(loadingDiv);
+
+        const interval = setInterval(() => {
+            index = (index + 1) % loadingMessages.length;
+            loadingDiv.innerText = loadingMessages[index];
+        }, 2000);
+
+        // remove loading after 6 seconds (simulate seller reply)
+        setTimeout(() => {
+            clearInterval(interval);
+            loadingDiv.remove();
+        }, 6000);
+    }
+}
+
+function sendSellerMessage() {
+    const input = document.getElementById('seller-chat-text');
+    const message = input.value.trim();
+    if (!message) return;
+
+    appendMessage('buyer', message);
+    input.value = '';
+
+    // TODO: Send to backend
+}
+
+function appendMessage(sender, text) {
+
+    // save message to history
+    sellerChatHistory.push({ sender, text });
+
+    const container = document.getElementById('seller-chat-messages');
+
+    const msg = document.createElement('div');
+    msg.classList.add('seller-chat-message', sender);
+
+    msg.innerHTML = `<div class="bubble">${text}</div>`;
+
+    container.appendChild(msg);
+
+    container.scrollTop = container.scrollHeight;
+}
+    
+function renderChatHistory(){
+
+    const container = document.getElementById('seller-chat-messages');
+
+    container.innerHTML = '';
+
+    sellerChatHistory.forEach(m => {
+
+        const msg = document.createElement('div');
+        msg.classList.add('seller-chat-message', m.sender);
+
+        msg.innerHTML = `<div class="bubble">${m.text}</div>`;
+
+        container.appendChild(msg);
+    });
+
+    container.scrollTop = container.scrollHeight;
+}
+
+let isFollowing = false;
+function toggleFollow() {
+    isFollowing = !isFollowing;
+    const btn = document.getElementById('seller-shop-follow-btn');
+    if (isFollowing) {
+        btn.classList.add('following');
+        btn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            Following`;
+        if (typeof toast !== 'undefined') toast.success('You are now following this shop!');
+    } else {
+        btn.classList.remove('following');
+        btn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+            Follow`;
+        if (typeof toast !== 'undefined') toast.info('Unfollowed this shop');
+    }
+}
+
+function sellerShopChat() {
+    openSellerChat();
+}
+
+let chatHeads = [];
+
+function minimizeSellerChat(){
+
+    const modal = document.getElementById('seller-chat-modal');
+    modal.classList.remove('active');
+
+    const sellerName =
+        document.getElementById('seller-shop-name').textContent;
+
+    addSellerChatHead(sellerName);
+}
+
+const MAX_CHAT_HEADS = 5;
+function addSellerChatHead(name){
+
+    const container = document.getElementById('seller-chat-head-container');
+
+    // prevent duplicate chat heads for the same seller
+    const exists = chatHeads.some(h => h.dataset.name === name);
+    if (exists) return;
+
+    // limit total chat heads
+    if (chatHeads.length >= MAX_CHAT_HEADS) return;
+
+    const head = document.createElement('div');
+    head.className = 'seller-chat-head';
+    head.dataset.name = name;
+
+    head.textContent = name.charAt(0).toUpperCase();
+
+    head.onclick = function(){
+
+        openSellerChat();
+
+        head.remove();
+
+        chatHeads = chatHeads.filter(h => h !== head);
+    };
+
+    container.appendChild(head);
+
+    chatHeads.push(head);
+}
+
+function increaseChatHeadBadge(head){
+
+    const badge = head.querySelector('.chat-head-badge');
+
+    if (!badge) return;
+
+    let count = parseInt(badge.textContent) || 0;
+
+    count++;
+
+    badge.textContent = count;
+
+    if (count > 99) {
+        badge.textContent = '99+';
+    }
+}
+
+window.sellerShopMessaging = window.createStorefrontMessaging({
+    modalId: 'seller-chat-modal',
+    threadId: 'seller-chat-messages',
+    inputId: 'seller-chat-text',
+    sendButtonId: 'seller-chat-send-btn',
+    titleId: 'seller-chat-name',
+    avatarId: 'seller-chat-avatar',
+    headContainerId: 'seller-chat-head-container',
+    headClassName: 'seller-chat-head',
+    quickMessages: [
+        'Is this item available?',
+        'What sizes are available?',
+        'How long is the delivery?',
+        'Can I see more photos?',
+        'Is there a discount?'
+    ]
+});
+
+window.sellerShopChat = function () {
+    window.sellerShopMessaging.open();
+};
+
+window.openSellerChat = function () {
+    window.sellerShopMessaging.open();
+};
+
+window.closeSellerChat = function () {
+    window.sellerShopMessaging.close();
+};
+
+window.sendSellerMessage = function () {
+    window.sellerShopMessaging.send();
+};
+
+window.minimizeSellerChat = function () {
+    window.sellerShopMessaging.minimize();
+};
+</script>
+
+}

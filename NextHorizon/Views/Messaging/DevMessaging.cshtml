@@ -1,0 +1,190 @@
+@{
+    ViewData["Title"] = "Dev Messaging";
+}
+
+@section Styles {
+    <link href="~/Messaging/css/DevMessaging.css" rel="stylesheet" asp-append-version="true" />
+}
+
+<div class="dev-messaging-page">
+    <div class="dev-messaging-shell">
+        <div class="dev-messaging-head">
+            <h1>Messaging Dev Console</h1>
+            <p>Simulate buyer and seller messaging flows against development-only messaging APIs.</p>
+        </div>
+
+        <div class="dev-grid">
+            <section class="dev-card">
+                <h2>Persona</h2>
+
+                <label for="presetSelect">Preset</label>
+                <select id="presetSelect">
+                    <option value="">Custom only</option>
+                    <option value="1|2|12345">1 / 2 (order 12345)</option>
+                    <option value="101|202|2001">101 / 202 (order 2001)</option>
+                </select>
+
+                <div class="inline-row">
+                    <label><input type="radio" name="actorMode" value="buyer" checked /> Buyer</label>
+                    <label><input type="radio" name="actorMode" value="seller" /> Seller</label>
+                </div>
+
+                <label for="actorUserId">Actor User ID</label>
+                <input id="actorUserId" type="text" placeholder="1" />
+
+                <label for="buyerUserId">Buyer User ID</label>
+                <input id="buyerUserId" type="text" placeholder="1" />
+
+                <label for="sellerUserId">Seller User ID</label>
+                <input id="sellerUserId" type="text" placeholder="2" />
+
+                <label for="orderId">Order ID (for order chat)</label>
+                <input id="orderId" type="number" min="1" step="1" placeholder="12345" />
+            </section>
+
+            <section class="dev-card">
+                <h2>Conversation</h2>
+
+                <div class="action-group">
+                    <button type="button" id="createGeneralBtn">Create/Get General</button>
+                    <button type="button" id="createOrderBtn">Create/Get Order</button>
+                    <button type="button" id="listConversationsBtn">List Conversations</button>
+                </div>
+
+                <label for="conversationId">Conversation ID</label>
+                <input id="conversationId" type="number" min="1" step="1" placeholder="Auto-filled from create" />
+
+                <div class="action-group">
+                    <button type="button" id="getConversationBtn">Get Conversation</button>
+                    <button type="button" id="markReadBtn">Mark As Read</button>
+                </div>
+            </section>
+
+            <section class="dev-card">
+                <h2>Messages</h2>
+
+                <label for="messageBody">Message Body</label>
+                <textarea id="messageBody" rows="4" placeholder="Type a test message"></textarea>
+
+                <label for="messageAttachment">Image Attachment (optional)</label>
+                <input id="messageAttachment" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" />
+
+                <div class="action-group">
+                    <button type="button" id="sendMessageBtn">Send Message</button>
+                    <button type="button" id="listMessagesBtn">List Messages</button>
+                </div>
+
+                <label for="messageId">Message ID</label>
+                <input id="messageId" type="number" min="1" step="1" placeholder="Set to delete" />
+
+                <button type="button" id="deleteMessageBtn">Delete Message</button>
+            </section>
+
+            <section class="dev-card response-card">
+                <h2>Response</h2>
+                <div id="responseMeta" class="response-meta">No request yet.</div>
+                <pre id="responseBody" class="response-body">{}</pre>
+            </section>
+        </div>
+
+        <section class="dev-card chat-preview-card">
+            <div class="chat-preview-head">
+                <h2>Chat Preview</h2>
+                <p>DB-backed side-by-side buyer and seller chat views using dev messaging APIs.</p>
+            </div>
+
+            <div class="chat-config-grid">
+                <div class="chat-config-field">
+                    <label for="chatMode">Conversation Mode</label>
+                    <select id="chatMode">
+                        <option value="general" selected>General</option>
+                        <option value="order">Order</option>
+                    </select>
+                </div>
+
+                <div class="chat-config-field">
+                    <label for="chatBuyerUserId">Buyer User ID</label>
+                    <input id="chatBuyerUserId" type="text" placeholder="1" />
+                </div>
+
+                <div class="chat-config-field">
+                    <label for="chatSellerUserId">Seller User ID</label>
+                    <input id="chatSellerUserId" type="text" placeholder="2" />
+                </div>
+
+                <div class="chat-config-field chat-order-field" id="chatOrderField">
+                    <label for="chatOrderId">Order ID (required for order mode)</label>
+                    <input id="chatOrderId" type="number" min="1" step="1" placeholder="12345" />
+                </div>
+            </div>
+
+            <div class="chat-preview-toolbar">
+                <button type="button" id="startDbChatBtn">Start DB Chat</button>
+                <button type="button" id="reloadChatBtn" class="secondary-btn">Reload Messages</button>
+            </div>
+
+            <div class="chat-preview-meta">
+                Conversation: <code id="chatConversationId">Not started</code>
+            </div>
+
+            <div class="chat-panels">
+                <section class="chat-panel chat-panel-buyer" aria-label="Buyer chat panel">
+                    <header class="chat-panel-header">
+                        <div>
+                            <h3>Buyer to Seller</h3>
+                            <p id="buyerPanelUserId">Buyer not set</p>
+                        </div>
+                        <span class="persona-chip">Buyer View</span>
+                    </header>
+
+                    <div id="buyerThread" class="chat-thread"></div>
+
+                    <div class="chat-composer">
+                        <div class="chat-composer-main">
+                            <input id="buyerInput" type="text" placeholder="Type as buyer..." aria-label="Buyer message input" />
+                            <button type="button" id="buyerSendBtn">Send</button>
+                        </div>
+                        <div class="chat-attachment-row">
+                            <input id="buyerAttachment" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" aria-label="Buyer image attachment" />
+                            <div class="chat-attachment-meta">
+                                <span id="buyerAttachmentName">No attachment</span>
+                                <button type="button" id="buyerClearAttachmentBtn" class="chat-attachment-clear">Clear</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="chat-panel chat-panel-seller" aria-label="Seller chat panel">
+                    <header class="chat-panel-header">
+                        <div>
+                            <h3>Seller to Buyer</h3>
+                            <p id="sellerPanelUserId">Seller not set</p>
+                        </div>
+                        <span class="persona-chip">Seller View</span>
+                    </header>
+
+                    <div id="sellerThread" class="chat-thread"></div>
+
+                    <div class="chat-composer">
+                        <div class="chat-composer-main">
+                            <input id="sellerInput" type="text" placeholder="Type as seller..." aria-label="Seller message input" />
+                            <button type="button" id="sellerSendBtn">Send</button>
+                        </div>
+                        <div class="chat-attachment-row">
+                            <input id="sellerAttachment" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" aria-label="Seller image attachment" />
+                            <div class="chat-attachment-meta">
+                                <span id="sellerAttachmentName">No attachment</span>
+                                <button type="button" id="sellerClearAttachmentBtn" class="chat-attachment-clear">Clear</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Messaging/js/DevMessaging.js" asp-append-version="true"></script>
+}
+

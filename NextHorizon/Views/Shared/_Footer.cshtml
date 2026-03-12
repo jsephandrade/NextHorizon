@@ -1,0 +1,155 @@
+@* Views/Shared/_Footer.cshtml *@
+<footer class="site-footer-dark">
+    <div class="footer-inner">
+        <div class="footer-col brand">
+            <a class="logo" href="/" aria-label="NEXT HORIZON">
+                <span class="logo-box" aria-hidden="true"></span>
+            </a>
+            <p class="muted">Engineered for Performance.<br />Built for Runners.</p>
+        </div>
+
+        <div class="footer-col">
+            <h6 class="col-title">SHOP</h6>
+            <ul>
+                <li><a href="/Home/Shop">All Products</a></li>
+                <li><a href="/Home/Shop?cat=men">Men</a></li>
+                <li><a href="/Home/Shop?cat=women">Women</a></li>
+            </ul>
+        </div>
+
+        <div class="footer-col">
+            <h6 class="col-title">COMPANY</h6>
+            <ul>
+                <li><a href="/Home/About">About Us</a></li>
+                <li><a href="/Home/Contact">Contact</a></li>
+            </ul>
+        </div>
+
+        <div class="footer-col">
+            <h6 class="col-title">SUPPORT</h6>
+            <ul>
+                <li><a href="/Home/Help">Help Center</a></li>
+                <li><a href="/Home/Returns">Returns</a></li>
+                <li><a href="/Home/Shipping">Shipping</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="footer-divider"></div>
+
+    <div class="footer-bottom">
+        <div class="copyright">© @DateTime.Now.Year NEXT HORIZON. All rights reserved.</div>
+    </div>
+
+    <style>
+            .site-footer-dark {
+                background: #000;
+                color: #bfbfbf;
+                padding: 44px 20px 18px;
+                border-top: 0;
+                position: relative;
+            }
+
+            /* thin blue accent line at very bottom (matches screenshot) */
+            .site-footer-dark::after {
+                content: '';
+                display: block;
+                height: 6px;
+                background: #0f4a87;
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: -6px;
+            }
+
+            .footer-inner {
+                max-width: 1200px;
+                margin: 0 auto;
+                display: flex;
+                gap: 40px;
+                align-items: flex-start;
+            }
+
+            .footer-col {
+                flex: 1;
+                min-width: 120px;
+            }
+
+            .footer-col.brand {
+                flex: 2;
+            }
+
+            .logo-box {
+                display: inline-block;
+                width: 80px;
+                height: 28px;
+                background: #fff;
+                border-radius: 2px;
+                margin-bottom: 12px;
+            }
+
+            .muted {
+                color: #9b9b9b;
+                margin: 8px 0 0;
+                font-size: 13px;
+                line-height: 1.5;
+            }
+
+            .col-title {
+                color: #6b6b6b;
+                font-size: 12px;
+                letter-spacing: 2px;
+                margin: 4px 0 10px;
+                font-weight: 700;
+            }
+
+            .footer-col ul {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .footer-col ul li {
+                margin: 8px 0;
+            }
+
+            .footer-col a {
+                color: #bfbfbf;
+                text-decoration: none;
+                font-size: 14px;
+            }
+
+            .footer-col a:hover {
+                color: #fff;
+                text-decoration: underline;
+            }
+
+            .footer-divider {
+                border-top: 1px solid rgba(255, 255, 255, 0.06);
+                margin: 22px 0;
+                max-width: 1200px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .footer-bottom {
+                max-width: 1200px;
+                margin: 0 auto;
+                text-align: center;
+                padding-top: 12px;
+                color: #6b6b6b;
+                font-size: 13px;
+            }
+
+            @@media (max-width:900px) {
+                .footer-inner {
+                    flex-direction: column;
+                    gap: 18px;
+                }
+
+                .footer-col.brand {
+                    order: -1;
+                }
+            }
+    </style>
+</footer>

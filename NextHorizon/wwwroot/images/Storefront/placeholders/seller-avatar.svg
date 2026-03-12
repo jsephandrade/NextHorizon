@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-labelledby="title desc">
+  <title id="title">Seller avatar placeholder</title>
+  <desc id="desc">Placeholder image for storefront seller avatars.</desc>
+  <rect width="320" height="320" rx="160" fill="#efe5d8" />
+  <circle cx="160" cy="124" r="64" fill="#b48a68" />
+  <path d="M64 270c22-61 66-92 96-92s74 31 96 92" fill="#7b5237" />
+</svg>

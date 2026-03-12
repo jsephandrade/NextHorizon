@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 960" role="img" aria-labelledby="title desc">
+  <title id="title">Product detail placeholder</title>
+  <desc id="desc">Placeholder image for storefront product galleries.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f5efe6" />
+      <stop offset="100%" stop-color="#ddd0c0" />
+    </linearGradient>
+  </defs>
+  <rect width="960" height="960" rx="56" fill="url(#bg)" />
+  <rect x="150" y="170" width="660" height="500" rx="38" fill="#fffaf4" opacity="0.82" />
+  <path d="M276 530c55-136 160-214 286-214 101 0 205 48 261 214l20 60H256l20-60z" fill="#8d5b3a" />
+  <text x="480" y="760" text-anchor="middle" fill="#563724" font-family="Segoe UI, Arial, sans-serif" font-size="42" letter-spacing="6">PRODUCT VIEW</text>
+</svg>

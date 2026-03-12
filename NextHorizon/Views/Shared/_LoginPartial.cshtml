@@ -1,0 +1,17 @@
+<ul class="navbar-nav">
+@if (User?.Identity?.IsAuthenticated == true)
+{
+    <li class="nav-item">
+        <span class="nav-link text-dark">Hello @User.Identity?.Name!</span>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-dark" href="/Identity/Account/Login">Account</a>
+    </li>
+}
+else
+{
+    <li class="nav-item">
+        <a class="nav-link text-dark" href="/Identity/Account/Login">Login</a>
+    </li>
+}
+</ul>
