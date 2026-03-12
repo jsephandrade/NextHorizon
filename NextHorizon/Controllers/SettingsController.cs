@@ -28,17 +28,11 @@ namespace NextHorizon.Controllers
             // Fetch Business Profile
             var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
             
-            // Fetch All Active Addresses
-            var addresses = await _context.ShippingAddresses
-                .Where(a => a.UserId == userId && a.IsActive)
-                .ToListAsync();
-
             // Bundle it all together into one clean JSON response for React
             return Ok(new 
             {
                 Account = new { user.Email, user.UserType },
-                Business = seller,
-                Addresses = addresses
+                Business = seller
             });
         }
 
@@ -56,92 +50,69 @@ namespace NextHorizon.Controllers
             seller.BusinessEmail = dto.BusinessEmail;
             seller.BusinessPhone = dto.BusinessPhone;
             seller.BusinessAddress = dto.BusinessAddress;
+            //seller.TaxId = dto.TaxId;
 
             await _context.SaveChangesAsync();
             return Ok(new { message = "Business details saved successfully!" });
         }
-
-        // 3. ADD NEW ADDRESS (Handles the "+ Add New Address" button)
-        // POST: api/settings/5/address
-        [HttpPost("{userId}/address")]
-        public async Task<IActionResult> AddAddress(int userId, [FromBody] CreateAddressDto dto)
+        // 3. CHANGE PASSWORD
+        // PUT: api/settings/5/password
+        [HttpPut("{userId}/password")]
+        public async Task<IActionResult> ChangePassword(int userId, [FromBody] ChangePasswordDto dto)
         {
-            // Logic: If they check "Set as Default", we must un-default the old one
-            if (dto.IsDefault)
+            // 1. Basic validation
+            if (dto.NewPassword != dto.ConfirmNewPassword)
+                return BadRequest(new { message = "New passwords do not match." });
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return NotFound(new { message = "User not found." });
+
+            // 2. IMPORTANT: In a production app, you MUST verify the hash of the CurrentPassword here!
+            // Example: if (!VerifyPasswordHash(dto.CurrentPassword, user.PasswordHash)) return BadRequest("Incorrect current password.");
+            
+            // 3. Update the password
+            // In a real app, hash this before saving: user.PasswordHash = HashPassword(dto.NewPassword);
+            user.PasswordHash = dto.NewPassword; 
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Password updated successfully!" });
+        }
+        // 4. UPLOAD SHOP LOGO
+        // POST: api/settings/5/logo
+        [HttpPost("{userId}/logo")]
+        public async Task<IActionResult> UploadLogo(int userId, IFormFile file)
+        {
+            // 1. Check if they actually sent a file
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "No file uploaded." });
+
+            var seller = await _context.Sellers.FirstOrDefaultAsync(s => s.UserId == userId);
+            if (seller == null) return NotFound(new { message = "Seller not found." });
+
+            // 2. Generate a unique file name (so 'logo.png' doesn't overwrite someone else's 'logo.png')
+            var fileExtension = Path.GetExtension(file.FileName);
+            var uniqueFileName = Guid.NewGuid().ToString() + fileExtension;
+
+            // 3. Define where to save it (e.g., inside the wwwroot/uploads/logos folder)
+            var uploadFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "logos");
+            if (!Directory.Exists(uploadFolder)) Directory.CreateDirectory(uploadFolder);
+            
+            var filePath = Path.Combine(uploadFolder, uniqueFileName);
+
+            // 4. Save the physical file to your server
+            using (var stream = new FileStream(filePath, FileMode.Create))
             {
-                var existingAddresses = await _context.ShippingAddresses.Where(a => a.UserId == userId).ToListAsync();
-                foreach (var addr in existingAddresses)
-                {
-                    addr.IsDefault = false;
-                }
+                await file.CopyToAsync(stream);
             }
 
-            // Create the new SQL record
-            var newAddress = new ShippingAddress
-            {
-                UserId = userId,
-                Region = dto.Region,
-                Province = dto.Province,
-                CityMunicipality = dto.CityMunicipality,
-                Barangay = dto.Barangay,
-                PostalCode = dto.PostalCode,
-                HouseNumber = dto.HouseNumber,
-                Building = dto.Building,
-                StreetName = dto.StreetName,
-                IsDefault = dto.IsDefault,
-                IsActive = true, // Set to true by default when created
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _context.ShippingAddresses.Add(newAddress);
+            // 5. Save the text path into your SQL Server database
+            seller.LogoPath = $"/uploads/logos/{uniqueFileName}";
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "New address added successfully!" });
-        }
-        // 4. DELETE ADDRESS (Triggered by the Delete button)
-        // DELETE: api/settings/1/address/5
-        [HttpDelete("{userId}/address/{addressId}")]
-        public async Task<IActionResult> DeleteAddress(int userId, int addressId)
-        {
-            // We make sure to check both the addressId AND the userId for security
-            var address = await _context.ShippingAddresses
-                .FirstOrDefaultAsync(a => a.Id == addressId && a.UserId == userId);
-
-            if (address == null) return NotFound("Address not found.");
-
-            // PRO TIP: In e-commerce, it is usually better to "Soft Delete" an address 
-            // by setting IsActive = false, so old order history doesn't break!
-            address.IsActive = false; 
-            
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Address removed successfully!" });
-        }
-
-        // 5. SET DEFAULT ADDRESS (Triggered by the 'Set as Default' toggle)
-        // PUT: api/settings/1/address/5/default
-        [HttpPut("{userId}/address/{addressId}/default")]
-        public async Task<IActionResult> SetDefaultAddress(int userId, int addressId)
-        {
-            // Find all active addresses for this user
-            var addresses = await _context.ShippingAddresses
-                .Where(a => a.UserId == userId && a.IsActive)
-                .ToListAsync();
-
-            // Find the specific address they want to make default
-            var addressToMakeDefault = addresses.FirstOrDefault(a => a.Id == addressId);
-            if (addressToMakeDefault == null) return NotFound("Address not found.");
-
-            // Loop through all their addresses and turn off the default flag
-            foreach (var addr in addresses)
-            {
-                addr.IsDefault = false;
-            }
-            
-            // Turn the flag on for just the selected one
-            addressToMakeDefault.IsDefault = true;
-
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Default address updated!" });
+            return Ok(new { 
+                message = "Logo uploaded successfully!", 
+                logoPath = seller.LogoPath 
+            });
         }
     }
 }
