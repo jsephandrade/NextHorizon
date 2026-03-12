@@ -866,7 +866,16 @@ body.activity-modal-open {
 @media (max-width: 768px) {
     .activity-modal {
         padding: 0;
-        overflow: hidden;
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .activity-modal::-webkit-scrollbar {
+        width: 0;
+        height: 0;
     }
 
     .activity-modal-content {
@@ -881,43 +890,88 @@ body.activity-modal-open {
         border-radius: 0;
         border: 0;
         box-shadow: none;
+        overflow: visible;
+        background: linear-gradient(180deg, #050505 0%, #050505 56%, #f3f3f3 56%, #f3f3f3 100%);
     }
 
     .activity-modal-stage {
+        flex: 0 0 auto;
+        min-height: 0;
         padding:
             max(20px, env(safe-area-inset-top))
             max(20px, env(safe-area-inset-right))
-            20px
+            0
             max(20px, env(safe-area-inset-left));
         border-right: 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        border-bottom: 0;
+        justify-content: flex-start;
+        position: relative;
+        z-index: 0;
     }
 
     .modal-activity-info {
+        position: relative;
+        z-index: 1;
+        margin-top: -40vh;
+        margin-top: -40svh;
+        margin-top: -40dvh;
+        flex: 0 0 auto;
+        border-radius: 30px 30px 0 0;
+        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.08);
         padding:
-            20px
+            28px
             max(20px, env(safe-area-inset-right))
             max(28px, calc(env(safe-area-inset-bottom) + 12px))
             max(20px, env(safe-area-inset-left));
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+        overflow-y: visible;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .modal-activity-info::-webkit-scrollbar {
+        width: 0;
+        height: 0;
     }
 
     .activity-modal-frame {
-        min-height: clamp(300px, 44dvh, 480px);
-        min-height: clamp(300px, 44svh, 480px);
-        border-radius: 24px;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        min-height: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        overflow: visible;
+    }
+
+    .activity-modal-frame.is-loading,
+    .activity-modal-frame.is-empty {
+        width: 100%;
+        min-height: 260px;
+        padding: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 20px;
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+            #0b0b0b;
+        overflow: hidden;
     }
 
     .activity-modal-content img {
         width: 100%;
+        max-width: 100%;
         height: auto;
-        min-height: 240px;
-        max-height: min(42dvh, 420px);
-        max-height: min(42svh, 420px);
+        max-height: none;
+        object-fit: initial;
+        object-position: initial;
+        border-radius: 0;
+        margin: 0;
     }
 
     .close-modal {
+        position: fixed;
         top: max(12px, env(safe-area-inset-top));
         right: max(12px, env(safe-area-inset-right));
     }
@@ -968,8 +1022,28 @@ body.activity-modal-open {
             max(20px, env(safe-area-inset-left));
     }
 
+    .activity-modal-stage {
+        min-height: 0;
+        padding-bottom: 0;
+    }
+
+    .modal-activity-info {
+        margin-top: -38vh;
+        margin-top: -38svh;
+        margin-top: -38dvh;
+        border-radius: 26px 26px 0 0;
+        padding-top: 24px;
+    }
+
     .activity-modal-frame {
-        padding: 16px;
+        padding: 0;
+        height: auto;
+    }
+
+    .activity-modal-frame.is-loading,
+    .activity-modal-frame.is-empty {
+        padding: 14px;
+        min-height: 220px;
     }
 
     .modal-activity-primary {
