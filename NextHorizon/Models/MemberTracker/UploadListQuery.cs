@@ -1,4 +1,4 @@
-namespace MemberTracker.Models;
+namespace NextHorizon.Modules.MemberTracker.Models;
 
 public class UploadListQuery
 {
@@ -13,3 +13,4 @@ public class UploadListQuery
 
     public string? SortBy { get; init; }
 }
+

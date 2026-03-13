@@ -1,18 +1,19 @@
 using FluentValidation;
-using System.Security.Claims;
-using MemberTracker.Data;
-using MemberTracker.Models;
-using MemberTracker.Security;
+using NextHorizon.Models;
+using NextHorizon.Modules.MemberTracker.Data;
+using NextHorizon.Modules.MemberTracker.Models;
+using NextHorizon.Modules.MemberTracker.Security;
+using NextHorizon.Validation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using NextHorizon.Security;
 
-namespace NextHorizon.Controllers;
+namespace NextHorizon.Modules.MemberTracker.Controllers;
 
 [ApiController]
 [Authorize]
-[Route("api/member-uploads")]
-[Route("api/uploads")]
+[Route("api/member-tracker/uploads")]
 public class MemberUploadsController : ControllerBase
 {
     private const int DefaultPageNumber = 1;
@@ -25,17 +26,20 @@ public class MemberUploadsController : ControllerBase
     private readonly IWebHostEnvironment _webHostEnvironment;
     private readonly IValidator<CreateMemberUploadRequest> _createValidator;
     private readonly IValidator<UpdateMemberUploadRequest> _updateValidator;
+    private readonly IAuthenticatedUserContextService _authenticatedUserContextService;
 
     public MemberUploadsController(
         IMemberUploadRepository memberUploadRepository,
         IWebHostEnvironment webHostEnvironment,
         IValidator<CreateMemberUploadRequest> createValidator,
-        IValidator<UpdateMemberUploadRequest> updateValidator)
+        IValidator<UpdateMemberUploadRequest> updateValidator,
+        IAuthenticatedUserContextService authenticatedUserContextService)
     {
         _memberUploadRepository = memberUploadRepository;
         _webHostEnvironment = webHostEnvironment;
         _createValidator = createValidator;
         _updateValidator = updateValidator;
+        _authenticatedUserContextService = authenticatedUserContextService;
     }
 
     [HttpPost]
@@ -45,10 +49,15 @@ public class MemberUploadsController : ControllerBase
     [Consumes("multipart/form-data")]
     public async Task<ActionResult<MemberUploadDto>> Create([FromForm] CreateMemberUploadRequest request, CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
-        if (!userId.HasValue)
+        var currentUser = await _authenticatedUserContextService.GetCurrentAsync(User, cancellationToken);
+        if (currentUser is null)
         {
             return Unauthorized();
+        }
+
+        if (!currentUser.ConsumerId.HasValue)
+        {
+            return Forbid();
         }
 
         var validationResult = await ValidateRequestAsync(_createValidator, request, cancellationToken);
@@ -69,7 +78,7 @@ public class MemberUploadsController : ControllerBase
         {
             var createdUpload = await _memberUploadRepository.CreateAsync(
                 new CreateMemberUploadDbRequest(
-                    userId.Value,
+                    currentUser.ConsumerId.Value,
                     request.Title.Trim(),
                     request.ActivityName.Trim(),
                     request.ActivityDate.Date,
@@ -103,15 +112,20 @@ public class MemberUploadsController : ControllerBase
     [HttpGet("my")]
     public async Task<ActionResult<PagedResult<MemberUploadDto>>> GetMyUploads([FromQuery] UploadListQuery query, CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
-        if (!userId.HasValue)
+        var currentUser = await _authenticatedUserContextService.GetCurrentAsync(User, cancellationToken);
+        if (currentUser is null)
         {
             return Unauthorized();
         }
 
+        if (!currentUser.ConsumerId.HasValue)
+        {
+            return Forbid();
+        }
+
         return await GetPagedUploads(
             query,
-            options => _memberUploadRepository.GetMyUploadsAsync(userId.Value, options, cancellationToken));
+            options => _memberUploadRepository.GetMyUploadsAsync(currentUser.ConsumerId.Value, options, cancellationToken));
     }
 
     [HttpGet]
@@ -130,8 +144,8 @@ public class MemberUploadsController : ControllerBase
         [FromForm] UpdateMemberUploadRequest request,
         CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
-        if (!userId.HasValue)
+        var currentUser = await _authenticatedUserContextService.GetCurrentAsync(User, cancellationToken);
+        if (currentUser is null)
         {
             return Unauthorized();
         }
@@ -148,7 +162,7 @@ public class MemberUploadsController : ControllerBase
             return NotFound();
         }
 
-        if (!CanModifyUpload(existingUpload.UserId, userId.Value))
+        if (!CanModifyUpload(existingUpload.UserId, currentUser))
         {
             return Forbid();
         }
@@ -176,7 +190,7 @@ public class MemberUploadsController : ControllerBase
             var updatedUpload = await _memberUploadRepository.UpdateAsync(
                 new UpdateMemberUploadDbRequest(
                     uploadId,
-                    userId.Value,
+                    currentUser.ConsumerId ?? 0,
                     User.IsInRole(UploadRoles.Admin),
                     request.Title.Trim(),
                     request.ActivityName.Trim(),
@@ -220,8 +234,8 @@ public class MemberUploadsController : ControllerBase
     [ConditionalValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int uploadId, CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
-        if (!userId.HasValue)
+        var currentUser = await _authenticatedUserContextService.GetCurrentAsync(User, cancellationToken);
+        if (currentUser is null)
         {
             return Unauthorized();
         }
@@ -232,13 +246,13 @@ public class MemberUploadsController : ControllerBase
             return NotFound();
         }
 
-        if (!CanModifyUpload(existingUpload.UserId, userId.Value))
+        if (!CanModifyUpload(existingUpload.UserId, currentUser))
         {
             return Forbid();
         }
 
         var deleted = await _memberUploadRepository.DeleteAsync(
-            new DeleteMemberUploadDbRequest(uploadId, userId.Value, User.IsInRole(UploadRoles.Admin)),
+            new DeleteMemberUploadDbRequest(uploadId, currentUser.ConsumerId ?? 0, User.IsInRole(UploadRoles.Admin)),
             cancellationToken);
 
         if (!deleted)
@@ -365,14 +379,9 @@ public class MemberUploadsController : ControllerBase
         }
     }
 
-    private int? GetCurrentUserId()
-    {
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return int.TryParse(userIdClaim, out var userId) && userId > 0 ? userId : null;
-    }
-
-    private bool CanModifyUpload(int ownerUserId, int currentUserId)
-        => ownerUserId == currentUserId || User.IsInRole(UploadRoles.Admin);
+    private bool CanModifyUpload(int ownerUserId, AuthenticatedUserContext currentUser)
+        => User.IsInRole(UploadRoles.Admin)
+            || (currentUser.ConsumerId.HasValue && ownerUserId == currentUser.ConsumerId.Value);
 
     private static bool IsPaceSuspicious(int? avgPaceSecPerKm)
     {
@@ -452,3 +461,4 @@ public class MemberUploadsController : ControllerBase
         return BuildValidationProblem(validationResult);
     }
 }
+

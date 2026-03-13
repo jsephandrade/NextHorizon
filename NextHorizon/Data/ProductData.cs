@@ -1,6 +1,6 @@
-using MemberTracker.Models;
+using NextHorizon.Models;
 
-namespace MemberTracker.Data;
+namespace NextHorizon.Data;
 
 public static class ProductData
 {
@@ -427,3 +427,4 @@ public static class ProductData
         ];
     }
 }
+

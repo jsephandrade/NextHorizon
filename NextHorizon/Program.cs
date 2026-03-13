@@ -1,8 +1,10 @@
 using FluentValidation;
-using MemberTracker.Data;
-using MemberTracker.Data.Messaging;
-using MemberTracker.Models;
-using MemberTracker.Security;
+using NextHorizon.Data;
+using NextHorizon.Data.Messaging;
+using NextHorizon.Models;
+using NextHorizon.Modules.MemberTracker.Data;
+using NextHorizon.Modules.MemberTracker.Models;
+using NextHorizon.Modules.MemberTracker.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.RateLimiting;
@@ -21,7 +23,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlSer
 builder.Services.AddScoped<ICustomerStoredProcedureService, CustomerStoredProcedureService>();
 builder.Services.AddScoped<IMemberUploadRepository, MemberUploadStoredProcedureRepository>();
 builder.Services.AddScoped<IMessagingRepository, MessagingStoredProcedureRepository>();
-builder.Services.AddSingleton<IOrderConversationResolver, SimulatedOrderConversationResolver>();
+builder.Services.AddScoped<IOrderConversationResolver, SimulatedOrderConversationResolver>();
+builder.Services.AddScoped<IAuthenticatedUserContextService, AuthenticatedUserContextService>();
 builder.Services.AddTransient<IValidator<CreateMemberUploadRequest>, CreateMemberUploadRequestValidator>();
 builder.Services.AddTransient<IValidator<UpdateMemberUploadRequest>, UpdateMemberUploadRequestValidator>();
 builder.Services.AddAntiforgery(options =>
@@ -107,3 +110,4 @@ app.MapControllerRoute(
 
 
 app.Run();
+

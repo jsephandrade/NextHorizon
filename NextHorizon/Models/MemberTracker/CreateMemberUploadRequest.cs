@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 
-namespace MemberTracker.Models;
+namespace NextHorizon.Modules.MemberTracker.Models;
 
 public class CreateMemberUploadRequest
 {
@@ -20,3 +20,4 @@ public class CreateMemberUploadRequest
 
     public IFormFile? Proof { get; init; }
 }
+

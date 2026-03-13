@@ -1,10 +1,10 @@
-using MemberTracker.Data;
+using NextHorizon.Data;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace MemberTracker.Migrations
+namespace NextHorizon.Migrations
 {
     /// <inheritdoc />
     [DbContext(typeof(ApplicationDbContext))]
@@ -225,3 +225,4 @@ namespace MemberTracker.Migrations
         }
     }
 }
+

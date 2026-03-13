@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace MemberTracker.Security;
+namespace NextHorizon.Modules.MemberTracker.Security;
 
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
 public sealed class ConditionalValidateAntiForgeryTokenAttribute : Attribute, IAsyncAuthorizationFilter
@@ -36,3 +36,4 @@ public sealed class ConditionalValidateAntiForgeryTokenAttribute : Attribute, IA
         }
     }
 }
+

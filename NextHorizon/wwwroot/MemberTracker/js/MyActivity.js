@@ -1,6 +1,6 @@
 (function () {
     const SKELETON_CARD_COUNT = 6;
-    const EMPTY_ACTIVITY_MESSAGE = 'No activities yet. <a href="/Member/UploadActivity">Upload activity first</a>.';
+    const EMPTY_ACTIVITY_MESSAGE = 'No activities yet. <a href="/member-tracker/upload-activity">Upload activity first</a>.';
     const FILTER_LABELS = {
         all: "all dates",
         today: "today",
@@ -475,7 +475,7 @@
     }
 
     async function fetchActivities(sort) {
-        const response = await fetch(`/api/uploads/my?sort=${encodeURIComponent(sort)}&page=1&pageSize=100`, {
+        const response = await fetch(`/api/member-tracker/uploads/my?sort=${encodeURIComponent(sort)}&page=1&pageSize=100`, {
             method: "GET",
             credentials: "same-origin",
         });

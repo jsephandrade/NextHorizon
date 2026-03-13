@@ -1,4 +1,4 @@
-namespace MemberTracker.Models;
+namespace NextHorizon.Models;
 
 public class PagedResult<T>
 {
@@ -10,3 +10,4 @@ public class PagedResult<T>
 
     public IReadOnlyList<T> Items { get; init; } = [];
 }
+

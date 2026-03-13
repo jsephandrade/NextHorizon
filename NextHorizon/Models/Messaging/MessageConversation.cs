@@ -1,4 +1,4 @@
-namespace MemberTracker.Models.Messaging;
+namespace NextHorizon.Messaging.Models;
 
 public class MessageConversation
 {
@@ -24,3 +24,4 @@ public class MessageConversation
 
     public ICollection<ConversationMessage> Messages { get; set; } = new List<ConversationMessage>();
 }
+

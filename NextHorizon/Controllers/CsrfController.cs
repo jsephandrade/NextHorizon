@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
-namespace MemberTracker.Controllers;
+namespace NextHorizon.Controllers;
 
 [ApiController]
 [AllowAnonymous]
@@ -18,3 +18,4 @@ public sealed class CsrfController : ControllerBase
         return Ok(new { token = tokens.RequestToken });
     }
 }
+

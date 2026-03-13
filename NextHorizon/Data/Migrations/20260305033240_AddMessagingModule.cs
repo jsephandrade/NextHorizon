@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace MemberTracker.Migrations
+namespace NextHorizon.Migrations
 {
     /// <inheritdoc />
     public partial class AddMessagingModule : Migration
@@ -542,3 +542,4 @@ namespace MemberTracker.Migrations
         }
     }
 }
+

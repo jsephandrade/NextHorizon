@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using MemberTracker.Data;
+using NextHorizon.Data;
 using NextHorizon.Models;
 
 namespace NextHorizon.Services;
@@ -26,3 +26,4 @@ public sealed class CustomerStoredProcedureService : ICustomerStoredProcedureSer
             .ToListAsync(cancellationToken);
     }
 }
+

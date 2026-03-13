@@ -89,7 +89,7 @@ Run from repository root (`C:\dev\NextHorizon`):
 
 ## EF + Stored Procedure Notes
 
-- `AppDbContext` is configured for SQL Server via `ConnectionStrings:DefaultConnection` in:
+- `ApplicationDbContext` is configured for SQL Server via `ConnectionStrings:DefaultConnection` in:
   - `NextHorizon/appsettings.json`
   - `NextHorizon/appsettings.Development.json`
 - Sample SP integration service:

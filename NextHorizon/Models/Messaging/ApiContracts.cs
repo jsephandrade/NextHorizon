@@ -1,4 +1,4 @@
-namespace MemberTracker.Models.Messaging;
+namespace NextHorizon.Messaging.Models;
 
 public sealed class ConversationDto
 {
@@ -51,3 +51,4 @@ public sealed class SendMessageRequest
     public string? Body { get; init; }
     public IFormFile? Attachment { get; init; }
 }
+

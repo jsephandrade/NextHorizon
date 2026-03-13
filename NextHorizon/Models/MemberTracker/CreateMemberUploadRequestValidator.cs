@@ -1,6 +1,7 @@
 using FluentValidation;
+using NextHorizon.Validation;
 
-namespace MemberTracker.Models;
+namespace NextHorizon.Modules.MemberTracker.Models;
 
 public class CreateMemberUploadRequestValidator : AbstractValidator<CreateMemberUploadRequest>
 {
@@ -88,3 +89,4 @@ public class CreateMemberUploadRequestValidator : AbstractValidator<CreateMember
         return distanceKm.HasValue && UploadValidationRules.HaveConsistentDistanceAndTime(distanceKm.Value, request.MovingTimeSec);
     }
 }
+

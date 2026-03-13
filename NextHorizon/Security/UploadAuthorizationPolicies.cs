@@ -1,4 +1,4 @@
-namespace MemberTracker.Security;
+namespace NextHorizon.Modules.MemberTracker.Security;
 
 public static class UploadRoles
 {
@@ -12,3 +12,4 @@ public static class UploadAuthorizationPolicies
     public const string ConsumerUpload = "ConsumerUpload";
     public const string ViewAllUploads = "ViewAllUploads";
 }
+

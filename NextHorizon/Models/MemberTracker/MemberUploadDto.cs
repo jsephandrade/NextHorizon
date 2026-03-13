@@ -1,4 +1,4 @@
-namespace MemberTracker.Models;
+namespace NextHorizon.Modules.MemberTracker.Models;
 
 public class MemberUploadDto
 {
@@ -32,3 +32,4 @@ public class MemberUploadDto
 
     public DateTime UpdatedAt { get; init; }
 }
+

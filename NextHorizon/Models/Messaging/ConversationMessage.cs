@@ -1,4 +1,4 @@
-namespace MemberTracker.Models.Messaging;
+namespace NextHorizon.Messaging.Models;
 
 public class ConversationMessage
 {
@@ -18,3 +18,4 @@ public class ConversationMessage
 
     public MessageConversation Conversation { get; set; } = null!;
 }
+

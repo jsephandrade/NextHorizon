@@ -4,7 +4,7 @@
     var controllerName = ViewContext.RouteData.Values["controller"]?.ToString();
     var actionName = ViewContext.RouteData.Values["action"]?.ToString();
     var isStorefrontPage = string.Equals(controllerName, "Home", StringComparison.OrdinalIgnoreCase);
-    var isMemberTrackerPage = string.Equals(controllerName, "Member", StringComparison.OrdinalIgnoreCase)
+    var isMemberTrackerPage = string.Equals(controllerName, "MemberTracker", StringComparison.OrdinalIgnoreCase)
         && (string.Equals(actionName, "UploadActivity", StringComparison.OrdinalIgnoreCase)
             || string.Equals(actionName, "MyActivity", StringComparison.OrdinalIgnoreCase));
     var showDevMessagingLink = WebHostEnvironment.IsDevelopment() &&
@@ -17,7 +17,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>@(ViewData["Title"] ?? ViewBag.Title ?? "MemberTracker") - MemberTracker</title>
+    <title>@(ViewData["Title"] ?? ViewBag.Title ?? "NextHorizon") - NextHorizon</title>
 
     @if (isStorefrontPage)
     {
@@ -57,7 +57,7 @@
                 <div class="header-actions">
                     @if (showDevMessagingLink)
                     {
-                        <a asp-controller="Member" asp-action="DevMessaging" class="dev-messaging-btn">Dev Messaging</a>
+                        <a asp-controller="MemberTracker" asp-action="DevMessaging" class="dev-messaging-btn">Dev Messaging</a>
                     }
 
                     <a href="/Home/Cart" class="cart-btn" aria-label="Shopping Cart">
@@ -142,7 +142,7 @@
                             </svg>
                         </button>
                         <div class="profile-dropdown" id="profile-dropdown">
-                            <a href="/Member/UploadActivity" class="profile-dropdown-link">Member Upload</a>
+                            <a asp-controller="MemberTracker" asp-action="UploadActivity" class="profile-dropdown-link">MemberTracker Uploads</a>
                         </div>
                     </div>
                 </div>

@@ -1,4 +1,4 @@
-namespace MemberTracker.Models.Messaging;
+namespace NextHorizon.Messaging.Models;
 
 public enum ConversationContextType : byte
 {
@@ -6,3 +6,4 @@ public enum ConversationContextType : byte
     Direct = General,
     Order = 2,
 }
+

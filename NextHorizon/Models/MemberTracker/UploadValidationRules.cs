@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using System.Buffers.Binary;
 using System.Text;
 
-namespace MemberTracker.Models;
+namespace NextHorizon.Validation;
 
 public static class UploadValidationRules
 {
@@ -435,3 +435,4 @@ public static class UploadValidationRules
         return true;
     }
 }
+

@@ -1,4 +1,4 @@
-namespace MemberTracker.Models.Messaging.Dev;
+namespace NextHorizon.Messaging.Models.Dev;
 
 public sealed class DevGeneralConversationRequest
 {
@@ -26,3 +26,4 @@ public sealed class DevActorRequest
 {
     public string ActorUserId { get; init; } = string.Empty;
 }
+

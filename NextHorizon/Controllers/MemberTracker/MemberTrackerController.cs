@@ -1,33 +1,34 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace MemberTracker.Controllers;
+namespace NextHorizon.Modules.MemberTracker.Controllers;
 
 [Authorize]
-public class MemberController : Controller
+[Route("member-tracker")]
+public class MemberTrackerController : Controller
 {
     private readonly IWebHostEnvironment _webHostEnvironment;
     private readonly IConfiguration _configuration;
 
-    public MemberController(IWebHostEnvironment webHostEnvironment, IConfiguration configuration)
+    public MemberTrackerController(IWebHostEnvironment webHostEnvironment, IConfiguration configuration)
     {
         _webHostEnvironment = webHostEnvironment;
         _configuration = configuration;
     }
 
-    [HttpGet]
+    [HttpGet("upload-activity")]
     public IActionResult UploadActivity()
     {
-        return View("~/Views/MemberTracker/UploadActivity.cshtml");
+        return View();
     }
 
-    [HttpGet]
+    [HttpGet("my-activity")]
     public IActionResult MyActivity()
     {
-        return View("~/Views/MemberTracker/MyActivity.cshtml");
+        return View();
     }
 
-    [HttpGet]
+    [HttpGet("dev-messaging")]
     public IActionResult DevMessaging()
     {
         var devMessagingEnabled = _configuration.GetValue("Features:EnableDevMessaging", false);
@@ -39,3 +40,4 @@ public class MemberController : Controller
         return View("~/Views/Messaging/DevMessaging.cshtml");
     }
 }
+

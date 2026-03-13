@@ -1,9 +1,11 @@
 using System.Data;
 using System.Data.Common;
-using MemberTracker.Models;
+using NextHorizon.Data;
+using NextHorizon.Models;
+using NextHorizon.Modules.MemberTracker.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace MemberTracker.Data;
+namespace NextHorizon.Modules.MemberTracker.Data;
 
 public interface IMemberUploadRepository
 {
@@ -58,8 +60,6 @@ public class MemberUploadStoredProcedureRepository : IMemberUploadRepository
     public Task<MemberUpload> CreateAsync(CreateMemberUploadDbRequest request, CancellationToken cancellationToken)
         => WithOpenConnectionAsync(async connection =>
         {
-            await EnsureConsumerRowAsync(connection, request.UserId, cancellationToken);
-
             await using var command = connection.CreateCommand();
             command.CommandText = "dbo.sp_MemberUpload_Create";
             command.CommandType = CommandType.StoredProcedure;
@@ -202,52 +202,6 @@ public class MemberUploadStoredProcedureRepository : IMemberUploadRepository
         return MapUpload(reader);
     }
 
-    private static async Task EnsureConsumerRowAsync(DbConnection connection, int consumerId, CancellationToken cancellationToken)
-    {
-        await using var command = connection.CreateCommand();
-        command.CommandText =
-            """
-            IF OBJECT_ID(N'[dbo].[Consumers]', N'U') IS NOT NULL
-            BEGIN
-                IF EXISTS
-                (
-                    SELECT 1
-                    FROM sys.identity_columns ic
-                    WHERE ic.object_id = OBJECT_ID(N'[dbo].[Consumers]', N'U')
-                      AND ic.name = N'consumer_id'
-                )
-                BEGIN
-                    BEGIN TRY
-                        SET IDENTITY_INSERT dbo.Consumers ON;
-
-                        IF NOT EXISTS (SELECT 1 FROM dbo.Consumers WHERE consumer_id = @ConsumerID)
-                            INSERT INTO dbo.Consumers (consumer_id) VALUES (@ConsumerID);
-
-                        SET IDENTITY_INSERT dbo.Consumers OFF;
-                    END TRY
-                    BEGIN CATCH
-                        BEGIN TRY
-                            SET IDENTITY_INSERT dbo.Consumers OFF;
-                        END TRY
-                        BEGIN CATCH
-                        END CATCH;
-
-                        THROW;
-                    END CATCH
-                END
-                ELSE
-                BEGIN
-                    IF NOT EXISTS (SELECT 1 FROM dbo.Consumers WHERE consumer_id = @ConsumerID)
-                        INSERT INTO dbo.Consumers (consumer_id) VALUES (@ConsumerID);
-                END
-            END;
-            """;
-        command.CommandType = CommandType.Text;
-        AddParameter(command, "@ConsumerID", consumerId, DbType.Int32);
-
-        await command.ExecuteNonQueryAsync(cancellationToken);
-    }
-
     private async Task<T> WithOpenConnectionAsync<T>(
         Func<DbConnection, Task<T>> action,
         CancellationToken cancellationToken)
@@ -307,3 +261,4 @@ public class MemberUploadStoredProcedureRepository : IMemberUploadRepository
         command.Parameters.Add(parameter);
     }
 }
+

@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using MemberTracker.Models;
-using MemberTracker.Models.Messaging;
 using NextHorizon.Models;
+using NextHorizon.Messaging.Models;
+using NextHorizon.Modules.MemberTracker.Models;
 
-namespace MemberTracker.Data;
+namespace NextHorizon.Data;
 
 public class ApplicationDbContext : DbContext
 {
@@ -30,6 +30,9 @@ public class ApplicationDbContext : DbContext
         platformUser.Property(x => x.UserId)
             .HasColumnName("user_id")
             .ValueGeneratedNever();
+        platformUser.Property(x => x.IsActive)
+            .HasColumnName("is_active")
+            .IsRequired();
 
         var consumer = builder.Entity<ConsumerRef>();
         consumer.ToTable("Consumers", "dbo", table => table.ExcludeFromMigrations());
@@ -37,6 +40,9 @@ public class ApplicationDbContext : DbContext
         consumer.Property(x => x.ConsumerId)
             .HasColumnName("consumer_id")
             .ValueGeneratedNever();
+        consumer.Property(x => x.UserId)
+            .HasColumnName("user_id")
+            .IsRequired();
 
         var seller = builder.Entity<SellerRef>();
         seller.ToTable("Sellers", "dbo", table => table.ExcludeFromMigrations());
@@ -44,6 +50,9 @@ public class ApplicationDbContext : DbContext
         seller.Property(x => x.SellerId)
             .HasColumnName("seller_id")
             .ValueGeneratedNever();
+        seller.Property(x => x.UserId)
+            .HasColumnName("user_id")
+            .IsRequired();
 
         var customer = builder.Entity<Customer>();
         customer.ToTable("Customers", "dbo", table => table.ExcludeFromMigrations());
@@ -217,3 +226,4 @@ public class ApplicationDbContext : DbContext
             .IsDescending(false, true);
     }
 }
+

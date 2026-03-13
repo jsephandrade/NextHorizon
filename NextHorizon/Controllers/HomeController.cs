@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using MemberTracker.Data;
-using MemberTracker.Models;
+using NextHorizon.Data;
 using NextHorizon.Models;
 using System.Diagnostics;
 
@@ -213,3 +212,4 @@ namespace NextHorizon.Controllers
         }
     }
 }
+

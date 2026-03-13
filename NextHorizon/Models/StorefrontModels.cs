@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace MemberTracker.Models;
+namespace NextHorizon.Models;
 
 public sealed class Product
 {
@@ -140,3 +140,4 @@ public sealed class OrderConfirmationViewModel
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
     public DateTime EstimatedDeliveryDate { get; init; } = DateTime.UtcNow.AddDays(5);
 }
+

@@ -1,12 +1,13 @@
-namespace MemberTracker.Data.Messaging;
+namespace NextHorizon.Data.Messaging;
 
 public interface IOrderConversationResolver
 {
-    Task<OrderConversationContext?> ResolveAsync(int orderId, int requestUserId, CancellationToken cancellationToken);
+    Task<OrderConversationContext?> ResolveAsync(int orderId, MessageActorContext actor, CancellationToken cancellationToken);
 }
 
 public sealed record OrderConversationContext(
     int OrderId,
-    int BuyerUserId,
-    int SellerUserId,
+    int BuyerConsumerId,
+    int SellerId,
     bool CanRequestUserAccess);
+

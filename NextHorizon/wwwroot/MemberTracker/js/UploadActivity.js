@@ -446,7 +446,7 @@
         submitButton.textContent = "Submitting...";
         try {
             const csrfToken = await getCsrfToken();
-            const response = await fetch("/api/uploads", {
+            const response = await fetch("/api/member-tracker/uploads", {
                 method: "POST",
                 headers: csrfToken ? { "X-CSRF-TOKEN": csrfToken } : undefined,
                 body: payload,
@@ -459,7 +459,7 @@
                 return;
             }
 
-            window.location.assign("/Member/MyActivity");
+            window.location.assign("/member-tracker/my-activity");
         } catch (_error) {
             setWarning("activityWarning", "Unable to submit activity right now.");
         } finally {

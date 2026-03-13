@@ -1,11 +1,13 @@
-using MemberTracker.Data.Messaging;
-using MemberTracker.Models;
-using MemberTracker.Models.Messaging;
-using MemberTracker.Models.Messaging.Dev;
+using NextHorizon.Data.Messaging;
+using NextHorizon.Models;
+using NextHorizon.Messaging.Models;
+using NextHorizon.Messaging.Models.Dev;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NextHorizon.Security;
+using NextHorizon.Validation;
 
-namespace MemberTracker.Controllers;
+namespace NextHorizon.Controllers;
 
 [ApiController]
 [Authorize]
@@ -19,17 +21,20 @@ public sealed class DevMessagingController : ControllerBase
     private readonly IOrderConversationResolver _orderConversationResolver;
     private readonly IWebHostEnvironment _webHostEnvironment;
     private readonly IConfiguration _configuration;
+    private readonly IAuthenticatedUserContextService _authenticatedUserContextService;
 
     public DevMessagingController(
         IMessagingRepository messagingRepository,
         IOrderConversationResolver orderConversationResolver,
         IWebHostEnvironment webHostEnvironment,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IAuthenticatedUserContextService authenticatedUserContextService)
     {
         _messagingRepository = messagingRepository;
         _orderConversationResolver = orderConversationResolver;
         _webHostEnvironment = webHostEnvironment;
         _configuration = configuration;
+        _authenticatedUserContextService = authenticatedUserContextService;
     }
 
     [HttpPost("conversations/general")]
@@ -47,18 +52,19 @@ public sealed class DevMessagingController : ControllerBase
             return BadRequest("ActorUserId, BuyerUserId, and SellerUserId must be positive integers.");
         }
 
-        if (buyerUserId == sellerUserId)
+        var actor = await _authenticatedUserContextService.GetByUserIdAsync(actorUserId, cancellationToken);
+        if (actor is null)
         {
-            return BadRequest("BuyerUserId and SellerUserId must be different.");
+            return BadRequest("ActorUserId must resolve to an active Users.user_id.");
         }
 
-        if (!IsParticipant(actorUserId, buyerUserId, sellerUserId))
+        if (!IsParticipant(ToMessageActor(actor), buyerUserId, sellerUserId))
         {
-            return BadRequest("ActorUserId must be either BuyerUserId or SellerUserId.");
+            return BadRequest("ActorUserId must resolve to either the buyer consumer or seller participant.");
         }
 
         var conversation = await _messagingRepository.CreateOrGetGeneralAsync(buyerUserId, sellerUserId, cancellationToken);
-        var actorView = await _messagingRepository.GetConversationAsync(conversation.ConversationId, actorUserId, cancellationToken);
+        var actorView = await _messagingRepository.GetConversationAsync(conversation.ConversationId, ToMessageActor(actor), cancellationToken);
 
         return actorView is null ? NotFound() : Ok(ToConversationDto(actorView));
     }
@@ -76,6 +82,12 @@ public sealed class DevMessagingController : ControllerBase
             return BadRequest("ActorUserId must be a positive integer and OrderId must be greater than zero.");
         }
 
+        var actor = await _authenticatedUserContextService.GetByUserIdAsync(actorUserId, cancellationToken);
+        if (actor is null)
+        {
+            return BadRequest("ActorUserId must resolve to an active Users.user_id.");
+        }
+
         int buyerUserId;
         int sellerUserId;
 
@@ -85,14 +97,14 @@ public sealed class DevMessagingController : ControllerBase
             buyerUserId = explicitBuyerUserId;
             sellerUserId = explicitSellerUserId;
 
-            if (!IsParticipant(actorUserId, buyerUserId, sellerUserId))
+            if (!IsParticipant(ToMessageActor(actor), buyerUserId, sellerUserId))
             {
                 return Forbid();
             }
         }
         else
         {
-            var resolved = await _orderConversationResolver.ResolveAsync(request.OrderId, actorUserId, cancellationToken);
+            var resolved = await _orderConversationResolver.ResolveAsync(request.OrderId, ToMessageActor(actor), cancellationToken);
             if (resolved is null)
             {
                 return NotFound("Order not found.");
@@ -103,12 +115,12 @@ public sealed class DevMessagingController : ControllerBase
                 return Forbid();
             }
 
-            buyerUserId = resolved.BuyerUserId;
-            sellerUserId = resolved.SellerUserId;
+            buyerUserId = resolved.BuyerConsumerId;
+            sellerUserId = resolved.SellerId;
         }
 
         var conversation = await _messagingRepository.CreateOrGetOrderAsync(request.OrderId, buyerUserId, sellerUserId, cancellationToken);
-        var actorView = await _messagingRepository.GetConversationAsync(conversation.ConversationId, actorUserId, cancellationToken);
+        var actorView = await _messagingRepository.GetConversationAsync(conversation.ConversationId, ToMessageActor(actor), cancellationToken);
 
         return actorView is null ? NotFound() : Ok(ToConversationDto(actorView));
     }
@@ -130,10 +142,16 @@ public sealed class DevMessagingController : ControllerBase
             return BadRequest("actorUserId must be a positive integer.");
         }
 
+        var actor = await _authenticatedUserContextService.GetByUserIdAsync(actorUserGuid, cancellationToken);
+        if (actor is null || !actor.HasMessagingRole)
+        {
+            return BadRequest("actorUserId must resolve to an active user with a consumer or seller role.");
+        }
+
         var normalizedPage = Math.Max(1, page);
         var normalizedPageSize = Math.Clamp(pageSize, 1, MaxPageSize);
 
-        var paged = await _messagingRepository.ListByUserAsync(actorUserGuid, normalizedPage, normalizedPageSize, cancellationToken);
+        var paged = await _messagingRepository.ListByActorAsync(ToMessageActor(actor), normalizedPage, normalizedPageSize, cancellationToken);
 
         return Ok(new PagedResult<ConversationDto>
         {
@@ -157,7 +175,13 @@ public sealed class DevMessagingController : ControllerBase
             return BadRequest("actorUserId must be a positive integer.");
         }
 
-        var conversation = await _messagingRepository.GetConversationAsync(conversationId, actorUserGuid, cancellationToken);
+        var actor = await _authenticatedUserContextService.GetByUserIdAsync(actorUserGuid, cancellationToken);
+        if (actor is null || !actor.HasMessagingRole)
+        {
+            return BadRequest("actorUserId must resolve to an active user with a consumer or seller role.");
+        }
+
+        var conversation = await _messagingRepository.GetConversationAsync(conversationId, ToMessageActor(actor), cancellationToken);
         return conversation is null ? NotFound() : Ok(ToConversationDto(conversation));
     }
 
@@ -173,6 +197,12 @@ public sealed class DevMessagingController : ControllerBase
         if (!TryParseUserId(request.ActorUserId, out var actorUserId))
         {
             return BadRequest("ActorUserId must be a positive integer.");
+        }
+
+        var actor = await _authenticatedUserContextService.GetByUserIdAsync(actorUserId, cancellationToken);
+        if (actor is null || !actor.HasMessagingRole)
+        {
+            return BadRequest("ActorUserId must resolve to an active user with a consumer or seller role.");
         }
 
         var body = request.Body?.Trim() ?? string.Empty;
@@ -200,7 +230,7 @@ public sealed class DevMessagingController : ControllerBase
 
         try
         {
-            var item = await _messagingRepository.SendMessageAsync(conversationId, actorUserId, body, savedAttachment?.AttachmentUrl, cancellationToken);
+            var item = await _messagingRepository.SendMessageAsync(conversationId, ToMessageActor(actor), body, savedAttachment?.AttachmentUrl, cancellationToken);
             if (item is null)
             {
                 if (savedAttachment is not null)
@@ -242,8 +272,14 @@ public sealed class DevMessagingController : ControllerBase
             return BadRequest("actorUserId must be a positive integer.");
         }
 
+        var actor = await _authenticatedUserContextService.GetByUserIdAsync(actorUserGuid, cancellationToken);
+        if (actor is null || !actor.HasMessagingRole)
+        {
+            return BadRequest("actorUserId must resolve to an active user with a consumer or seller role.");
+        }
+
         var normalizedPageSize = Math.Clamp(pageSize, 1, MaxPageSize);
-        var messages = await _messagingRepository.ListMessagesAsync(conversationId, actorUserGuid, before, normalizedPageSize, cancellationToken);
+        var messages = await _messagingRepository.ListMessagesAsync(conversationId, ToMessageActor(actor), before, normalizedPageSize, cancellationToken);
 
         return messages is null
             ? NotFound()
@@ -263,7 +299,13 @@ public sealed class DevMessagingController : ControllerBase
             return BadRequest("ActorUserId must be a positive integer.");
         }
 
-        var updated = await _messagingRepository.MarkReadAsync(conversationId, actorUserId, cancellationToken);
+        var actor = await _authenticatedUserContextService.GetByUserIdAsync(actorUserId, cancellationToken);
+        if (actor is null || !actor.HasMessagingRole)
+        {
+            return BadRequest("ActorUserId must resolve to an active user with a consumer or seller role.");
+        }
+
+        var updated = await _messagingRepository.MarkReadAsync(conversationId, ToMessageActor(actor), cancellationToken);
         return updated ? NoContent() : NotFound();
     }
 
@@ -280,7 +322,13 @@ public sealed class DevMessagingController : ControllerBase
             return BadRequest("actorUserId must be a positive integer.");
         }
 
-        var deleted = await _messagingRepository.SoftDeleteMessageAsync(messageId, actorUserGuid, cancellationToken);
+        var actor = await _authenticatedUserContextService.GetByUserIdAsync(actorUserGuid, cancellationToken);
+        if (actor is null)
+        {
+            return BadRequest("actorUserId must resolve to an active Users.user_id.");
+        }
+
+        var deleted = await _messagingRepository.SoftDeleteMessageAsync(messageId, actor.UserId, cancellationToken);
         return deleted ? NoContent() : NotFound();
     }
 
@@ -290,8 +338,9 @@ public sealed class DevMessagingController : ControllerBase
     private static bool TryParseUserId(string? userId, out int value)
         => int.TryParse(userId?.Trim(), out value) && value > 0;
 
-    private static bool IsParticipant(int actorUserId, int buyerUserId, int sellerUserId)
-        => actorUserId == buyerUserId || actorUserId == sellerUserId;
+    private static bool IsParticipant(MessageActorContext actor, int buyerUserId, int sellerUserId)
+        => (actor.ConsumerId.HasValue && actor.ConsumerId.Value == buyerUserId)
+            || (actor.SellerId.HasValue && actor.SellerId.Value == sellerUserId);
 
     private async Task<(string AbsolutePath, string AttachmentUrl)> SaveAttachmentAsync(IFormFile attachment, CancellationToken cancellationToken)
     {
@@ -352,4 +401,8 @@ public sealed class DevMessagingController : ControllerBase
             IsDeleted = item.IsDeleted,
             SentAt = item.SentAt,
         };
+
+    private static MessageActorContext ToMessageActor(AuthenticatedUserContext actor)
+        => new(actor.UserId, actor.ConsumerId, actor.SellerId);
 }
+

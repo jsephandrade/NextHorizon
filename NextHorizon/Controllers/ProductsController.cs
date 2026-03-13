@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using MemberTracker.Data;
-using MemberTracker.Models;
+using NextHorizon.Data;
+using NextHorizon.Models;
 
-namespace MemberTracker.Controllers
+namespace NextHorizon.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -68,3 +68,4 @@ namespace MemberTracker.Controllers
         }
     }
 }
+

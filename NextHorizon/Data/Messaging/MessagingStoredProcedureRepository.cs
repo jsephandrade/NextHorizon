@@ -1,10 +1,11 @@
 using System.Data;
 using System.Data.Common;
-using MemberTracker.Models;
-using MemberTracker.Models.Messaging;
+using NextHorizon.Data;
+using NextHorizon.Models;
+using NextHorizon.Messaging.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace MemberTracker.Data.Messaging;
+namespace NextHorizon.Data.Messaging;
 
 public sealed class MessagingStoredProcedureRepository : IMessagingRepository
 {
@@ -15,57 +16,124 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
         _dbContext = dbContext;
     }
 
-    public Task<MessageConversationSummary> CreateOrGetGeneralAsync(int buyerUserId, int sellerUserId, CancellationToken cancellationToken)
+    public Task<MessageConversationSummary> CreateOrGetGeneralAsync(int buyerConsumerId, int sellerId, CancellationToken cancellationToken)
         => WithOpenConnectionAsync(async connection =>
         {
-            await EnsureUserRowsAsync(
+            var conversationId = await GetOrCreateConversationIdAsync(
                 connection,
-                (buyerUserId, "Consumer"),
-                (sellerUserId, "Seller"),
+                buyerConsumerId,
+                sellerId,
+                ConversationContextType.General,
+                null,
                 cancellationToken);
-            await EnsureParticipantRowsAsync(connection, buyerUserId, sellerUserId, cancellationToken);
 
-            await using var command = connection.CreateCommand();
-            command.CommandText = "dbo.sp_MessageConversation_CreateOrGet_General";
-            command.CommandType = CommandType.StoredProcedure;
-
-            AddParameter(command, "@BuyerUserID", buyerUserId, DbType.Int32);
-            AddParameter(command, "@SellerUserID", sellerUserId, DbType.Int32);
-
-            var conversation = await ReadSingleConversationAsync(command, cancellationToken);
-            return conversation ?? throw new InvalidOperationException("Stored procedure sp_MessageConversation_CreateOrGet_General did not return a conversation.");
+            var summary = await GetConversationSnapshotAsync(connection, conversationId, cancellationToken);
+            return summary ?? throw new InvalidOperationException("Conversation was created but could not be reloaded.");
         }, cancellationToken);
 
-    public Task<MessageConversationSummary> CreateOrGetOrderAsync(int orderId, int buyerUserId, int sellerUserId, CancellationToken cancellationToken)
+    public Task<MessageConversationSummary> CreateOrGetOrderAsync(int orderId, int buyerConsumerId, int sellerId, CancellationToken cancellationToken)
         => WithOpenConnectionAsync(async connection =>
         {
-            await EnsureUserRowsAsync(
+            var conversationId = await GetOrCreateConversationIdAsync(
                 connection,
-                (buyerUserId, "Consumer"),
-                (sellerUserId, "Seller"),
+                buyerConsumerId,
+                sellerId,
+                ConversationContextType.Order,
+                orderId,
                 cancellationToken);
-            await EnsureParticipantRowsAsync(connection, buyerUserId, sellerUserId, cancellationToken);
 
-            await using var command = connection.CreateCommand();
-            command.CommandText = "dbo.sp_MessageConversation_CreateOrGet_Order";
-            command.CommandType = CommandType.StoredProcedure;
-
-            AddParameter(command, "@OrderID", orderId, DbType.Int32);
-            AddParameter(command, "@BuyerUserID", buyerUserId, DbType.Int32);
-            AddParameter(command, "@SellerUserID", sellerUserId, DbType.Int32);
-
-            var conversation = await ReadSingleConversationAsync(command, cancellationToken);
-            return conversation ?? throw new InvalidOperationException("Stored procedure sp_MessageConversation_CreateOrGet_Order did not return a conversation.");
+            var summary = await GetConversationSnapshotAsync(connection, conversationId, cancellationToken);
+            return summary ?? throw new InvalidOperationException("Conversation was created but could not be reloaded.");
         }, cancellationToken);
 
-    public Task<PagedResult<MessageConversationSummary>> ListByUserAsync(int userId, int pageNumber, int pageSize, CancellationToken cancellationToken)
+    public Task<PagedResult<MessageConversationSummary>> ListByActorAsync(MessageActorContext actor, int pageNumber, int pageSize, CancellationToken cancellationToken)
         => WithOpenConnectionAsync(async connection =>
         {
             await using var command = connection.CreateCommand();
-            command.CommandText = "dbo.sp_MessageConversation_ListByUser";
-            command.CommandType = CommandType.StoredProcedure;
+            command.CommandText =
+                """
+                ;WITH Base AS
+                (
+                    SELECT
+                        c.ConversationId,
+                        c.BuyerUserId,
+                        c.SellerUserId,
+                        c.ContextType,
+                        c.OrderId,
+                        c.LastMessageAt,
+                        c.BuyerLastReadAt,
+                        c.SellerLastReadAt,
+                        c.CreatedAt,
+                        c.UpdatedAt,
+                        CASE
+                            WHEN @ActorConsumerID IS NOT NULL AND c.BuyerUserId = @ActorConsumerID THEN CAST(1 AS TINYINT)
+                            WHEN @ActorSellerID IS NOT NULL AND c.SellerUserId = @ActorSellerID THEN CAST(2 AS TINYINT)
+                            ELSE CAST(0 AS TINYINT)
+                        END AS ActorSide
+                    FROM dbo.MessagingConversations c
+                    WHERE (@ActorConsumerID IS NOT NULL AND c.BuyerUserId = @ActorConsumerID)
+                       OR (@ActorSellerID IS NOT NULL AND c.SellerUserId = @ActorSellerID)
+                )
+                SELECT
+                    b.ConversationId AS ConversationID,
+                    b.BuyerUserId AS BuyerUserID,
+                    b.SellerUserId AS SellerUserID,
+                    b.ContextType AS ContextType,
+                    b.OrderId AS OrderID,
+                    b.LastMessageAt AS LastMessageAt,
+                    b.BuyerLastReadAt AS BuyerLastReadAt,
+                    b.SellerLastReadAt AS SellerLastReadAt,
+                    CASE
+                        WHEN lm.MessageId IS NULL THEN NULL
+                        WHEN lm.IsDeleted = 1 THEN N'[deleted]'
+                        WHEN LEN(lm.Body) > 120 THEN LEFT(lm.Body, 117) + N'...'
+                        ELSE lm.Body
+                    END AS LastMessagePreview,
+                    (
+                        SELECT COUNT(1)
+                        FROM dbo.MessagingMessages m
+                        WHERE m.ConversationId = b.ConversationId
+                          AND m.IsDeleted = 0
+                          AND m.SenderUserId <> @ActorUserID
+                          AND m.SentAt > COALESCE(
+                                CASE
+                                    WHEN b.ActorSide = 1 THEN b.BuyerLastReadAt
+                                    WHEN b.ActorSide = 2 THEN b.SellerLastReadAt
+                                    ELSE NULL
+                                END,
+                                CONVERT(DATETIME2, '1900-01-01')
+                          )
+                    ) AS UnreadCount,
+                    b.CreatedAt AS CreatedAt,
+                    b.UpdatedAt AS UpdatedAt
+                FROM Base b
+                OUTER APPLY
+                (
+                    SELECT TOP (1)
+                        m.MessageId,
+                        m.Body,
+                        m.IsDeleted
+                    FROM dbo.MessagingMessages m
+                    WHERE m.ConversationId = b.ConversationId
+                    ORDER BY m.SentAt DESC, m.MessageId DESC
+                ) lm
+                ORDER BY COALESCE(b.LastMessageAt, b.CreatedAt) DESC, b.ConversationId DESC
+                OFFSET (@Page - 1) * @PageSize ROWS
+                FETCH NEXT @PageSize ROWS ONLY;
 
-            AddParameter(command, "@UserID", userId, DbType.Int32);
+                ;WITH Base AS
+                (
+                    SELECT c.ConversationId
+                    FROM dbo.MessagingConversations c
+                    WHERE (@ActorConsumerID IS NOT NULL AND c.BuyerUserId = @ActorConsumerID)
+                       OR (@ActorSellerID IS NOT NULL AND c.SellerUserId = @ActorSellerID)
+                )
+                SELECT COUNT(1) AS TotalCount
+                FROM Base;
+                """;
+            command.CommandType = CommandType.Text;
+
+            AddActorParameters(command, actor);
             AddParameter(command, "@Page", pageNumber, DbType.Int32);
             AddParameter(command, "@PageSize", pageSize, DbType.Int32);
 
@@ -92,111 +160,414 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
             };
         }, cancellationToken);
 
-    public Task<MessageConversationSummary?> GetConversationAsync(int conversationId, int userId, CancellationToken cancellationToken)
+    public Task<MessageConversationSummary?> GetConversationAsync(int conversationId, MessageActorContext actor, CancellationToken cancellationToken)
+        => WithOpenConnectionAsync(connection => GetConversationForActorAsync(connection, conversationId, actor, cancellationToken), cancellationToken);
+
+    public Task<MessageItem?> SendMessageAsync(int conversationId, MessageActorContext actor, string body, string? attachmentUrl, CancellationToken cancellationToken)
         => WithOpenConnectionAsync(async connection =>
         {
-            await using var command = connection.CreateCommand();
-            command.CommandText = "dbo.sp_MessageConversation_GetById";
-            command.CommandType = CommandType.StoredProcedure;
+            if (!await IsConversationParticipantAsync(connection, conversationId, actor, cancellationToken))
+            {
+                return null;
+            }
 
-            AddParameter(command, "@ConversationID", conversationId, DbType.Int32);
-            AddParameter(command, "@UserID", userId, DbType.Int32);
+            await using var insertCommand = connection.CreateCommand();
+            insertCommand.CommandText =
+                """
+                DECLARE @Inserted TABLE
+                (
+                    MessageID BIGINT,
+                    ConversationID INT,
+                    SenderUserID INT,
+                    Body NVARCHAR(2000),
+                    AttachmentUrl NVARCHAR(400),
+                    SentAt DATETIME2,
+                    IsDeleted BIT
+                );
 
-            return await ReadSingleConversationAsync(command, cancellationToken);
-        }, cancellationToken);
+                INSERT INTO dbo.MessagingMessages
+                (
+                    ConversationId,
+                    SenderUserId,
+                    Body,
+                    AttachmentUrl,
+                    SentAt,
+                    IsDeleted
+                )
+                OUTPUT
+                    INSERTED.MessageId,
+                    INSERTED.ConversationId,
+                    INSERTED.SenderUserId,
+                    INSERTED.Body,
+                    INSERTED.AttachmentUrl,
+                    INSERTED.SentAt,
+                    INSERTED.IsDeleted
+                INTO @Inserted
+                VALUES
+                (
+                    @ConversationID,
+                    @SenderUserID,
+                    @Body,
+                    @AttachmentUrl,
+                    SYSUTCDATETIME(),
+                    0
+                );
 
-    public Task<MessageItem?> SendMessageAsync(int conversationId, int senderUserId, string body, string? attachmentUrl, CancellationToken cancellationToken)
-        => WithOpenConnectionAsync(async connection =>
-        {
-            await EnsureUserRowsAsync(
-                connection,
-                (senderUserId, "Messaging"),
-                null,
-                cancellationToken);
+                SELECT
+                    MessageID,
+                    ConversationID,
+                    SenderUserID,
+                    Body,
+                    AttachmentUrl,
+                    SentAt,
+                    IsDeleted
+                FROM @Inserted;
+                """;
+            insertCommand.CommandType = CommandType.Text;
 
-            await using var command = connection.CreateCommand();
-            command.CommandText = "dbo.sp_Message_Send";
-            command.CommandType = CommandType.StoredProcedure;
+            AddParameter(insertCommand, "@ConversationID", conversationId, DbType.Int32);
+            AddParameter(insertCommand, "@SenderUserID", actor.UserId, DbType.Int32);
+            AddParameter(insertCommand, "@Body", body, DbType.String);
+            AddParameter(insertCommand, "@AttachmentUrl", attachmentUrl, DbType.String);
 
-            AddParameter(command, "@ConversationID", conversationId, DbType.Int32);
-            AddParameter(command, "@SenderUserID", senderUserId, DbType.Int32);
-            AddParameter(command, "@Body", body, DbType.String);
-            AddParameter(command, "@AttachmentUrl", attachmentUrl, DbType.String);
-
-            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            await using var reader = await insertCommand.ExecuteReaderAsync(cancellationToken);
             if (!await reader.ReadAsync(cancellationToken))
             {
                 return null;
             }
 
-            return MapMessage(reader);
+            var item = MapMessage(reader);
+            await reader.CloseAsync();
+
+            await using var updateCommand = connection.CreateCommand();
+            updateCommand.CommandText =
+                """
+                UPDATE dbo.MessagingConversations
+                SET LastMessageAt = @SentAt,
+                    UpdatedAt = @SentAt
+                WHERE ConversationId = @ConversationID;
+                """;
+            updateCommand.CommandType = CommandType.Text;
+
+            AddParameter(updateCommand, "@ConversationID", conversationId, DbType.Int32);
+            AddParameter(updateCommand, "@SentAt", item.SentAt, DbType.DateTime2);
+
+            await updateCommand.ExecuteNonQueryAsync(cancellationToken);
+            return item;
         }, cancellationToken);
 
-    public Task<IReadOnlyList<MessageItem>?> ListMessagesAsync(int conversationId, int userId, DateTime? before, int pageSize, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<MessageItem>?> ListMessagesAsync(int conversationId, MessageActorContext actor, DateTime? before, int pageSize, CancellationToken cancellationToken)
         => WithOpenConnectionAsync(async connection =>
         {
+            if (!await IsConversationParticipantAsync(connection, conversationId, actor, cancellationToken))
+            {
+                return null;
+            }
+
             await using var command = connection.CreateCommand();
-            command.CommandText = "dbo.sp_Message_List";
-            command.CommandType = CommandType.StoredProcedure;
+            command.CommandText =
+                """
+                SELECT TOP (@PageSize)
+                    MessageId AS MessageID,
+                    ConversationId AS ConversationID,
+                    SenderUserId AS SenderUserID,
+                    Body AS Body,
+                    AttachmentUrl AS AttachmentUrl,
+                    SentAt AS SentAt,
+                    IsDeleted AS IsDeleted
+                FROM dbo.MessagingMessages
+                WHERE ConversationId = @ConversationID
+                  AND (@Before IS NULL OR SentAt < @Before)
+                ORDER BY SentAt DESC, MessageId DESC;
+                """;
+            command.CommandType = CommandType.Text;
 
             AddParameter(command, "@ConversationID", conversationId, DbType.Int32);
-            AddParameter(command, "@UserID", userId, DbType.Int32);
             AddParameter(command, "@Before", before, DbType.DateTime2);
             AddParameter(command, "@PageSize", pageSize, DbType.Int32);
 
             var items = new List<MessageItem>();
-
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-            if (await reader.NextResultAsync(cancellationToken))
+            while (await reader.ReadAsync(cancellationToken))
             {
-                while (await reader.ReadAsync(cancellationToken))
-                {
-                    items.Add(MapMessage(reader));
-                }
-
-                return (IReadOnlyList<MessageItem>)items;
+                items.Add(MapMessage(reader));
             }
 
-            return (IReadOnlyList<MessageItem>?)null;
+            return (IReadOnlyList<MessageItem>)items;
         }, cancellationToken);
 
-    public Task<bool> MarkReadAsync(int conversationId, int userId, CancellationToken cancellationToken)
+    public Task<bool> MarkReadAsync(int conversationId, MessageActorContext actor, CancellationToken cancellationToken)
         => WithOpenConnectionAsync(async connection =>
         {
             await using var command = connection.CreateCommand();
-            command.CommandText = "dbo.sp_MessageConversation_MarkRead";
-            command.CommandType = CommandType.StoredProcedure;
+            command.CommandText =
+                """
+                UPDATE dbo.MessagingConversations
+                SET BuyerLastReadAt = CASE
+                        WHEN @ActorConsumerID IS NOT NULL AND BuyerUserId = @ActorConsumerID THEN SYSUTCDATETIME()
+                        ELSE BuyerLastReadAt
+                    END,
+                    SellerLastReadAt = CASE
+                        WHEN @ActorSellerID IS NOT NULL AND SellerUserId = @ActorSellerID THEN SYSUTCDATETIME()
+                        ELSE SellerLastReadAt
+                    END,
+                    UpdatedAt = SYSUTCDATETIME()
+                WHERE ConversationId = @ConversationID
+                  AND (
+                        (@ActorConsumerID IS NOT NULL AND BuyerUserId = @ActorConsumerID)
+                     OR (@ActorSellerID IS NOT NULL AND SellerUserId = @ActorSellerID)
+                  );
+                """;
+            command.CommandType = CommandType.Text;
 
             AddParameter(command, "@ConversationID", conversationId, DbType.Int32);
-            AddParameter(command, "@UserID", userId, DbType.Int32);
+            AddActorParameters(command, actor);
 
-            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-            if (!await reader.ReadAsync(cancellationToken))
-            {
-                return false;
-            }
-
-            return reader.GetBoolean(reader.GetOrdinal("Updated"));
+            return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
         }, cancellationToken);
 
     public Task<bool> SoftDeleteMessageAsync(long messageId, int userId, CancellationToken cancellationToken)
         => WithOpenConnectionAsync(async connection =>
         {
             await using var command = connection.CreateCommand();
-            command.CommandText = "dbo.sp_Message_SoftDelete";
-            command.CommandType = CommandType.StoredProcedure;
+            command.CommandText =
+                """
+                UPDATE dbo.MessagingMessages
+                SET IsDeleted = 1
+                WHERE MessageId = @MessageID
+                  AND SenderUserId = @UserID
+                  AND IsDeleted = 0;
+                """;
+            command.CommandType = CommandType.Text;
 
             AddParameter(command, "@MessageID", messageId, DbType.Int64);
             AddParameter(command, "@UserID", userId, DbType.Int32);
 
-            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-            if (!await reader.ReadAsync(cancellationToken))
-            {
-                return false;
-            }
-
-            return reader.GetBoolean(reader.GetOrdinal("Deleted"));
+            return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
         }, cancellationToken);
+
+    private async Task<int> GetOrCreateConversationIdAsync(
+        DbConnection connection,
+        int buyerConsumerId,
+        int sellerId,
+        ConversationContextType contextType,
+        int? orderId,
+        CancellationToken cancellationToken)
+    {
+        await using var lookupCommand = connection.CreateCommand();
+        lookupCommand.CommandText = contextType == ConversationContextType.General
+            ? """
+              SELECT TOP (1) ConversationId
+              FROM dbo.MessagingConversations
+              WHERE BuyerUserId = @BuyerConsumerID
+                AND SellerUserId = @SellerID
+                AND ContextType = 1;
+              """
+            : """
+              SELECT TOP (1) ConversationId
+              FROM dbo.MessagingConversations
+              WHERE OrderId = @OrderID
+                AND ContextType = 2;
+              """;
+        lookupCommand.CommandType = CommandType.Text;
+
+        AddParameter(lookupCommand, "@BuyerConsumerID", buyerConsumerId, DbType.Int32);
+        AddParameter(lookupCommand, "@SellerID", sellerId, DbType.Int32);
+        AddParameter(lookupCommand, "@OrderID", orderId, DbType.Int32);
+
+        var existingId = await lookupCommand.ExecuteScalarAsync(cancellationToken);
+        if (existingId is not null && existingId != DBNull.Value)
+        {
+            return Convert.ToInt32(existingId);
+        }
+
+        await using var insertCommand = connection.CreateCommand();
+        insertCommand.CommandText =
+            """
+            INSERT INTO dbo.MessagingConversations
+            (
+                BuyerUserId,
+                SellerUserId,
+                ContextType,
+                OrderId,
+                LastMessageAt,
+                BuyerLastReadAt,
+                SellerLastReadAt,
+                CreatedAt,
+                UpdatedAt
+            )
+            OUTPUT INSERTED.ConversationId
+            VALUES
+            (
+                @BuyerConsumerID,
+                @SellerID,
+                @ContextType,
+                @OrderID,
+                NULL,
+                NULL,
+                NULL,
+                SYSUTCDATETIME(),
+                SYSUTCDATETIME()
+            );
+            """;
+        insertCommand.CommandType = CommandType.Text;
+
+        AddParameter(insertCommand, "@BuyerConsumerID", buyerConsumerId, DbType.Int32);
+        AddParameter(insertCommand, "@SellerID", sellerId, DbType.Int32);
+        AddParameter(insertCommand, "@ContextType", (byte)contextType, DbType.Byte);
+        AddParameter(insertCommand, "@OrderID", orderId, DbType.Int32);
+
+        var insertedId = await insertCommand.ExecuteScalarAsync(cancellationToken);
+        return insertedId is null || insertedId == DBNull.Value
+            ? throw new InvalidOperationException("Failed to create a messaging conversation.")
+            : Convert.ToInt32(insertedId);
+    }
+
+    private async Task<MessageConversationSummary?> GetConversationSnapshotAsync(DbConnection connection, int conversationId, CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText =
+            """
+            SELECT TOP (1)
+                c.ConversationId AS ConversationID,
+                c.BuyerUserId AS BuyerUserID,
+                c.SellerUserId AS SellerUserID,
+                c.ContextType AS ContextType,
+                c.OrderId AS OrderID,
+                c.LastMessageAt AS LastMessageAt,
+                c.BuyerLastReadAt AS BuyerLastReadAt,
+                c.SellerLastReadAt AS SellerLastReadAt,
+                CASE
+                    WHEN lm.MessageId IS NULL THEN NULL
+                    WHEN lm.IsDeleted = 1 THEN N'[deleted]'
+                    WHEN LEN(lm.Body) > 120 THEN LEFT(lm.Body, 117) + N'...'
+                    ELSE lm.Body
+                END AS LastMessagePreview,
+                CAST(0 AS INT) AS UnreadCount,
+                c.CreatedAt AS CreatedAt,
+                c.UpdatedAt AS UpdatedAt
+            FROM dbo.MessagingConversations c
+            OUTER APPLY
+            (
+                SELECT TOP (1)
+                    m.MessageId,
+                    m.Body,
+                    m.IsDeleted
+                FROM dbo.MessagingMessages m
+                WHERE m.ConversationId = c.ConversationId
+                ORDER BY m.SentAt DESC, m.MessageId DESC
+            ) lm
+            WHERE c.ConversationId = @ConversationID;
+            """;
+        command.CommandType = CommandType.Text;
+
+        AddParameter(command, "@ConversationID", conversationId, DbType.Int32);
+        return await ReadSingleConversationAsync(command, cancellationToken);
+    }
+
+    private async Task<MessageConversationSummary?> GetConversationForActorAsync(
+        DbConnection connection,
+        int conversationId,
+        MessageActorContext actor,
+        CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText =
+            """
+            SELECT TOP (1)
+                c.ConversationId AS ConversationID,
+                c.BuyerUserId AS BuyerUserID,
+                c.SellerUserId AS SellerUserID,
+                c.ContextType AS ContextType,
+                c.OrderId AS OrderID,
+                c.LastMessageAt AS LastMessageAt,
+                c.BuyerLastReadAt AS BuyerLastReadAt,
+                c.SellerLastReadAt AS SellerLastReadAt,
+                CASE
+                    WHEN lm.MessageId IS NULL THEN NULL
+                    WHEN lm.IsDeleted = 1 THEN N'[deleted]'
+                    WHEN LEN(lm.Body) > 120 THEN LEFT(lm.Body, 117) + N'...'
+                    ELSE lm.Body
+                END AS LastMessagePreview,
+                (
+                    SELECT COUNT(1)
+                    FROM dbo.MessagingMessages m
+                    WHERE m.ConversationId = c.ConversationId
+                      AND m.IsDeleted = 0
+                      AND m.SenderUserId <> @ActorUserID
+                      AND m.SentAt > COALESCE(
+                            CASE
+                                WHEN @ActorConsumerID IS NOT NULL AND c.BuyerUserId = @ActorConsumerID THEN c.BuyerLastReadAt
+                                WHEN @ActorSellerID IS NOT NULL AND c.SellerUserId = @ActorSellerID THEN c.SellerLastReadAt
+                                ELSE NULL
+                            END,
+                            CONVERT(DATETIME2, '1900-01-01')
+                      )
+                ) AS UnreadCount,
+                c.CreatedAt AS CreatedAt,
+                c.UpdatedAt AS UpdatedAt
+            FROM dbo.MessagingConversations c
+            OUTER APPLY
+            (
+                SELECT TOP (1)
+                    m.MessageId,
+                    m.Body,
+                    m.IsDeleted
+                FROM dbo.MessagingMessages m
+                WHERE m.ConversationId = c.ConversationId
+                ORDER BY m.SentAt DESC, m.MessageId DESC
+            ) lm
+            WHERE c.ConversationId = @ConversationID
+              AND (
+                    (@ActorConsumerID IS NOT NULL AND c.BuyerUserId = @ActorConsumerID)
+                 OR (@ActorSellerID IS NOT NULL AND c.SellerUserId = @ActorSellerID)
+              );
+            """;
+        command.CommandType = CommandType.Text;
+
+        AddParameter(command, "@ConversationID", conversationId, DbType.Int32);
+        AddActorParameters(command, actor);
+
+        return await ReadSingleConversationAsync(command, cancellationToken);
+    }
+
+    private async Task<bool> IsConversationParticipantAsync(
+        DbConnection connection,
+        int conversationId,
+        MessageActorContext actor,
+        CancellationToken cancellationToken)
+    {
+        if (!actor.HasConversationRole)
+        {
+            return false;
+        }
+
+        await using var command = connection.CreateCommand();
+        command.CommandText =
+            """
+            SELECT CASE
+                WHEN EXISTS
+                (
+                    SELECT 1
+                    FROM dbo.MessagingConversations c
+                    WHERE c.ConversationId = @ConversationID
+                      AND (
+                            (@ActorConsumerID IS NOT NULL AND c.BuyerUserId = @ActorConsumerID)
+                         OR (@ActorSellerID IS NOT NULL AND c.SellerUserId = @ActorSellerID)
+                      )
+                )
+                THEN CAST(1 AS BIT)
+                ELSE CAST(0 AS BIT)
+            END AS IsMember;
+            """;
+        command.CommandType = CommandType.Text;
+
+        AddParameter(command, "@ConversationID", conversationId, DbType.Int32);
+        AddActorParameters(command, actor);
+
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return result is bool isMember && isMember;
+    }
 
     private async Task<MessageConversationSummary?> ReadSingleConversationAsync(DbCommand command, CancellationToken cancellationToken)
     {
@@ -207,313 +578,6 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
         }
 
         return MapConversation(reader);
-    }
-
-    private static async Task EnsureParticipantRowsAsync(DbConnection connection, int buyerUserId, int sellerUserId, CancellationToken cancellationToken)
-    {
-        await using var command = connection.CreateCommand();
-        command.CommandText =
-            """
-            IF OBJECT_ID(N'[dbo].[Consumers]', N'U') IS NOT NULL
-            BEGIN
-                IF NOT EXISTS (SELECT 1 FROM dbo.Consumers WHERE consumer_id = @BuyerUserID)
-                BEGIN
-                    IF EXISTS
-                    (
-                        SELECT 1
-                        FROM sys.identity_columns ic
-                        WHERE ic.object_id = OBJECT_ID(N'[dbo].[Consumers]', N'U')
-                          AND ic.name = N'consumer_id'
-                    )
-                    BEGIN
-                        BEGIN TRY
-                            SET IDENTITY_INSERT dbo.Consumers ON;
-
-                            INSERT INTO dbo.Consumers
-                            (
-                                consumer_id,
-                                user_id,
-                                first_name,
-                                last_name,
-                                address,
-                                phone_number,
-                                created_at,
-                                username
-                            )
-                            VALUES
-                            (
-                                @BuyerUserID,
-                                @BuyerUserID,
-                                CONCAT(N'Consumer ', @BuyerUserID),
-                                N'Messaging',
-                                CONCAT(N'Placeholder address for consumer ', @BuyerUserID),
-                                NULL,
-                                SYSUTCDATETIME(),
-                                CONCAT(N'consumer', @BuyerUserID)
-                            );
-
-                            SET IDENTITY_INSERT dbo.Consumers OFF;
-                        END TRY
-                        BEGIN CATCH
-                            BEGIN TRY
-                                SET IDENTITY_INSERT dbo.Consumers OFF;
-                            END TRY
-                            BEGIN CATCH
-                            END CATCH;
-
-                            THROW;
-                        END CATCH
-                    END
-                    ELSE
-                    BEGIN
-                        INSERT INTO dbo.Consumers
-                        (
-                            user_id,
-                            first_name,
-                            last_name,
-                            address,
-                            phone_number,
-                            created_at,
-                            username
-                        )
-                        VALUES
-                        (
-                            @BuyerUserID,
-                            CONCAT(N'Consumer ', @BuyerUserID),
-                            N'Messaging',
-                            CONCAT(N'Placeholder address for consumer ', @BuyerUserID),
-                            NULL,
-                            SYSUTCDATETIME(),
-                            CONCAT(N'consumer', @BuyerUserID)
-                        );
-                    END
-                END
-            END;
-
-            IF OBJECT_ID(N'[dbo].[Sellers]', N'U') IS NOT NULL
-            BEGIN
-                IF NOT EXISTS (SELECT 1 FROM dbo.Sellers WHERE seller_id = @SellerUserID)
-                BEGIN
-                    IF EXISTS
-                    (
-                        SELECT 1
-                        FROM sys.identity_columns ic
-                        WHERE ic.object_id = OBJECT_ID(N'[dbo].[Sellers]', N'U')
-                          AND ic.name = N'seller_id'
-                    )
-                    BEGIN
-                        BEGIN TRY
-                            SET IDENTITY_INSERT dbo.Sellers ON;
-
-                            INSERT INTO dbo.Sellers
-                            (
-                                seller_id,
-                                user_id,
-                                business_type,
-                                business_name,
-                                business_email,
-                                business_phone,
-                                tax_id,
-                                business_address,
-                                logo_path,
-                                document_path,
-                                seller_status,
-                                created_at
-                            )
-                            VALUES
-                            (
-                                @SellerUserID,
-                                @SellerUserID,
-                                N'Demo Storefront',
-                                CONCAT(N'Storefront Seller ', @SellerUserID),
-                                CONCAT(N'seller', @SellerUserID, N'@placeholder.local'),
-                                CONCAT(N'09', RIGHT(CONCAT(N'000000000', @SellerUserID), 9)),
-                                NULL,
-                                CONCAT(N'Placeholder business address for seller ', @SellerUserID),
-                                NULL,
-                                NULL,
-                                N'active',
-                                SYSUTCDATETIME()
-                            );
-
-                            SET IDENTITY_INSERT dbo.Sellers OFF;
-                        END TRY
-                        BEGIN CATCH
-                            BEGIN TRY
-                                SET IDENTITY_INSERT dbo.Sellers OFF;
-                            END TRY
-                            BEGIN CATCH
-                            END CATCH;
-
-                            THROW;
-                        END CATCH
-                    END
-                    ELSE
-                    BEGIN
-                        INSERT INTO dbo.Sellers
-                        (
-                            user_id,
-                            business_type,
-                            business_name,
-                            business_email,
-                            business_phone,
-                            tax_id,
-                            business_address,
-                            logo_path,
-                            document_path,
-                            seller_status,
-                            created_at
-                        )
-                        VALUES
-                        (
-                            @SellerUserID,
-                            N'Demo Storefront',
-                            CONCAT(N'Storefront Seller ', @SellerUserID),
-                            CONCAT(N'seller', @SellerUserID, N'@placeholder.local'),
-                            CONCAT(N'09', RIGHT(CONCAT(N'000000000', @SellerUserID), 9)),
-                            NULL,
-                            CONCAT(N'Placeholder business address for seller ', @SellerUserID),
-                            NULL,
-                            NULL,
-                            N'active',
-                            SYSUTCDATETIME()
-                        );
-                    END
-                END
-            END;
-            """;
-        command.CommandType = CommandType.Text;
-
-        AddParameter(command, "@BuyerUserID", buyerUserId, DbType.Int32);
-        AddParameter(command, "@SellerUserID", sellerUserId, DbType.Int32);
-
-        try
-        {
-            await command.ExecuteNonQueryAsync(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException(
-                $"Failed to bootstrap messaging participants for buyerUserId={buyerUserId} and sellerUserId={sellerUserId}.",
-                ex);
-        }
-    }
-
-    private static async Task EnsureUserRowsAsync(
-        DbConnection connection,
-        (int UserId, string UserType) firstUser,
-        (int UserId, string UserType)? secondUser,
-        CancellationToken cancellationToken)
-    {
-        await using var command = connection.CreateCommand();
-        command.CommandText =
-            """
-            IF OBJECT_ID(N'[dbo].[Users]', N'U') IS NOT NULL
-            BEGIN
-                DECLARE @UserSeeds TABLE
-                (
-                    user_id INT NOT NULL PRIMARY KEY,
-                    email VARCHAR(255) NOT NULL,
-                    password_hash VARCHAR(255) NOT NULL,
-                    user_type VARCHAR(20) NULL
-                );
-
-                INSERT INTO @UserSeeds (user_id, email, password_hash, user_type)
-                SELECT
-                    @FirstUserID,
-                    CONCAT(LOWER(@FirstUserType), @FirstUserID, '@placeholder.local'),
-                    CONCAT('placeholder-hash-', LOWER(@FirstUserType), '-', @FirstUserID),
-                    @FirstUserType
-                WHERE @FirstUserID > 0;
-
-                INSERT INTO @UserSeeds (user_id, email, password_hash, user_type)
-                SELECT
-                    @SecondUserID,
-                    CONCAT(LOWER(@SecondUserType), @SecondUserID, '@placeholder.local'),
-                    CONCAT('placeholder-hash-', LOWER(@SecondUserType), '-', @SecondUserID),
-                    @SecondUserType
-                WHERE @SecondUserID IS NOT NULL
-                  AND @SecondUserID > 0
-                  AND NOT EXISTS (SELECT 1 FROM @UserSeeds x WHERE x.user_id = @SecondUserID);
-
-                IF EXISTS (SELECT 1 FROM @UserSeeds)
-                BEGIN
-                    IF EXISTS
-                    (
-                        SELECT 1
-                        FROM sys.identity_columns ic
-                        WHERE ic.object_id = OBJECT_ID(N'[dbo].[Users]', N'U')
-                          AND ic.name = N'user_id'
-                    )
-                    BEGIN
-                        BEGIN TRY
-                            SET IDENTITY_INSERT dbo.Users ON;
-
-                            INSERT INTO dbo.Users
-                            (
-                                user_id,
-                                email,
-                                password_hash,
-                                is_active,
-                                created_at,
-                                updated_at,
-                                user_type
-                            )
-                            SELECT
-                                src.user_id,
-                                src.email,
-                                src.password_hash,
-                                1,
-                                SYSUTCDATETIME(),
-                                SYSUTCDATETIME(),
-                                src.user_type
-                            FROM @UserSeeds src
-                            WHERE NOT EXISTS (SELECT 1 FROM dbo.Users target WHERE target.user_id = src.user_id);
-
-                            SET IDENTITY_INSERT dbo.Users OFF;
-                        END TRY
-                        BEGIN CATCH
-                            BEGIN TRY
-                                SET IDENTITY_INSERT dbo.Users OFF;
-                            END TRY
-                            BEGIN CATCH
-                            END CATCH;
-
-                            THROW;
-                        END CATCH
-                    END
-                    ELSE
-                    BEGIN
-                        INSERT INTO dbo.Users
-                        (
-                            email,
-                            password_hash,
-                            is_active,
-                            created_at,
-                            updated_at,
-                            user_type
-                        )
-                        SELECT
-                            src.email,
-                            src.password_hash,
-                            1,
-                            SYSUTCDATETIME(),
-                            SYSUTCDATETIME(),
-                            src.user_type
-                        FROM @UserSeeds src
-                        WHERE NOT EXISTS (SELECT 1 FROM dbo.Users target WHERE target.user_id = src.user_id);
-                    END
-                END
-            END;
-            """;
-        command.CommandType = CommandType.Text;
-
-        AddParameter(command, "@FirstUserID", firstUser.UserId, DbType.Int32);
-        AddParameter(command, "@FirstUserType", firstUser.UserType, DbType.String);
-        AddParameter(command, "@SecondUserID", secondUser?.UserId, DbType.Int32);
-        AddParameter(command, "@SecondUserType", secondUser?.UserType, DbType.String);
-
-        await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     private static MessageConversationSummary MapConversation(DbDataReader reader)
@@ -589,6 +653,13 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
         return reader.IsDBNull(ordinal) ? null : reader.GetDateTime(ordinal);
     }
 
+    private static void AddActorParameters(DbCommand command, MessageActorContext actor)
+    {
+        AddParameter(command, "@ActorUserID", actor.UserId, DbType.Int32);
+        AddParameter(command, "@ActorConsumerID", actor.ConsumerId, DbType.Int32);
+        AddParameter(command, "@ActorSellerID", actor.SellerId, DbType.Int32);
+    }
+
     private static void AddParameter(DbCommand command, string name, object? value, DbType dbType)
     {
         var parameter = command.CreateParameter();
@@ -598,3 +669,4 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
         command.Parameters.Add(parameter);
     }
 }
+

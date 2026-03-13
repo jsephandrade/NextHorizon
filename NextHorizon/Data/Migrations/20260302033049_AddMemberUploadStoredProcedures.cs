@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace MemberTracker.Migrations
+namespace NextHorizon.Migrations
 {
     /// <inheritdoc />
     public partial class AddMemberUploadStoredProcedures : Migration
@@ -281,3 +281,4 @@ namespace MemberTracker.Migrations
         }
     }
 }
+
