@@ -1,14 +1,3 @@
-
-    /* Hide sidebar for this page 
-.sidebar {
-    display: none !important;
-}
-
-/* Remove space left by sidebar 
-.main-content {
-    margin-left: 0 !important;
-}
-
 /* General Page Styling */
 body {
     font-family: 'Poppins', sans-serif;
@@ -127,11 +116,30 @@ body {
     box-shadow: 0 8px 25px rgba(0,0,0,0.05);
 }
 
-.total-gross h3 {
-    font-size: 18px;
+.total-gross {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+}
+
+.total-gross-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #d1d5db;
+}
+
+.total-gross-value {
+    font-size: 30px;
     font-weight: 700;
-    margin-bottom: 15px;
-    color: #1a1a1a;
+    line-height: 1;
+    color: #ffffff;
 }
 
 /* Tabs */
@@ -147,6 +155,7 @@ body {
     border-radius: 50px;
     border: 1px solid #1a1a1a;
     background: #fff;
+    font-family: inherit;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
@@ -300,4 +309,15 @@ body {
     text-align:center;
     padding:40px;
     color:#777;
+}
+
+@media (max-width: 768px) {
+    .total-gross {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .total-gross-value {
+        font-size: 24px;
+    }
 }

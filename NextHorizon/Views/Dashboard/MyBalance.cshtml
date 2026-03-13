@@ -1,5 +1,9 @@
 @model NextHorizon.Models.FinanceViewModel
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/mybalance.css" asp-append-version="true" />
+}
+
 <div class="page-actions">
     <a class="link-btn" asp-controller="Dashboard" asp-action="Finance">
         <i class="fas fa-arrow-left"></i> Back
@@ -63,10 +67,10 @@
 
             <!-- Total Gross -->
             <div class="total-gross">
-                <h3>
-                    Total Gross:
+                <span class="total-gross-label">Total Gross</span>
+                <span class="total-gross-value">
                     &#8369;@((Model.AvailableBalance + Model.PendingPayout + Model.TotalWithdrawn).ToString("N2"))
-                </h3>
+                </span>
             </div>
 
             <!-- Tabs -->
