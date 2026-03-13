@@ -83,7 +83,7 @@ public class AccountController : Controller
             HttpContext.Session.SetString("SellerEmail", seller.BusinessEmail ?? user.Email);
             HttpContext.Session.SetInt32("SellerId", seller.SellerId);
             HttpContext.Session.SetString("SellerName", seller.BusinessName ?? "Seller");
-
+            HttpContext.Session.SetInt32("UserId", user.UserId);
             return RedirectToAction("SellerDashboard", "Dashboard");
         }
         catch
