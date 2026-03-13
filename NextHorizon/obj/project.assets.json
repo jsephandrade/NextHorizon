@@ -3081,7 +3081,12 @@
     ]
   },
   "packageFolders": {
+<<<<<<< HEAD
     "C:\\Users\\kenne\\.nuget\\packages\\": {}
+=======
+    "C:\\Users\\Natsumi\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+>>>>>>> 997887574d01efd51600cc23125cda49a9e092b3
   },
   "project": {
     "version": "1.0.0",
@@ -3089,11 +3094,20 @@
       "projectUniqueName": "C:\\NextHorizon\\NextHorizon\\NextHorizon.csproj",
       "projectName": "NextHorizon",
       "projectPath": "C:\\NextHorizon\\NextHorizon\\NextHorizon.csproj",
+<<<<<<< HEAD
       "packagesPath": "C:\\Users\\kenne\\.nuget\\packages\\",
+=======
+      "packagesPath": "C:\\Users\\Natsumi\\.nuget\\packages\\",
+>>>>>>> 997887574d01efd51600cc23125cda49a9e092b3
       "outputPath": "C:\\NextHorizon\\NextHorizon\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
+<<<<<<< HEAD
         "C:\\Users\\kenne\\AppData\\Roaming\\NuGet\\NuGet.Config"
+=======
+        "C:\\Users\\Natsumi\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config"
+>>>>>>> 997887574d01efd51600cc23125cda49a9e092b3
       ],
       "originalTargetFrameworks": [
         "net10.0"
