@@ -136,8 +136,8 @@
     return null;
   }
 
-  function renderBubble(message, buyerUserId) {
-    const senderClass = message.senderUserId === buyerUserId ? 'buyer' : 'seller';
+  function renderBubble(message, currentUserId) {
+    const senderClass = message.senderUserId === currentUserId ? 'buyer' : 'seller';
     const senderLabel = senderClass === 'buyer' ? 'You' : 'Seller';
     const wrapper = document.createElement('div');
     wrapper.className = 'seller-chat-message ' + senderClass;
@@ -187,7 +187,7 @@
       sellerUserId: null,
       sellerName: config.defaultSellerName || 'Seller',
       sellerAvatarUrl: config.defaultSellerAvatarUrl || '',
-      buyerUserId: null,
+      currentUserId: null,
       conversationId: null,
       messages: [],
       headElement: null,
@@ -370,7 +370,7 @@
       }
 
       state.messages.forEach(function (message) {
-        threadNode.appendChild(renderBubble(message, state.buyerUserId || ''));
+        threadNode.appendChild(renderBubble(message, state.currentUserId || ''));
       });
       threadNode.scrollTop = threadNode.scrollHeight;
     }
@@ -390,13 +390,13 @@
       });
 
       const conversationId = Number.parseInt(String(payload.conversationId || payload.ConversationId), 10);
-      const buyerUserId = String(payload.buyerUserId || payload.BuyerUserId || '');
-      if (!Number.isInteger(conversationId) || conversationId <= 0 || !buyerUserId) {
+      const currentUserId = String(payload.currentUserId || payload.CurrentUserId || '');
+      if (!Number.isInteger(conversationId) || conversationId <= 0 || !currentUserId) {
         throw new Error(DEFAULT_ERROR);
       }
 
       state.conversationId = conversationId;
-      state.buyerUserId = buyerUserId;
+      state.currentUserId = currentUserId;
       return conversationId;
     }
 
@@ -504,7 +504,7 @@
 
       if (changedSeller) {
         state.conversationId = null;
-        state.buyerUserId = null;
+        state.currentUserId = null;
         state.messages = [];
         state.lastError = '';
         clearAttachment();

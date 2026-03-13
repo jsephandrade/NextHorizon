@@ -48,6 +48,11 @@ public sealed class MessagesController : ControllerBase
             return Unauthorized();
         }
 
+        if (!currentUser.ConsumerId.HasValue)
+        {
+            return Forbid();
+        }
+
         var contextType = ParseContextType(request.ContextType);
         if (!contextType.HasValue)
         {
@@ -64,11 +69,6 @@ public sealed class MessagesController : ControllerBase
                 return BadRequest("SellerUserId must be a positive integer when ContextType is general.");
             }
 
-            if (!currentUser.ConsumerId.HasValue)
-            {
-                return Forbid();
-            }
-
             if (currentUser.SellerId.HasValue && currentUser.SellerId.Value == sellerUserInt)
             {
                 return BadRequest("Buyer and seller must be different accounts.");
@@ -83,7 +83,7 @@ public sealed class MessagesController : ControllerBase
                 return BadRequest("OrderId is required when ContextType is order.");
             }
 
-            var actor = ToMessageActor(currentUser);
+            var actor = ToStorefrontActor(currentUser);
             var orderContext = await _orderConversationResolver.ResolveAsync(request.OrderId.Value, actor, cancellationToken);
             if (orderContext is null)
             {
@@ -102,8 +102,8 @@ public sealed class MessagesController : ControllerBase
                 cancellationToken);
         }
 
-        var actorView = await _messagingRepository.GetConversationAsync(summary.ConversationId, ToMessageActor(currentUser), cancellationToken);
-        return actorView is null ? NotFound() : Ok(ToConversationDto(actorView));
+        var actorView = await _messagingRepository.GetConversationAsync(summary.ConversationId, ToStorefrontActor(currentUser), cancellationToken);
+        return actorView is null ? NotFound() : Ok(ToConversationDto(actorView, currentUser.UserId));
     }
 
     [HttpGet("conversations")]
@@ -115,7 +115,7 @@ public sealed class MessagesController : ControllerBase
             return Unauthorized();
         }
 
-        if (!currentUser.HasMessagingRole)
+        if (!currentUser.ConsumerId.HasValue)
         {
             return Forbid();
         }
@@ -123,14 +123,14 @@ public sealed class MessagesController : ControllerBase
         var page = Math.Max(query.Page ?? DefaultPageNumber, 1);
         var pageSize = Math.Clamp(query.PageSize ?? DefaultConversationPageSize, 1, MaxPageSize);
 
-        var paged = await _messagingRepository.ListByActorAsync(ToMessageActor(currentUser), page, pageSize, cancellationToken);
+        var paged = await _messagingRepository.ListByActorAsync(ToStorefrontActor(currentUser), page, pageSize, cancellationToken);
 
         return Ok(new PagedResult<ConversationDto>
         {
             PageNumber = paged.PageNumber,
             PageSize = paged.PageSize,
             TotalCount = paged.TotalCount,
-            Items = paged.Items.Select(ToConversationDto).ToList(),
+            Items = paged.Items.Select(summary => ToConversationDto(summary, currentUser.UserId)).ToList(),
         });
     }
 
@@ -143,18 +143,18 @@ public sealed class MessagesController : ControllerBase
             return Unauthorized();
         }
 
-        if (!currentUser.HasMessagingRole)
+        if (!currentUser.ConsumerId.HasValue)
         {
             return Forbid();
         }
 
-        var conversation = await _messagingRepository.GetConversationAsync(conversationId, ToMessageActor(currentUser), cancellationToken);
+        var conversation = await _messagingRepository.GetConversationAsync(conversationId, ToStorefrontActor(currentUser), cancellationToken);
         if (conversation is null)
         {
             return NotFound();
         }
 
-        return Ok(ToConversationDto(conversation));
+        return Ok(ToConversationDto(conversation, currentUser.UserId));
     }
 
     [HttpPost("conversations/{conversationId:int}/messages")]
@@ -169,7 +169,7 @@ public sealed class MessagesController : ControllerBase
             return Unauthorized();
         }
 
-        if (!currentUser.HasMessagingRole)
+        if (!currentUser.ConsumerId.HasValue)
         {
             return Forbid();
         }
@@ -200,7 +200,7 @@ public sealed class MessagesController : ControllerBase
         {
             var message = await _messagingRepository.SendMessageAsync(
                 conversationId,
-                ToMessageActor(currentUser),
+                ToStorefrontActor(currentUser),
                 body,
                 savedAttachment?.AttachmentUrl,
                 cancellationToken);
@@ -240,7 +240,7 @@ public sealed class MessagesController : ControllerBase
             return Unauthorized();
         }
 
-        if (!currentUser.HasMessagingRole)
+        if (!currentUser.ConsumerId.HasValue)
         {
             return Forbid();
         }
@@ -248,7 +248,7 @@ public sealed class MessagesController : ControllerBase
         var pageSize = Math.Clamp(query.PageSize ?? DefaultMessagePageSize, 1, MaxPageSize);
         var messages = await _messagingRepository.ListMessagesAsync(
             conversationId,
-            ToMessageActor(currentUser),
+            ToStorefrontActor(currentUser),
             query.Before,
             pageSize,
             cancellationToken);
@@ -272,12 +272,12 @@ public sealed class MessagesController : ControllerBase
             return Unauthorized();
         }
 
-        if (!currentUser.HasMessagingRole)
+        if (!currentUser.ConsumerId.HasValue)
         {
             return Forbid();
         }
 
-        var updated = await _messagingRepository.MarkReadAsync(conversationId, ToMessageActor(currentUser), cancellationToken);
+        var updated = await _messagingRepository.MarkReadAsync(conversationId, ToStorefrontActor(currentUser), cancellationToken);
         return updated ? NoContent() : NotFound();
     }
 
@@ -290,6 +290,11 @@ public sealed class MessagesController : ControllerBase
         if (currentUser is null)
         {
             return Unauthorized();
+        }
+
+        if (!currentUser.ConsumerId.HasValue)
+        {
+            return Forbid();
         }
 
         var deleted = await _messagingRepository.SoftDeleteMessageAsync(messageId, currentUser.UserId, cancellationToken);
@@ -352,13 +357,14 @@ public sealed class MessagesController : ControllerBase
         return null;
     }
 
-    private static MessageActorContext ToMessageActor(AuthenticatedUserContext currentUser)
-        => new(currentUser.UserId, currentUser.ConsumerId, currentUser.SellerId);
+    private static MessageActorContext ToStorefrontActor(AuthenticatedUserContext currentUser)
+        => new(currentUser.UserId, currentUser.ConsumerId, null);
 
-    private static ConversationDto ToConversationDto(MessageConversationSummary summary)
+    private static ConversationDto ToConversationDto(MessageConversationSummary summary, int currentUserId)
         => new()
         {
             ConversationId = summary.ConversationId,
+            CurrentUserId = currentUserId.ToString(),
             BuyerUserId = summary.BuyerUserId.ToString(),
             SellerUserId = summary.SellerUserId.ToString(),
             ContextType = summary.ContextType == ConversationContextType.Order ? "order" : "general",

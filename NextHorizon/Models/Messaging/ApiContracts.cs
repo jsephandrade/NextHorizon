@@ -3,6 +3,7 @@ namespace NextHorizon.Messaging.Models;
 public sealed class ConversationDto
 {
     public int ConversationId { get; init; }
+    public string CurrentUserId { get; init; } = string.Empty;
     public string BuyerUserId { get; init; } = string.Empty;
     public string SellerUserId { get; init; } = string.Empty;
     public string ContextType { get; init; } = string.Empty;

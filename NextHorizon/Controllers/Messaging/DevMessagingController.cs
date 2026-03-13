@@ -66,7 +66,7 @@ public sealed class DevMessagingController : ControllerBase
         var conversation = await _messagingRepository.CreateOrGetGeneralAsync(buyerUserId, sellerUserId, cancellationToken);
         var actorView = await _messagingRepository.GetConversationAsync(conversation.ConversationId, ToMessageActor(actor), cancellationToken);
 
-        return actorView is null ? NotFound() : Ok(ToConversationDto(actorView));
+        return actorView is null ? NotFound() : Ok(ToConversationDto(actorView, actor.UserId));
     }
 
     [HttpPost("conversations/order")]
@@ -122,7 +122,7 @@ public sealed class DevMessagingController : ControllerBase
         var conversation = await _messagingRepository.CreateOrGetOrderAsync(request.OrderId, buyerUserId, sellerUserId, cancellationToken);
         var actorView = await _messagingRepository.GetConversationAsync(conversation.ConversationId, ToMessageActor(actor), cancellationToken);
 
-        return actorView is null ? NotFound() : Ok(ToConversationDto(actorView));
+        return actorView is null ? NotFound() : Ok(ToConversationDto(actorView, actor.UserId));
     }
 
     [HttpGet("conversations")]
@@ -158,7 +158,7 @@ public sealed class DevMessagingController : ControllerBase
             PageNumber = paged.PageNumber,
             PageSize = paged.PageSize,
             TotalCount = paged.TotalCount,
-            Items = paged.Items.Select(ToConversationDto).ToList(),
+            Items = paged.Items.Select(summary => ToConversationDto(summary, actor.UserId)).ToList(),
         });
     }
 
@@ -182,7 +182,7 @@ public sealed class DevMessagingController : ControllerBase
         }
 
         var conversation = await _messagingRepository.GetConversationAsync(conversationId, ToMessageActor(actor), cancellationToken);
-        return conversation is null ? NotFound() : Ok(ToConversationDto(conversation));
+        return conversation is null ? NotFound() : Ok(ToConversationDto(conversation, actor.UserId));
     }
 
     [HttpPost("conversations/{conversationId:int}/messages")]
@@ -373,10 +373,11 @@ public sealed class DevMessagingController : ControllerBase
         }
     }
 
-    private static ConversationDto ToConversationDto(MessageConversationSummary summary)
+    private static ConversationDto ToConversationDto(MessageConversationSummary summary, int currentUserId)
         => new()
         {
             ConversationId = summary.ConversationId,
+            CurrentUserId = currentUserId.ToString(),
             BuyerUserId = summary.BuyerUserId.ToString(),
             SellerUserId = summary.SellerUserId.ToString(),
             ContextType = summary.ContextType == ConversationContextType.Order ? "order" : "general",
