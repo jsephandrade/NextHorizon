@@ -22,18 +22,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if(accountType){
         accountType.addEventListener("change", function(){
-            cardFields.style.display="none";
-            ewalletFields.style.display="none";
-            bankFields.style.display="none";
+            cardFields.style.display = "none";
+            ewalletFields.style.display = "none";
+            bankFields.style.display = "none";
 
-            if(this.value==="card"){
-                cardFields.style.display="block";
+            if(this.value === "card"){
+                cardFields.style.display = "block";
             }
-            if(this.value==="ewallet"){
-                ewalletFields.style.display="block";
+            if(this.value === "ewallet"){
+                ewalletFields.style.display = "block";
             }
-            if(this.value==="bank"){
-                bankFields.style.display="block";
+            if(this.value === "bank"){
+                bankFields.style.display = "block";
             }
         });
     }
@@ -41,8 +41,24 @@ document.addEventListener("DOMContentLoaded", function () {
     // ===== Add Account Button =====
     const addBtn = document.getElementById("addAccountBtn");
     if(addBtn){
-        addBtn.addEventListener("click", function () {
-            alert("The account has been added");
+        addBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            
+            // Validate form before submitting
+            const form = document.getElementById("payoutAccountForm");
+            const accountTypeValue = accountType ? accountType.value : '';
+            
+            if (!accountTypeValue) {
+                if (window.Modal) {
+                    Modal.warning('Please select an account type');
+                }
+                return;
+            }
+            
+            // Submit the form
+            if (form) {
+                form.submit();
+            }
         });
     }
 
