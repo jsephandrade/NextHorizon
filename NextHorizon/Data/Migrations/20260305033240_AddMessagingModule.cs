@@ -11,110 +11,7 @@ namespace NextHorizon.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateTable(
-                name: "MessagingConversations",
-                columns: table => new
-                {
-                    ConversationId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    BuyerUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    SellerUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    ContextType = table.Column<byte>(type: "tinyint", nullable: false),
-                    OrderId = table.Column<int>(type: "int", nullable: true),
-                    LastMessageAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    BuyerLastReadAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    SellerLastReadAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MessagingConversations", x => x.ConversationId);
-                    table.CheckConstraint("CK_MessagingConversations_ContextType", "[ContextType] IN (1, 2)");
-                    table.CheckConstraint("CK_MessagingConversations_ContextType_Order", "([ContextType] = 1 AND [OrderId] IS NULL) OR ([ContextType] = 2 AND [OrderId] IS NOT NULL)");
-                    table.ForeignKey(
-                        name: "FK_MessagingConversations_AspNetUsers_BuyerUserId",
-                        column: x => x.BuyerUserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_MessagingConversations_AspNetUsers_SellerUserId",
-                        column: x => x.SellerUserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "MessagingMessages",
-                columns: table => new
-                {
-                    MessageId = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ConversationId = table.Column<int>(type: "int", nullable: false),
-                    SenderUserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    Body = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
-                    AttachmentUrl = table.Column<string>(type: "nvarchar(400)", maxLength: 400, nullable: true),
-                    SentAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "SYSUTCDATETIME()"),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false, defaultValue: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MessagingMessages", x => x.MessageId);
-                    table.ForeignKey(
-                        name: "FK_MessagingMessages_AspNetUsers_SenderUserId",
-                        column: x => x.SenderUserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_MessagingMessages_MessagingConversations_ConversationId",
-                        column: x => x.ConversationId,
-                        principalTable: "MessagingConversations",
-                        principalColumn: "ConversationId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_MessagingConversations_BuyerUserId",
-                table: "MessagingConversations",
-                column: "BuyerUserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_MessagingConversations_BuyerUserId_SellerUserId_ContextType",
-                table: "MessagingConversations",
-                columns: new[] { "BuyerUserId", "SellerUserId", "ContextType" },
-                unique: true,
-                filter: "[ContextType] = 1");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_MessagingConversations_LastMessageAt",
-                table: "MessagingConversations",
-                column: "LastMessageAt");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_MessagingConversations_OrderId_ContextType",
-                table: "MessagingConversations",
-                columns: new[] { "OrderId", "ContextType" },
-                unique: true,
-                filter: "[ContextType] = 2");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_MessagingConversations_SellerUserId",
-                table: "MessagingConversations",
-                column: "SellerUserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_MessagingMessages_ConversationId_SentAt",
-                table: "MessagingMessages",
-                columns: new[] { "ConversationId", "SentAt" },
-                descending: new[] { false, true });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_MessagingMessages_SenderUserId",
-                table: "MessagingMessages",
-                column: "SenderUserId");
+            EnsureLegacyMessagingTables(migrationBuilder);
 
             migrationBuilder.Sql(
                 """
@@ -539,6 +436,239 @@ namespace NextHorizon.Migrations
 
             migrationBuilder.DropTable(
                 name: "MessagingConversations");
+        }
+
+        private static void EnsureLegacyMessagingTables(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.Sql(
+                """
+                IF OBJECT_ID(N'[dbo].[MessagingConversations]', N'U') IS NULL
+                BEGIN
+                    CREATE TABLE dbo.MessagingConversations
+                    (
+                        ConversationId INT NOT NULL IDENTITY(1,1),
+                        BuyerUserId NVARCHAR(450) NOT NULL,
+                        SellerUserId NVARCHAR(450) NOT NULL,
+                        ContextType TINYINT NOT NULL,
+                        OrderId INT NULL,
+                        LastMessageAt DATETIME2 NULL,
+                        BuyerLastReadAt DATETIME2 NULL,
+                        SellerLastReadAt DATETIME2 NULL,
+                        CreatedAt DATETIME2 NOT NULL CONSTRAINT DF_MessagingConversations_CreatedAt DEFAULT SYSUTCDATETIME(),
+                        UpdatedAt DATETIME2 NOT NULL CONSTRAINT DF_MessagingConversations_UpdatedAt DEFAULT SYSUTCDATETIME(),
+                        CONSTRAINT PK_MessagingConversations PRIMARY KEY (ConversationId)
+                    );
+                END;
+
+                IF OBJECT_ID(N'[dbo].[MessagingMessages]', N'U') IS NULL
+                BEGIN
+                    CREATE TABLE dbo.MessagingMessages
+                    (
+                        MessageId BIGINT NOT NULL IDENTITY(1,1),
+                        ConversationId INT NOT NULL,
+                        SenderUserId NVARCHAR(450) NOT NULL,
+                        Body NVARCHAR(2000) NOT NULL,
+                        AttachmentUrl NVARCHAR(400) NULL,
+                        SentAt DATETIME2 NOT NULL CONSTRAINT DF_MessagingMessages_SentAt DEFAULT SYSUTCDATETIME(),
+                        IsDeleted BIT NOT NULL CONSTRAINT DF_MessagingMessages_IsDeleted DEFAULT ((0)),
+                        CONSTRAINT PK_MessagingMessages PRIMARY KEY (MessageId)
+                    );
+                END;
+
+                IF NOT EXISTS
+                (
+                    SELECT 1
+                    FROM sys.columns c
+                    INNER JOIN sys.types t ON t.user_type_id = c.user_type_id
+                    WHERE c.object_id = OBJECT_ID(N'[dbo].[MessagingConversations]', N'U')
+                      AND c.name = N'ConversationId'
+                      AND t.name = N'int'
+                      AND c.is_nullable = 0
+                      AND c.is_identity = 1
+                )
+                    THROW 51060, 'Migration blocked: [dbo].[MessagingConversations].[ConversationId] must be NOT NULL INT IDENTITY.', 1;
+
+                IF NOT EXISTS
+                (
+                    SELECT 1
+                    FROM sys.columns c
+                    INNER JOIN sys.types t ON t.user_type_id = c.user_type_id
+                    WHERE c.object_id = OBJECT_ID(N'[dbo].[MessagingConversations]', N'U')
+                      AND c.name = N'BuyerUserId'
+                      AND t.name = N'nvarchar'
+                      AND c.max_length = 900
+                      AND c.is_nullable = 0
+                )
+                    THROW 51061, 'Migration blocked: [dbo].[MessagingConversations].[BuyerUserId] must be NOT NULL NVARCHAR(450).', 1;
+
+                IF NOT EXISTS
+                (
+                    SELECT 1
+                    FROM sys.columns c
+                    INNER JOIN sys.types t ON t.user_type_id = c.user_type_id
+                    WHERE c.object_id = OBJECT_ID(N'[dbo].[MessagingConversations]', N'U')
+                      AND c.name = N'SellerUserId'
+                      AND t.name = N'nvarchar'
+                      AND c.max_length = 900
+                      AND c.is_nullable = 0
+                )
+                    THROW 51062, 'Migration blocked: [dbo].[MessagingConversations].[SellerUserId] must be NOT NULL NVARCHAR(450).', 1;
+
+                IF NOT EXISTS
+                (
+                    SELECT 1
+                    FROM sys.columns c
+                    INNER JOIN sys.types t ON t.user_type_id = c.user_type_id
+                    WHERE c.object_id = OBJECT_ID(N'[dbo].[MessagingConversations]', N'U')
+                      AND c.name = N'ContextType'
+                      AND t.name = N'tinyint'
+                      AND c.is_nullable = 0
+                )
+                    THROW 51063, 'Migration blocked: [dbo].[MessagingConversations].[ContextType] must be NOT NULL TINYINT.', 1;
+
+                IF NOT EXISTS
+                (
+                    SELECT 1
+                    FROM sys.columns c
+                    INNER JOIN sys.types t ON t.user_type_id = c.user_type_id
+                    WHERE c.object_id = OBJECT_ID(N'[dbo].[MessagingMessages]', N'U')
+                      AND c.name = N'MessageId'
+                      AND t.name = N'bigint'
+                      AND c.is_nullable = 0
+                      AND c.is_identity = 1
+                )
+                    THROW 51064, 'Migration blocked: [dbo].[MessagingMessages].[MessageId] must be NOT NULL BIGINT IDENTITY.', 1;
+
+                IF NOT EXISTS
+                (
+                    SELECT 1
+                    FROM sys.columns c
+                    INNER JOIN sys.types t ON t.user_type_id = c.user_type_id
+                    WHERE c.object_id = OBJECT_ID(N'[dbo].[MessagingMessages]', N'U')
+                      AND c.name = N'ConversationId'
+                      AND t.name = N'int'
+                      AND c.is_nullable = 0
+                )
+                    THROW 51065, 'Migration blocked: [dbo].[MessagingMessages].[ConversationId] must be NOT NULL INT.', 1;
+
+                IF NOT EXISTS
+                (
+                    SELECT 1
+                    FROM sys.columns c
+                    INNER JOIN sys.types t ON t.user_type_id = c.user_type_id
+                    WHERE c.object_id = OBJECT_ID(N'[dbo].[MessagingMessages]', N'U')
+                      AND c.name = N'SenderUserId'
+                      AND t.name = N'nvarchar'
+                      AND c.max_length = 900
+                      AND c.is_nullable = 0
+                )
+                    THROW 51066, 'Migration blocked: [dbo].[MessagingMessages].[SenderUserId] must be NOT NULL NVARCHAR(450).', 1;
+
+                IF NOT EXISTS
+                (
+                    SELECT 1
+                    FROM sys.columns c
+                    INNER JOIN sys.types t ON t.user_type_id = c.user_type_id
+                    WHERE c.object_id = OBJECT_ID(N'[dbo].[MessagingMessages]', N'U')
+                      AND c.name = N'Body'
+                      AND t.name = N'nvarchar'
+                      AND c.max_length = 4000
+                      AND c.is_nullable = 0
+                )
+                    THROW 51067, 'Migration blocked: [dbo].[MessagingMessages].[Body] must be NOT NULL NVARCHAR(2000).', 1;
+
+                IF NOT EXISTS
+                (
+                    SELECT 1
+                    FROM sys.key_constraints kc
+                    INNER JOIN sys.index_columns ic
+                        ON ic.object_id = kc.parent_object_id
+                       AND ic.index_id = kc.unique_index_id
+                    INNER JOIN sys.columns c
+                        ON c.object_id = ic.object_id
+                       AND c.column_id = ic.column_id
+                    WHERE kc.parent_object_id = OBJECT_ID(N'[dbo].[MessagingConversations]', N'U')
+                      AND kc.[type] = N'PK'
+                    GROUP BY kc.name
+                    HAVING COUNT(*) = 1
+                       AND MAX(CASE WHEN c.name = N'ConversationId' THEN 1 ELSE 0 END) = 1
+                )
+                    THROW 51068, 'Migration blocked: [dbo].[MessagingConversations] must have a single-column primary key on [ConversationId].', 1;
+
+                IF NOT EXISTS
+                (
+                    SELECT 1
+                    FROM sys.key_constraints kc
+                    INNER JOIN sys.index_columns ic
+                        ON ic.object_id = kc.parent_object_id
+                       AND ic.index_id = kc.unique_index_id
+                    INNER JOIN sys.columns c
+                        ON c.object_id = ic.object_id
+                       AND c.column_id = ic.column_id
+                    WHERE kc.parent_object_id = OBJECT_ID(N'[dbo].[MessagingMessages]', N'U')
+                      AND kc.[type] = N'PK'
+                    GROUP BY kc.name
+                    HAVING COUNT(*) = 1
+                       AND MAX(CASE WHEN c.name = N'MessageId' THEN 1 ELSE 0 END) = 1
+                )
+                    THROW 51069, 'Migration blocked: [dbo].[MessagingMessages] must have a single-column primary key on [MessageId].', 1;
+
+                IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_MessagingConversations_ContextType')
+                    ALTER TABLE dbo.MessagingConversations
+                        ADD CONSTRAINT CK_MessagingConversations_ContextType CHECK ([ContextType] IN (1, 2));
+
+                IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_MessagingConversations_ContextType_Order')
+                    ALTER TABLE dbo.MessagingConversations
+                        ADD CONSTRAINT CK_MessagingConversations_ContextType_Order CHECK (([ContextType] = 1 AND [OrderId] IS NULL) OR ([ContextType] = 2 AND [OrderId] IS NOT NULL));
+
+                IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_MessagingMessages_MessagingConversations_ConversationId')
+                    ALTER TABLE dbo.MessagingMessages WITH CHECK
+                        ADD CONSTRAINT FK_MessagingMessages_MessagingConversations_ConversationId
+                        FOREIGN KEY (ConversationId) REFERENCES dbo.MessagingConversations(ConversationId) ON DELETE CASCADE;
+
+                IF OBJECT_ID(N'[dbo].[AspNetUsers]', N'U') IS NOT NULL
+                   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_MessagingConversations_AspNetUsers_BuyerUserId')
+                    ALTER TABLE dbo.MessagingConversations WITH CHECK
+                        ADD CONSTRAINT FK_MessagingConversations_AspNetUsers_BuyerUserId
+                        FOREIGN KEY (BuyerUserId) REFERENCES dbo.AspNetUsers(Id) ON DELETE NO ACTION;
+
+                IF OBJECT_ID(N'[dbo].[AspNetUsers]', N'U') IS NOT NULL
+                   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_MessagingConversations_AspNetUsers_SellerUserId')
+                    ALTER TABLE dbo.MessagingConversations WITH CHECK
+                        ADD CONSTRAINT FK_MessagingConversations_AspNetUsers_SellerUserId
+                        FOREIGN KEY (SellerUserId) REFERENCES dbo.AspNetUsers(Id) ON DELETE NO ACTION;
+
+                IF OBJECT_ID(N'[dbo].[AspNetUsers]', N'U') IS NOT NULL
+                   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_MessagingMessages_AspNetUsers_SenderUserId')
+                    ALTER TABLE dbo.MessagingMessages WITH CHECK
+                        ADD CONSTRAINT FK_MessagingMessages_AspNetUsers_SenderUserId
+                        FOREIGN KEY (SenderUserId) REFERENCES dbo.AspNetUsers(Id) ON DELETE NO ACTION;
+
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[MessagingConversations]', N'U') AND name = N'IX_MessagingConversations_BuyerUserId')
+                    CREATE INDEX IX_MessagingConversations_BuyerUserId ON dbo.MessagingConversations (BuyerUserId);
+
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[MessagingConversations]', N'U') AND name = N'IX_MessagingConversations_BuyerUserId_SellerUserId_ContextType')
+                    CREATE UNIQUE INDEX IX_MessagingConversations_BuyerUserId_SellerUserId_ContextType
+                        ON dbo.MessagingConversations (BuyerUserId, SellerUserId, ContextType)
+                        WHERE [ContextType] = 1;
+
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[MessagingConversations]', N'U') AND name = N'IX_MessagingConversations_LastMessageAt')
+                    CREATE INDEX IX_MessagingConversations_LastMessageAt ON dbo.MessagingConversations (LastMessageAt);
+
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[MessagingConversations]', N'U') AND name = N'IX_MessagingConversations_OrderId_ContextType')
+                    CREATE UNIQUE INDEX IX_MessagingConversations_OrderId_ContextType
+                        ON dbo.MessagingConversations (OrderId, ContextType)
+                        WHERE [ContextType] = 2;
+
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[MessagingConversations]', N'U') AND name = N'IX_MessagingConversations_SellerUserId')
+                    CREATE INDEX IX_MessagingConversations_SellerUserId ON dbo.MessagingConversations (SellerUserId);
+
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[MessagingMessages]', N'U') AND name = N'IX_MessagingMessages_ConversationId_SentAt')
+                    CREATE INDEX IX_MessagingMessages_ConversationId_SentAt ON dbo.MessagingMessages (ConversationId ASC, SentAt DESC);
+
+                IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[MessagingMessages]', N'U') AND name = N'IX_MessagingMessages_SenderUserId')
+                    CREATE INDEX IX_MessagingMessages_SenderUserId ON dbo.MessagingMessages (SenderUserId);
+                """);
         }
     }
 }
