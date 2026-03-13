@@ -4,6 +4,8 @@ namespace NextHorizon.Data;
 
 public static class ProductData
 {
+    private const int StrideLabSellerId = 1;
+    private const int PaceHausSellerId = 202;
     private const string PlaceholderProductImage = "/images/Storefront/placeholders/product-card.svg";
     private const string PlaceholderProductAltImage = "/images/Storefront/placeholders/product-detail.svg";
     private const string PlaceholderSellerAvatar = "/images/Storefront/placeholders/seller-avatar.svg";
@@ -19,6 +21,9 @@ public static class ProductData
 
     public static string CreateOrderId()
         => $"NH-{DateTime.UtcNow:yyyyMMdd}-{Orders.Count + 1:D4}";
+
+    public static bool HasSeller(int sellerId)
+        => Sellers.Any(seller => seller.Id == sellerId);
 
     public static void SaveOrder(OrderConfirmationViewModel order)
     {
@@ -51,7 +56,7 @@ public static class ProductData
         [
             new Seller
             {
-                Id = 201,
+                Id = StrideLabSellerId,
                 ShopName = "Stride Lab",
                 Avatar = PlaceholderSellerAvatar,
                 CoverImage = PlaceholderSellerCover,
@@ -67,7 +72,7 @@ public static class ProductData
             },
             new Seller
             {
-                Id = 202,
+                Id = PaceHausSellerId,
                 ShopName = "Pace Haus",
                 Avatar = PlaceholderSellerAvatar,
                 CoverImage = PlaceholderSellerCover,
@@ -123,7 +128,7 @@ public static class ProductData
                 Stock = 12,
                 Rating = 4.9,
                 ReviewCount = 3,
-                SellerId = 201,
+                SellerId = StrideLabSellerId,
                 Reviews =
                 [
                     new Review
@@ -202,7 +207,7 @@ public static class ProductData
                 Stock = 20,
                 Rating = 4.6,
                 ReviewCount = 2,
-                SellerId = 201,
+                SellerId = StrideLabSellerId,
                 Reviews =
                 [
                     new Review
@@ -261,7 +266,7 @@ public static class ProductData
                 Stock = 16,
                 Rating = 4.7,
                 ReviewCount = 2,
-                SellerId = 202,
+                SellerId = PaceHausSellerId,
                 Reviews =
                 [
                     new Review
@@ -324,7 +329,7 @@ public static class ProductData
                 RestockNote = "Reserve now and we will ship as soon as the next production batch lands.",
                 Rating = 4.5,
                 ReviewCount = 1,
-                SellerId = 202,
+                SellerId = PaceHausSellerId,
                 Reviews =
                 [
                     new Review
@@ -366,7 +371,7 @@ public static class ProductData
                 Stock = 32,
                 Rating = 4.4,
                 ReviewCount = 0,
-                SellerId = 201,
+                SellerId = StrideLabSellerId,
             },
             new Product
             {
@@ -401,7 +406,7 @@ public static class ProductData
                 PreOrderNote = "Limited first drop for members. Orders ship immediately after launch.",
                 Rating = 4.8,
                 ReviewCount = 0,
-                SellerId = 202,
+                SellerId = PaceHausSellerId,
             },
         ];
     }

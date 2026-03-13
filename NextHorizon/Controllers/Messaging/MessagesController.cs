@@ -1,3 +1,4 @@
+using NextHorizon.Data;
 using NextHorizon.Data.Messaging;
 using NextHorizon.Models;
 using NextHorizon.Messaging.Models;
@@ -67,6 +68,11 @@ public sealed class MessagesController : ControllerBase
             if (string.IsNullOrWhiteSpace(sellerUserId) || !int.TryParse(sellerUserId, out var sellerUserInt) || sellerUserInt <= 0)
             {
                 return BadRequest("SellerUserId must be a positive integer when ContextType is general.");
+            }
+
+            if (!ProductData.HasSeller(sellerUserInt))
+            {
+                return NotFound("Seller not found.");
             }
 
             if (currentUser.SellerId.HasValue && currentUser.SellerId.Value == sellerUserInt)
