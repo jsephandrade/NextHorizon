@@ -321,3 +321,268 @@ body {
         font-size: 24px;
     }
 }
+
+
+/* My Balance Page Specific Styles */
+
+.balance-page {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.balance-box {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 16px;
+    margin-bottom: 30px;
+}
+
+.balance-page-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    color: white;
+}
+
+.balance-description {
+    font-size: 16px;
+    opacity: 0.9;
+    margin: 0;
+    color: rgba(255,255,255,0.9);
+}
+
+.balance-description strong {
+    color: #facc15;
+}
+
+.metric-value.pending {
+    color: #f39c12;
+}
+
+.badge.bg-warning {
+    background-color: #facc15;
+    color: #1a1a1a;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+.text-muted {
+    color: #666;
+    font-size: 12px;
+    display: block;
+    margin-top: 5px;
+}
+
+/* Transaction Type Icons */
+.transaction-type {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.transaction-type i {
+    width: 16px;
+}
+
+/* Action Buttons */
+.btn-view {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: #3498db;
+    color: white;
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+.btn-view:hover {
+    opacity: 0.8;
+    color: white;
+    text-decoration: none;
+}
+
+/* Empty State */
+.text-center.py-5 {
+    text-align: center;
+    padding: 3rem 0;
+}
+
+.text-center.py-5 i {
+    color: #ccc;
+}
+
+/* Filter Button */
+.btn-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #1a1a2e;
+    color: white;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+.btn-filter:hover {
+    background: #2a2a3e;
+    color: white;
+    text-decoration: none;
+    transform: translateY(-2px);
+}
+
+/* Spacing Utilities */
+.mt-3 {
+    margin-top: 1rem;
+}
+
+.mb-3 {
+    margin-bottom: 1rem;
+}
+
+.py-5 {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .balance-box {
+        padding: 20px;
+    }
+    
+    .balance-page-title {
+        font-size: 24px;
+    }
+}
+
+.balance-page {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .balance-box {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+    }
+    
+    .balance-page-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0 0 10px 0;
+        color: white;
+    }
+    
+    .balance-description {
+        font-size: 16px;
+        opacity: 0.9;
+        margin: 0;
+        color: rgba(255,255,255,0.9);
+    }
+    
+    .balance-description strong {
+        color: #facc15;
+    }
+    
+    .metric-value.pending {
+        color: #f39c12;
+    }
+    
+    .badge.bg-warning {
+        background-color: #facc15;
+        color: #1a1a1a;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-left: 8px;
+    }
+    
+    .text-muted {
+        color: #666;
+        font-size: 12px;
+        display: block;
+        margin-top: 5px;
+    }
+    
+    .btn-filter {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: #1a1a2e;
+        color: white;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+    
+    .btn-filter:hover {
+        background: #2a2a3e;
+        color: white;
+        text-decoration: none;
+        transform: translateY(-2px);
+    }
+    
+    .py-5 {
+        padding-top: 3rem;
+        padding-bottom: 3rem;
+    }
+    
+    .mt-3 {
+        margin-top: 1rem;
+    }
+    
+    .mb-3 {
+        margin-bottom: 1rem;
+    }
+    
+    .text-danger {
+        color: #e74c3c !important;
+        font-weight: 600;
+    }
+    
+    .text-success {
+        color: #27ae60 !important;
+        font-weight: 600;
+    }
+    
+    .text-warning {
+        color: #f39c12 !important;
+    }
+    
+    .transaction-type {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .btn-view {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        background: #3498db;
+        color: white;
+        text-decoration: none;
+    }
+    
+    .btn-view:hover {
+        opacity: 0.8;
+        color: white;
+        text-decoration: none;
+    }

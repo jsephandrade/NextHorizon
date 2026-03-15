@@ -14,44 +14,66 @@
     ViewData["SellerName"] = Model.SellerName;
 }
 
+<!-- Success/Error Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
 <section class="section">
     <h3 class="finance-section-title">Finance Overview</h3>
     <div class="cards-grid performance-grid">
-        <div class="card performance-card clickable-card"
-            onclick="window.location.href='@Url.Action("Withdraw","Dashboard")'">
-                    <div class="card-header">
-                        <span class="card-label">Available Balance</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="metric-value">&#8369;@Model.AvailableBalance.ToString("N2")</div>
-                        <div class="metric-growth positive">
-                            <i class="fas fa-wallet"></i>
-                            <span>Ready to withdraw</span>
-                        </div>
-                    </div>
-                </div>
-            </a>
-
-        <div class="card performance-card clickable-card"
-            onclick="window.location.href='@Url.Action("PendingPayout","Dashboard")'">
+        <!-- Available Balance Card - Clickable to Withdraw -->
+        <div class="card performance-card clickable-card" 
+             onclick="window.location.href='@Url.Action("Withdraw", "Dashboard")'">
             <div class="card-header">
-                <span class="card-label">Pending Payout</span>
+                <span class="card-label">Available Balance</span>
             </div>
             <div class="card-body">
-                <div class="metric-value">&#8369;@Model.PendingPayout.ToString("N2")</div>
+                <div class="metric-value">&#8369;@Model.AvailableBalance.ToString("N2")</div>
+                <div class="metric-growth positive">
+                    <i class="fas fa-wallet"></i>
+                    <span>Ready to withdraw</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Payout Card - Clickable to Pending Payouts -->
+        <div class="card performance-card clickable-card" 
+             onclick="window.location.href='@Url.Action("TransactionHistory", "Dashboard", new { status = "Pending" })'">
+            <div class="card-header">
+                <span class="card-label">Pending Payout</span>
+                @if (Model.PendingPayoutCount > 0)
+                {
+                    <span class="badge bg-warning">@Model.PendingPayoutCount</span>
+                }
+            </div>
+            <div class="card-body">
+                <div class="metric-value">&#8369;@Model.PendingBalance.ToString("N2")</div>
                 <div class="metric-growth">
                     <i class="fas fa-clock"></i>
-                    <span>Under review</span>
+                    <span>pending request(s)</span>
                 </div>
             </div>
         </div>
         
+        <!-- Total Gross Card -->
         <div class="card performance-card">
             <div class="card-header">
                 <span class="card-label">Total Gross</span>
             </div>
             <div class="card-body">
-                <div class="metric-value">&#8369;@Model.TotalWithdrawn.ToString("N2")</div>
+                <div class="metric-value">&#8369;@Model.TotalEarned.ToString("N2")</div>
                 <div class="metric-growth positive">
                     <i class="fas fa-check-circle"></i>
                     <span>All-time sales</span>
@@ -74,7 +96,9 @@
         </div>
         <div class="card">
             <span class="card-label">Last Updated</span>
-            <div class="card-value">@Model.CurrentDate.ToString("MMM dd, yyyy hh:mm tt")</div>
+            <div class="card-value">@(Model.CurrentDate.Year > 2000 ? 
+                Model.CurrentDate.ToString("MMM dd, yyyy hh:mm tt") : 
+                DateTime.Now.ToString("MMM dd, yyyy hh:mm tt"))</div>
         </div>
     </div>
 </section>
@@ -98,32 +122,73 @@
                     <th>Method</th>
                     <th>Amount</th>
                     <th>Status</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
-                @for (var i = 0; i < Math.Min(3, Model.Transactions.Count); i++)
+                @for (var i = 0; i < Math.Min(5, Model.Transactions.Count); i++)
                 {
                     var tx = Model.Transactions[i];
                     <tr>
                         <td>@tx.ReferenceId</td>
                         <td>@tx.TransactionDate.ToString("MMM dd, yyyy hh:mm tt")</td>
-                        <td>@tx.Type</td>
-                        <td>@tx.Method</td>
                         <td>
+                            <span class="transaction-type">
+                                @if (tx.Type.Contains("Withdrawal"))
+                                {
+                                    <i class="fas fa-arrow-up text-warning"></i>
+                                }
+                                else if (tx.Type.Contains("Payout"))
+                                {
+                                    <i class="fas fa-arrow-down text-success"></i>
+                                }
+                                else if (tx.Type.Contains("Refund"))
+                                {
+                                    <i class="fas fa-undo text-danger"></i>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-exchange-alt"></i>
+                                }
+                                @tx.Type
+                            </span>
+                        </td>
+                        <td>@tx.Method</td>
+                        <td class="@(tx.Amount < 0 ? "text-danger" : "text-success")">
                             @if (tx.Amount < 0)
                             {
-                                <span style="color:#b42318;">- &#8369;@Math.Abs(tx.Amount).ToString("N2")</span>
+                                <span>- &#8369;@Math.Abs(tx.Amount).ToString("N2")</span>
                             }
                             else
                             {
-                                <span>&#8369;@tx.Amount.ToString("N2")</span>
+                                <span>+ &#8369;@tx.Amount.ToString("N2")</span>
                             }
                         </td>
                         <td>
-                            <span class="badge status @(tx.Status.Equals("Processing", StringComparison.OrdinalIgnoreCase) ? "process" : 
-                                                    tx.Status.Equals("Completed", StringComparison.OrdinalIgnoreCase) ? "complete" : "")">
+                            <span class="badge status @(tx.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase) ? "pending" : 
+                                                    tx.Status.Equals("Completed", StringComparison.OrdinalIgnoreCase) ? "complete" : 
+                                                    tx.Status.Equals("Failed", StringComparison.OrdinalIgnoreCase) ? "failed" : "")">
                                 @tx.Status
                             </span>
+                        </td>
+                        <td>
+                            <a asp-action="TransactionDetails" asp-route-id="@tx.ReferenceId" class="btn-view">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Transactions.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="empty-state-cell">
+                            <div class="empty-state-content">
+                                <div class="empty-state-icon">
+                                    <i class="fas fa-receipt"></i>
+                                </div>
+                                <h5 class="empty-state-title">No transactions yet</h5>
+                                <p class="empty-state-message">Your transactions will appear here</p>
+                            </div>
                         </td>
                     </tr>
                 }
@@ -133,7 +198,6 @@
 
     <!-- Finance Quick Actions Cards -->
     <div class="finance-cards">
-        
         <a asp-controller="Dashboard" asp-action="MyBalance" class="finance-card">
             <div class="finance-card-icon">
                 <i class="fas fa-wallet"></i>
@@ -141,10 +205,11 @@
             <div class="finance-card-info">
                 <h4>My Balance</h4>
                 <p>View your available balance</p>
+                <small class="text-muted">&#8369;@Model.AvailableBalance.ToString("N2")</small>
             </div>
         </a>
 
-        <a href="/Dashboard/PayoutAccounts" class="finance-card">
+        <a asp-controller="Dashboard" asp-action="PayoutAccounts" class="finance-card">
             <div class="finance-card-icon">
                 <i class="fas fa-university"></i>
             </div>
@@ -153,6 +218,6 @@
                 <p>Manage payout methods</p>
             </div>
         </a>
-
     </div>
 </section>
+
