@@ -103,7 +103,38 @@ namespace NextHorizon.Controllers
         private async Task<SellerDashboardViewModel> BuildSellerDashboardModelAsync(CancellationToken cancellationToken = default)
         {
             var sellerEmail = HttpContext.Session.GetString("SellerEmail");
-            var sellerContext = await _sellerContextService.ResolveSellerAsync(sellerEmail, cancellationToken);
+            var sellerIdFromSession = HttpContext.Session.GetInt32("SellerId");
+            var sellerNameFromSession = HttpContext.Session.GetString("SellerName");
+
+            SellerContextInfo sellerContext;
+            if (sellerIdFromSession is > 0)
+            {
+                sellerContext = await _sellerContextService.ResolveSellerByIdAsync(sellerIdFromSession.Value, cancellationToken);
+
+                if (sellerContext.SellerId <= 0)
+                {
+                    sellerContext = new SellerContextInfo
+                    {
+                        SellerId = sellerIdFromSession.Value,
+                        SellerName = string.IsNullOrWhiteSpace(sellerNameFromSession) ? "Seller" : sellerNameFromSession
+                    };
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(sellerEmail))
+            {
+                sellerContext = await _sellerContextService.ResolveSellerAsync(sellerEmail, cancellationToken);
+            }
+            else
+            {
+                sellerContext = await _sellerContextService.ResolveSellerAsync(null, cancellationToken);
+            }
+
+            if (sellerContext.SellerId > 0)
+            {
+                HttpContext.Session.SetInt32("SellerId", sellerContext.SellerId);
+                HttpContext.Session.SetString("SellerName", string.IsNullOrWhiteSpace(sellerContext.SellerName) ? "Seller" : sellerContext.SellerName);
+            }
+
             var performance = await _sellerPerformanceService.GetSellerPerformanceAsync(
                 sellerContext.SellerId,
                 DateTime.UtcNow,
@@ -112,6 +143,17 @@ namespace NextHorizon.Controllers
                 sellerContext.SellerId,
                 new[] { 2024, 2025, 2026 },
                 cancellationToken);
+            var topProducts = await _sellerPerformanceService.GetTopPerformingProductsAsync(
+                sellerContext.SellerId,
+                topCount: 5,
+                cancellationToken: cancellationToken);
+
+            var now = DateTime.UtcNow;
+            var t1H = _sellerPerformanceService.GetTopPerformingProductsAsync(sellerContext.SellerId, topCount: 10, from: now.AddHours(-1), cancellationToken: cancellationToken);
+            var t1D = _sellerPerformanceService.GetTopPerformingProductsAsync(sellerContext.SellerId, topCount: 10, from: now.AddDays(-1), cancellationToken: cancellationToken);
+            var t7D = _sellerPerformanceService.GetTopPerformingProductsAsync(sellerContext.SellerId, topCount: 10, from: now.AddDays(-7), cancellationToken: cancellationToken);
+            var t1M = _sellerPerformanceService.GetTopPerformingProductsAsync(sellerContext.SellerId, topCount: 10, from: now.AddDays(-30), cancellationToken: cancellationToken);
+            await Task.WhenAll(t1H, t1D, t7D, t1M);
 
             return new SellerDashboardViewModel
             {
@@ -133,13 +175,97 @@ namespace NextHorizon.Controllers
 
                 RecentOrders = new List<Order>
                 {
-                    new Order { OrderId = "061231", Customer = "Kiboy", Status = "Paid", Amount = 650.00m },
-                    new Order { OrderId = "061232", Customer = "Loyd", Status = "To Ship", Amount = 650.00m },
-                    new Order { OrderId = "061233", Customer = "Sarah", Status = "Pending", Amount = 650.00m },
-                    new Order { OrderId = "061234", Customer = "Discaya", Status = "To Ship", Amount = 650.00m },
-                    new Order { OrderId = "061235", Customer = "Romualdez", Status = "Pending", Amount = 650.00m },
-                    new Order { OrderId = "061236", Customer = "Vins", Status = "Paid", Amount = 650.00m },
-                    new Order { OrderId = "061237", Customer = "Kenneth", Status = "To Ship", Amount = 650.00m }
+                    new Order
+                    {
+                        OrderId = "061231",
+                        Customer = "Kiboy",
+                        ProductName = "Nike Air Max 270",
+                        ProductImage = "https://picsum.photos/seed/recent-1/80/80",
+                        Sku = "NH-NK-001",
+                        Size = "US 9",
+                        DateTime = DateTime.Now.AddMinutes(-32),
+                        Courier = "J&T Express",
+                        Status = "Paid",
+                        Amount = 5595.00m
+                    },
+                    new Order
+                    {
+                        OrderId = "061232",
+                        Customer = "Loyd",
+                        ProductName = "Nike Dri-FIT Training Shirt",
+                        ProductImage = "https://picsum.photos/seed/recent-2/80/80",
+                        Sku = "NH-NK-002",
+                        Size = "L",
+                        DateTime = DateTime.Now.AddHours(-1),
+                        Courier = "Ninja Van",
+                        Status = "To Ship",
+                        Amount = 2690.00m
+                    },
+                    new Order
+                    {
+                        OrderId = "061233",
+                        Customer = "Sarah",
+                        ProductName = "Nike React Infinity Run FK 3",
+                        ProductImage = "https://picsum.photos/seed/recent-3/80/80",
+                        Sku = "NH-NK-004",
+                        Size = "US 8",
+                        DateTime = DateTime.Now.AddHours(-3),
+                        Courier = "LBC",
+                        Status = "Pending",
+                        Amount = 7445.00m
+                    },
+                    new Order
+                    {
+                        OrderId = "061234",
+                        Customer = "Discaya",
+                        ProductName = "Nike Pro Training Shorts",
+                        ProductImage = "https://picsum.photos/seed/recent-4/80/80",
+                        Sku = "NH-NK-003",
+                        Size = "M",
+                        DateTime = DateTime.Now.AddHours(-5),
+                        Courier = "J&T Express",
+                        Status = "To Ship",
+                        Amount = 3370.00m
+                    },
+                    new Order
+                    {
+                        OrderId = "061235",
+                        Customer = "Romualdez",
+                        ProductName = "Nike Sport Drawstring Bag",
+                        ProductImage = "https://picsum.photos/seed/recent-5/80/80",
+                        Sku = "NH-NK-005",
+                        Size = "One Size",
+                        DateTime = DateTime.Now.AddHours(-8),
+                        Courier = "SPX Express",
+                        Status = "Pending",
+                        Amount = 980.00m
+                    },
+                    new Order
+                    {
+                        OrderId = "061236",
+                        Customer = "Vins",
+                        ProductName = "Nike Air Max 270",
+                        ProductImage = "https://picsum.photos/seed/recent-6/80/80",
+                        Sku = "NH-NK-001",
+                        Size = "US 10",
+                        DateTime = DateTime.Now.AddHours(-11),
+                        Courier = "LBC",
+                        Status = "Paid",
+                        Amount = 11140.00m
+                    },
+                    new Order
+                    {
+                        OrderId = "061237",
+                        Customer = "Kenneth",
+                        ProductName = "Nike Dri-FIT Training Shirt",
+                        ProductImage = "https://picsum.photos/seed/recent-7/80/80",
+                        Sku = "NH-NK-002",
+                        Size = "XL",
+                        DateTime = DateTime.Now.AddHours(-15),
+                        Courier = "Ninja Van",
+                        Status = "To Ship",
+                        Amount = 3970.00m
+                    }
                 },
 
                 Orders = new List<Order>
@@ -224,12 +350,13 @@ namespace NextHorizon.Controllers
                     }
                 },
 
-                TopProducts = new List<TopSellingProduct>
+                TopProducts = topProducts,
+                TopProductsByRange = new Dictionary<string, List<TopSellingProduct>>
                 {
-                    new TopSellingProduct { ProductName = "Nike Shoes", ImageUrl = "https://picsum.photos/seed/nike-shoes/120/120", UnitsSold = 16, Rank = 1 },
-                    new TopSellingProduct { ProductName = "Croptop", ImageUrl = "https://picsum.photos/seed/croptop/120/120", UnitsSold = 12, Rank = 2 },
-                    new TopSellingProduct { ProductName = "Tumbler", ImageUrl = "https://picsum.photos/seed/tumbler/120/120", UnitsSold = 6, Rank = 3 },
-                    new TopSellingProduct { ProductName = "3 Men's Sleeveless", ImageUrl = "https://picsum.photos/seed/sleeveless/120/120", UnitsSold = 4, Rank = 4 }
+                    ["1H"] = t1H.Result,
+                    ["1D"] = t1D.Result,
+                    ["7D"] = t7D.Result,
+                    ["1M"] = t1M.Result,
                 }
             };
         }

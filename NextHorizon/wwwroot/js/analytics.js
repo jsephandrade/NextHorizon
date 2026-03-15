@@ -9,9 +9,10 @@ function initializeRevenueGraph() {
     const areaPath = document.getElementById('revenueAreaPath');
     const pointsGroup = document.getElementById('revenuePointGroup');
     const gridGroup = document.getElementById('revenueGridLines');
+    const labelsGroup = document.getElementById('revenueLabelsGroup');
     const chartShell = document.querySelector('.revenue-chart-shell[data-chart-data]');
 
-    if (!yearSelect || !linePath || !areaPath || !pointsGroup || !gridGroup || !chartShell) {
+    if (!yearSelect || !linePath || !areaPath || !pointsGroup || !gridGroup || !labelsGroup || !chartShell) {
         return;
     }
 
@@ -65,21 +66,72 @@ function initializeRevenueGraph() {
             gridGroup.appendChild(line);
         }
 
+        const monthSlotWidth = width / monthCount;
         const points = values.map((value, index) => {
-            const x = padding.left + (index / (monthCount - 1)) * innerWidth;
+            // Keep each point centered in its month slot to match .revenue-months labels.
+            const x = monthSlotWidth * index + monthSlotWidth / 2;
             const y = padding.top + ((maxValue - value) / valueRange) * innerHeight;
             return { x, y, value };
         });
 
-        const lineD = points
-            .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
-            .join(' ');
+        // Monotone cubic interpolation (Fritsch-Carlson) — no overshooting, flat zeros stay flat
+        function buildSmoothD(pts) {
+            if (pts.length === 0) return '';
+            if (pts.length === 1) return `M ${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`;
+            const n = pts.length;
+            const dx = [], dy = [], slopes = [];
+            for (let i = 0; i < n - 1; i++) {
+                dx[i] = pts[i + 1].x - pts[i].x;
+                dy[i] = pts[i + 1].y - pts[i].y;
+                slopes[i] = dy[i] / dx[i];
+            }
+            const m = new Array(n);
+            m[0] = slopes[0];
+            m[n - 1] = slopes[n - 2];
+            for (let i = 1; i < n - 1; i++) {
+                if (slopes[i - 1] * slopes[i] <= 0) {
+                    m[i] = 0;
+                } else {
+                    m[i] = (slopes[i - 1] + slopes[i]) / 2;
+                }
+            }
+            // Ensure monotonicity per Fritsch-Carlson
+            for (let i = 0; i < n - 1; i++) {
+                if (Math.abs(slopes[i]) < 1e-10) {
+                    m[i] = 0;
+                    m[i + 1] = 0;
+                } else {
+                    const alpha = m[i] / slopes[i];
+                    const beta = m[i + 1] / slopes[i];
+                    const r = Math.sqrt(alpha * alpha + beta * beta);
+                    if (r > 3) {
+                        m[i] = (3 * alpha / r) * slopes[i];
+                        m[i + 1] = (3 * beta / r) * slopes[i];
+                    }
+                }
+            }
+            const segs = [`M ${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`];
+            for (let i = 0; i < n - 1; i++) {
+                const cp1x = pts[i].x + dx[i] / 3;
+                const cp1y = pts[i].y + (m[i] * dx[i]) / 3;
+                const cp2x = pts[i + 1].x - dx[i] / 3;
+                const cp2y = pts[i + 1].y - (m[i + 1] * dx[i]) / 3;
+                segs.push(`C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)} ${cp2x.toFixed(2)} ${cp2y.toFixed(2)} ${pts[i + 1].x.toFixed(2)} ${pts[i + 1].y.toFixed(2)}`);
+            }
+            return segs.join(' ');
+        }
+
+        const lineD = buildSmoothD(points);
         linePath.setAttribute('d', lineD);
 
-        const areaD = `${lineD} L ${(padding.left + innerWidth).toFixed(2)} ${(padding.top + innerHeight).toFixed(2)} L ${padding.left.toFixed(2)} ${(padding.top + innerHeight).toFixed(2)} Z`;
+        const firstPt = points[0];
+        const lastPt = points[points.length - 1];
+        const bottomY = (padding.top + innerHeight).toFixed(2);
+        const areaD = `${lineD} L ${lastPt.x.toFixed(2)} ${bottomY} L ${firstPt.x.toFixed(2)} ${bottomY} Z`;
         areaPath.setAttribute('d', areaD);
 
         pointsGroup.innerHTML = '';
+        labelsGroup.innerHTML = '';
         for (const point of points) {
             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             circle.setAttribute('cx', point.x.toFixed(2));
@@ -91,6 +143,26 @@ function initializeRevenueGraph() {
             tooltip.textContent = `PHP ${Math.round(point.value).toLocaleString()}`;
             circle.appendChild(tooltip);
             pointsGroup.appendChild(circle);
+
+            if (point.value <= 0) {
+                continue;
+            }
+
+            const labelText = formatRevenueLabel(point.value);
+            // Place label above the point; if too close to top, put it below instead
+            const aboveY = point.y - 14;
+            const belowY = point.y + 22;
+            const labelY = aboveY < padding.top + 4 ? belowY : aboveY;
+
+            // Clamp horizontal so text doesn't overflow the SVG edges
+            const clampedX = Math.min(Math.max(point.x, 26), width - 26);
+
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', clampedX.toFixed(2));
+            text.setAttribute('y', labelY.toFixed(2));
+            text.setAttribute('class', 'revenue-value-label');
+            text.textContent = labelText;
+            labelsGroup.appendChild(text);
         }
     }
 
@@ -109,6 +181,7 @@ function initializeRevenueGraph() {
         areaPath.setAttribute('d', chart.areaPath || '');
         gridGroup.innerHTML = chart.gridMarkup || '';
         pointsGroup.innerHTML = chart.pointsMarkup || '';
+        labelsGroup.innerHTML = '';
     }
 
     yearSelect.addEventListener('change', () => {
@@ -119,6 +192,18 @@ function initializeRevenueGraph() {
     if (defaultYear) {
         applyGraph(defaultYear);
     }
+}
+
+function formatRevenueLabel(value) {
+    if (value >= 1_000_000) {
+        const m = value / 1_000_000;
+        return `\u20B1${m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)}M`;
+    }
+    if (value >= 1_000) {
+        const k = value / 1_000;
+        return `\u20B1${k % 1 === 0 ? k.toFixed(0) : k.toFixed(1)}K`;
+    }
+    return `\u20B1${Math.round(value).toLocaleString()}`;
 }
 
 function initializeTopProductsTable() {
@@ -148,6 +233,19 @@ function initializeTopProductsTable() {
         return;
     }
 
+    const rawProductsByRange = tableWrap.dataset.productsByRange;
+    let productsByRange = null;
+    if (rawProductsByRange) {
+        try {
+            const parsed = JSON.parse(rawProductsByRange);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                productsByRange = parsed;
+            }
+        } catch {
+            // fall through to multiplier simulation
+        }
+    }
+
     const rangeConfig = {
         '1H': { unitFactor: 0.2, revenueFactor: 0.2 },
         '1D': { unitFactor: 1, revenueFactor: 1 },
@@ -158,6 +256,7 @@ function initializeTopProductsTable() {
     let activeRange = '1H';
     let activePage = 1;
     const fixedPageSlots = pageButtons.length;
+    const rowsPerPage = 10;
     let lastPageCount = 1;
 
     function escapeHtml(value) {
@@ -179,36 +278,50 @@ function initializeTopProductsTable() {
         return Number.isFinite(parsed) ? parsed : 0;
     }
 
+    function normalizeProductRow(product) {
+        return {
+            productName: safeText(product.productName, 'Untitled Product'),
+            imageUrl: safeText(product.imageUrl, 'https://via.placeholder.com/60?text=Product'),
+            sku: safeText(product.sku, '-'),
+            category: safeText(product.category, 'General'),
+            unitsSold: Math.max(0, Math.round(toNumber(product.unitsSold))),
+            revenueGenerated: Math.max(0, Math.round(toNumber(product.revenueGenerated)))
+        };
+    }
+
+    function sortRows(rows) {
+        return rows.sort((a, b) => {
+            if (b.unitsSold !== a.unitsSold) return b.unitsSold - a.unitsSold;
+            if (b.revenueGenerated !== a.revenueGenerated) return b.revenueGenerated - a.revenueGenerated;
+            return a.productName.localeCompare(b.productName);
+        });
+    }
+
     function getRangeRows(rangeKey) {
+        if (productsByRange && Object.prototype.hasOwnProperty.call(productsByRange, rangeKey)) {
+            const rangeData = productsByRange[rangeKey];
+            if (Array.isArray(rangeData)) {
+                return sortRows(rangeData.map(normalizeProductRow));
+            }
+        }
+
+        // Fallback: simulate range from all-time data using a multiplier
         const config = rangeConfig[rangeKey] || rangeConfig['1D'];
+        return sortRows(products.map((product) => {
+            const baseUnits = Math.max(0, Math.round(toNumber(product.unitsSold)));
+            const baseRevenue = toNumber(product.revenueGenerated) > 0
+                ? toNumber(product.revenueGenerated)
+                : baseUnits * 650;
 
-        return products
-            .map((product) => {
-                const baseUnits = Math.max(0, Math.round(toNumber(product.unitsSold)));
-                const baseRevenue = toNumber(product.revenueGenerated) > 0
-                    ? toNumber(product.revenueGenerated)
-                    : baseUnits * 650;
-
-                return {
-                    productName: safeText(product.productName, 'Untitled Product'),
-                    imageUrl: safeText(product.imageUrl, 'https://via.placeholder.com/60?text=Product'),
-                    sku: safeText(product.sku, '-'),
-                    category: safeText(product.category, 'General'),
-                    unitsSold: Math.max(0, Math.round(baseUnits * config.unitFactor)),
-                    revenueGenerated: Math.max(0, Math.round(baseRevenue * config.revenueFactor))
-                };
-            })
-            .sort((a, b) => {
-                if (b.unitsSold !== a.unitsSold) {
-                    return b.unitsSold - a.unitsSold;
-                }
-
-                if (b.revenueGenerated !== a.revenueGenerated) {
-                    return b.revenueGenerated - a.revenueGenerated;
-                }
-
-                return a.productName.localeCompare(b.productName);
-            });
+            return {
+                productName: safeText(product.productName, 'Untitled Product'),
+                imageUrl: safeText(product.imageUrl, 'https://via.placeholder.com/60?text=Product'),
+                sku: safeText(product.sku, '-'),
+                category: safeText(product.category, 'General'),
+                unitsSold: Math.max(0, Math.round(baseUnits * config.unitFactor)),
+                revenueGenerated: Math.max(0, Math.round(baseRevenue * config.revenueFactor))
+            };
+        }));
     }
 
     function formatCurrency(value) {
@@ -221,37 +334,50 @@ function initializeTopProductsTable() {
     function updatePaginationState(pageCount) {
         lastPageCount = Math.max(1, pageCount);
 
+        const pageWindowStart = Math.floor((activePage - 1) / fixedPageSlots) * fixedPageSlots + 1;
+
         pageButtons.forEach((button, index) => {
-            const pageNumber = index + 1;
+            const pageNumber = pageWindowStart + index;
             const isAvailable = pageNumber <= lastPageCount;
 
+            button.textContent = String(pageNumber);
+            button.dataset.page = String(pageNumber);
             button.disabled = !isAvailable;
+            button.hidden = !isAvailable;
             button.setAttribute('aria-disabled', String(!isAvailable));
             button.classList.toggle('active', isAvailable && pageNumber === activePage);
         });
 
-        nextButton.disabled = lastPageCount <= 1;
-        nextButton.setAttribute('aria-disabled', String(lastPageCount <= 1));
-        nextButton.setAttribute('aria-label', activePage >= lastPageCount ? 'Go back to page 1' : 'Go to next page');
+        const isNextDisabled = activePage >= lastPageCount;
+        nextButton.disabled = isNextDisabled;
+        nextButton.setAttribute('aria-disabled', String(isNextDisabled));
+        nextButton.setAttribute('aria-label', isNextDisabled ? 'Last page reached' : 'Go to next page');
     }
 
     function renderRows() {
         const rows = getRangeRows(activeRange);
         if (rows.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="6">No products available for this range.</td></tr>';
+            tableBody.innerHTML = `
+                <tr class="analytics-empty-row">
+                    <td colspan="6">
+                        <div class="analytics-empty-state">
+                            <i class="fas fa-box-open"></i>
+                            <p>No product sales found for the selected period.</p>
+                        </div>
+                    </td>
+                </tr>`;
             activePage = 1;
             updatePaginationState(1);
             return;
         }
 
-        const pageSize = Math.max(1, Math.ceil(rows.length / fixedPageSlots));
-        const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+        const pageCount = Math.max(1, Math.ceil(rows.length / rowsPerPage));
         activePage = Math.min(Math.max(activePage, 1), pageCount);
 
-        const start = (activePage - 1) * pageSize;
-        const pageRows = rows.slice(start, start + pageSize);
+        const start = (activePage - 1) * rowsPerPage;
+        const pageRows = rows.slice(start, start + rowsPerPage);
 
-        tableBody.innerHTML = pageRows
+        const renderedRows = pageRows
             .map((row, index) => {
                 const rank = start + index + 1;
 
@@ -272,6 +398,8 @@ function initializeTopProductsTable() {
                 `;
             })
             .join('');
+
+        tableBody.innerHTML = renderedRows;
 
         updatePaginationState(pageCount);
     }
@@ -302,15 +430,28 @@ function initializeTopProductsTable() {
     });
 
     nextButton.addEventListener('click', () => {
-        if (lastPageCount <= 1) {
+        if (activePage >= lastPageCount) {
             return;
         }
 
-        activePage = activePage >= lastPageCount ? 1 : activePage + 1;
+        activePage += 1;
         renderRows();
     });
 
-    const initiallyActiveRangeButton = rangeButtons.find((button) => button.classList.contains('active')) || rangeButtons[0];
+    let initiallyActiveRangeButton = rangeButtons.find((button) => button.classList.contains('active')) || rangeButtons[0];
+
+    if (productsByRange && typeof productsByRange === 'object') {
+        const orderedRangeKeys = ['1H', '1D', '7D', '1M'];
+        const firstNonEmptyKey = orderedRangeKeys.find((rangeKey) => {
+            const value = productsByRange[rangeKey];
+            return Array.isArray(value) && value.length > 0;
+        });
+
+        if (firstNonEmptyKey) {
+            initiallyActiveRangeButton = rangeButtons.find((button) => button.dataset.range === firstNonEmptyKey) || initiallyActiveRangeButton;
+        }
+    }
+
     if (initiallyActiveRangeButton) {
         activeRange = initiallyActiveRangeButton.dataset.range || '1H';
         rangeButtons.forEach((button) => {

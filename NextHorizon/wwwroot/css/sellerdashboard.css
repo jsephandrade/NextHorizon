@@ -165,7 +165,7 @@ body{
 
 .bottom-grid{
     display:grid;
-    grid-template-columns:2fr 1fr;
+    grid-template-columns:1fr;
     gap:30px;
 }
 
@@ -176,6 +176,7 @@ body{
     background:white;
     border-radius:14px;
     overflow:hidden;
+    overflow-x:auto;
 
     box-shadow:
         0 2px 6px rgba(0,0,0,0.04),
@@ -184,6 +185,7 @@ body{
 
 .orders-table{
     width:100%;
+    min-width:0;
     border-collapse:collapse;
 }
 
@@ -193,12 +195,12 @@ body{
     text-transform:uppercase;
     letter-spacing:.8px;
     color:#888;
-    padding:16px 20px;
+    padding:14px 12px;
 }
 
 .orders-table td{
-    padding:16px 20px;
-    font-size:14px;
+    padding:14px 12px;
+    font-size:13px;
     color:#333;
 }
 
@@ -208,6 +210,33 @@ body{
 
 .orders-table tr:hover{
     background:#f8f9fb;
+}
+
+.recent-product-cell{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.recent-product-cell img{
+    width:42px;
+    height:42px;
+    border-radius:8px;
+    object-fit:cover;
+    background:#f3f3f3;
+    border:1px solid #ececec;
+    flex-shrink:0;
+}
+
+.recent-product-meta{
+    min-width:0;
+}
+
+.recent-product-name{
+    font-size:13px;
+    font-weight:600;
+    color:#202020;
+    line-height:1.3;
 }
 
 

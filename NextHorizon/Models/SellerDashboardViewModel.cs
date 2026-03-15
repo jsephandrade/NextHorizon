@@ -31,6 +31,9 @@ namespace NextHorizon.Models
         // Top Selling Products
         public List<TopSellingProduct> TopProducts { get; set; } = new();
 
+        // Analytics: range-keyed top products (keys: "1H", "1D", "7D", "1M")
+        public Dictionary<string, List<TopSellingProduct>> TopProductsByRange { get; set; } = new();
+
          // Analytics: Year -> monthly revenue totals (Jan..Dec)
         public Dictionary<int, List<decimal>> MonthlyRevenueByYear { get; set; } = new();
     }

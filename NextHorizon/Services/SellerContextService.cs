@@ -18,9 +18,48 @@ public sealed class SellerContextService : ISellerContextService
         _logger = logger;
     }
 
+    public async Task<SellerContextInfo> ResolveSellerByIdAsync(int sellerId, CancellationToken cancellationToken = default)
+    {
+        var fallback = new SellerContextInfo { SellerId = 0, SellerName = "Seller" };
+        if (sellerId <= 0 || string.IsNullOrWhiteSpace(_connectionString))
+        {
+            return fallback;
+        }
+
+        try
+        {
+            await using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync(cancellationToken);
+
+            await using var command = new SqlCommand("SELECT TOP (1) * FROM dbo.Sellers WHERE seller_id = @SellerId", connection);
+            command.Parameters.AddWithValue("@SellerId", sellerId);
+
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                return fallback;
+            }
+
+            var ordinals = BuildOrdinalMap(reader);
+            var idOrdinal = FindOrdinal(ordinals, IdCandidates);
+            if (idOrdinal is null)
+            {
+                return fallback;
+            }
+
+            var nameOrdinal = FindOrdinal(ordinals, NameCandidates);
+            return ReadSeller(reader, idOrdinal.Value, nameOrdinal, fallback.SellerName) ?? fallback;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to resolve seller {SellerId} from dbo.Sellers. Falling back to default seller context.", sellerId);
+            return fallback;
+        }
+    }
+
     public async Task<SellerContextInfo> ResolveSellerAsync(string? userIdentity, CancellationToken cancellationToken = default)
     {
-        var fallback = new SellerContextInfo { SellerId = 1, SellerName = "Seller" };
+        var fallback = new SellerContextInfo { SellerId = 0, SellerName = "Seller" };
         if (string.IsNullOrWhiteSpace(_connectionString))
         {
             return fallback;

@@ -48,53 +48,6 @@
             </div>
         </div>
 
-        <div class="card critical-card">
-            <div class="card-content">
-                <div class="card-info">
-                    <span class="card-label">Withdraw Summary</span>
-                    <span class="card-value">&#8369;@Model.WithdrawAmount.ToString("N2") <small>(@Model.WithdrawStatus)</small></span>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="section">
-    <h2 class="section-title">Performance</h2>
-    <div class="cards-grid performance-grid">
-        <div class="card performance-card">
-            <div class="card-header">
-                <span class="card-label">Today's Sales</span>
-            </div>
-            <div class="card-body">
-                <div class="metric-value">&#8369;@Model.TodaySales.ToString("N2")</div>
-                <div class="metric-growth positive">
-                    <i class="fas fa-arrow-up"></i>
-                    <span>(+@Model.SalesGrowth%)</span>
-                </div>
-            </div>
-            <div class="card-chart">
-                <i class="fas fa-chart-line"></i>
-            </div>
-        </div>
-
-        <div class="card performance-card">
-            <div class="card-header">
-                <span class="card-label">Total Revenue</span>
-            </div>
-            <div class="card-body">
-                <div class="metric-value">&#8369;@Model.TotalRevenue.ToString("N2")</div>
-            </div>
-        </div>
-
-        <div class="card performance-card">
-            <div class="card-header">
-                <span class="card-label">Total Visit</span>
-            </div>
-            <div class="card-body">
-                <div class="metric-value">@Model.TotalVisits</div>
-            </div>
-        </div>
     </div>
 </section>
 
@@ -106,7 +59,12 @@
                 <thead>
                     <tr>
                         <th>Order ID</th>
+                        <th>Product</th>
+                        <th>SKU</th>
+                        <th>Size</th>
                         <th>Customer</th>
+                        <th>Time</th>
+                        <th>Preferred Courier</th>
                         <th>Status</th>
                         <th>Amount</th>
                     </tr>
@@ -116,7 +74,21 @@
                     {
                         <tr>
                             <td>@order.OrderId</td>
+                            <td>
+                                <div class="recent-product-cell">
+                                    <img src="@order.ProductImage"
+                                         alt="@order.ProductName"
+                                         onerror="this.src='https://via.placeholder.com/60?text=Product'" />
+                                    <div class="recent-product-meta">
+                                        <div class="recent-product-name">@order.ProductName</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>@order.Sku</td>
+                            <td>@order.Size</td>
                             <td>@order.Customer</td>
+                            <td>@order.DateTime.ToString("MMM dd, yyyy h:mm tt")</td>
+                            <td>@order.Courier</td>
                             <td>
                                 <span class="status-badge @order.Status.ToLower().Replace(" ", "-")">
                                     @order.Status
@@ -127,26 +99,6 @@
                     }
                 </tbody>
             </table>
-        </div>
-    </section>
-
-    <section class="section">
-        <h2 class="section-title">Your Top Selling Products</h2>
-        <div class="products-list">
-            @foreach (var product in Model.TopProducts)
-            {
-                <div class="product-item">
-                    <div class="product-rank">@product.Rank</div>
-                    <div class="product-image">
-                        <img src="@product.ImageUrl" alt="@product.ProductName"
-                             onerror="this.src='https://via.placeholder.com/60?text=Product'">
-                    </div>
-                    <div class="product-info">
-                        <h4>@product.ProductName</h4>
-                        <span>@product.UnitsSold unit sold</span>
-                    </div>
-                </div>
-            }
         </div>
     </section>
 </div>

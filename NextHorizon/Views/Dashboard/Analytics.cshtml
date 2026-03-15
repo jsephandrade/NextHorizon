@@ -94,6 +94,18 @@
             unitsSold = product.UnitsSold,
             revenueGenerated = product.RevenueGenerated
         }));
+    var topProductsByRangeJson = JsonSerializer.Serialize(
+        Model.TopProductsByRange.ToDictionary(
+            kvp => kvp.Key,
+            kvp => kvp.Value.Select(p => new
+            {
+                productName = p.ProductName,
+                imageUrl = p.ImageUrl,
+                sku = p.Sku,
+                category = p.Category,
+                unitsSold = p.UnitsSold,
+                revenueGenerated = p.RevenueGenerated
+            }).ToList()));
 }
 
 @section Styles {
@@ -168,6 +180,7 @@
                 <path id="revenueAreaPath" class="revenue-area"></path>
                 <path id="revenueLinePath" class="revenue-line"></path>
                 <g id="revenuePointGroup"></g>
+                <g id="revenueLabelsGroup"></g>
             </svg>
             <div class="revenue-months" aria-hidden="true">
                 @foreach (var month in monthLabels)
@@ -189,7 +202,7 @@
             </div>
         </div>
 
-        <div class="analytics-table-wrap" data-products='@topProductsJson'>
+        <div class="analytics-table-wrap" data-products='@topProductsJson' data-products-by-range='@topProductsByRangeJson'>
             <table class="analytics-table">
                 <thead>
                     <tr>
@@ -202,21 +215,35 @@
                     </tr>
                 </thead>
                 <tbody data-analytics-products>
-                    @foreach (var product in topProducts)
+                    @if (topProducts.Count == 0)
                     {
-                        <tr>
-                            <td>@product.Rank</td>
-                            <td>
-                                <div class="analytics-product-cell">
-                                    <img src="@product.ImageUrl" alt="@product.ProductName" onerror="this.src='https://via.placeholder.com/60?text=Product'" />
-                                    <span>@product.ProductName</span>
+                        <tr class="analytics-empty-row">
+                            <td colspan="6">
+                                <div class="analytics-empty-state">
+                                    <i class="fas fa-box-open"></i>
+                                    <p>No product sales data found for your store yet.</p>
                                 </div>
                             </td>
-                            <td>@product.Sku</td>
-                            <td>@product.Category</td>
-                            <td>@product.UnitsSold</td>
-                            <td>&#8369;@product.RevenueGenerated.ToString("N0")</td>
                         </tr>
+                    }
+                    else
+                    {
+                        @foreach (var product in topProducts)
+                        {
+                            <tr>
+                                <td>@product.Rank</td>
+                                <td>
+                                    <div class="analytics-product-cell">
+                                        <img src="@product.ImageUrl" alt="@product.ProductName" onerror="this.src='https://via.placeholder.com/60?text=Product'" />
+                                        <span>@product.ProductName</span>
+                                    </div>
+                                </td>
+                                <td>@product.Sku</td>
+                                <td>@product.Category</td>
+                                <td>@product.UnitsSold</td>
+                                <td>&#8369;@product.RevenueGenerated.ToString("N0")</td>
+                            </tr>
+                        }
                     }
                 </tbody>
             </table>

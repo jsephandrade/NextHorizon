@@ -8,6 +8,8 @@ namespace NextHorizon.Models
         public string Customer { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public decimal Amount { get; set; }
+        public string Sku { get; set; } = string.Empty;
+        public string Size { get; set; } = string.Empty;
 
         // Order Management fields
         public DateTime DateTime { get; set; }
