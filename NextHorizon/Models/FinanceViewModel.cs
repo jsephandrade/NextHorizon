@@ -60,7 +60,17 @@ namespace NextHorizon.Models
         public List<FinanceTransactionViewModel> RecentTransactions { get; set; } = new();
     }
 
+    public class TransactionDetailDto
+    {
+        public string ReferenceId { get; set; }
+        public DateTime TransactionDate { get; set; }
+        public string Type { get; set; }
+        public string Method { get; set; }
+        public decimal Amount { get; set; }
+        public string Status { get; set; }
+        public string Source { get; set; }
+        public string AdditionalDetails { get; set; }
+    }
 
- 
 }
 

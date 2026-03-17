@@ -167,6 +167,12 @@ namespace NextHorizon.Controllers
                                 ? Convert.ToDecimal(reader["Total_Earned"]) : 0;
                             model.TotalWithdrawn = reader["Total_Withdrawn"] != DBNull.Value 
                                 ? Convert.ToDecimal(reader["Total_Withdrawn"]) : 0;
+                            
+                            // Get pending payout count and amount from withdrawal_requests
+                            model.PendingPayoutCount = reader["PendingPayoutCount"] != DBNull.Value 
+                                ? Convert.ToInt32(reader["PendingPayoutCount"]) : 0;
+                            model.TotalPendingWithdrawal = reader["TotalPendingWithdrawal"] != DBNull.Value 
+                                ? Convert.ToDecimal(reader["TotalPendingWithdrawal"]) : 0;
                         }
 
                         // Next result set - Today's Revenue
@@ -183,7 +189,7 @@ namespace NextHorizon.Controllers
                                 ? Convert.ToDecimal(reader["ThisMonthRevenue"]) : 0;
                         }
 
-                        // Next result set - Recent Transactions
+                        // Next result set - Recent Transactions (Combined)
                         if (await reader.NextResultAsync())
                         {
                             while (await reader.ReadAsync())
@@ -207,7 +213,7 @@ namespace NextHorizon.Controllers
 
             return model;
         }
-
+        
         // ============== TRANSACTION HISTORY ==============
         public async Task<IActionResult> TransactionHistory(
             int page = 1, 
@@ -296,6 +302,8 @@ namespace NextHorizon.Controllers
                 }
             }
 
+
+
             // Get seller name separately
             model.SellerName = await GetSellerName(sellerId);
             model.CurrentDate = DateTime.Now;
@@ -303,6 +311,119 @@ namespace NextHorizon.Controllers
             return model;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetTransactionDetailsSP(string referenceId)
+        {
+            try
+            {
+                Console.WriteLine($"GetTransactionDetailsSP called with referenceId: {referenceId}");
+                
+                var sellerId = GetSellerIdFromSession();
+                if (sellerId == null)
+                {
+                    return Json(new { success = false, message = "Seller not authenticated" });
+                }
+
+                Console.WriteLine($"SellerId: {sellerId}");
+
+                var transaction = await GetTransactionDetailsFromSP(sellerId.Value, referenceId);
+
+                if (transaction == null)
+                {
+                    Console.WriteLine($"No transaction found for referenceId: {referenceId}");
+                    return Json(new { success = false, message = $"Transaction not found with reference: {referenceId}" });
+                }
+
+                return Json(new { success = true, transaction });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception: {ex.Message}");
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        private async Task<object> GetTransactionDetailsFromSP(int sellerId, string referenceId)
+        {
+            using (var connection = new SqlConnection(GetConnectionString()))
+            {
+                using (var command = new SqlCommand("sp_GetTransactionDetails", connection))
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.Parameters.AddWithValue("@SellerId", sellerId);
+                    command.Parameters.AddWithValue("@ReferenceId", referenceId);
+
+                    await connection.OpenAsync();
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            // Check if we actually got data (ReferenceId not null)
+                            if (reader["ReferenceId"] != DBNull.Value)
+                            {
+                                string source = reader["Source"]?.ToString() ?? "";
+                                
+                                // Handle wallet transaction (no Method column)
+                                if (source == "wallet_transaction")
+                                {
+                                    return new
+                                    {
+                                        referenceId = reader["ReferenceId"].ToString(),
+                                        transactionDate = Convert.ToDateTime(reader["TransactionDate"]),
+                                        type = reader["Type"].ToString(),
+                                        method = "N/A", // Wallet transactions don't have method
+                                        amount = Convert.ToDecimal(reader["Amount"]),
+                                        status = reader["Status"].ToString(),
+                                        source = source,
+                                        additionalDetails = new { }
+                                    };
+                                }
+                                // Handle withdrawal request (has Method column)
+                                else
+                                {
+                                    // Parse additional details if they exist
+                                    object additionalDetails = null;
+                                    if (reader["AdditionalDetails"] != DBNull.Value)
+                                    {
+                                        string details = reader["AdditionalDetails"].ToString();
+                                        var detailsDict = new Dictionary<string, string>();
+                                        
+                                        // Parse the CONCAT string format: "Requested: ... | Processed: ... | Account: ..."
+                                        var parts = details.Split('|');
+                                        foreach (var part in parts)
+                                        {
+                                            var keyValue = part.Split(':');
+                                            if (keyValue.Length >= 2)
+                                            {
+                                                string key = keyValue[0].Trim();
+                                                string value = string.Join(":", keyValue.Skip(1)).Trim();
+                                                detailsDict[key] = value;
+                                            }
+                                        }
+                                        additionalDetails = detailsDict;
+                                    }
+
+                                    return new
+                                    {
+                                        referenceId = reader["ReferenceId"].ToString(),
+                                        transactionDate = Convert.ToDateTime(reader["TransactionDate"]),
+                                        type = reader["Type"].ToString(),
+                                        method = reader["Method"]?.ToString() ?? "N/A",
+                                        amount = Convert.ToDecimal(reader["Amount"]),
+                                        status = reader["Status"].ToString(),
+                                        source = source,
+                                        additionalDetails = additionalDetails
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+            
         // ============== MY BALANCE ==============
         public async Task<IActionResult> MyBalance()
         {
