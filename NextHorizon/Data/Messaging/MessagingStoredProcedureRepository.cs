@@ -46,7 +46,12 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
             return summary ?? throw new InvalidOperationException("Conversation was created but could not be reloaded.");
         }, cancellationToken);
 
-    public Task<PagedResult<MessageConversationSummary>> ListByActorAsync(MessageActorContext actor, int pageNumber, int pageSize, CancellationToken cancellationToken)
+    public Task<PagedResult<MessageConversationSummary>> ListByActorAsync(
+        MessageActorContext actor,
+        ConversationActorScope scope,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken)
         => WithOpenConnectionAsync(async connection =>
         {
             await using var command = connection.CreateCommand();
@@ -71,8 +76,23 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                             ELSE CAST(0 AS TINYINT)
                         END AS ActorSide
                     FROM dbo.MessagingConversations c
-                    WHERE (@ActorConsumerID IS NOT NULL AND c.BuyerUserId = @ActorConsumerID)
-                       OR (@ActorSellerID IS NOT NULL AND c.SellerUserId = @ActorSellerID)
+                    WHERE (
+                            @ActorScope = 2
+                            AND @ActorSellerID IS NOT NULL
+                            AND c.SellerUserId = @ActorSellerID
+                        )
+                       OR (
+                            @ActorScope = 1
+                            AND @ActorConsumerID IS NOT NULL
+                            AND c.BuyerUserId = @ActorConsumerID
+                        )
+                       OR (
+                            @ActorScope = 0
+                            AND (
+                                    (@ActorConsumerID IS NOT NULL AND c.BuyerUserId = @ActorConsumerID)
+                                 OR (@ActorSellerID IS NOT NULL AND c.SellerUserId = @ActorSellerID)
+                            )
+                        )
                 )
                 SELECT
                     b.ConversationId AS ConversationID,
@@ -125,8 +145,23 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                 (
                     SELECT c.ConversationId
                     FROM dbo.MessagingConversations c
-                    WHERE (@ActorConsumerID IS NOT NULL AND c.BuyerUserId = @ActorConsumerID)
-                       OR (@ActorSellerID IS NOT NULL AND c.SellerUserId = @ActorSellerID)
+                    WHERE (
+                            @ActorScope = 2
+                            AND @ActorSellerID IS NOT NULL
+                            AND c.SellerUserId = @ActorSellerID
+                        )
+                       OR (
+                            @ActorScope = 1
+                            AND @ActorConsumerID IS NOT NULL
+                            AND c.BuyerUserId = @ActorConsumerID
+                        )
+                       OR (
+                            @ActorScope = 0
+                            AND (
+                                    (@ActorConsumerID IS NOT NULL AND c.BuyerUserId = @ActorConsumerID)
+                                 OR (@ActorSellerID IS NOT NULL AND c.SellerUserId = @ActorSellerID)
+                            )
+                        )
                 )
                 SELECT COUNT(1) AS TotalCount
                 FROM Base;
@@ -134,6 +169,7 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
             command.CommandType = CommandType.Text;
 
             AddActorParameters(command, actor);
+            AddParameter(command, "@ActorScope", (int)scope, DbType.Int32);
             AddParameter(command, "@Page", pageNumber, DbType.Int32);
             AddParameter(command, "@PageSize", pageSize, DbType.Int32);
 
@@ -158,6 +194,82 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                 TotalCount = totalCount,
                 Items = items,
             };
+        }, cancellationToken);
+
+    public Task<MessageConversationSummary?> FindConversationAsync(
+        MessageActorContext actor,
+        ConversationContextType contextType,
+        int? sellerId,
+        int? orderId,
+        CancellationToken cancellationToken)
+        => WithOpenConnectionAsync(async connection =>
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText =
+                """
+                SELECT TOP (1)
+                    c.ConversationId AS ConversationID,
+                    c.BuyerUserId AS BuyerUserID,
+                    c.SellerUserId AS SellerUserID,
+                    c.ContextType AS ContextType,
+                    c.OrderId AS OrderID,
+                    c.LastMessageAt AS LastMessageAt,
+                    c.BuyerLastReadAt AS BuyerLastReadAt,
+                    c.SellerLastReadAt AS SellerLastReadAt,
+                    CASE
+                        WHEN lm.MessageId IS NULL THEN NULL
+                        WHEN lm.IsDeleted = 1 THEN N'[deleted]'
+                        WHEN LEN(lm.Body) > 120 THEN LEFT(lm.Body, 117) + N'...'
+                        ELSE lm.Body
+                    END AS LastMessagePreview,
+                    (
+                        SELECT COUNT(1)
+                        FROM dbo.MessagingMessages m
+                        WHERE m.ConversationId = c.ConversationId
+                          AND m.IsDeleted = 0
+                          AND m.SenderUserId <> @ActorUserID
+                          AND m.SentAt > COALESCE(
+                                CASE
+                                    WHEN @ActorConsumerID IS NOT NULL AND c.BuyerUserId = @ActorConsumerID THEN c.BuyerLastReadAt
+                                    WHEN @ActorSellerID IS NOT NULL AND c.SellerUserId = @ActorSellerID THEN c.SellerLastReadAt
+                                    ELSE NULL
+                                END,
+                                CONVERT(DATETIME2, '1900-01-01')
+                          )
+                    ) AS UnreadCount,
+                    c.CreatedAt AS CreatedAt,
+                    c.UpdatedAt AS UpdatedAt
+                FROM dbo.MessagingConversations c
+                OUTER APPLY
+                (
+                    SELECT TOP (1)
+                        m.MessageId,
+                        m.Body,
+                        m.IsDeleted
+                    FROM dbo.MessagingMessages m
+                    WHERE m.ConversationId = c.ConversationId
+                    ORDER BY m.SentAt DESC, m.MessageId DESC
+                ) lm
+                WHERE c.ContextType = @ContextType
+                  AND (
+                        (@ActorConsumerID IS NOT NULL AND c.BuyerUserId = @ActorConsumerID)
+                     OR (@ActorSellerID IS NOT NULL AND c.SellerUserId = @ActorSellerID)
+                  )
+                  AND (@SellerID IS NULL OR c.SellerUserId = @SellerID)
+                  AND (
+                        (@ContextType = 1 AND c.OrderId IS NULL)
+                     OR (@ContextType = 2 AND c.OrderId = @OrderID)
+                  )
+                ORDER BY c.ConversationId DESC;
+                """;
+            command.CommandType = CommandType.Text;
+
+            AddActorParameters(command, actor);
+            AddParameter(command, "@ContextType", (byte)contextType, DbType.Byte);
+            AddParameter(command, "@SellerID", sellerId, DbType.Int32);
+            AddParameter(command, "@OrderID", orderId, DbType.Int32);
+
+            return await ReadSingleConversationAsync(command, cancellationToken);
         }, cancellationToken);
 
     public Task<MessageConversationSummary?> GetConversationAsync(int conversationId, MessageActorContext actor, CancellationToken cancellationToken)
@@ -292,6 +404,9 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
             {
                 items.Add(MapMessage(reader));
             }
+
+            // SQL fetches newest-first for efficient paging; reverse here so chat threads render chronologically.
+            items.Reverse();
 
             return (IReadOnlyList<MessageItem>)items;
         }, cancellationToken);

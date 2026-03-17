@@ -9,7 +9,19 @@ public interface IMessagingRepository
 
     Task<MessageConversationSummary> CreateOrGetOrderAsync(int orderId, int buyerConsumerId, int sellerId, CancellationToken cancellationToken);
 
-    Task<PagedResult<MessageConversationSummary>> ListByActorAsync(MessageActorContext actor, int pageNumber, int pageSize, CancellationToken cancellationToken);
+    Task<PagedResult<MessageConversationSummary>> ListByActorAsync(
+        MessageActorContext actor,
+        ConversationActorScope scope,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken);
+
+    Task<MessageConversationSummary?> FindConversationAsync(
+        MessageActorContext actor,
+        ConversationContextType contextType,
+        int? sellerId,
+        int? orderId,
+        CancellationToken cancellationToken);
 
     Task<MessageConversationSummary?> GetConversationAsync(int conversationId, MessageActorContext actor, CancellationToken cancellationToken);
 
@@ -28,6 +40,13 @@ public sealed record MessageActorContext(
     int? SellerId)
 {
     public bool HasConversationRole => ConsumerId.HasValue || SellerId.HasValue;
+}
+
+public enum ConversationActorScope
+{
+    Any = 0,
+    Consumer = 1,
+    Seller = 2,
 }
 
 public sealed record MessageConversationSummary(

@@ -186,7 +186,8 @@
 }
 
 #main-header .notif-btn,
-#main-header .login-btn {
+#main-header .login-btn,
+#main-header .header-chat-btn {
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -203,11 +204,22 @@
 }
 
 #main-header .notif-btn:hover,
-#main-header .login-btn:hover {
+#main-header .login-btn:hover,
+#main-header .header-chat-btn:hover {
     background: #111827;
     border-color: #111827;
     color: #ffffff;
     transform: translateY(-1px);
+}
+
+#main-header .header-chat-btn {
+    text-decoration: none;
+}
+
+#main-header .header-chat-btn.active {
+    background: #111827;
+    border-color: #111827;
+    color: #ffffff;
 }
 
 #main-header .notif-dot {
@@ -371,6 +383,47 @@
     color: #111827;
 }
 
+body.consumer-messenger-layout #main-header.consumer-messenger-topbar {
+    position: relative;
+    top: auto;
+    background: #ffffff;
+    border-bottom: 1px solid var(--header-border);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+body.consumer-messenger-layout .consumer-messenger-header-shell {
+    max-width: none;
+    padding: 0;
+}
+
+body.consumer-messenger-layout .consumer-messenger-header-content {
+    min-height: 74px;
+    display: grid;
+    grid-template-columns: 232px 1fr;
+    align-items: center;
+}
+
+body.consumer-messenger-layout .consumer-messenger-header-content .logo {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 74px;
+    padding: 0 28px;
+    border-right: 1px solid var(--header-border);
+}
+
+body.consumer-messenger-layout .consumer-messenger-layout-title {
+    margin: 0;
+    padding: 0 28px;
+    color: #0f172a;
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
 @media (max-width: 900px) {
     .site-header-shell {
         padding: 0 16px;
@@ -389,6 +442,18 @@
     #main-header .notif-dropdown {
         right: -12px;
         width: min(320px, calc(100vw - 32px));
+    }
+
+    body.consumer-messenger-layout .consumer-messenger-header-content {
+        grid-template-columns: 188px 1fr;
+    }
+
+    body.consumer-messenger-layout .consumer-messenger-header-content .logo {
+        padding: 0 20px;
+    }
+
+    body.consumer-messenger-layout .consumer-messenger-layout-title {
+        padding: 0 24px;
     }
 }
 
@@ -417,5 +482,24 @@
 
     #main-header .dev-messaging-btn {
         display: none;
+    }
+
+    body.consumer-messenger-layout .consumer-messenger-header-content {
+        grid-template-columns: 112px 1fr;
+        min-height: 68px;
+    }
+
+    body.consumer-messenger-layout .consumer-messenger-header-content .logo {
+        min-height: 68px;
+        padding: 0 16px;
+    }
+
+    body.consumer-messenger-layout .consumer-messenger-layout-title {
+        padding: 0 20px;
+        font-size: 17px;
+    }
+
+    body.consumer-messenger-layout #main-header .header-logo-img {
+        height: 24px;
     }
 }

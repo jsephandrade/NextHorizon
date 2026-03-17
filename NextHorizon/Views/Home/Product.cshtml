@@ -1150,6 +1150,7 @@ function renderSellerProfile(seller) {
     section.style.display = 'block';
 
     const shopUrl = `/Home/SellerShop?id=${seller.id}`;
+    const messengerUrl = `/consumer/messenger/?sellerId=${seller.id}`;
 
     document.getElementById('pd-seller-avatar').src = seller.avatar;
     document.getElementById('pd-seller-avatar').alt = seller.shopName;
@@ -1172,6 +1173,8 @@ function renderSellerProfile(seller) {
         sellerName: seller.shopName,
         sellerAvatarUrl: seller.avatar
     });
+    window.productConsumerMessengerUrl = messengerUrl;
+    window.setConsumerMessengerHeaderLink?.(messengerUrl);
 }
 
 function formatCount(n) {

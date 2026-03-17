@@ -43,6 +43,14 @@ public class ApplicationDbContext : DbContext
         consumer.Property(x => x.UserId)
             .HasColumnName("user_id")
             .IsRequired();
+        consumer.Property(x => x.FirstName)
+            .HasColumnName("first_name");
+        consumer.Property(x => x.MiddleName)
+            .HasColumnName("middle_name");
+        consumer.Property(x => x.LastName)
+            .HasColumnName("last_name");
+        consumer.Property(x => x.Username)
+            .HasColumnName("username");
 
         var seller = builder.Entity<SellerRef>();
         seller.ToTable("Sellers", "dbo", table => table.ExcludeFromMigrations());
@@ -57,16 +65,25 @@ public class ApplicationDbContext : DbContext
         var customer = builder.Entity<Customer>();
         customer.ToTable("Customers", "dbo", table => table.ExcludeFromMigrations());
         customer.HasKey(x => x.Id);
+        customer.Property(x => x.ConsumerId);
         customer.Property(x => x.FullName)
             .HasMaxLength(200)
             .IsRequired();
         customer.Property(x => x.Email)
             .HasMaxLength(320)
             .IsRequired();
+        customer.HasIndex(x => x.ConsumerId)
+            .IsUnique()
+            .HasFilter("[ConsumerId] IS NOT NULL");
         customer.HasIndex(x => x.Email)
             .IsUnique();
         customer.Property(x => x.CreatedUtc)
             .HasDefaultValueSql("SYSUTCDATETIME()");
+        customer.HasOne<ConsumerRef>()
+            .WithMany()
+            .HasForeignKey(x => x.ConsumerId)
+            .HasPrincipalKey(x => x.ConsumerId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         var upload = builder.Entity<MemberUpload>();
 

@@ -319,6 +319,29 @@
       }
     }
 
+    function applyConversationMeta(payload) {
+      if (!payload) return;
+
+      const currentUserId = String(payload.currentUserId || payload.CurrentUserId || '');
+      if (currentUserId) {
+        state.currentUserId = currentUserId;
+      }
+
+      const counterpartyRole = String(payload.counterpartyRole || payload.CounterpartyRole || '').toLowerCase();
+      const displayName = String(payload.displayName || payload.DisplayName || '').trim();
+      const avatarUrl = String(payload.avatarUrl || payload.AvatarUrl || '').trim();
+
+      if (counterpartyRole === 'seller' && displayName) {
+        state.sellerName = displayName;
+      }
+
+      if (counterpartyRole === 'seller' && avatarUrl) {
+        state.sellerAvatarUrl = avatarUrl;
+      }
+
+      updateHeader();
+    }
+
     function renderEmpty(message) {
       const threadNode = thread();
       if (!threadNode) return;
@@ -390,13 +413,39 @@
       });
 
       const conversationId = Number.parseInt(String(payload.conversationId || payload.ConversationId), 10);
-      const currentUserId = String(payload.currentUserId || payload.CurrentUserId || '');
-      if (!Number.isInteger(conversationId) || conversationId <= 0 || !currentUserId) {
+      if (!Number.isInteger(conversationId) || conversationId <= 0) {
         throw new Error(DEFAULT_ERROR);
       }
 
+      applyConversationMeta(payload);
       state.conversationId = conversationId;
-      state.currentUserId = currentUserId;
+      return conversationId;
+    }
+
+    async function resolveConversation() {
+      if (!state.sellerUserId) throw new Error('Chat is not ready for this seller yet.');
+
+      const query = new URLSearchParams();
+      query.set('contextType', config.contextType || 'general');
+      query.set('sellerUserId', state.sellerUserId);
+      if (config.orderId) {
+        query.set('orderId', String(config.orderId));
+      }
+
+      const payload = await request('/api/messages/conversations/resolve?' + query.toString());
+      if (!payload) {
+        state.conversationId = null;
+        return null;
+      }
+
+      const conversationId = Number.parseInt(String(payload.conversationId || payload.ConversationId), 10);
+      if (!Number.isInteger(conversationId) || conversationId <= 0) {
+        state.conversationId = null;
+        return null;
+      }
+
+      applyConversationMeta(payload);
+      state.conversationId = conversationId;
       return conversationId;
     }
 
@@ -419,7 +468,13 @@
       renderMessages();
 
       try {
-        const conversationId = await ensureConversation();
+        const conversationId = await resolveConversation();
+        if (!conversationId) {
+          state.messages = [];
+          setComposer(true, 'Type a message...');
+          return;
+        }
+
         const payload = await request('/api/messages/conversations/' + conversationId + '/messages?pageSize=100');
         state.messages = normalizeMessages(payload);
         setComposer(true, 'Type a message...');

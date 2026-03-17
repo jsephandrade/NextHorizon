@@ -28,9 +28,25 @@ namespace NextHorizon.Migrations
                         .HasColumnType("int")
                         .HasColumnName("consumer_id");
 
+                    b.Property<string>("FirstName")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("first_name");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("last_name");
+
+                    b.Property<string>("MiddleName")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("middle_name");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int")
                         .HasColumnName("user_id");
+
+                    b.Property<string>("Username")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("username");
 
                     b.HasKey("ConsumerId");
 
@@ -190,6 +206,9 @@ namespace NextHorizon.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("ConsumerId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedUtc")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
@@ -206,6 +225,10 @@ namespace NextHorizon.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ConsumerId")
+                        .IsUnique()
+                        .HasFilter("[ConsumerId] IS NOT NULL");
 
                     b.HasIndex("Email")
                         .IsUnique();
@@ -277,6 +300,14 @@ namespace NextHorizon.Migrations
                         .IsDescending(false, true);
 
                     b.ToTable("MemberUploads", (string)null);
+                });
+
+            modelBuilder.Entity("NextHorizon.Models.Customer", b =>
+                {
+                    b.HasOne("NextHorizon.Data.ConsumerRef", null)
+                        .WithMany()
+                        .HasForeignKey("ConsumerId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("NextHorizon.Messaging.Models.ConversationMessage", b =>

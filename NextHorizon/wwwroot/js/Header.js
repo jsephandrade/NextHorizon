@@ -16,6 +16,10 @@ function getProfileElements() {
   };
 }
 
+function getConsumerMessengerLink() {
+  return document.getElementById('header-consumer-messenger-link');
+}
+
 function closeNotifDropdown() {
   const { dropdown } = getNotifElements();
   dropdown?.classList.remove('open');
@@ -85,3 +89,12 @@ document.addEventListener('click', function (event) {
     closeProfileDropdown();
   }
 });
+
+window.setConsumerMessengerHeaderLink = function (url) {
+  const link = getConsumerMessengerLink();
+  if (!link || typeof url !== 'string' || !url.trim()) {
+    return;
+  }
+
+  link.setAttribute('href', url);
+};

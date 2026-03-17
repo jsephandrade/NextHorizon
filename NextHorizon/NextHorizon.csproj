@@ -16,4 +16,18 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Remove="Views\Dashboard\**\*.cshtml" />
+    <Content Remove="Views\Home\MyPurchases.cshtml" />
+    <Content Remove="Views\Home\PaymentMethods.cshtml" />
+    <Content Remove="Views\Home\ViewPurchaseHistory.cshtml" />
+    <Content Remove="Views\Seller\SellerDashboard.cshtml" />
+
+    <RazorGenerate Remove="Views\Dashboard\**\*.cshtml" />
+    <RazorGenerate Remove="Views\Home\MyPurchases.cshtml" />
+    <RazorGenerate Remove="Views\Home\PaymentMethods.cshtml" />
+    <RazorGenerate Remove="Views\Home\ViewPurchaseHistory.cshtml" />
+    <RazorGenerate Remove="Views\Seller\SellerDashboard.cshtml" />
+  </ItemGroup>
+
 </Project>

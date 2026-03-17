@@ -39,6 +39,8 @@ namespace NextHorizon.Controllers
         public IActionResult Product(int id)
         {
             ViewData["ProductId"] = id;
+            ViewData["ShowConsumerMessengerLink"] = true;
+            ViewData["ConsumerMessengerHref"] = "/consumer/messenger/";
             return View();
         }
 
@@ -46,6 +48,22 @@ namespace NextHorizon.Controllers
         public IActionResult SellerShop(int id)
         {
             ViewData["SellerId"] = id;
+            ViewData["ShowConsumerMessengerLink"] = true;
+            ViewData["ConsumerMessengerHref"] = $"/consumer/messenger/?sellerId={id}";
+            return View();
+        }
+
+        [HttpGet("/consumer/messenger/")]
+        public IActionResult ConsumerMessenger(int? sellerId, int? conversationId, int? orderId)
+        {
+            ViewData["SellerId"] = sellerId;
+            ViewData["ConversationId"] = conversationId;
+            ViewData["OrderId"] = orderId;
+            ViewData["ShowConsumerMessengerLink"] = true;
+            ViewData["ConsumerMessengerHref"] = sellerId.HasValue
+                ? $"/consumer/messenger/?sellerId={sellerId.Value}"
+                : "/consumer/messenger/";
+            ViewData["HideFooter"] = true;
             return View();
         }
 

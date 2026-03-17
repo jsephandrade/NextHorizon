@@ -3,7 +3,9 @@ namespace NextHorizon.Security;
 public sealed record AuthenticatedUserContext(
     int UserId,
     int? ConsumerId,
-    int? SellerId)
+    int? ConsumerAccountUserId,
+    int? SellerId,
+    int? SellerAccountUserId)
 {
     public bool HasConsumerRole => ConsumerId.HasValue;
 

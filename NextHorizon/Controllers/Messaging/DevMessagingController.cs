@@ -151,7 +151,12 @@ public sealed class DevMessagingController : ControllerBase
         var normalizedPage = Math.Max(1, page);
         var normalizedPageSize = Math.Clamp(pageSize, 1, MaxPageSize);
 
-        var paged = await _messagingRepository.ListByActorAsync(ToMessageActor(actor), normalizedPage, normalizedPageSize, cancellationToken);
+        var paged = await _messagingRepository.ListByActorAsync(
+            ToMessageActor(actor),
+            ConversationActorScope.Any,
+            normalizedPage,
+            normalizedPageSize,
+            cancellationToken);
 
         return Ok(new PagedResult<ConversationDto>
         {

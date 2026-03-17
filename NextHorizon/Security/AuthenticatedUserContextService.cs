@@ -6,11 +6,15 @@ namespace NextHorizon.Security;
 
 public sealed class AuthenticatedUserContextService : IAuthenticatedUserContextService
 {
-    private readonly ApplicationDbContext _dbContext;
+    private const int DevelopmentFallbackSellerId = 1;
 
-    public AuthenticatedUserContextService(ApplicationDbContext dbContext)
+    private readonly ApplicationDbContext _dbContext;
+    private readonly IWebHostEnvironment _webHostEnvironment;
+
+    public AuthenticatedUserContextService(ApplicationDbContext dbContext, IWebHostEnvironment webHostEnvironment)
     {
         _dbContext = dbContext;
+        _webHostEnvironment = webHostEnvironment;
     }
 
     public Task<AuthenticatedUserContext?> GetCurrentAsync(ClaimsPrincipal principal, CancellationToken cancellationToken)
@@ -40,19 +44,42 @@ public sealed class AuthenticatedUserContextService : IAuthenticatedUserContextS
             return null;
         }
 
-        var consumerId = await _dbContext.Set<ConsumerRef>()
+        var consumerRecord = await _dbContext.Set<ConsumerRef>()
             .AsNoTracking()
             .Where(consumer => consumer.UserId == userId)
-            .Select(consumer => (int?)consumer.ConsumerId)
+            .Select(consumer => new
+            {
+                ConsumerId = (int?)consumer.ConsumerId,
+                ConsumerAccountUserId = (int?)consumer.UserId,
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
-        var sellerId = await _dbContext.Set<SellerRef>()
+        var sellerRecord = await _dbContext.Set<SellerRef>()
             .AsNoTracking()
             .Where(seller => seller.UserId == userId)
-            .Select(seller => (int?)seller.SellerId)
+            .Select(seller => new
+            {
+                SellerId = (int?)seller.SellerId,
+                SellerAccountUserId = (int?)seller.UserId,
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
-        return new AuthenticatedUserContext(userId, consumerId, sellerId);
+        var consumerId = consumerRecord?.ConsumerId;
+        var consumerAccountUserId = consumerRecord?.ConsumerAccountUserId;
+        var sellerId = sellerRecord?.SellerId;
+        var sellerAccountUserId = sellerRecord?.SellerAccountUserId;
+
+        if (!sellerId.HasValue && _webHostEnvironment.IsDevelopment())
+        {
+            sellerId = DevelopmentFallbackSellerId;
+            sellerAccountUserId = await _dbContext.Set<SellerRef>()
+                .AsNoTracking()
+                .Where(seller => seller.SellerId == sellerId.Value)
+                .Select(seller => (int?)seller.UserId)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        return new AuthenticatedUserContext(userId, consumerId, consumerAccountUserId, sellerId, sellerAccountUserId);
     }
 }
 

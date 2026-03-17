@@ -198,6 +198,7 @@ function renderSellerShop(seller, products) {
     document.getElementById('seller-shop-loading').style.display = 'none';
     document.getElementById('seller-shop-content').style.display = 'block';
     document.title = `${seller.shopName} - NEXT HORIZON`;
+    const messengerUrl = `/consumer/messenger/?sellerId=${seller.id}`;
 
     // Promo banner
     document.getElementById('seller-promo-img').src = seller.coverImage;
@@ -215,6 +216,8 @@ function renderSellerShop(seller, products) {
         sellerName: seller.shopName,
         sellerAvatarUrl: seller.avatar
     });
+    window.sellerShopMessengerUrl = messengerUrl;
+    window.setConsumerMessengerHeaderLink?.(messengerUrl);
 
     // Stats
     document.getElementById('ss-products-count').textContent = seller.totalProducts;
@@ -282,144 +285,6 @@ function getShopStars(rating) {
     return html;
 }
 
-let currentSeller = null;
-let sellerChatHistory = [];
-function openSellerChat() {
-
-    const modal = document.getElementById('seller-chat-modal');
-    modal.classList.add('active');
-
-    document.getElementById('seller-chat-avatar').src =
-        document.getElementById('seller-shop-avatar').src;
-
-    document.getElementById('seller-chat-name').textContent =
-        document.getElementById('seller-shop-name').textContent;
-
-    renderChatHistory();
-    loadSellerMessages();
-}
-
-function closeSellerChat() {
-    document.getElementById('seller-chat-modal').classList.remove('active');
-}
-
-async function loadSellerMessages() {
-
-    if (sellerChatHistory.length > 0) return;
-
-    const quickMessages = [
-        "Is this item available?",
-        "What sizes are available?",
-        "How long is the delivery?",
-        "Can I see more photos?",
-        "Is there a discount?"
-    ];
-
-    const loadingMessages = [
-        "Seller is preparing a reply...",
-        "Checking product availability...",
-        "Looking for the best answer for you...",
-        "Please wait while we contact the seller...",
-        "Good things take time... the seller will reply soon!"
-    ];
-
-    const container = document.getElementById("seller-chat-messages");
-
-    // QUICK MESSAGE SUGGESTIONS
-    const suggestionBox = document.createElement("div");
-    suggestionBox.classList.add("quick-message-container");
-
-    quickMessages.forEach(msg => {
-
-        const btn = document.createElement("button");
-        btn.classList.add("quick-message-btn");
-        btn.innerText = msg;
-
-        btn.onclick = () => {
-
-            appendMessage("buyer", msg);
-            suggestionBox.remove();
-
-            showLoadingMessage(); // show entertaining loading message
-        };
-
-        suggestionBox.appendChild(btn);
-    });
-
-    container.appendChild(suggestionBox);
-
-
-    // LOADING MESSAGE FUNCTION
-    function showLoadingMessage() {
-
-        const loadingDiv = document.createElement("div");
-        loadingDiv.classList.add("seller-loading-message");
-
-        let index = 0;
-        loadingDiv.innerText = loadingMessages[index];
-
-        container.appendChild(loadingDiv);
-
-        const interval = setInterval(() => {
-            index = (index + 1) % loadingMessages.length;
-            loadingDiv.innerText = loadingMessages[index];
-        }, 2000);
-
-        // remove loading after 6 seconds (simulate seller reply)
-        setTimeout(() => {
-            clearInterval(interval);
-            loadingDiv.remove();
-        }, 6000);
-    }
-}
-
-function sendSellerMessage() {
-    const input = document.getElementById('seller-chat-text');
-    const message = input.value.trim();
-    if (!message) return;
-
-    appendMessage('buyer', message);
-    input.value = '';
-
-    // TODO: Send to backend
-}
-
-function appendMessage(sender, text) {
-
-    // save message to history
-    sellerChatHistory.push({ sender, text });
-
-    const container = document.getElementById('seller-chat-messages');
-
-    const msg = document.createElement('div');
-    msg.classList.add('seller-chat-message', sender);
-
-    msg.innerHTML = `<div class="bubble">${text}</div>`;
-
-    container.appendChild(msg);
-
-    container.scrollTop = container.scrollHeight;
-}
-    
-function renderChatHistory(){
-
-    const container = document.getElementById('seller-chat-messages');
-
-    container.innerHTML = '';
-
-    sellerChatHistory.forEach(m => {
-
-        const msg = document.createElement('div');
-        msg.classList.add('seller-chat-message', m.sender);
-
-        msg.innerHTML = `<div class="bubble">${m.text}</div>`;
-
-        container.appendChild(msg);
-    });
-
-    container.scrollTop = container.scrollHeight;
-}
-
 let isFollowing = false;
 function toggleFollow() {
     isFollowing = !isFollowing;
@@ -436,72 +301,6 @@ function toggleFollow() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
             Follow`;
         if (typeof toast !== 'undefined') toast.info('Unfollowed this shop');
-    }
-}
-
-function sellerShopChat() {
-    openSellerChat();
-}
-
-let chatHeads = [];
-
-function minimizeSellerChat(){
-
-    const modal = document.getElementById('seller-chat-modal');
-    modal.classList.remove('active');
-
-    const sellerName =
-        document.getElementById('seller-shop-name').textContent;
-
-    addSellerChatHead(sellerName);
-}
-
-const MAX_CHAT_HEADS = 5;
-function addSellerChatHead(name){
-
-    const container = document.getElementById('seller-chat-head-container');
-
-    // prevent duplicate chat heads for the same seller
-    const exists = chatHeads.some(h => h.dataset.name === name);
-    if (exists) return;
-
-    // limit total chat heads
-    if (chatHeads.length >= MAX_CHAT_HEADS) return;
-
-    const head = document.createElement('div');
-    head.className = 'seller-chat-head';
-    head.dataset.name = name;
-
-    head.textContent = name.charAt(0).toUpperCase();
-
-    head.onclick = function(){
-
-        openSellerChat();
-
-        head.remove();
-
-        chatHeads = chatHeads.filter(h => h !== head);
-    };
-
-    container.appendChild(head);
-
-    chatHeads.push(head);
-}
-
-function increaseChatHeadBadge(head){
-
-    const badge = head.querySelector('.chat-head-badge');
-
-    if (!badge) return;
-
-    let count = parseInt(badge.textContent) || 0;
-
-    count++;
-
-    badge.textContent = count;
-
-    if (count > 99) {
-        badge.textContent = '99+';
     }
 }
 

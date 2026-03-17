@@ -235,7 +235,6 @@ C:\dev\NextHorizon\.codex_build_verify\NextHorizon\NextHorizon.deps.json
 C:\dev\NextHorizon\.codex_build_verify\NextHorizon\NextHorizon.runtimeconfig.json
 C:\dev\NextHorizon\.codex_build_verify\NextHorizon\NextHorizon.dll
 C:\dev\NextHorizon\.codex_build_verify\NextHorizon\NextHorizon.pdb
-C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\6rhzmbho1e-{0}-id069b9h8f-id069b9h8f.gz
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\klkpnq5tlx-{0}-r5lat5lsmy-r5lat5lsmy.gz
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\dm506cm1qk-{0}-icyvhvz3xp-icyvhvz3xp.gz
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\4esortlzx0-{0}-59ttoe7jh1-59ttoe7jh1.gz
@@ -250,7 +249,6 @@ C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\8g7r0plz2d-{0}-x5cua
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\2b5464szxy-{0}-ifzozs23zp-ifzozs23zp.gz
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\enqqa9c8uz-{0}-cis750xeus-cis750xeus.gz
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\bjxhm0fsb5-{0}-x4gh4taslk-x4gh4taslk.gz
-C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\r29687kjot-{0}-quytyxefzc-quytyxefzc.gz
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\cxg3994u99-{0}-6coorl2xpo-6coorl2xpo.gz
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\22nv2yg08w-{0}-lp60xlh2wz-lp60xlh2wz.gz
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\cis8im8uiv-{0}-jg19ba7rue-jg19ba7rue.gz
@@ -258,4 +256,10 @@ C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\gvx9fn01nj-{0}-t2b1v
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\9sazny50ku-{0}-oofdeu1tso-oofdeu1tso.gz
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\tso8lr2e5b-{0}-iofwc3wstc-iofwc3wstc.gz
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\tih97wwgbh-{0}-g2pljvxagy-g2pljvxagy.gz
-C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\c0bkvdevto-{0}-h11kog4ukv-h11kog4ukv.gz
+C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\c0bkvdevto-{0}-cxkb16n1b6-cxkb16n1b6.gz
+C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\vr5t3eztkj-{0}-xbdevwivad-xbdevwivad.gz
+C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\6rhzmbho1e-{0}-78zhvn6d2n-78zhvn6d2n.gz
+C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\3u1lb0na76-{0}-dgshhdsrbi-dgshhdsrbi.gz
+C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\7vtu0gxxse-{0}-1vtxhrrmrm-1vtxhrrmrm.gz
+C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\r29687kjot-{0}-eoz473phg4-eoz473phg4.gz
+C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\vd9k4h4uq1-{0}-y7ccyts723-y7ccyts723.gz
