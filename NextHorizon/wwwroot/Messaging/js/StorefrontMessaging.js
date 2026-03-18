@@ -373,6 +373,19 @@
       threadNode.appendChild(wrap);
     }
 
+    function scrollThreadToLatest() {
+      const threadNode = thread();
+      if (!threadNode) return;
+
+      const alignToBottom = function () {
+        threadNode.scrollTop = threadNode.scrollHeight;
+      };
+
+      alignToBottom();
+      window.requestAnimationFrame(alignToBottom);
+      window.setTimeout(alignToBottom, 0);
+    }
+
     function renderMessages() {
       const threadNode = thread();
       if (!threadNode) return;
@@ -393,9 +406,14 @@
       }
 
       state.messages.forEach(function (message) {
-        threadNode.appendChild(renderBubble(message, state.currentUserId || ''));
+        const bubble = renderBubble(message, state.currentUserId || '');
+        bubble.querySelectorAll('img, video').forEach(function (media) {
+          const eventName = media.tagName === 'VIDEO' ? 'loadedmetadata' : 'load';
+          media.addEventListener(eventName, scrollThreadToLatest, { once: true });
+        });
+        threadNode.appendChild(bubble);
       });
-      threadNode.scrollTop = threadNode.scrollHeight;
+      scrollThreadToLatest();
     }
 
     async function ensureConversation() {

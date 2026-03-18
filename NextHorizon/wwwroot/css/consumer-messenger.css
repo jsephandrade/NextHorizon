@@ -1,7 +1,9 @@
 body.consumer-messenger-layout {
     background: #ffffff;
     margin: 0;
+    height: 100vh;
     min-height: 100vh;
+    max-height: 100vh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -19,7 +21,8 @@ body.consumer-messenger-layout footer {
 .consumer-messenger-shell {
     display: flex;
     flex-direction: column;
-    flex: 1;
+    flex: 1 1 auto;
+    height: 100%;
     min-height: 0;
     background: #ffffff;
     overflow: hidden;
@@ -27,11 +30,14 @@ body.consumer-messenger-layout footer {
 
 .consumer-messenger-page {
     flex: 1;
+    height: 100%;
     min-height: 0;
 }
 
 @media (max-width: 768px) {
     body.consumer-messenger-layout {
+        height: 100dvh;
         min-height: 100dvh;
+        max-height: 100dvh;
     }
 }

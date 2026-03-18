@@ -106,6 +106,7 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                     CASE
                         WHEN lm.MessageId IS NULL THEN NULL
                         WHEN lm.IsDeleted = 1 THEN N'[deleted]'
+                        WHEN NULLIF(LTRIM(RTRIM(lm.Body)), N'') IS NULL AND lm.AttachmentUrl IS NOT NULL THEN N'Attachment sent'
                         WHEN LEN(lm.Body) > 120 THEN LEFT(lm.Body, 117) + N'...'
                         ELSE lm.Body
                     END AS LastMessagePreview,
@@ -132,6 +133,7 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                     SELECT TOP (1)
                         m.MessageId,
                         m.Body,
+                        m.AttachmentUrl,
                         m.IsDeleted
                     FROM dbo.MessagingMessages m
                     WHERE m.ConversationId = b.ConversationId
@@ -219,6 +221,7 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                     CASE
                         WHEN lm.MessageId IS NULL THEN NULL
                         WHEN lm.IsDeleted = 1 THEN N'[deleted]'
+                        WHEN NULLIF(LTRIM(RTRIM(lm.Body)), N'') IS NULL AND lm.AttachmentUrl IS NOT NULL THEN N'Attachment sent'
                         WHEN LEN(lm.Body) > 120 THEN LEFT(lm.Body, 117) + N'...'
                         ELSE lm.Body
                     END AS LastMessagePreview,
@@ -245,6 +248,7 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                     SELECT TOP (1)
                         m.MessageId,
                         m.Body,
+                        m.AttachmentUrl,
                         m.IsDeleted
                     FROM dbo.MessagingMessages m
                     WHERE m.ConversationId = c.ConversationId
@@ -555,6 +559,7 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                 CASE
                     WHEN lm.MessageId IS NULL THEN NULL
                     WHEN lm.IsDeleted = 1 THEN N'[deleted]'
+                    WHEN NULLIF(LTRIM(RTRIM(lm.Body)), N'') IS NULL AND lm.AttachmentUrl IS NOT NULL THEN N'Attachment sent'
                     WHEN LEN(lm.Body) > 120 THEN LEFT(lm.Body, 117) + N'...'
                     ELSE lm.Body
                 END AS LastMessagePreview,
@@ -567,6 +572,7 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                 SELECT TOP (1)
                     m.MessageId,
                     m.Body,
+                    m.AttachmentUrl,
                     m.IsDeleted
                 FROM dbo.MessagingMessages m
                 WHERE m.ConversationId = c.ConversationId
@@ -601,6 +607,7 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                 CASE
                     WHEN lm.MessageId IS NULL THEN NULL
                     WHEN lm.IsDeleted = 1 THEN N'[deleted]'
+                    WHEN NULLIF(LTRIM(RTRIM(lm.Body)), N'') IS NULL AND lm.AttachmentUrl IS NOT NULL THEN N'Attachment sent'
                     WHEN LEN(lm.Body) > 120 THEN LEFT(lm.Body, 117) + N'...'
                     ELSE lm.Body
                 END AS LastMessagePreview,
@@ -627,6 +634,7 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                 SELECT TOP (1)
                     m.MessageId,
                     m.Body,
+                    m.AttachmentUrl,
                     m.IsDeleted
                 FROM dbo.MessagingMessages m
                 WHERE m.ConversationId = c.ConversationId

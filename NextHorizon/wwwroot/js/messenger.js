@@ -44,7 +44,9 @@
         messageRequestId: 0,
         imageViewer: null,
         selectedAttachment: null,
-        selectedAttachmentPreviewUrl: null
+        selectedAttachmentPreviewUrl: null,
+        videoFpsByUrl: {},
+        videoFpsPromises: {}
     };
 
     function messagingRole() {
@@ -301,6 +303,171 @@
         return link;
     }
 
+    function createAttachmentMeta(value) {
+        const meta = document.createElement("span");
+        meta.className = "attachment-meta";
+        meta.textContent = value;
+        return meta;
+    }
+
+    function formatFps(fps) {
+        if (!Number.isFinite(fps) || fps <= 0) {
+            return "";
+        }
+
+        const rounded = Math.round(fps * 100) / 100;
+        return rounded.toFixed(2).replace(/\.?0+$/, "") + " FPS";
+    }
+
+    function measureVideoFps(url) {
+        if (!url) {
+            return Promise.resolve(null);
+        }
+
+        if (Object.prototype.hasOwnProperty.call(state.videoFpsByUrl, url)) {
+            return Promise.resolve(state.videoFpsByUrl[url]);
+        }
+
+        if (state.videoFpsPromises[url]) {
+            return state.videoFpsPromises[url];
+        }
+
+        state.videoFpsPromises[url] = new Promise(function (resolve) {
+            const probe = document.createElement("video");
+            const sampleWindowSeconds = 1;
+            let frameCount = 0;
+            let startMediaTime = null;
+            let lastMediaTime = null;
+            let finished = false;
+            let timeoutHandle = 0;
+
+            function cleanup(result) {
+                if (finished) {
+                    return;
+                }
+
+                finished = true;
+                if (timeoutHandle) {
+                    window.clearTimeout(timeoutHandle);
+                }
+
+                probe.pause();
+                probe.removeAttribute("src");
+                probe.load();
+
+                if (probe.parentNode) {
+                    probe.parentNode.removeChild(probe);
+                }
+
+                state.videoFpsByUrl[url] = result;
+                delete state.videoFpsPromises[url];
+                resolve(result);
+            }
+
+            if (typeof probe.requestVideoFrameCallback !== "function") {
+                cleanup(null);
+                return;
+            }
+
+            probe.muted = true;
+            probe.defaultMuted = true;
+            probe.playsInline = true;
+            probe.preload = "auto";
+            probe.style.position = "fixed";
+            probe.style.left = "-9999px";
+            probe.style.top = "0";
+            probe.style.width = "1px";
+            probe.style.height = "1px";
+            probe.style.opacity = "0";
+            probe.style.pointerEvents = "none";
+            probe.src = url;
+
+            function onFrame(_, metadata) {
+                if (finished) {
+                    return;
+                }
+
+                const mediaTime = Number(metadata?.mediaTime);
+                if (!Number.isFinite(mediaTime)) {
+                    probe.requestVideoFrameCallback(onFrame);
+                    return;
+                }
+
+                if (startMediaTime === null) {
+                    startMediaTime = mediaTime;
+                }
+
+                lastMediaTime = mediaTime;
+                frameCount += 1;
+
+                if ((lastMediaTime - startMediaTime) >= sampleWindowSeconds && frameCount > 1) {
+                    const fps = (frameCount - 1) / (lastMediaTime - startMediaTime);
+                    cleanup(Number.isFinite(fps) && fps > 0 ? fps : null);
+                    return;
+                }
+
+                probe.requestVideoFrameCallback(onFrame);
+            }
+
+            probe.addEventListener("loadeddata", function () {
+                if (finished) {
+                    return;
+                }
+
+                probe.requestVideoFrameCallback(onFrame);
+
+                const playResult = probe.play();
+                if (playResult && typeof playResult.catch === "function") {
+                    playResult.catch(function () {
+                        cleanup(null);
+                    });
+                }
+            }, { once: true });
+
+            probe.addEventListener("error", function () {
+                cleanup(null);
+            }, { once: true });
+
+            timeoutHandle = window.setTimeout(function () {
+                cleanup(null);
+            }, 6000);
+
+            document.body.appendChild(probe);
+        });
+
+        return state.videoFpsPromises[url];
+    }
+
+    function hydrateVideoFps(url, label) {
+        if (!label || !url) {
+            return;
+        }
+
+        measureVideoFps(url).then(function (fps) {
+            if (!label.isConnected) {
+                return;
+            }
+
+            const value = formatFps(fps);
+            if (!value) {
+                label.remove();
+                return;
+            }
+
+            label.textContent = value;
+            label.hidden = false;
+            scrollMessagesToLatest();
+        });
+    }
+
+    function hasMessageText(message) {
+        return !message.isDeleted && Boolean((message.body || "").trim());
+    }
+
+    function isAttachmentOnlyMessage(message) {
+        return !message.isDeleted && Boolean(message.attachmentUrl) && !hasMessageText(message);
+    }
+
     function ensureImageViewer() {
         if (state.imageViewer) {
             return state.imageViewer;
@@ -459,8 +626,17 @@
             video.playsInline = true;
             video.src = message.attachmentUrl;
 
+            const metaRow = document.createElement("div");
+            metaRow.className = "attachment-meta-row";
+
+            const fpsLabel = createAttachmentMeta("");
+            fpsLabel.hidden = true;
+            metaRow.appendChild(fpsLabel);
+            metaRow.appendChild(createAttachmentLink(message.attachmentUrl, "Open video"));
+
             container.appendChild(video);
-            container.appendChild(createAttachmentLink(message.attachmentUrl, "Open video"));
+            container.appendChild(metaRow);
+            hydrateVideoFps(message.attachmentUrl, fpsLabel);
             return container;
         }
 
@@ -757,6 +933,21 @@
         elements.messages.appendChild(empty);
     }
 
+    function scrollMessagesToLatest() {
+        const container = elements.messages;
+        if (!container) {
+            return;
+        }
+
+        const alignToBottom = function () {
+            container.scrollTop = container.scrollHeight;
+        };
+
+        alignToBottom();
+        window.requestAnimationFrame(alignToBottom);
+        window.setTimeout(alignToBottom, 0);
+    }
+
     function renderMessages(messages) {
         elements.messages.innerHTML = "";
 
@@ -768,10 +959,17 @@
         messages.forEach(function (message) {
             const wrapper = document.createElement("div");
             const isSent = message.senderUserId === state.currentUserId;
+            const mediaOnly = isAttachmentOnlyMessage(message);
             wrapper.className = "message " + (isSent ? "sent" : "received");
+            if (mediaOnly) {
+                wrapper.classList.add("message--media-only");
+            }
 
             const content = document.createElement("div");
             content.className = "message-content";
+            if (mediaOnly) {
+                content.classList.add("message-content--media-only");
+            }
 
             if (message.isDeleted || message.body) {
                 const paragraph = document.createElement("p");
@@ -781,6 +979,10 @@
 
             const attachment = renderAttachmentPreview(message);
             if (attachment) {
+                attachment.querySelectorAll("img, video").forEach(function (media) {
+                    const eventName = media.tagName === "VIDEO" ? "loadedmetadata" : "load";
+                    media.addEventListener(eventName, scrollMessagesToLatest, { once: true });
+                });
                 content.appendChild(attachment);
             }
 
@@ -793,7 +995,7 @@
             elements.messages.appendChild(wrapper);
         });
 
-        elements.messages.scrollTop = elements.messages.scrollHeight;
+        scrollMessagesToLatest();
     }
 
     function renderConversationPlaceholder() {
@@ -979,6 +1181,8 @@
                     forceRender: activeConversationChanged || settings.forceMessageReload,
                     markAsRead: activeConversationChanged
                 });
+            } else {
+                scrollMessagesToLatest();
             }
 
             if (!settings.preserveStatus) {
@@ -1039,6 +1243,8 @@
             if (shouldRender) {
                 renderMessages(messages);
                 state.renderedConversationId = conversation.conversationId;
+            } else {
+                scrollMessagesToLatest();
             }
 
             const shouldMarkRead = conversation.unreadCount > 0
