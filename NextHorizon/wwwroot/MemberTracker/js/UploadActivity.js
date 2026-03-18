@@ -72,7 +72,7 @@
 
     async function readErrorMessage(response) {
         const contentType = response.headers.get("content-type") || "";
-        if (contentType.includes("application/json")) {
+        if (contentType.includes("json")) {
             const payload = await response.json().catch(() => null);
             const errors = payload?.errors;
             if (errors && typeof errors === "object") {
