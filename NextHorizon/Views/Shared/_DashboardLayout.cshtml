@@ -249,31 +249,73 @@
             position: relative;
             margin-right: 30px;
         }
+
+        /* Seller messenger route-specific layout */
+        body.seller-messenger-layout {
+            background-color: #ffffff;
+            overflow: hidden;
+        }
+
+        .seller-messenger-main {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            min-height: 0;
+            margin-top: 0;
+            background-color: #ffffff;
+            overflow: hidden;
+        }
+
+        .seller-messenger-topbar {
+            width: auto;
+            position: static;
+            top: auto;
+            flex-shrink: 0;
+        }
+
+        .seller-messenger-content {
+            flex: 1;
+            min-height: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        @@media (max-width: 768px) {
+            body.seller-messenger-layout {
+                overflow: auto;
+            }
+
+            .seller-messenger-main {
+                height: auto;
+                min-height: calc(100vh - 80px);
+            }
+        }
     </style>
 
     @RenderSection("Styles", required: false)
 </head>
-<body>
-    @{
-        var currentAction = (ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty).ToLowerInvariant();
-        var sellerName = ViewData["SellerName"]?.ToString() ?? "Seller";
-        var pageHeading = ViewData["DashboardHeading"]?.ToString() ?? ViewData["Title"]?.ToString() ?? "Dashboard";
-        var isMessenger = currentAction == "sellermessenger";
-        var isDashboard = currentAction == "sellerdashboard";
-        var isOrders = currentAction == "ordermanagement" || currentAction == "orderdetails";
-        var isFinance =
-        currentAction == "finance"
-        || currentAction == "transactionhistory"
-        || currentAction == "payoutaccounts"
-        || currentAction == "addpayoutaccount"
-        || currentAction == "withdraw"
-        || currentAction == "pendingpayout"
-        || currentAction == "mybalance";
-        var isAnalytics = currentAction == "analytics";
-    }
+@{
+    var currentAction = (ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty).ToLowerInvariant();
+    var sellerName = ViewData["SellerName"]?.ToString() ?? "Seller";
+    var pageHeading = ViewData["DashboardHeading"]?.ToString() ?? ViewData["Title"]?.ToString() ?? "Dashboard";
+    var isMessenger = currentAction == "sellermessenger";
+    var isDashboard = currentAction == "sellerdashboard";
+    var isOrders = currentAction == "ordermanagement" || currentAction == "orderdetails";
+    var isFinance =
+    currentAction == "finance"
+    || currentAction == "transactionhistory"
+    || currentAction == "payoutaccounts"
+    || currentAction == "addpayoutaccount"
+    || currentAction == "withdraw"
+    || currentAction == "pendingpayout"
+    || currentAction == "mybalance";
+    var isAnalytics = currentAction == "analytics";
+}
+<body class="@(isMessenger ? "seller-messenger-layout" : string.Empty)">
 
     <div class="dashboard-container @(isMessenger ? "seller-messenger-shell" : string.Empty)">
-        <aside class="sidebar">
+        <aside class="sidebar @(isMessenger ? "seller-messenger-sidebar" : string.Empty)">
             <div class="logo">
                 <img src="/images/new-logo.png" alt="Horizon" class="seller-logo-img" />
             </div>
@@ -330,7 +372,7 @@
                 </div>
             </header>
 
-            <div class="dashboard-content">
+            <div class="dashboard-content @(isMessenger ? "seller-messenger-content" : string.Empty)">
                 @RenderBody()
             </div>
         </main>
