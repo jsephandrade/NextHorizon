@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Mvc;
 using NextHorizon.Data;
 using NextHorizon.Models;
+using Microsoft.AspNetCore.Authentication;
+using System.Security.Claims;
+
 
 namespace NextHorizon.Controllers;
 
@@ -27,7 +30,7 @@ public class AccountController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Login(LoginViewModel model)
+    public async Task<IActionResult> Login(LoginViewModel model)
     {
         if (!ModelState.IsValid)
         {
@@ -79,7 +82,20 @@ public class AccountController : Controller
                 ModelState.AddModelError(string.Empty, "No seller account found for this user.");
                 return View(model);
             }
+                        var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Role, user.UserType)
+            };
+            var claimsIdentity = new ClaimsIdentity(claims, "Cookies");
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7)
+            };
 
+            await HttpContext.SignInAsync("Cookies", new ClaimsPrincipal(claimsIdentity), authProperties);
             HttpContext.Session.SetString("SellerEmail", seller.BusinessEmail ?? user.Email);
             HttpContext.Session.SetInt32("SellerId", seller.SellerId);
             HttpContext.Session.SetString("SellerName", seller.BusinessName ?? "Seller");

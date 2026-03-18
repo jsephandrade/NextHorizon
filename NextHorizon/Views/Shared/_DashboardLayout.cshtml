@@ -258,7 +258,7 @@
         var currentAction = (ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty).ToLowerInvariant();
         var sellerName = ViewData["SellerName"]?.ToString() ?? "Seller";
         var pageHeading = ViewData["DashboardHeading"]?.ToString() ?? ViewData["Title"]?.ToString() ?? "Dashboard";
-
+        var isMessenger = currentAction == "sellermessenger";
         var isDashboard = currentAction == "sellerdashboard";
         var isOrders = currentAction == "ordermanagement" || currentAction == "orderdetails";
         var isFinance =
@@ -272,7 +272,7 @@
         var isAnalytics = currentAction == "analytics";
     }
 
-    <div class="dashboard-container">
+    <div class="dashboard-container @(isMessenger ? "seller-messenger-shell" : string.Empty)">
         <aside class="sidebar">
             <div class="logo">
                 <img src="/images/new-logo.png" alt="Horizon" class="seller-logo-img" />
@@ -288,8 +288,8 @@
                     <li>
                         <a href="#"><i class="fas fa-box"></i> Products</a>
                     </li>
-                    <li>
-                        <a href="#"><i class="fas fa-envelope"></i> Message</a>
+                    <li class="@(isMessenger ? "active" : string.Empty)">
+                        <a asp-controller="Seller" asp-action="SellerMessenger"><i class="fas fa-envelope"></i> Message</a>
                     </li>
                     <li class="@(isFinance ? "active" : string.Empty)">
                         <a asp-controller="Dashboard" asp-action="Finance"><i class="fas fa-wallet"></i> Finances</a>
@@ -301,8 +301,8 @@
             </nav>
         </aside>
 
-        <main class="main-content">
-            <header class="top-header order-header">
+        <main class="main-content  @(isMessenger ? "seller-messenger-main" : string.Empty)">
+            <header class="top-header order-header @(isMessenger ? "seller-messenger-topbar" : string.Empty)">
                 <h2 class="section-title">@pageHeading</h2>
                 <div class="header-right">
                     <button class="icon-btn" type="button" aria-label="Notifications">
