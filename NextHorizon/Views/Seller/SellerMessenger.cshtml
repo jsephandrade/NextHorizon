@@ -12,6 +12,7 @@
     html,
     body {
         height: 100%;
+        font-family: 'Poppins', sans-serif;
     }
 
     .dashboard-content {
@@ -30,6 +31,269 @@
     .main-content {
         background: #f5f7fa;
     }
+
+    /* ================= Conversations Panel ================= */
+    .conversations-panel {
+        width: 320px;
+        border-right: 1px solid #e5e5e5;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        position: relative;
+    }
+
+    .search-conversations {
+        padding: 12px 16px;
+        border-bottom: 1px solid #e5e5e5;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #e5e5e5;
+        border-radius: 20px;
+        outline: none;
+        font-size: 13px;
+        transition: border-color 0.3s ease;
+    }
+
+    .search-input:focus {
+        border-color: #111;
+    }
+
+    .conversation-item {
+        display: flex;
+        gap: 12px;
+        padding: 12px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        border-left: 3px solid transparent;
+        align-items: center;
+    }
+
+    .avatar-placeholder {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #111;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    .conversation-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .conversation-name {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+
+    .last-message {
+        font-size: 12px;
+        color: #888;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .conversation-time {
+        font-size: 12px;
+        color: #aaa;
+        flex-shrink: 0;
+    }
+
+    /* ================= Chat Panel ================= */
+    .chat-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .chat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-bottom: 1px solid #e5e5e5;
+        flex-shrink: 0;
+    }
+
+    .chat-user-info {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .chat-avatar .avatar-placeholder {
+        width: 44px;
+        height: 44px;
+        font-size: 13px;
+    }
+
+    .chat-user-info h3 {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0 0 4px 0;
+        color: #111;
+    }
+
+    .status-online {
+        font-size: 12px;
+        color: #666;
+    }
+
+    /* ================= Help Center Button (matching help-center.css) ================= */
+    .chat-help-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        aspect-ratio: 1 / 1;
+        border-radius: 50%;
+        background: #111;
+        /* black like help-center */
+        color: #fff;
+        text-decoration: none;
+        font-size: 14px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+        transition: all 0.25s ease;
+        position: relative;
+    }
+
+    .chat-help-btn:hover {
+        transform: translateY(-2px);
+        background: #252525;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .chat-help-btn i {
+        pointer-events: none;
+    }
+
+    /* ================= Messages ================= */
+    .messages-container {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 0;
+        background: #f5f7fa;
+    }
+
+    .message {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 8px;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .message.sent {
+        align-items: flex-end;
+    }
+
+    .message.received {
+        align-items: flex-start;
+    }
+
+    .message-content {
+        max-width: 60%;
+        padding: 12px 16px;
+        border-radius: 12px;
+        word-wrap: break-word;
+    }
+
+    .message.sent .message-content {
+        background: #000;
+        color: #fff;
+        border-bottom-right-radius: 4px;
+    }
+
+    .message.received .message-content {
+        background: #f0f0f0;
+        color: #111;
+        border-bottom-left-radius: 4px;
+    }
+
+    .message-content p {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .message-time {
+        font-size: 12px;
+        color: #999;
+        margin-top: 4px;
+    }
+
+    .message.sent .message-time {
+        text-align: right;
+    }
+
+    /* ================= Input Area ================= */
+    .message-input-area {
+        display: flex;
+        gap: 10px;
+        padding: 15px 20px;
+        border-top: 1px solid #e5e5e5;
+        background: #fff;
+        flex-shrink: 0;
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+    }
+
+    .message-input {
+        flex: 1;
+        padding: 12px 16px;
+        border: 1px solid #e5e5e5;
+        border-radius: 24px;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.3s ease;
+    }
+
+    .message-input:focus {
+        border-color: #111;
+    }
+
+    .send-btn {
+        background: #111;
+        color: #fff;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.3s ease;
+    }
+
+    .send-btn:hover {
+        background: #333;
+        transform: scale(1.05);
+    }
+
+    .send-btn:active {
+        transform: scale(0.95);
+    }
 </style>
 
 <div class="messenger-container">
@@ -41,7 +305,6 @@
         </div>
 
         <div class="conversations-list">
-            <!-- Conversation Items -->
             <div class="conversation-item active">
                 <div class="conversation-avatar">
                     <div class="avatar-placeholder">JD</div>
@@ -63,20 +326,8 @@
                 </div>
                 <div class="conversation-time">1:15 PM</div>
             </div>
-
-            <div class="conversation-item">
-                <div class="conversation-avatar">
-                    <div class="avatar-placeholder">MC</div>
-                </div>
-                <div class="conversation-info">
-                    <div class="conversation-name">Mike Chen</div>
-                    <div class="last-message">Great product! When's the next batch?</div>
-                </div>
-                <div class="conversation-time">10:45 AM</div>
-            </div>
         </div>
 
-        <!-- No Results -->
         <div class="no-results">No conversations found</div>
     </aside>
 
@@ -92,33 +343,25 @@
                     <p class="status-online">Online</p>
                 </div>
             </div>
+            <!-- HELP CENTER BUTTON -->
+            <a asp-controller="Help" asp-action="Index" class="chat-help-btn" aria-label="Help Center"
+                   title="Help Center">
+                <i class="fas fa-question"></i>
+            </a>
         </div>
 
         <div class="messages-container">
             <div class="message received">
                 <div class="message-content">
                     <p>Hi! I have a question about the order</p>
-                </div><span class="message-time">10:30 AM</span>
+                </div>
+                <span class="message-time">10:30 AM</span>
             </div>
             <div class="message sent">
                 <div class="message-content">
                     <p>Sure! What can I help you with?</p>
-                </div><span class="message-time">10:32 AM</span>
-            </div>
-            <div class="message received">
-                <div class="message-content">
-                    <p>When will my order arrive?</p>
-                </div><span class="message-time">10:33 AM</span>
-            </div>
-            <div class="message sent">
-                <div class="message-content">
-                    <p>Your order is expected to arrive by Friday</p>
-                </div><span class="message-time">10:35 AM</span>
-            </div>
-            <div class="message received">
-                <div class="message-content">
-                    <p>Thanks for the quick response!</p>
-                </div><span class="message-time">10:36 AM</span>
+                </div>
+                <span class="message-time">10:32 AM</span>
             </div>
         </div>
 

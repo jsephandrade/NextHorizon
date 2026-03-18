@@ -83,13 +83,18 @@
     align-items: center;
 }
 
+/* ================= Sidebar Hover - Light Gray ================= */
 .conversation-item:hover {
-    background-color: #e8ecf1;
+    background-color: #f0f0f0; /* soft light gray for hover */
+    border-left-color: transparent; /* no border change on hover */
+    color: inherit; /* keep text color consistent */
 }
 
+/* Active conversation */
 .conversation-item.active {
-    background-color: #dde3ec;
-    border-left-color: var(--primary);
+    background-color: #dde3ec; /* slightly different to highlight active */
+    color: #111; /* dark text for active item */
+    border-left-color: var(--primary); /* left indicator */
 }
 
 .conversation-avatar {
@@ -177,11 +182,52 @@
     margin: 0 0 4px 0;
 }
 
-.status-online {
-    font-size: 12px;
-    color: #4CAF50;
-    margin: 0;
-    font-weight: 500;
+.chat-help-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 38px;
+    height: 38px;
+    aspect-ratio: 1 / 1;
+
+    border-radius: 50%;
+    background: #111;          /* same as help-center */
+    color: #fff;
+    text-decoration: none;
+
+    font-size: 14px;
+
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    transition: all 0.25s ease;
+    position: relative;
+}
+
+/* SAME HOVER FEEL */
+.chat-help-btn:hover {
+    transform: translateY(-2px);
+    background: #252525;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+/* OPTIONAL: subtle glow like help-center */
+.chat-help-btn::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.chat-help-btn:hover::after {
+    opacity: 1;
+}
+
+/* icon alignment */
+.chat-help-btn i {
+    pointer-events: none;
 }
 
 /* Messages Container */

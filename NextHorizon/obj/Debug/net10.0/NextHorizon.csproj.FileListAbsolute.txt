@@ -149,10 +149,8 @@ C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\rjsmcshtml.dsw
 C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\scopedcss\Views\Shared\_Layout.cshtml.rz.scp.css
 C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\scopedcss\bundle\NextHorizon.styles.css
 C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\scopedcss\projectbundle\NextHorizon.bundle.scp.css
-C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\3u1lb0na76-{0}-efkfa18t2k-efkfa18t2k.gz
 C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\7vtu0gxxse-{0}-998bl03cnk-998bl03cnk.gz
 C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\cxkgjsvw8i-{0}-b9sayid5wm-b9sayid5wm.gz
-C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\gvx9fn01nj-{0}-sw0ymidl5j-sw0ymidl5j.gz
 C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\d378fwkq1m-{0}-61n19gt1b8-61n19gt1b8.gz
 C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\vd9k4h4uq1-{0}-abvk5cq2qd-abvk5cq2qd.gz
 C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\q635eqxult-{0}-wpxl75rnnx-wpxl75rnnx.gz
@@ -228,3 +226,7 @@ C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\refint\NextHor
 C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\NextHorizon.pdb
 C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\NextHorizon.genruntimeconfig.cache
 C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\ref\NextHorizon.dll
+C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\gvx9fn01nj-{0}-ogux8vz36r-ogux8vz36r.gz
+C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\3u1lb0na76-{0}-ud68v3o9hl-ud68v3o9hl.gz
+C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\o6ptg4nado-{0}-gv26puo3jo-gv26puo3jo.gz
+C:\Users\Divine Quijano\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\1xgydqf2jd-{0}-2mq2s8jmke-2mq2s8jmke.gz

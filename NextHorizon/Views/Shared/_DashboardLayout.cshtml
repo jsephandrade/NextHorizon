@@ -8,283 +8,337 @@
     <!-- FONT & ICONS -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/help-center.css" asp-append-version="true" />
 
     <!-- EMBEDDED CSS -->
     <style>
-            /* ===== RESET & BASE ===== */
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-            body {
-                font-family: 'Poppins', sans-serif;
-                background-color: #f5f7fa;
-                color: #1a1a1a;
-            }
+                            /* ===== RESET & BASE ===== */
+                            * {
+                                margin: 0;
+                                padding: 0;
+                                box-sizing: border-box;
+                            }
 
-            /* ===== LAYOUT ===== */
-            .dashboard-container {
-                display: flex;
-                min-height: 100vh;
-            }
+                            body {
+                                font-family: 'Poppins', sans-serif;
+                                background-color: #f5f7fa;
+                                color: #1a1a1a;
+                            }
 
-            /* ===== SIDEBAR ===== */
-            .sidebar {
-                width: 260px;
-                background-color: #fff;
-                /* changed to white */
-                color: #1a1a1a;
-                /* black text */
-                padding: 20px 0;
-                position: fixed;
-                height: 100vh;
-                overflow-y: auto;
-                transition: all 0.3s ease;
-            }
-            .logo {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 10px;
-                padding: 0;
-                margin-bottom: 40px;
-                font-size: 24px;
-                font-weight: 700;
-            }
-            .logo i {
-                font-size: 28px;
-            }
+                            /* ===== LAYOUT ===== */
+                            .dashboard-container {
+                                display: flex;
+                                min-height: 100vh;
+                            }
 
-            .seller-logo-img {
-                height: 30px;
-                width: auto;
-                display: block;
-                object-fit: contain;
-            }
+                            /* ===== SIDEBAR ===== */
+                            .sidebar {
+                                width: 260px;
+                                background-color: #fff;
+                                /* changed to white */
+                                color: #1a1a1a;
+                                /* black text */
+                                padding: 20px 0;
+                                position: fixed;
+                                height: 100vh;
+                                overflow-y: auto;
+                                transition: all 0.3s ease;
+                            }
 
-            .sidebar-nav ul {
-                list-style: none;
-            }
+                            .logo {
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                gap: 10px;
+                                padding: 0;
+                                margin-bottom: 40px;
+                                font-size: 24px;
+                                font-weight: 700;
+                            }
 
-            .sidebar-nav li {
-                margin-bottom: 5px;
-            }
+                            .logo i {
+                                font-size: 28px;
+                            }
 
-            /* Sidebar links */
-            .sidebar-nav a {
-                display: flex;
-                align-items: center;
-                gap: 15px;
-                padding: 15px 25px;
-                color: #1a1a1a;
-                /* black text */
-                text-decoration: none;
-                transition: all 0.3s ease;
-                font-weight: 500;
-                border-radius: 8px;
-            }
+                            .seller-logo-img {
+                                height: 30px;
+                                width: auto;
+                                display: block;
+                                object-fit: contain;
+                            }
 
-            .sidebar-nav a i {
-                width: 20px;
-                text-align: center;
-            }
+                            .sidebar-nav ul {
+                                list-style: none;
+                            }
 
-            /* Hover effect: invert colors */
-            .sidebar-nav a:hover,
-            .sidebar-nav li.active a {
-                background-color: #1a1a1a;
-                /* black background on hover/active */
-                color: #fff;
-                /* white text and icons */
-            }
+                            .sidebar-nav li {
+                                margin-bottom: 5px;
+                            }
 
-            /* ===== MAIN CONTENT ===== */
-            .main-content {
-                flex: 1;
-                margin-left: 260px;
-                background-color: #f5f7fa;
-            }
+                            /* Sidebar links */
+                            .sidebar-nav a {
+                                display: flex;
+                                align-items: center;
+                                gap: 15px;
+                                padding: 15px 25px;
+                                color: #1a1a1a;
+                                /* black text */
+                                text-decoration: none;
+                                transition: all 0.3s ease;
+                                font-weight: 500;
+                                border-radius: 8px;
+                            }
 
-            /* ===== TOP HEADER ===== */
-            .top-header {
-                background-color: white;
-                padding: 20px 40px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                border-bottom: 1px solid #e1e4e8;
-                position: sticky;
-                top: 0;
-                z-index: 50;
-            }
-            .section-title {
-                font-size: 22px;
-                font-weight: 600;
-                color: #1a1a2e;
-            }
+                            .sidebar-nav a i {
+                                width: 20px;
+                                text-align: center;
+                            }
 
-            .header-right {
-                display: flex;
-                align-items: center;
-                gap: 20px;
-            }
+                            /* Hover effect: invert colors */
+                            .sidebar-nav a:hover,
+                            .sidebar-nav li.active a {
+                                background-color: #1a1a1a;
+                                /* black background on hover/active */
+                                color: #fff;
+                                /* white text and icons */
+                            }
 
-            .icon-btn {
-                background: none;
-                border: none;
-                font-size: 20px;
-                color: #666;
-                cursor: pointer;
-                padding: 8px;
-                border-radius: 8px;
-                transition: all 0.3s;
-            }
-            .icon-btn:hover {
-                background-color: #f0f0f0;
-                color: #1a1a1a;
-            }
+                            /* ===== MAIN CONTENT ===== */
+                            .main-content {
+                                flex: 1;
+                                margin-left: 260px;
+                                background-color: #f5f7fa;
+                            }
 
-            .seller-dropdown {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                padding: 8px 16px;
-                background-color: #f5f7fa;
-                border-radius: 8px;
-                cursor: pointer;
-                font-weight: 500;
-            }
-            .seller-dropdown i {
-                font-size: 12px;
-            }
+                            /* ===== TOP HEADER ===== */
+                            .top-header {
+                                background-color: white;
+                                padding: 20px 40px;
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: center;
+                                border-bottom: 1px solid #e1e4e8;
+                                position: sticky;
+                                top: 0;
+                                z-index: 50;
+                            }
 
-            /* ===== DASHBOARD CONTENT ===== */
-            .dashboard-content {
-                padding: 40px;
-                font-family: 'Poppins', sans-serif;
-            }
+                            .section-title {
+                                font-size: 22px;
+                                font-weight: 600;
+                                color: #1a1a2e;
+                            }
 
-            /* ===== CARDS / BOXES STYLE ===== */
-            .card {
-                background: #fff;
-                border-radius: 16px;
-                padding: 20px;
-                margin-bottom: 25px;
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-                transition: transform 0.3s ease, box-shadow 0.3s ease;
-            }
-            .card:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            }
+                            .header-right {
+                                display: flex;
+                                align-items: center;
+                                gap: 20px;
+                            }
 
-            /* ===== TABLE ===== */
-            table {
-                width: 100%;
-                border-collapse: separate;
-                border-spacing: 0;
-                font-family: 'Poppins', sans-serif;
-            }
-            thead {
-                background: #f1f1f1;
-            }
-            th,
-            td {
-                padding: 14px 16px;
-                text-align: left;
-                font-size: 14px;
-            }
-            th {
-                font-weight: 600;
-            }
-            tbody tr:hover {
-                background: #fafafa;
-            }
+                            .icon-btn {
+                                background: none;
+                                border: none;
+                                font-size: 20px;
+                                color: #666;
+                                cursor: pointer;
+                                padding: 8px;
+                                border-radius: 8px;
+                                transition: all 0.3s;
+                            }
 
-            /* ===== BADGES & BUTTONS ===== */
-            .badge {
-                background: #1a1a1a;
-                color: #fff;
-                padding: 6px 14px;
-                border-radius: 50px;
-                font-size: 12px;
-                font-weight: 600;
-            }
+                            .icon-btn:hover {
+                                background-color: #f0f0f0;
+                                color: #1a1a1a;
+                            }
 
-            .text-danger {
-                color: #dc3545;
-                text-decoration: none;
-                font-size: 13px;
-            }
-            .text-danger:hover {
-                text-decoration: underline;
-            }
-            .set-default {
-                color: #1a1a1a;
-                text-decoration: none;
-                font-size: 13px;
-                font-weight: 500;
-            }
-            .set-default:hover {
-                text-decoration: underline;
-            }
+                            .seller-dropdown {
+                                display: flex;
+                                align-items: center;
+                                gap: 8px;
+                                padding: 8px 16px;
+                                background-color: #f5f7fa;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                font-weight: 500;
+                            }
 
-            .add-btn {
-                border: 1px solid #1a1a1a;
-                background: #fff;
-                padding: 10px 18px;
-                border-radius: 50px;
-                cursor: pointer;
-                font-size: 14px;
-                font-weight: 600;
-                text-decoration: none;
-                transition: all 0.3s ease;
-            }
-            .add-btn:hover {
-                background: #1a1a1a;
-                color: #fff;
-            }
+                            .seller-dropdown i {
+                                font-size: 12px;
+                            }
 
-            /* ===== PAGE ACTIONS ===== */
-            .page-actions {
-                margin-bottom: 20px;
-                display: flex;
-                gap: 12px;
-            }
-            .link-btn {
-                display: inline-flex;
-                align-items: center;
-                gap: 8px;
-                border: 1px solid #1a1a1a;
-                color: #1a1a1a;
-                text-decoration: none;
-                padding: 10px 16px;
-                border-radius: 50px;
-                font-size: 14px;
-                font-weight: 600;
-                background: #fff;
-                transition: all 0.3s ease;
-            }
-            .link-btn:hover {
-                background: #1a1a1a;
-                color: #fff;
-            }
+                            /* ===== DASHBOARD CONTENT ===== */
+                            .dashboard-content {
+                                padding: 40px;
+                                font-family: 'Poppins', sans-serif;
+                            }
 
-            /* ===== RESPONSIVE ===== */
-            @@media (max-width: 768px) {
-                .sidebar {
-                    transform: translateX(-100%);
-                    transition: transform 0.3s;
-                }
-                .main-content {
-                    margin-left: 0;
-                }
+                            /* ===== CARDS / BOXES STYLE ===== */
+                            .card {
+                                background: #fff;
+                                border-radius: 16px;
+                                padding: 20px;
+                                margin-bottom: 25px;
+                                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+                                transition: transform 0.3s ease, box-shadow 0.3s ease;
+                            }
 
-                .dashboard-content {
-                    padding: 20px;
-                }
-            }
+                            .card:hover {
+                                transform: translateY(-5px);
+                                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+                            }
+
+                            /* ===== TABLE ===== */
+                            table {
+                                width: 100%;
+                                border-collapse: separate;
+                                border-spacing: 0;
+                                font-family: 'Poppins', sans-serif;
+                            }
+
+                            thead {
+                                background: #f1f1f1;
+                            }
+
+                            th,
+                            td {
+                                padding: 14px 16px;
+                                text-align: left;
+                                font-size: 14px;
+                            }
+
+                            th {
+                                font-weight: 600;
+                            }
+                            tbody tr:hover {
+                                background: #fafafa;
+                            }
+
+                            /* ===== BADGES & BUTTONS ===== */
+                            .badge {
+                                background: #1a1a1a;
+                                color: #fff;
+                                padding: 6px 14px;
+                                border-radius: 50px;
+                                font-size: 12px;
+                                font-weight: 600;
+                            }
+
+                            .text-danger {
+                                color: #dc3545;
+                                text-decoration: none;
+                                font-size: 13px;
+                            }
+
+                            .text-danger:hover {
+                                text-decoration: underline;
+                            }
+
+                            .set-default {
+                                color: #1a1a1a;
+                                text-decoration: none;
+                                font-size: 13px;
+                                font-weight: 500;
+                            }
+
+                            .set-default:hover {
+                                text-decoration: underline;
+                            }
+
+                            .add-btn {
+                                border: 1px solid #1a1a1a;
+                                background: #fff;
+                                padding: 10px 18px;
+                                border-radius: 50px;
+                                cursor: pointer;
+                                font-size: 14px;
+                                font-weight: 600;
+                                text-decoration: none;
+                                transition: all 0.3s ease;
+                            }
+                            .add-btn:hover {
+                                background: #1a1a1a;
+                                color: #fff;
+                            }
+
+                            /* ===== PAGE ACTIONS ===== */
+                            .page-actions {
+                                margin-bottom: 20px;
+                                display: flex;
+                                gap: 12px;
+                            }
+
+                            .link-btn {
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 8px;
+                                border: 1px solid #1a1a1a;
+                                color: #1a1a1a;
+                                text-decoration: none;
+                                padding: 10px 16px;
+                                border-radius: 50px;
+                                font-size: 14px;
+                                font-weight: 600;
+                                background: #fff;
+                                transition: all 0.3s ease;
+                            }
+
+                            .link-btn:hover {
+                                background: #1a1a1a;
+                                color: #fff;
+                            }
+
+                            /* Floating Help Center Button */
+                            .help-center-float {
+                                position: fixed;
+                                right: 20px;
+                                bottom: 20px;
+                                z-index: 1200;
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 8px;
+                                padding: 10px 14px;
+                                border-radius: 999px;
+                                text-decoration: none;
+                                background: #111;
+                                color: #fff;
+                                font-weight: 600;
+                                font-size: 14px;
+                                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+                                transition: transform 0.2s ease, background 0.2s ease;
+                            }
+
+                            .help-center-float:hover {
+                                transform: translateY(-2px);
+                                background: #252525;
+                            }
+
+                            .help-center-float .help-center-icon {
+                                width: 28px;
+                                height: 28px;
+                                display: inline-flex;
+                                align-items: center;
+                                justify-content: center;
+                                border-radius: 9999px;
+                                background: #fff;
+                                color: #111;
+                                font-size: 14px;
+                            }
+
+                            /* ===== RESPONSIVE ===== */
+                            @@media (max-width: 768px) {
+                                .sidebar {
+                                    transform: translateX(-100%);
+                                    transition: transform 0.3s;
+                                }
+
+                                .main-content {
+                                    margin-left: 0;
+                                }
+
+                                .dashboard-content {
+                                    padding: 20px;
+                                }
+                            }
     </style>
 
     @RenderSection("Styles", required: false)
@@ -357,6 +411,13 @@
                         </div>
                     </main>
                 </div>
+
+                @if (!isMessenger)
+                {
+                    <a asp-controller="Help" asp-action="Index" class="help-center-float" aria-label="Help Center" title="Help Center">
+                        <span class="help-center-icon"><i class="fas fa-question"></i></span>
+                    </a>
+                }
 
                 @await RenderSectionAsync("Scripts", required: false)
             </body>

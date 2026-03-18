@@ -1,0 +1,157 @@
+@{
+    ViewData["Title"] = "Seller Help Center";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="/css/helpcenter.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+}
+
+<div class="help-center-page">
+
+    <!-- HERO SECTION -->
+    <div class="help-center-hero">
+        <div>
+            <p class="help-center-label">Support</p>
+            <h1>Need help managing your seller account?</h1>
+            <p class="help-center-subtitle">
+                Explore quick answers, guides, and support options for orders, payouts, shipping, marketing, and account
+                management.
+            </p>
+        </div>
+        <a class="help-center-action" href="mailto:support@nexthorizon.com">Email Support</a>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="help-search">
+        <i class="fas fa-search"></i>
+        <input type="text" id="helpSearchInput" placeholder="Search help topics..." />
+    </div>
+
+    <p id="noResultsMessage" class="no-results">No results found.</p>
+
+    <!-- HELP CARDS GRID -->
+    <h2 class="help-category-header">Categories</h2>
+    <div class="help-center-grid">
+        <div class="help-card" data-title="orders management">
+            <div class="help-card-icon"><i class="fas fa-box-open"></i></div>
+            <div class="help-card-content">
+                <h3>Orders Management</h3>
+                <a href="#">View order guides</a>
+            </div>
+        </div>
+
+        <div class="help-card" data-title="payouts transactions">
+            <div class="help-card-icon"><i class="fas fa-dollar-sign"></i></div>
+            <div class="help-card-content">
+                <h3>Payouts & Transactions</h3>
+                <a href="#">View payout help</a>
+            </div>
+        </div>
+
+        <div class="help-card" data-title="account settings">
+            <div class="help-card-icon"><i class="fas fa-user-cog"></i></div>
+            <div class="help-card-content">
+                <h3>Account Settings</h3>
+                <a href="#">View account help</a>
+            </div>
+        </div>
+
+        <div class="help-card" data-title="shipping logistics">
+            <div class="help-card-icon"><i class="fas fa-truck-loading"></i></div>
+            <div class="help-card-content">
+                <h3>Shipping & Logistics</h3>
+                <a href="#">View shipping help</a>
+            </div>
+        </div>
+
+        <div class="help-card" data-title="promotions marketing">
+            <div class="help-card-icon"><i class="fas fa-bullhorn"></i></div>
+            <div class="help-card-content">
+                <h3>Promotions & Marketing</h3>
+                <a href="#">View marketing help</a>
+            </div>
+        </div>
+
+        <div class="help-card" data-title="contact support help">
+            <div class="help-card-icon"><i class="fas fa-life-ring"></i></div>
+            <div class="help-card-content">
+                <h3>Contact Support</h3>
+                <a href="mailto:support@nexthorizon.com">Email support</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ SECTION -->
+    <div class="help-center-faq">
+        <h2>Frequently Asked Questions</h2>
+
+        <div class="faq-item" data-title="manage orders">
+            <strong>How do I manage my orders?</strong>
+            <p>Go to Orders Management in your seller dashboard and update order statuses or handle returns as needed.
+            </p>
+        </div>
+
+        <div class="faq-item" data-title="view payouts">
+            <strong>How do I view my payouts?</strong>
+            <p>Visit the Payouts & Transactions section to check your payments and resolve any transaction issues.</p>
+        </div>
+
+        <div class="faq-item" data-title="account settings">
+            <strong>How do I update my seller account settings?</strong>
+            <p>Access Account Settings to update personal info, store preferences, and security settings.</p>
+        </div>
+
+        <div class="faq-item" data-title="shipping logistics">
+            <strong>How can I manage shipping and logistics?</strong>
+            <p>Go to Shipping & Logistics to manage shipments, create labels, and process returns efficiently.</p>
+        </div>
+
+        <div class="faq-item" data-title="marketing promotions">
+            <strong>How do I run promotions and marketing campaigns?</strong>
+            <p>Check Promotions & Marketing to create discounts, run campaigns, and improve your product visibility.</p>
+        </div>
+
+        <div class="faq-item" data-title="contact support">
+            <strong>How can I contact support?</strong>
+            <p>Email support@nexthorizon.com for urgent assistance with your seller account or operational issues.</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+                    const searchInput = document.getElementById("helpSearchInput");
+                    const cards = document.querySelectorAll(".help-card");
+                    const faqs = document.querySelectorAll(".faq-item");
+                    const noResults = document.getElementById("noResultsMessage");
+
+                    searchInput.addEventListener("keyup", function () {
+                        const value = this.value.toLowerCase();
+                        let visibleCount = 0;
+
+                        cards.forEach(card => {
+                            const title = card.getAttribute("data-title");
+                            if (title.includes(value)) {
+                                card.style.display = "flex";
+                                visibleCount++;
+                            } else {
+                                card.style.display = "none";
+                            }
+                        });
+
+                        faqs.forEach(faq => {
+                            const title = faq.getAttribute("data-title");
+                            if (title.includes(value)) {
+                                faq.style.display = "block";
+                                visibleCount++;
+                            } else {
+                                faq.style.display = "none";
+                            }
+                        });
+
+                        noResults.style.display = visibleCount === 0 ? "block" : "none";
+                    });
+    </script>
+}
