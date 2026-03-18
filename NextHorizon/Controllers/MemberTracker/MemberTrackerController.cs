@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NextHorizon.Modules.MemberTracker.Models;
+using NextHorizon.Validation;
 
 namespace NextHorizon.Modules.MemberTracker.Controllers;
 
@@ -19,7 +21,7 @@ public class MemberTrackerController : Controller
     [HttpGet("upload-activity")]
     public IActionResult UploadActivity()
     {
-        return View();
+        return View(new UploadActivityViewModel(UploadValidationRules.AllowedActivityNames));
     }
 
     [HttpGet("my-activity")]

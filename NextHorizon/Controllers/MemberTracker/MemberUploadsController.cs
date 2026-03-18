@@ -432,7 +432,7 @@ public class MemberUploadsController : ControllerBase
             UpdatedAt = upload.UpdatedAt,
         };
 
-    private ActionResult? BuildValidationProblem(FluentValidation.Results.ValidationResult validationResult)
+    private ActionResult? BuildValidationProblem(FluentValidation.Results.ValidationResult validationResult, object? request = null)
     {
         if (validationResult.IsValid)
         {
@@ -445,11 +445,14 @@ public class MemberUploadsController : ControllerBase
                 group => group.Key,
                 group => group.Select(error => error.ErrorMessage).Distinct().ToArray());
 
-        return ValidationProblem(new ValidationProblemDetails(errors)
+        var problemDetails = new ValidationProblemDetails(errors)
         {
             Title = "Validation failed",
             Status = StatusCodes.Status400BadRequest,
-        });
+        };
+
+        EnrichValidationProblem(problemDetails, errors, request);
+        return ValidationProblem(problemDetails);
     }
 
     private async Task<ActionResult?> ValidateRequestAsync<TRequest>(
@@ -458,7 +461,32 @@ public class MemberUploadsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var validationResult = await validator.ValidateAsync(request, cancellationToken);
-        return BuildValidationProblem(validationResult);
+        return BuildValidationProblem(validationResult, request);
+    }
+
+    private static void EnrichValidationProblem(
+        ValidationProblemDetails problemDetails,
+        IReadOnlyDictionary<string, string[]> errors,
+        object? request)
+    {
+        if (!errors.ContainsKey(nameof(CreateMemberUploadRequest.ActivityName)))
+        {
+            return;
+        }
+
+        problemDetails.Extensions["allowedActivityNames"] = UploadValidationRules.AllowedActivityNames;
+
+        var receivedActivityName = request switch
+        {
+            CreateMemberUploadRequest createRequest => createRequest.ActivityName?.Trim(),
+            UpdateMemberUploadRequest updateRequest => updateRequest.ActivityName?.Trim(),
+            _ => null,
+        };
+
+        if (!string.IsNullOrWhiteSpace(receivedActivityName))
+        {
+            problemDetails.Extensions["receivedActivityName"] = receivedActivityName;
+        }
     }
 }
 

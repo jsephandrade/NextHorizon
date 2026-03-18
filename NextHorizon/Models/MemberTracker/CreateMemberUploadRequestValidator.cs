@@ -15,7 +15,7 @@ public class CreateMemberUploadRequestValidator : AbstractValidator<CreateMember
         RuleFor(x => x.ActivityName)
             .NotEmpty()
             .Must(UploadValidationRules.BeAllowedActivity)
-            .WithMessage("ActivityName must be one of: Run, Walk, Ride, Training.");
+            .WithMessage(UploadValidationRules.AllowedActivityValidationMessage);
 
         RuleFor(x => x.ActivityDate)
             .NotEmpty()

@@ -27,6 +27,11 @@
     const removeButton = document.getElementById("removeBtn");
     const submitButton = document.getElementById("submitBtn");
     let csrfTokenPromise = null;
+    const allowedActivityValues = Array.from(activityNameInput?.options ?? [])
+        .map((option) => option.value.trim())
+        .filter((value) => value.length > 0);
+    const invalidActivityMessage = activityNameInput?.dataset.invalidMessage?.trim()
+        || `ActivityName must be one of: ${allowedActivityValues.join(", ")}.`;
 
     const warningIds = [
         "activityWarning",
@@ -118,6 +123,15 @@
 
         const parsed = Number.parseInt(digitsOnly, 10);
         return Number.isFinite(parsed) ? Math.min(parsed, 99) : 0;
+    }
+
+    function resolveCanonicalActivityName(value) {
+        const normalizedValue = (value ?? "").trim();
+        if (!normalizedValue) {
+            return "";
+        }
+
+        return allowedActivityValues.find((allowedValue) => allowedValue.toLowerCase() === normalizedValue.toLowerCase()) ?? "";
     }
 
     function clearDefaultFieldValue(input, defaultValue) {
@@ -368,6 +382,9 @@
         if (!activityName) {
             setWarning("activityWarning", "Please select an activity.");
             isValid = false;
+        } else if (!resolveCanonicalActivityName(activityName)) {
+            setWarning("activityWarning", invalidActivityMessage);
+            isValid = false;
         }
 
         const activityDate = activityDateInput?.value?.trim() ?? "";
@@ -421,7 +438,12 @@
         const movingTimeSec = parseNonNegativeInt(movingTimeInput.value);
         const distance = Number.parseFloat(distanceInput.value);
         const distanceUnit = (distanceUnitHiddenInput?.value || "km").toLowerCase();
-        const activityName = activityNameInput.value.trim();
+        const activityName = resolveCanonicalActivityName(activityNameInput.value);
+        if (!activityName) {
+            setWarning("activityWarning", invalidActivityMessage);
+            return;
+        }
+
         const activityDate = activityDateInput.value;
         const title = buildGeneratedTitle(activityName, activityDate);
 

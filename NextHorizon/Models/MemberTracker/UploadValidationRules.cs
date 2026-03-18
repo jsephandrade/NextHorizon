@@ -7,6 +7,14 @@ namespace NextHorizon.Validation;
 
 public static class UploadValidationRules
 {
+    private static readonly string[] AllowedActivityNamesInternal =
+    [
+        "Run",
+        "Walk",
+        "Ride",
+        "Hike",
+    ];
+
     public const long MaxProofSizeBytes = 5 * 1024 * 1024;
 
     public const decimal MaxDistanceKm = 300;
@@ -23,13 +31,12 @@ public static class UploadValidationRules
 
     public static decimal MaxDistanceMi => MaxDistanceKm / KmPerMile;
 
-    public static readonly HashSet<string> AllowedActivities = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "Run",
-        "Walk",
-        "Ride",
-        "Training",
-    };
+    public static IReadOnlyList<string> AllowedActivityNames => AllowedActivityNamesInternal;
+
+    public static string AllowedActivityValidationMessage =>
+        $"ActivityName must be one of: {string.Join(", ", AllowedActivityNamesInternal)}.";
+
+    public static readonly HashSet<string> AllowedActivities = new(AllowedActivityNamesInternal, StringComparer.OrdinalIgnoreCase);
 
     public static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -87,7 +94,7 @@ public static class UploadValidationRules
     };
 
     public static bool BeAllowedActivity(string activityName)
-        => AllowedActivities.Contains(activityName.Trim());
+        => !string.IsNullOrWhiteSpace(activityName) && AllowedActivities.Contains(activityName.Trim());
 
     public static bool BeNotMoreThanOneDayAhead(DateTime activityDate)
         => activityDate.Date <= DateTime.UtcNow.Date.AddDays(1);

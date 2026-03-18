@@ -1,3 +1,5 @@
+@model NextHorizon.Modules.MemberTracker.Models.UploadActivityViewModel
+@using NextHorizon.Validation
 @{
     ViewData["Title"] = "Upload Activity";
 }
@@ -20,12 +22,13 @@
                 <div class="form-left">
                     <div class="input-warning" id="activityWarning"></div>
                     <div class="select-wrapper">
-                        <select id="activityName" name="ActivityName" class="form-control">
+                        <select id="activityName" name="ActivityName" class="form-control"
+                                data-invalid-message="@UploadValidationRules.AllowedActivityValidationMessage">
                             <option value="">Select Activity</option>
-                            <option value="Run">Run</option>
-                            <option value="Walk">Walk</option>
-                            <option value="Ride">Ride</option>
-                            <option value="Training">Training</option>
+                            @foreach (var activity in Model.AllowedActivities)
+                            {
+                                <option value="@activity">@activity</option>
+                            }
                         </select>
                     </div>
 
