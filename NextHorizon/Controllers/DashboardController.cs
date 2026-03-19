@@ -1005,6 +1005,37 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
             return null;
         }
 
+        private async Task<List<Order>> GetRecentOrdersAsync(int sellerId, int top, CancellationToken cancellationToken)
+        {
+            var orders = new List<Order>();
+            using var connection = new SqlConnection(GetConnectionString());
+            using var command = new SqlCommand("sp_GetSellerRecentOrders", connection)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+            command.Parameters.AddWithValue("@SellerId", sellerId);
+            command.Parameters.AddWithValue("@Top", top);
+            await connection.OpenAsync(cancellationToken);
+            using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                orders.Add(new Order
+                {
+                    OrderId      = reader["OrderId"].ToString() ?? string.Empty,
+                    Customer     = reader["Customer"].ToString() ?? string.Empty,
+                    ProductName  = reader["ProductName"].ToString() ?? string.Empty,
+                    ProductImage = reader["ProductImage"].ToString() ?? string.Empty,
+                    Size         = reader["Size"].ToString() ?? string.Empty,
+                    Sku          = reader["Sku"].ToString() ?? string.Empty,
+                    DateTime     = reader["DateTime"] != DBNull.Value ? Convert.ToDateTime(reader["DateTime"]) : DateTime.Now,
+                    Courier      = reader["Courier"].ToString() ?? string.Empty,
+                    Status       = reader["Status"].ToString() ?? string.Empty,
+                    Amount       = reader["TotalAmount"] != DBNull.Value ? Convert.ToDecimal(reader["TotalAmount"]) : 0
+                });
+            }
+            return orders;
+        }
+
         private async Task<SellerDashboardViewModel> BuildSellerDashboardModelAsync(CancellationToken cancellationToken = default)
         {
             var sellerEmail = HttpContext.Session.GetString("SellerEmail");
@@ -1078,100 +1109,7 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
                 TotalVisits = 423,
                 MonthlyRevenueByYear = monthlyRevenue,
 
-                RecentOrders = new List<Order>
-                {
-                    new Order
-                    {
-                        OrderId = "061231",
-                        Customer = "Kiboy",
-                        ProductName = "Nike Air Max 270",
-                        ProductImage = "https://picsum.photos/seed/recent-1/80/80",
-                        Sku = "NH-NK-001",
-                        Size = "US 9",
-                        DateTime = DateTime.Now.AddMinutes(-32),
-                        Courier = "J&T Express",
-                        Status = "Paid",
-                        Amount = 5595.00m
-                    },
-                    new Order
-                    {
-                        OrderId = "061232",
-                        Customer = "Loyd",
-                        ProductName = "Nike Dri-FIT Training Shirt",
-                        ProductImage = "https://picsum.photos/seed/recent-2/80/80",
-                        Sku = "NH-NK-002",
-                        Size = "L",
-                        DateTime = DateTime.Now.AddHours(-1),
-                        Courier = "Ninja Van",
-                        Status = "To Ship",
-                        Amount = 2690.00m
-                    },
-                    new Order
-                    {
-                        OrderId = "061233",
-                        Customer = "Sarah",
-                        ProductName = "Nike React Infinity Run FK 3",
-                        ProductImage = "https://picsum.photos/seed/recent-3/80/80",
-                        Sku = "NH-NK-004",
-                        Size = "US 8",
-                        DateTime = DateTime.Now.AddHours(-3),
-                        Courier = "LBC",
-                        Status = "Pending",
-                        Amount = 7445.00m
-                    },
-                    new Order
-                    {
-                        OrderId = "061234",
-                        Customer = "Discaya",
-                        ProductName = "Nike Pro Training Shorts",
-                        ProductImage = "https://picsum.photos/seed/recent-4/80/80",
-                        Sku = "NH-NK-003",
-                        Size = "M",
-                        DateTime = DateTime.Now.AddHours(-5),
-                        Courier = "J&T Express",
-                        Status = "To Ship",
-                        Amount = 3370.00m
-                    },
-                    new Order
-                    {
-                        OrderId = "061235",
-                        Customer = "Romualdez",
-                        ProductName = "Nike Sport Drawstring Bag",
-                        ProductImage = "https://picsum.photos/seed/recent-5/80/80",
-                        Sku = "NH-NK-005",
-                        Size = "One Size",
-                        DateTime = DateTime.Now.AddHours(-8),
-                        Courier = "SPX Express",
-                        Status = "Pending",
-                        Amount = 980.00m
-                    },
-                    new Order
-                    {
-                        OrderId = "061236",
-                        Customer = "Vins",
-                        ProductName = "Nike Air Max 270",
-                        ProductImage = "https://picsum.photos/seed/recent-6/80/80",
-                        Sku = "NH-NK-001",
-                        Size = "US 10",
-                        DateTime = DateTime.Now.AddHours(-11),
-                        Courier = "LBC",
-                        Status = "Paid",
-                        Amount = 11140.00m
-                    },
-                    new Order
-                    {
-                        OrderId = "061237",
-                        Customer = "Kenneth",
-                        ProductName = "Nike Dri-FIT Training Shirt",
-                        ProductImage = "https://picsum.photos/seed/recent-7/80/80",
-                        Sku = "NH-NK-002",
-                        Size = "XL",
-                        DateTime = DateTime.Now.AddHours(-15),
-                        Courier = "Ninja Van",
-                        Status = "To Ship",
-                        Amount = 3970.00m
-                    }
-                },
+                RecentOrders = await GetRecentOrdersAsync(sellerContext.SellerId, 10, cancellationToken),
 
                 Orders = new List<Order>
                 {
