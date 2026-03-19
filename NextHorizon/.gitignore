@@ -1,0 +1,39 @@
+# Build results
+bin/
+obj/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio cache/options
+.vs/
+.vscode/
+
+# Visual Studio Code
+launch.json
+tasks.json
+
+# NuGet
+*.nupkg
+*.snupkg
+*.nupkg.metadata
+
+# Rider
+.idea/
+*.sln.iml
+
+# Local app files
+appsettings.Development.json
+appsettings.Local.json
+
+# Database files
+*.mdf
+*.ldf
+
+# OS files
+.DS_Store
+Thumbs.db
