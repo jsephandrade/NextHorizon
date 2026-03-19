@@ -1,6 +1,208 @@
 ﻿@{
-    ViewData["Title"] = "Privacy Policy";
+    ViewData["Title"] = "FAQ";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<div class="faq-page">
+
+    <div class="faq-header">
+    <div class="faq-header-inner">
+        <h2><strong>We're Here to Help!</strong></h2>
+
+        <div class="faq-search">
+            <input type="text" id="faqSearch" placeholder="Search questions..." />
+            <button class="search-btn">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+    <div class="faq-container">
+
+        <!-- LEFT SIDEBAR -->
+        <div class="faq-sidebar">
+
+            <div class="faq-category active"><i class="fas fa-truck"></i> Tracking & Delivery</div>
+            <div class="faq-category"><i class="fas fa-undo"></i> Return & Refund</div>
+            <div class="faq-category"><i class="fas fa-box"></i> Processing</div>
+            <div class="faq-category"><i class="fas fa-credit-card"></i> Payment</div>
+            <div class="faq-category"><i class="fas fa-user"></i> Account Issues</div>
+            <div class="faq-category"><i class="fas fa-tags"></i> Pre-sale</div>
+            <div class="faq-category"><i class="fas fa-shield-alt"></i> Legal/Security/Privacy</div>
+            <div class="faq-category"><i class="fas fa-bullhorn"></i> Media/CSR</div>
+            <div class="faq-category"><i class="fas fa-comment-dots"></i> Suggestion/Dispute</div>
+
+        </div>
+
+        <!-- RIGHT CONTENT -->
+        <div class="faq-content" id="faqContent">
+
+            <!-- QUESTIONS -->
+            <div class="faq-question-item">
+                <span>Where is my order?</span>
+                <i class="fas fa-chevron-right arrow"></i>
+            </div>
+
+            <div class="faq-answer">
+                You can track your order in "My Purchases" under tracking details.
+            </div>
+
+            <div class="faq-question-item">
+                <span>How long will the order take to arrive?</span>
+                <i class="fas fa-chevron-right arrow"></i>
+            </div>
+
+            <div class="faq-answer">
+                Delivery usually takes 3–7 business days depending on your location.
+            </div>
+
+            <div class="faq-question-item">
+                <span>Why is my order delayed?</span>
+                <i class="fas fa-chevron-right arrow"></i>
+            </div>
+
+            <div class="faq-answer">
+                Delays may occur due to weather, logistics, or high order volume.
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<script>
+const faqData = {
+    "Tracking & Delivery": [
+        ["Where is my order?", "Track it in 'My Purchases' under tracking details."],
+        ["How long will delivery take?", "Usually 3–7 business days depending on location."],
+        ["Can I receive my order earlier?", "Delivery time depends on courier and cannot be rushed."],
+        ["Why is my order delayed?", "Delays may be due to logistics, weather, or high demand."]
+    ],
+
+    "Return & Refund": [
+        ["How do I request a refund?", "Go to your order and click 'Return/Refund'."],
+        ["How long does refund take?", "Refunds are processed within 5–10 business days."],
+        ["Can I return used items?", "Only unused items with original packaging are accepted."]
+    ],
+
+    "Processing": [
+        ["What does processing mean?", "Your order is being prepared for shipment."],
+        ["Can I cancel during processing?", "Yes, before it is shipped."],
+        ["Why is processing taking long?", "High order volume may delay processing."]
+    ],
+
+    "Payment": [
+        ["What payment methods are accepted?", "We accept cards, e-wallets, and COD."],
+        ["Why was my payment declined?", "Check your card details or contact your bank."],
+        ["Can I change payment method?", "No, but you can cancel and reorder."]
+    ],
+
+    "Account Issues": [
+        ["I forgot my password", "Click 'Forgot Password' on login page."],
+        ["How do I change my email?", "Go to Account Settings → Profile."],
+        ["Why is my account locked?", "Too many failed login attempts."]
+    ],
+
+    "Pre-sale": [
+        ["Do you offer discounts?", "Yes, during promotions and events."],
+        ["Can I reserve items?", "Reservation is currently not available."]
+    ],
+
+    "Legal/Security/Privacy": [
+        ["Is my data safe?", "Yes, we use secure encryption."],
+        ["How is my data used?", "Only for improving services and transactions."]
+    ],
+
+    "Media/CSR": [
+        ["Do you support charities?", "Yes, through CSR programs."],
+        ["Can media contact you?", "Email support@nexthorizon.com."]
+    ],
+
+    "Suggestion/Dispute": [
+        ["How do I file a complaint?", "Contact support with full details."],
+        ["Can I suggest features?", "Yes, send feedback via support email."]
+    ]
+};
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    let currentCategory = "Tracking & Delivery";
+
+    // LOAD FAQ
+    function loadFAQ(category) {
+        currentCategory = category;
+
+        const container = document.getElementById("faqContent");
+        const data = faqData[category];
+
+        container.innerHTML = data.map(([q, a]) => `
+            <div class="faq-question-item">
+                <span>${q}</span>
+                <i class="fas fa-chevron-right arrow"></i>
+            </div>
+            <div class="faq-answer">${a}</div>
+        `).join("");
+
+        bindAccordion();
+    }
+
+    // ACCORDION
+    function bindAccordion() {
+        document.querySelectorAll(".faq-question-item").forEach(q => {
+            q.addEventListener("click", () => {
+
+                document.querySelectorAll(".faq-question-item")
+                    .forEach(i => i.classList.remove("active"));
+
+                q.classList.add("active");
+            });
+        });
+    }
+
+    // SIDEBAR CLICK (FIXED TEXT ISSUE)
+    document.querySelectorAll(".faq-category").forEach(cat => {
+        cat.addEventListener("click", () => {
+
+            document.querySelectorAll(".faq-category")
+                .forEach(c => c.classList.remove("active"));
+
+            cat.classList.add("active");
+
+            // REMOVE ICON TEXT ISSUE
+            const category = cat.textContent.trim();
+
+            loadFAQ(category);
+        });
+    });
+
+    // SEARCH FUNCTION (FIXED)
+    const searchInput = document.getElementById("faqSearch");
+
+    if (searchInput) {
+        searchInput.addEventListener("keyup", function () {
+            const keyword = this.value.toLowerCase();
+
+            const filtered = faqData[currentCategory].filter(([q, a]) =>
+                q.toLowerCase().includes(keyword) ||
+                a.toLowerCase().includes(keyword)
+            );
+
+            const container = document.getElementById("faqContent");
+
+            container.innerHTML = filtered.map(([q, a]) => `
+                <div class="faq-question-item">
+                    <span>${q}</span>
+                    <i class="fas fa-chevron-right arrow"></i>
+                </div>
+                <div class="faq-answer">${a}</div>
+            `).join("");
+
+            bindAccordion();
+        });
+    }
+
+    // INITIAL LOAD
+    loadFAQ(currentCategory);
+
+});
+</script>

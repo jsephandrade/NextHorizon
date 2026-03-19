@@ -1,8 +1,305 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Help Center";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="help-center-page">
+    <!-- HERO -->
+    <div class="help-center-hero">
+        <div>
+            <p class="help-center-label">Support</p>
+            <h1>Need help? We’ve got your back.</h1>
+            <p class="help-center-subtitle">
+                Explore quick answers, troubleshooting guides, and support options for
+                orders, payments, and account management.
+            </p>
+        </div>
+        <a class="help-center-action" href="mailto:support@nexthorizon.com">Email Support</a>
+    </div>
+
+    <!-- HELP OPTIONS -->
+<div class="help-center-grid">
+
+    <div class="help-card" data-help="order">
+        <div class="help-card-icon"><i class="fa-solid fa-box"></i></div>
+        <h3>Order Help</h3>
+    </div>
+
+    <div class="help-card" data-help="tracking">
+        <div class="help-card-icon"><i class="fa-solid fa-truck"></i></div>
+        <h3>Order Tracking</h3>
+    </div>
+
+    <div class="help-card" data-help="billing">
+        <div class="help-card-icon"><i class="fa-solid fa-credit-card"></i></div>
+        <h3>Billing & Payments</h3>
+    </div>
+
+    <div class="help-card" data-help="account">
+        <div class="help-card-icon"><i class="fa-solid fa-user-gear"></i></div>
+        <h3>Account Help</h3>
+    </div>
+
+    <div class="help-card" data-help="returns">
+        <div class="help-card-icon"><i class="fa-solid fa-rotate-left"></i></div>
+        <h3>Returns & Refunds</h3>
+    </div>
+
+    <div class="help-card" data-help="technical">
+        <div class="help-card-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+        <h3>Technical Support</h3>
+    </div>
+
+    <div class="help-card" data-help="contact">
+        <div class="help-card-icon"><i class="fa-solid fa-life-ring"></i></div>
+        <h3>Contact Support</h3>
+    </div>
+
 </div>
+ <!-- FAQ -->
+    <div class="help-center-faq">
+
+    <!-- Tabs -->
+    <div class="faq-tabs">
+        <span class="active" data-tab="hot">Hot Questions</span>
+        <span data-tab="presale">Pre-sale</span>
+        <span data-tab="payment">Payment & Account</span>
+    </div>
+
+    <!-- HOT QUESTIONS -->
+    <div class="faq-list active" id="hot">
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">1</span>
+                <span>Can I cancel my order?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">You can cancel your order before it is shipped.</div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">2</span>
+                <span>Why is my order delayed?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">Delays may be due to logistics or high demand.</div>
+        </div>
+    </div>
+
+    <!-- PRE-SALE -->
+    <div class="faq-list" id="presale">
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">1</span>
+                <span>Do you offer discounts?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">Yes, discounts are available during promos.</div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">2</span>
+                <span>Can I reserve an item?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">Currently, reservation is not supported.</div>
+        </div>
+    </div>
+
+    <!-- PAYMENT -->
+    <div class="faq-list" id="payment">
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">1</span>
+                <span>What payment methods are accepted?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">We accept cards, e-wallets, and COD.</div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">2</span>
+                <span>How do I update my payment method?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">Go to Account Settings → Payment Methods.</div>
+        </div>
+    </div>
+
+</div>
+
+   <div class="help-chat">
+
+        <!-- CHAT BODY -->
+        <div class="help-chat-body" id="helpChatBox">
+            <div class="chat-message bot">
+                Hi! Select a category above to get help instantly.
+            </div>
+        </div>
+
+        <!-- CHAT INPUT -->
+        <div class="help-chat-input">
+            <input type="text" id="chatInput" placeholder="Type your message here..." />
+            <button id="sendBtn">Send</button>
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+<script>
+const responses = {
+    order: "You can manage your orders in 'My Purchases'. You can cancel orders before shipment or request returns after delivery.",
+    
+    tracking: "To track your order, go to 'My Purchases' and click 'Track Order' to see real-time delivery updates.",
+    
+    billing: "You can update your payment methods in Account Settings > Payment Methods.",
+    
+    account: "Manage your account by updating your profile, password, and security settings.",
+    
+    returns: "To request a return or refund, go to your order and click 'Return/Refund'.",
+    
+    technical: "Try clearing cache or switching browser. Contact support if issue continues.",
+    
+    contact: "Email us at support@nexthorizon.com or use live chat."
+};
+
+const chatBox = document.getElementById("helpChatBox");
+const input = document.getElementById("chatInput");
+const sendBtn = document.getElementById("sendBtn");
+
+/* ================= CARD CLICK ================= */
+document.querySelectorAll(".help-card").forEach(card => {
+    card.addEventListener("click", () => {
+        const type = card.getAttribute("data-help");
+
+        addUserMessage(card.querySelector("h3").innerText);
+        addBotMessage(responses[type] || "Sorry, I couldn't find help for that.");
+    });
+});
+
+/* ================= SEND BUTTON ================= */
+sendBtn.addEventListener("click", sendMessage);
+input.addEventListener("keypress", function(e) {
+    if (e.key === "Enter") sendMessage();
+});
+
+function sendMessage() {
+    const text = input.value.trim();
+    if (!text) return;
+
+    addUserMessage(text);
+
+    // Simple AI-like matching
+    let reply = "Sorry, I didn't understand that. Please choose a category above.";
+
+    if (text.toLowerCase().includes("track")) reply = responses.tracking;
+    else if (text.toLowerCase().includes("order")) reply = responses.order;
+    else if (text.toLowerCase().includes("payment") || text.toLowerCase().includes("billing")) reply = responses.billing;
+    else if (text.toLowerCase().includes("account")) reply = responses.account;
+    else if (text.toLowerCase().includes("refund") || text.toLowerCase().includes("return")) reply = responses.returns;
+    else if (text.toLowerCase().includes("bug") || text.toLowerCase().includes("error")) reply = responses.technical;
+    else if (text.toLowerCase().includes("contact")) reply = responses.contact;
+
+    setTimeout(() => addBotMessage(reply), 500);
+
+    input.value = "";
+}
+
+/* ================= MESSAGE HELPERS ================= */
+function addUserMessage(text) {
+    const msg = document.createElement("div");
+    msg.className = "chat-message user";
+    msg.innerText = text;
+    chatBox.appendChild(msg);
+    scrollToBottom();
+}
+
+function addBotMessage(text) {
+    const msg = document.createElement("div");
+    msg.className = "chat-message bot";
+    msg.innerText = text;
+    chatBox.appendChild(msg);
+    scrollToBottom();
+}
+
+function addLoadingMessage() {
+    const msg = document.createElement("div");
+    msg.className = "chat-message bot loading";
+
+    msg.innerHTML = `
+        <div class="typing">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    `;
+
+    chatBox.appendChild(msg);
+    scrollToBottom();
+
+    return msg;
+}
+
+function scrollToBottom() {
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+</script>
+
+<script>
+document.querySelectorAll(".faq-question").forEach(q => {
+    q.addEventListener("click", () => {
+        const item = q.parentElement;
+
+        // accordion (single open)
+        document.querySelectorAll(".faq-item").forEach(i => i.classList.remove("active"));
+        item.classList.add("active");
+
+        const question = q.children[1].innerText;
+        const answer = item.querySelector(".faq-answer").innerText;
+
+        // scroll
+        document.querySelector(".help-chat").scrollIntoView({ behavior: "smooth" });
+
+        // chat
+        addUserMessage(question);
+
+        const loader = addLoadingMessage();
+
+        setTimeout(() => {
+            loader.remove();
+            addBotMessage(answer);
+        }, 800);
+    });
+});
+</script>
+
+<script>
+// TAB SWITCHING
+document.querySelectorAll(".faq-tabs span").forEach(tab => {
+    tab.addEventListener("click", () => {
+
+        // remove active tab
+        document.querySelectorAll(".faq-tabs span").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+
+        // hide all lists
+        document.querySelectorAll(".faq-list").forEach(list => list.classList.remove("active"));
+
+        // show selected
+        document.getElementById(tab.dataset.tab).classList.add("active");
+    });
+});
+
+// ACCORDION
+document.querySelectorAll(".faq-question").forEach(q => {
+    q.addEventListener("click", () => {
+        const item = q.parentElement;
+        item.classList.toggle("active");
+    });
+});
+</script>
