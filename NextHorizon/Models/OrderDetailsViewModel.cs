@@ -20,6 +20,8 @@ namespace NextHorizon.Models
         public decimal Subtotal { get; set; }
         public decimal ShippingFee { get; set; }
         public decimal Discount { get; set; }
+        public string? PaymentMethod { get; set; }
         public decimal Total => Subtotal + ShippingFee - Discount;
+
     }
 }

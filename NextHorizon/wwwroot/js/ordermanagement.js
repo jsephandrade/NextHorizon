@@ -1,529 +1,498 @@
+let activeStatusFilter = 'all';
+let selectedNoteOrderId = '';
+let selectedNoteCustomer = '';
+let selectedReviewOrderId = '';
+let selectedShipmentOrderId = '';
+let selectedReturnOrderId = '';
 
-        let activeStatusFilter = 'all';
-        let selectedOrderId = '';
-        let selectedCourier = '';
-        let selectedDeclineOrderId = '';
-        let selectedAcceptSummary = {};
-        let selectedNoteOrderId = '';
-        let selectedNoteCustomer = '';
-        let selectedReviewOrder = {};
+// ================= UTILS =================
+function applyOrderFilters() {
+    const searchValue = (document.getElementById('orderSearch')?.value || '').toLowerCase().trim();
+    const categoryValue = document.getElementById('categoryFilter')?.value || 'all';
 
-        function applyOrderFilters() {
-            const searchValue = (document.getElementById('orderSearch')?.value || '').toLowerCase().trim();
-            const categoryValue = document.getElementById('categoryFilter')?.value || 'all';
-            const dateFrom = document.getElementById('dateFrom')?.value || '';
-            const dateTo = document.getElementById('dateTo')?.value || '';
+    document.querySelectorAll('.order-row').forEach(function (row) {
+        const status = row.dataset.status || '';
+        const rowText = row.innerText.toLowerCase();
 
-            document.querySelectorAll('.order-row').forEach(function (row) {
-                const status = row.dataset.status || '';
-                const rowDate = row.dataset.date || '';
-                const rowCategory = row.dataset.category || '';
-                const rowText = row.innerText.toLowerCase();
+        const statusMatch = activeStatusFilter === 'all' || status === activeStatusFilter;
+        const categoryMatch = categoryValue === 'all';
+        const searchMatch = !searchValue || rowText.includes(searchValue);
 
-                const statusMatch = activeStatusFilter === 'all' || status === activeStatusFilter;
-                const categoryMatch = categoryValue === 'all' || rowCategory === categoryValue;
-                const searchMatch = !searchValue || rowText.includes(searchValue);
-                const fromMatch = !dateFrom || rowDate >= dateFrom;
-                const toMatch = !dateTo || rowDate <= dateTo;
+        row.style.display = (statusMatch && categoryMatch && searchMatch) ? '' : 'none';
+    });
+}
 
-                row.style.display = (statusMatch && categoryMatch && searchMatch && fromMatch && toMatch) ? '' : 'none';
-            });
-        }
+function toggleOrderMenu(button) {
+    const wrap = button.closest('.action-menu-wrap');
+    if (!wrap) return;
 
-        function toggleOrderMenu(button) {
-            const wrap = button.closest('.action-menu-wrap');
-            if (!wrap) return;
+    const menu = wrap.querySelector('.action-menu');
+    const isOpen = menu.classList.contains('open');
 
-            const menu = wrap.querySelector('.action-menu');
-            const isOpen = menu.classList.contains('open');
+    // Close all others
+    document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+    
+    if (!isOpen) {
+        menu.classList.add('open');
+    }
+}
 
-            document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
-            if (!isOpen) {
-                menu.classList.add('open');
-            }
-        }
+function updateOrderRowStatus(orderId, statusKey, statusLabel) {
+    const orderRow = document.querySelector(`.order-row[data-order-id="${orderId}"]`);
+    if (!orderRow) return;
 
-        function resetCourierSelection() {
-            selectedCourier = '';
-            document.querySelectorAll('.courier-option').forEach(function (option) {
-                option.classList.remove('active');
-            });
+    orderRow.dataset.status = statusKey;
 
-            const confirmBtn = document.getElementById('courierSelectionConfirmBtn');
-            if (confirmBtn) {
-                confirmBtn.disabled = true;
-            }
-        }
+    const badge = orderRow.querySelector('.status-badge');
+    if (badge) {
+        badge.textContent = statusLabel;
+        badge.className = `status-badge ${statusKey}`;
+    }
+}
 
-        function openCourierSelectionModal() {
-            const modal = document.getElementById('courierSelectionModal');
-            const orderText = document.getElementById('courierSelectionOrderIdText');
-            if (orderText) {
-                orderText.textContent = selectedOrderId;
-            }
-            resetCourierSelection();
-            modal?.classList.add('active');
-        }
+function openMarkShippedModal(orderRow) {
+    if (!orderRow) return;
 
-        function closeCourierSelectionModal(resetSelection = true) {
-            const modal = document.getElementById('courierSelectionModal');
-            modal?.classList.remove('active');
-            if (resetSelection) {
-                resetCourierSelection();
-            }
-        }
+    selectedShipmentOrderId = orderRow.dataset.orderId || '';
+    document.getElementById('shipOrderId').textContent = selectedShipmentOrderId;
+    document.getElementById('shipCustomer').textContent = orderRow.children[1]?.innerText || '---';
+    document.getElementById('shipItems').textContent = orderRow.children[4]?.innerText || '0';
+    document.getElementById('shipTotal').textContent = orderRow.children[5]?.innerText || '0.00';
+    document.getElementById('courierName').value = 'J&T Express';
+    document.getElementById('trackingNumber').value = '';
+    document.getElementById('shipmentDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('shipmentNotes').value = '';
+    document.getElementById('markShippedModal').style.display = 'flex';
+}
 
-        function openShipmentSummaryModal() {
-            const modal = document.getElementById('shipmentSummaryModal');
-            const now = new Date();
-            const compactOrderId = (selectedOrderId || '').replace(/\D/g, '').slice(-12) || '000000000000';
-            const trackingNum = compactOrderId.padEnd(12, '0');
-            const sortCode = selectedCourier.includes('LBC') ? '320-LBC 00' :
-                selectedCourier.includes('Ninja') ? '320-NVN 00' : '320-JNT 00';
-            const serviceCode = selectedCourier.includes('LBC') ? 'PH-LM-LBC-notcod' :
-                selectedCourier.includes('Ninja') ? 'PH-LM-NV-notcod' : 'PH-LM-JT-notcod';
-            const payment = (selectedAcceptSummary.payment || '').toUpperCase();
+function closeMarkShippedModal() {
+    document.getElementById('markShippedModal').style.display = 'none';
+}
 
-            document.getElementById('waybillTrackingNum').textContent = trackingNum;
-            document.getElementById('waybillSortingCode').textContent = sortCode;
-            document.getElementById('waybillCustomerName').textContent = selectedAcceptSummary.customer || '-';
-            document.getElementById('waybillContact').textContent = selectedAcceptSummary.contact || '-';
-            document.getElementById('waybillAddress').innerHTML = (selectedAcceptSummary.address || '-').replace(/, /g, ',<br>');
-            document.getElementById('waybillRouteCode').textContent = (compactOrderId.slice(-3) || '047').padStart(3, '0');
-            document.getElementById('waybillSellerName').textContent = '@Model.SellerName'.toUpperCase();
-            document.getElementById('waybillServiceCode').textContent = serviceCode;
-            document.getElementById('waybillDeliveryCode').textContent = 'SC-TT-DG';
-            document.getElementById('waybillPaymentMethod').textContent = payment === 'COD' ? 'COD' : 'CASHLESS';
-            document.getElementById('waybillSkuId').textContent = 'SKU-' + compactOrderId;
-            document.getElementById('waybillProductName').textContent = selectedAcceptSummary.product || '-';
-            document.getElementById('waybillQuantity').textContent = selectedAcceptSummary.quantity || '-';
-            document.getElementById('waybillOrderId').textContent = selectedOrderId || '-';
-            document.getElementById('waybillPrintTime').textContent = now.getFullYear() + '-' +
-                String(now.getMonth() + 1).padStart(2, '0') + '-' +
-                String(now.getDate()).padStart(2, '0') + ' ' +
-                String(now.getHours()).padStart(2, '0') + ':' +
-                String(now.getMinutes()).padStart(2, '0');
-            document.getElementById('waybillCode').textContent = 'P' + (compactOrderId.slice(-3) || '003');
+function openConfirmShipmentModal() {
+    document.getElementById('confirmShipOrderId').textContent = selectedShipmentOrderId || '';
+    document.getElementById('confirmShipmentModal').style.display = 'flex';
+}
 
-            modal?.classList.add('active');
-        }
+function closeConfirmShipmentModal() {
+    document.getElementById('confirmShipmentModal').style.display = 'none';
+}
 
-        function closeShipmentSummaryModal() {
-            const modal = document.getElementById('shipmentSummaryModal');
-            modal?.classList.remove('active');
-        }
+function openTrackingRequiredModal() {
+    document.getElementById('trackingRequiredModal').style.display = 'flex';
+}
 
-        function printShipmentSummary() {
-            const source = document.getElementById('shipmentSummaryPrintContent');
-            if (!source) return;
+function closeTrackingRequiredModal() {
+    document.getElementById('trackingRequiredModal').style.display = 'none';
+}
 
-            const printWindow = window.open('', '_blank', 'width=900,height=700');
-            if (!printWindow) return;
+function openReturnedInfoModal(orderRow) {
+    if (!orderRow) return;
 
-            printWindow.document.write(
-                '<!DOCTYPE html><html><head><title>Shipment Summary</title>' +
-                '<style>@@page{size:8.5in 11in;margin:0}body{font-family:Arial,sans-serif;margin:0;color:#111}'+
-                '.print-quarter{width:4.25in;height:5.5in;padding:.2in;box-sizing:border-box;overflow:hidden}'+
-                '.jt-waybill{border:2px solid #111;border-radius:10px;overflow:hidden;font-size:11px}'+
-                '.jt-waybill-header{display:flex;justify-content:space-between;align-items:center;background:#111;color:#fff;padding:8px}'+
-                '.jt-waybill-body{padding:8px}.jt-sorting-code{padding:4px 8px;border-bottom:1px dashed #bbb;font-weight:700}'+
-                '.jt-receiver-section,.jt-sender-section,.jt-payment-section,.jt-items-section,.jt-waybill-footer{border:1px solid #ddd;margin-top:6px;padding:6px}'+
-                '.jt-item-row,.jt-items-header{display:grid;grid-template-columns:1fr 2fr .5fr;gap:6px}'+
-                '.jt-waybill-footer{display:flex;justify-content:space-between;gap:8px;font-size:10px}'+
-                '.barcode-lines{display:flex;gap:1px;height:20px}.barcode-lines span{width:2px;background:#111;display:block}</style></head><body>' +
-                '<div class="print-quarter">' + source.innerHTML + '</div></body></html>'
-            );
-            printWindow.document.close();
-            printWindow.focus();
-            printWindow.print();
-        }
+    selectedReturnOrderId = orderRow.dataset.orderId || '';
+    document.getElementById('returnInfoOrderId').textContent = selectedReturnOrderId;
+    document.getElementById('returnInfoCustomer').textContent = orderRow.children[1]?.innerText || '---';
+    document.getElementById('returnInfoProduct').textContent = orderRow.children[3]?.innerText || '---';
+    document.getElementById('returnInfoQuantity').textContent = orderRow.children[4]?.innerText || '0';
+    document.getElementById('returnInfoTotal').textContent = orderRow.children[5]?.innerText || '0.00';
+    document.getElementById('returnInfoCourier').textContent = orderRow.dataset.courier || 'J&T Express';
+    document.getElementById('returnInfoTracking').textContent = orderRow.dataset.tracking || '123456789';
+    document.getElementById('returnInfoProofImage').src = orderRow.dataset.returnProof || 'https://picsum.photos/seed/return-proof-1/360/220';
+    document.getElementById('returnInfoNote').textContent = orderRow.dataset.returnNote || 'Package was sent back because the buyer could not be reached.';
+    document.getElementById('returnedInfoModal').style.display = 'flex';
+}
 
-        function closeAllAcceptFlowModals() {
-            closeCourierSelectionModal();
-            closeShipmentSummaryModal();
-            selectedOrderId = '';
-            selectedCourier = '';
-            selectedAcceptSummary = {};
-        }
+function closeReturnedInfoModal() {
+    document.getElementById('returnedInfoModal').style.display = 'none';
+}
 
-        function openAddNotesModal(orderId, customer) {
-            selectedNoteOrderId = orderId || '';
-            selectedNoteCustomer = customer || '';
+function openConfirmReturnModal() {
+    document.getElementById('confirmReturnOrderId').textContent = selectedReturnOrderId || '';
+    document.getElementById('confirmReturnModal').style.display = 'flex';
+}
 
-            const overlay = document.getElementById('addNotesModal');
-            const orderText = document.getElementById('addNotesOrderIdText');
-            const customerText = document.getElementById('addNotesCustomerText');
-            const textarea = document.getElementById('addNotesTextarea');
-            const charCount = document.getElementById('addNotesCharCount');
-            const error = document.getElementById('addNotesError');
+function closeConfirmReturnModal() {
+    document.getElementById('confirmReturnModal').style.display = 'none';
+}
 
-            if (orderText) orderText.textContent = selectedNoteOrderId;
-            if (customerText) customerText.textContent = selectedNoteCustomer || '-';
-            if (textarea) textarea.value = '';
-            if (charCount) charCount.textContent = '0';
-            if (error) error.classList.remove('active');
+// ================= MODALS =================
+function openAddNotesModal(orderId, customer) {
+    selectedNoteOrderId = orderId || '';
+    selectedNoteCustomer = customer || '';
 
-            overlay?.classList.add('active');
-            textarea?.focus();
-            document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
-        }
+    // Header: "Customer: name - order #"
+    document.getElementById('customerHeaderText').textContent = `Customer: ${customer} - Order #${orderId}`;
 
-        function closeAddNotesModal() {
-            const overlay = document.getElementById('addNotesModal');
-            overlay?.classList.remove('active');
-            selectedNoteOrderId = '';
-            selectedNoteCustomer = '';
-        }
+    // Customer card (beside avatar)
+    document.getElementById('addNotesCustomerText').textContent = `${customer}`;
 
-        function showAddNotesToast(message) {
-            const toast = document.getElementById('addNotesToast');
-            const text = document.getElementById('addNotesToastMessage');
-            if (text) text.textContent = message;
-            toast?.classList.add('active');
-            window.setTimeout(function () {
-                toast?.classList.remove('active');
-            }, 2200);
-        }
+    // Clear textarea
+    document.getElementById('addNotesTextarea').value = '';
 
-        function openReviewRequestModal(orderData) {
-            selectedReviewOrder = orderData || {};
-            document.getElementById('reviewOrderId').textContent = selectedReviewOrder.orderId || '-';
-            document.getElementById('reviewBuyer').textContent = selectedReviewOrder.buyer || '-';
-            document.getElementById('reviewProduct').textContent = selectedReviewOrder.product || '-';
-            document.getElementById('reviewOrderDate').textContent = selectedReviewOrder.orderDate || '-';
-            document.getElementById('reviewDeliveryDate').textContent = selectedReviewOrder.deliveryDate || '-';
-            document.getElementById('reviewPaymentMethod').textContent = selectedReviewOrder.payment || '-';
+    // Show modal
+    document.getElementById('addNotesModal')?.classList.add('active');
+}
 
-            const now = new Date();
-            const requestedAt = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-            const deadline = new Date(now.getTime() + 36 * 60 * 60 * 1000);
-            const fmt = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+function closeAddNotesModal() {
+    const modal = document.getElementById('addNotesModal');
+    modal?.classList.remove('active');
+    selectedNoteOrderId = '';
+    selectedNoteCustomer = '';
+}
 
-            document.getElementById('reviewRequestedAt').textContent = fmt(requestedAt);
-            document.getElementById('reviewDeadline').textContent = fmt(deadline);
+function openNoteSavedModal(orderId, noteText) {
+    const modal = document.getElementById('noteSavedModal');
+    const orderLabel = document.getElementById('noteSavedOrderId');
+    const message = document.getElementById('noteSavedMessage');
+    if (orderLabel) {
+        orderLabel.textContent = orderId || '';
+    }
+    if (message) {
+        message.textContent = noteText.trim();
+    }
+    modal?.classList.add('active');
+}
 
-            document.querySelectorAll('input[name="reviewDecision"]').forEach(r => r.checked = false);
-            document.getElementById('reviewApproveSection')?.classList.remove('active');
-            document.getElementById('reviewRejectSection')?.classList.remove('active');
-            document.getElementById('reviewRejectReason').value = '';
-            document.getElementById('reviewApproveComment').value = '';
-            document.getElementById('reviewRejectComment').value = '';
-            document.getElementById('reviewRequestError')?.classList.remove('active');
+function closeNoteSavedModal() {
+    const modal = document.getElementById('noteSavedModal');
+    modal?.classList.remove('active');
+}
 
-            document.getElementById('reviewRequestModal')?.classList.add('active');
-            document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
-        }
+function openReviewRequestModal(orderId) {
+    selectedReviewOrderId = orderId || '';
+    document.getElementById('reviewRequestModal')?.classList.add('active');
+}
 
-        function closeReviewRequestModal() {
-            document.getElementById('reviewRequestModal')?.classList.remove('active');
-            document.getElementById('reviewRequestError')?.classList.remove('active');
-            selectedReviewOrder = {};
-        }
+function closeReviewRequestModal() {
+    document.getElementById('reviewRequestModal')?.classList.remove('active');
+}
 
-        function showReviewRequestToast(message) {
-            const toast = document.getElementById('reviewRequestToast');
-            const text = document.getElementById('reviewRequestToastMessage');
-            if (text) text.textContent = message;
-            toast?.classList.add('active');
-            window.setTimeout(function () {
-                toast?.classList.remove('active');
-            }, 2600);
-        }
+// ================= EVENTS =================
+document.addEventListener('click', function (event) {
+    // ===== VIEW ORDER (PUT THIS FIRST) =====
+    const viewOrderBtn = event.target.closest('.view-order-btn');
+    if (viewOrderBtn) {
+        event.stopPropagation();
 
-        function openDeclineOrderModal(orderId) {
-            const modal = document.getElementById('declineOrderModal');
-            const orderText = document.getElementById('declineOrderIdText');
-            selectedDeclineOrderId = orderId || '';
-            if (orderText) {
-                orderText.textContent = selectedDeclineOrderId;
-            }
-            modal?.classList.add('active');
-            document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
-        }
+        const orderId = viewOrderBtn.dataset.orderId;
 
-        function closeDeclineOrderModal() {
-            const modal = document.getElementById('declineOrderModal');
-            modal?.classList.remove('active');
-        }
+        console.log("Opening modal:", orderId); // DEBUG
 
-        function openDeclineReasonModal() {
-            const modal = document.getElementById('declineReasonModal');
-            const orderText = document.getElementById('declineReasonOrderIdText');
-            const reasonInput = document.getElementById('declineReasonInput');
-            const reasonError = document.getElementById('declineReasonError');
+        openOrderSummaryModal(orderId);
 
-            if (orderText) {
-                orderText.textContent = selectedDeclineOrderId;
-            }
-            if (reasonInput) {
-                reasonInput.value = '';
-                reasonInput.focus();
-            }
-            if (reasonError) {
-                reasonError.style.display = 'none';
-            }
-            modal?.classList.add('active');
-        }
+        return;
+    }
+    // Action menu toggle
+    const actionBtn = event.target.closest('.action-icon-btn');
+    if (actionBtn) {
+        toggleOrderMenu(actionBtn);
+        return;
+    }
 
-        function closeDeclineReasonModal() {
-            const modal = document.getElementById('declineReasonModal');
-            modal?.classList.remove('active');
-        }
+    // Add note
+    const addNoteBtn = event.target.closest('.add-note-btn');
+    if (addNoteBtn) {
+        event.stopPropagation(); // 🔥 prevents interference
+        openAddNotesModal(addNoteBtn.dataset.orderId, addNoteBtn.dataset.customer);
+        return;
+    }
 
-        function openDeclineSuccessModal() {
-            const modal = document.getElementById('declineSuccessModal');
-            const message = document.getElementById('declineSuccessMessage');
-            if (message) {
-                message.textContent = 'Order ' + selectedDeclineOrderId + ' has been declined.';
-            }
-            modal?.classList.add('active');
-        }
+    const markAsShippedBtn = event.target.closest('.mark-as-shipped-btn');
+    if (markAsShippedBtn) {
+        event.stopPropagation();
+        document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+        openMarkShippedModal(markAsShippedBtn.closest('.order-row'));
+        return;
+    }
 
-        function closeDeclineSuccessModal() {
-            const modal = document.getElementById('declineSuccessModal');
-            modal?.classList.remove('active');
-        }
+    const markReturnedBtn = event.target.closest('.mark-returned-btn');
+    if (markReturnedBtn) {
+        event.stopPropagation();
+        document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+        openReturnedInfoModal(markReturnedBtn.closest('.order-row'));
+        return;
+    }
 
-        function closeAllDeclineFlowModals() {
-            closeDeclineOrderModal();
-            closeDeclineReasonModal();
-            closeDeclineSuccessModal();
-            selectedDeclineOrderId = '';
-        }
+    // Review request
+    const reviewBtn = event.target.closest('.review-request-btn');
+    if (reviewBtn) {
+        openReviewRequestModal(reviewBtn.dataset.orderId);
+        return;
+    }
 
-        document.addEventListener('click', function (event) {
-            const acceptBtn = event.target.closest('.accept-order-btn');
-            if (acceptBtn) {
-                const orderId = acceptBtn.dataset.orderId || '';
-                selectedOrderId = orderId;
-                selectedAcceptSummary = {
-                    customer: acceptBtn.dataset.customer || '',
-                    orderDate: acceptBtn.dataset.orderDate || '',
-                    product: acceptBtn.dataset.product || '',
-                    quantity: acceptBtn.dataset.quantity || '',
-                    payment: acceptBtn.dataset.payment || '',
-                    total: acceptBtn.dataset.total || '',
-                    contact: acceptBtn.dataset.contact || '',
-                    address: acceptBtn.dataset.address || ''
-                };
-                openCourierSelectionModal();
-                return;
-            }
+    // Close menus ONLY if not clicking menu items
+    if (!event.target.closest('.action-menu') && !event.target.classList.contains('action-icon-btn')) {
+        document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+    }
 
-            const declineBtn = event.target.closest('.decline-order-btn');
-            if (declineBtn) {
-                const orderId = declineBtn.dataset.orderId || '';
-                openDeclineOrderModal(orderId);
-                return;
-            }
+    // Close modals on overlay
+    if (event.target.id === 'addNotesModal') closeAddNotesModal();
+    if (event.target.id === 'reviewRequestModal') closeReviewRequestModal();
+    if (event.target.id === 'noteSavedModal') closeNoteSavedModal();
+    if (event.target.id === 'markShippedModal') closeMarkShippedModal();
+    if (event.target.id === 'confirmShipmentModal') closeConfirmShipmentModal();
+    if (event.target.id === 'trackingRequiredModal') closeTrackingRequiredModal();
+    if (event.target.id === 'returnedInfoModal') closeReturnedInfoModal();
+    if (event.target.id === 'confirmReturnModal') closeConfirmReturnModal();
+});
 
-            const addNoteBtn = event.target.closest('.add-note-btn');
-            if (addNoteBtn) {
-                const orderId = addNoteBtn.dataset.orderId || '';
-                const customer = addNoteBtn.dataset.customer || '';
-                openAddNotesModal(orderId, customer);
-                return;
-            }
+document.getElementById('addNotesSaveBtn')?.addEventListener('click', function () {
+    const textarea = document.getElementById('addNotesTextarea');
+    const value = (textarea?.value || '').trim();
 
-            const reviewBtn = event.target.closest('.review-request-btn');
-            if (reviewBtn) {
-                openReviewRequestModal({
-                    orderId: reviewBtn.dataset.orderId || '',
-                    buyer: reviewBtn.dataset.buyer || '',
-                    product: reviewBtn.dataset.product || '',
-                    orderDate: reviewBtn.dataset.orderDate || '',
-                    deliveryDate: reviewBtn.dataset.deliveryDate || '',
-                    payment: reviewBtn.dataset.payment || ''
-                });
-                return;
-            }
+    if (value) {
+        // TODO: Save to backend
+        closeAddNotesModal();
+        openNoteSavedModal(selectedNoteOrderId, value);
+    }
+});
 
-            if (!event.target.closest('.action-menu-wrap')) {
-                document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
-            }
+document.getElementById('addNotesCancelBtn')?.addEventListener('click', closeAddNotesModal);
+document.getElementById('reviewRequestCancelBtn')?.addEventListener('click', closeReviewRequestModal);
+document.getElementById('noteSavedOkBtn')?.addEventListener('click', closeNoteSavedModal);
+document.getElementById('reviewRequestSubmitBtn')?.addEventListener('click', closeReviewRequestModal);
 
-            const courierOption = event.target.closest('.courier-option');
-            if (courierOption) {
-                selectedCourier = courierOption.dataset.courier || '';
-                document.querySelectorAll('.courier-option').forEach(function (option) {
-                    option.classList.remove('active');
-                });
-                courierOption.classList.add('active');
-                const confirmBtn = document.getElementById('courierSelectionConfirmBtn');
-                if (confirmBtn) {
-                    confirmBtn.disabled = !selectedCourier;
-                }
-                return;
-            }
+// Filter buttons
+document.querySelectorAll('.order-filter-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        activeStatusFilter = this.dataset.filter;
+        document.querySelectorAll('.order-filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        applyOrderFilters();
+    });
+});
 
-            const modalOverlay = event.target.closest('.modal-overlay');
-            if (modalOverlay && event.target === modalOverlay) {
-                if (modalOverlay.id === 'shipmentSummaryModal') {
-                    closeAllAcceptFlowModals();
-                    return;
-                }
-                if (modalOverlay.id === 'courierSelectionModal') {
-                    closeCourierSelectionModal();
-                    return;
-                }
-                if (modalOverlay.id === 'declineOrderModal') {
-                    closeDeclineOrderModal();
-                    return;
-                }
-                if (modalOverlay.id === 'declineReasonModal') {
-                    closeDeclineReasonModal();
-                    return;
-                }
-                if (modalOverlay.id === 'declineSuccessModal') {
-                    closeAllDeclineFlowModals();
-                    return;
-                }
-            }
+// Search/inputs
+document.getElementById('orderSearch')?.addEventListener('input', applyOrderFilters);
+document.getElementById('categoryFilter')?.addEventListener('change', applyOrderFilters);
+document.getElementById('searchBtn')?.addEventListener('click', applyOrderFilters);
+document.getElementById('clearDate')?.addEventListener('click', function() {
+    document.getElementById('startDate').value = '';
+    document.getElementById('endDate').value = '';
+    applyOrderFilters();
+});
 
-            if (event.target && event.target.id === 'addNotesModal') {
-                closeAddNotesModal();
-            }
-            if (event.target && event.target.id === 'reviewRequestModal') {
-                closeReviewRequestModal();
-            }
+// ESC key
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        closeAddNotesModal();
+        closeReviewRequestModal();
+        closeNoteSavedModal();
+        closeMarkShippedModal();
+        closeConfirmShipmentModal();
+        closeTrackingRequiredModal();
+        closeReturnedInfoModal();
+        closeConfirmReturnModal();
+        document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+    }
+});
+
+// ================= INIT =================
+document.addEventListener('DOMContentLoaded', function () {
+    applyOrderFilters();
+});
+
+// ===== ORDER SUMMARY =====
+function openOrderSummaryModal(orderId) {
+    document.getElementById('summaryOrderId').textContent = orderId;
+    document.getElementById('orderSummaryModal').classList.add('active');
+}
+
+function closeOrderSummaryModal() {
+    document.getElementById('orderSummaryModal').classList.remove('active');
+}
+
+// ===== DECLINE =====
+function openDeclineModal() {
+    alert("Decline reason modal (you can build next)");
+}
+
+function confirmOrder() {
+    // Hide summary
+    closeOrderSummaryModal();
+
+    // Show processing
+    const modal = document.getElementById('processingModal');
+    modal.classList.add('active');
+
+    // Simulate backend processing
+    setTimeout(() => {
+        // Hide processing
+        modal.classList.remove('active');
+
+        // Update the order row status
+        updateOrderRowStatus(selectedReviewOrderId, 'to-ship', 'TO SHIP');
+
+        // Re-apply filters so the "To Ship" filter sees it
+        applyOrderFilters();
+
+        // Open the modal
+        openToShipModal(selectedReviewOrderId);
+
+    }, 2500);
+}
+
+// ===== ORDER TO SHIP MODAL =====
+function openToShipModal(orderId) {
+    const modal = document.getElementById('orderToShipModal');
+    const message = document.getElementById('toShipMessage');
+    message.textContent = `Order #${orderId} has been moved to TO SHIP.`;
+    modal?.classList.add('active');
+}
+
+function closeToShipModal() {
+    document.getElementById('orderToShipModal')?.classList.remove('active');
+}
+
+// OK button
+document.getElementById('toShipOkBtn')?.addEventListener('click', closeToShipModal);
+
+// ===== DOWNLOAD RECEIPT MODAL =====
+function openDownloadReceiptModal(order) {
+    const orderDate = order?.DateTime ? new Date(order.DateTime) : null;
+    const totalAmount = Number(order?.TotalAmount || 0);
+    const quantity = Number(order?.Quantity || 0);
+    const unitPrice = quantity > 0 ? totalAmount / quantity : totalAmount;
+
+    document.getElementById('receiptOrderId').textContent = order?.OrderId || '';
+    document.getElementById('receiptCustomer').textContent = order?.Customer || '';
+    document.getElementById('receiptDate').textContent =
+        orderDate && !Number.isNaN(orderDate.getTime())
+            ? orderDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            : '';
+    document.getElementById('receiptTotal').textContent = totalAmount.toFixed(2);
+
+    const tbody = document.getElementById('receiptItemsBody');
+    tbody.innerHTML = ''; // clear previous items
+    order.Items = Array.isArray(order?.Items) && order.Items.length
+        ? order.Items
+        : [{ ProductName: order?.ProductName || '', Quantity: quantity, Price: unitPrice }];
+
+    order.Items.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${item.ProductName}</td>
+            <td>x${item.Quantity}</td>
+            <td>₱${item.Price.toFixed(2)}</td>
+            <td>₱${(item.Price * item.Quantity).toFixed(2)}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    document.getElementById('downloadReceiptModal').classList.add('active');
+}
+
+function closeDownloadReceiptModal() {
+    document.getElementById('downloadReceiptModal').classList.remove('active');
+}
+
+// Example download function (you can replace with actual backend/pdf generation)
+function downloadReceipt() {
+    alert('Receipt download started! (implement backend PDF)');
+    closeDownloadReceiptModal();
+}
+
+document.getElementById('downloadReceiptModal').addEventListener('click', function(e) {
+    if(e.target.id === 'downloadReceiptModal') closeDownloadReceiptModal();
+});
+
+let currentReviewOrder = null;
+
+// Open modal and populate info
+function openReviewRequestModal(order) {
+    currentReviewOrder = order;
+
+    document.getElementById('reviewOrderId').textContent = order.OrderId;
+    document.getElementById('reviewCustomer').textContent = order.Customer;
+    document.getElementById('reviewProduct').textContent = order.ProductName;
+    document.getElementById('reviewReason').textContent = order.ReturnReason;
+
+    const photoContainer = document.getElementById('reviewPhotos');
+    photoContainer.innerHTML = '';
+
+    if (order.Attachments && order.Attachments.length > 0) {
+        order.Attachments.forEach(url => {
+            const img = document.createElement('img');
+            img.src = url;
+            img.style.width = '80px';
+            img.style.height = '80px';
+            img.style.objectFit = 'cover';
+            img.style.marginRight = '10px';
+            img.style.borderRadius = '4px';
+            photoContainer.appendChild(img);
         });
+    } else {
+        photoContainer.innerHTML = '<p>No attachments provided.</p>';
+    }
 
-        document.querySelectorAll('.order-filter-btn').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                activeStatusFilter = btn.dataset.filter;
+    // Clear previous selection
+    const radios = document.getElementsByName('reviewDecision');
+    radios.forEach(r => r.checked = false);
+    document.getElementById('reviewComment').value = '';
 
-                document.querySelectorAll('.order-filter-btn').forEach(function (b) {
-                    b.classList.remove('active');
-                });
-                btn.classList.add('active');
-                applyOrderFilters();
-            });
-        });
+    document.getElementById('reviewRequestModal').classList.add('active');
+}
 
-        document.getElementById('orderSearch')?.addEventListener('input', applyOrderFilters);
-        document.getElementById('categoryFilter')?.addEventListener('change', applyOrderFilters);
-        document.getElementById('dateFrom')?.addEventListener('change', applyOrderFilters);
-        document.getElementById('dateTo')?.addEventListener('change', applyOrderFilters);
+// Close modal
+function closeReviewRequestModal() {
+    document.getElementById('reviewRequestModal').classList.remove('active');
+    currentReviewOrder = null;
+}
 
-        document.getElementById('clearDates')?.addEventListener('click', function () {
-            const from = document.getElementById('dateFrom');
-            const to = document.getElementById('dateTo');
-            if (from) from.value = '';
-            if (to) to.value = '';
-            applyOrderFilters();
-        });
+// Submit decision
+function submitReviewRequest() {
+    if (!currentReviewOrder) return;
 
-        document.getElementById('courierSelectionCancelBtn')?.addEventListener('click', closeCourierSelectionModal);
-        document.getElementById('courierSelectionConfirmBtn')?.addEventListener('click', function () {
-            if (!selectedCourier) {
-                return;
-            }
-            closeCourierSelectionModal(false);
-            openShipmentSummaryModal();
-        });
-        document.getElementById('shipmentSummaryCloseBtn')?.addEventListener('click', closeAllAcceptFlowModals);
-        document.getElementById('shipmentSummaryCloseBtn2')?.addEventListener('click', closeAllAcceptFlowModals);
-        document.getElementById('shipmentSummaryPrintBtn')?.addEventListener('click', printShipmentSummary);
-        document.getElementById('declineOrderCancelBtn')?.addEventListener('click', closeAllDeclineFlowModals);
-        document.getElementById('declineOrderConfirmBtn')?.addEventListener('click', function () {
-            if (!selectedDeclineOrderId) {
-                return;
-            }
-            closeDeclineOrderModal();
-            openDeclineReasonModal();
-        });
-        document.getElementById('declineReasonCancelBtn')?.addEventListener('click', closeAllDeclineFlowModals);
-        document.getElementById('declineReasonSubmitBtn')?.addEventListener('click', function () {
-            const reasonInput = document.getElementById('declineReasonInput');
-            const reasonError = document.getElementById('declineReasonError');
-            const reason = (reasonInput?.value || '').trim();
+    const decision = document.querySelector('input[name="reviewDecision"]:checked')?.value;
+    const comment = document.getElementById('reviewComment').value.trim();
 
-            if (!reason) {
-                if (reasonError) {
-                    reasonError.style.display = 'block';
-                }
-                return;
-            }
+    if (!decision) {
+        alert("Please select Approve or Reject.");
+        return;
+    }
 
-            if (reasonError) {
-                reasonError.style.display = 'none';
-            }
+    // TODO: send decision + comment to backend via fetch/ajax
+    console.log("Order", currentReviewOrder.OrderId, "Decision:", decision, "Comment:", comment);
 
-            closeDeclineReasonModal();
-            openDeclineSuccessModal();
-        });
-        document.getElementById('declineSuccessOkBtn')?.addEventListener('click', closeAllDeclineFlowModals);
-        document.getElementById('addNotesCloseBtn')?.addEventListener('click', closeAddNotesModal);
-        document.getElementById('addNotesCancelBtn')?.addEventListener('click', closeAddNotesModal);
-        document.getElementById('addNotesTextarea')?.addEventListener('input', function () {
-            const textarea = document.getElementById('addNotesTextarea');
-            const charCount = document.getElementById('addNotesCharCount');
-            const error = document.getElementById('addNotesError');
-            const length = textarea?.value.length || 0;
+    // Close modal
+    closeReviewRequestModal();
 
-            if (charCount) {
-                charCount.textContent = String(length);
-            }
-            if (error && length > 0) {
-                error.classList.remove('active');
-            }
-        });
-        document.getElementById('addNotesSaveBtn')?.addEventListener('click', function () {
-            const textarea = document.getElementById('addNotesTextarea');
-            const error = document.getElementById('addNotesError');
-            const value = (textarea?.value || '').trim();
+    alert(`Review submitted for order #${currentReviewOrder.OrderId}.`);
+}
 
-            if (!value) {
-                error?.classList.add('active');
-                return;
-            }
+// Shipment modal logic is handled through the delegated click listener above.
 
-            error?.classList.remove('active');
-            closeAddNotesModal();
-            showAddNotesToast('Note saved for order ' + selectedNoteOrderId + '.');
-        });
-        document.getElementById('reviewRequestCloseBtn')?.addEventListener('click', closeReviewRequestModal);
-        document.getElementById('reviewRequestCancelBtn')?.addEventListener('click', closeReviewRequestModal);
-        document.querySelectorAll('input[name="reviewDecision"]').forEach(function (input) {
-            input.addEventListener('change', function () {
-                const approveSection = document.getElementById('reviewApproveSection');
-                const rejectSection = document.getElementById('reviewRejectSection');
-                const isApprove = input.value === 'approve';
-                approveSection?.classList.toggle('active', isApprove);
-                rejectSection?.classList.toggle('active', !isApprove);
-                document.getElementById('reviewRequestError')?.classList.remove('active');
-            });
-        });
-        document.getElementById('reviewRequestSubmitBtn')?.addEventListener('click', function () {
-            const selectedDecision = document.querySelector('input[name="reviewDecision"]:checked');
-            const rejectReason = document.getElementById('reviewRejectReason')?.value || '';
-            const error = document.getElementById('reviewRequestError');
+// CONFIRM SHIPMENT (Step 5)
+function confirmShipment() {
+    const tracking = document.getElementById("trackingNumber").value.trim();
 
-            if (!selectedDecision) {
-                error?.classList.add('active');
-                return;
-            }
+    if (!tracking) {
+        openTrackingRequiredModal();
+        return;
+    }
 
-            if (selectedDecision.value === 'reject' && !rejectReason) {
-                error?.classList.add('active');
-                return;
-            }
+    // 🔥 SEND TO BACKEND (AJAX)
+    openConfirmShipmentModal();
+}
 
-            error?.classList.remove('active');
-            const actionText = selectedDecision.value === 'approve' ? 'approved' : 'rejected';
-            closeReviewRequestModal();
-            showReviewRequestToast('Return request for order ' + (selectedReviewOrder.orderId || '') + ' was ' + actionText + '.');
-        });
+function completeShipment() {
+    updateOrderRowStatus(selectedShipmentOrderId, 'shipped', 'Shipped');
+    closeConfirmShipmentModal();
+    closeMarkShippedModal();
+    applyOrderFilters();
+}
 
-        document.addEventListener('keydown', function (event) {
-            if (event.key === 'Escape') {
-                closeAllAcceptFlowModals();
-                closeAllDeclineFlowModals();
-                closeAddNotesModal();
-                closeReviewRequestModal();
-            }
-        });
+function closeReturnModal() {
+    closeReturnedInfoModal();
+}
 
-        document.addEventListener('DOMContentLoaded', function () {
-            applyOrderFilters();
-        });
+function confirmReturn() {
+    completeReturn();
+}
+
+function completeReturn() {
+    updateOrderRowStatus(selectedReturnOrderId, 'return', 'Return');
+    closeReturnedInfoModal();
+    openConfirmReturnModal();
+    applyOrderFilters();
+}

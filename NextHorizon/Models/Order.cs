@@ -20,5 +20,8 @@ namespace NextHorizon.Models
         public string PaymentStatus { get; set; } = string.Empty;
         public string FulfillmentStatus { get; set; } = string.Empty;
         public string Courier { get; set; } = string.Empty;
+        public string TrackingNumber { get; set; } = string.Empty;
+        public string ReturnProofImage { get; set; } = string.Empty;
+        public string ReturnNote { get; set; } = string.Empty;
     }
 }

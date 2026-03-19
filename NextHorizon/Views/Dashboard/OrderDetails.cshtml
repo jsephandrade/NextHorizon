@@ -18,94 +18,146 @@
 </div>
 
 <div class="order-details-grid">
+
+    <!-- LEFT -->
     <section>
+
         <div class="detail-card">
             <h3 class="section-title">Order Information</h3>
+
+            <div class="highlight">
+                <span>Total:</span>
+                <strong>&#8369;@Model.Total.ToString("N2")</strong>
+            </div>
+
             <div class="detail-row">
                 <div class="detail-label">Order ID</div>
                 <div class="detail-value">@Model.OrderId</div>
             </div>
+
             <div class="detail-row">
-                <div class="detail-label">Order Date</div>
+                <div class="detail-label">Date</div>
                 <div class="detail-value">@Model.OrderDateTime.ToString("MMM dd, yyyy hh:mm tt")</div>
             </div>
+
             <div class="detail-row">
-                <div class="detail-label">Payment Status</div>
+                <div class="detail-label">Payment</div>
                 <div class="detail-value">
-                    <span class="badge payment @Model.PaymentStatus.ToLower()">@Model.PaymentStatus</span>
+                    <span class="badge payment @(Model.PaymentStatus?.ToLower() ?? "")">
+                        @Model.PaymentStatus
+                    </span>
                 </div>
             </div>
+
             <div class="detail-row">
-                <div class="detail-label">Fulfillment Status</div>
-                <div class="detail-value"><span class="badge status">@Model.FulfillmentStatus</span></div>
+                <div class="detail-label">Status</div>
+                <div class="detail-value">
+                    <span class="badge status">@Model.FulfillmentStatus</span>
+                </div>
             </div>
+
+            <div class="detail-row">
+                <div class="detail-label">Payment Method</div>
+                <div class="detail-value">@Model.PaymentMethod ?? "N/A"</div>
+            </div>
+
             <div class="detail-row">
                 <div class="detail-label">Courier</div>
-                <div class="detail-value">@Model.Courier</div>
+                <div class="detail-value">@Model.Courier ?? "N/A"</div>
             </div>
+
             <div class="detail-row">
-                <div class="detail-label">Tracking Number</div>
-                <div class="detail-value">@Model.TrackingNumber</div>
+                <div class="detail-label">Tracking</div>
+                <div class="detail-value">@Model.TrackingNumber ?? "N/A"</div>
             </div>
         </div>
 
+        <!-- 🔹 ITEMS -->
         <div class="detail-card">
             <h3 class="section-title">Items</h3>
-            @foreach (var item in Model.Items)
+
+            @if (Model.Items != null && Model.Items.Any())
             {
-                <div class="item-row">
-                    <div class="item-left">
-                        <img src="@item.ProductImage" alt="@item.ProductName" />
-                        <div>
-                            <div class="detail-value">@item.ProductName</div>
-                            <div class="detail-label">Qty: @item.Quantity x &#8369;@item.UnitPrice.ToString("N2")</div>
+                foreach (var item in Model.Items)
+                {
+                    <div class="item-row">
+                        <div class="item-left">
+                            <img src="@(string.IsNullOrEmpty(item.ProductImage) ? "/images/default.png" : item.ProductImage)" />
+                            <div>
+                                <div class="detail-value">@item.ProductName</div>
+                                <div class="detail-label">
+                                    Qty: @item.Quantity x &#8369;@item.UnitPrice.ToString("N2")
+                                </div>
+                            </div>
                         </div>
+                        <div class="detail-value">&#8369;@item.LineTotal.ToString("N2")</div>
                     </div>
-                    <div class="detail-value">&#8369;@item.LineTotal.ToString("N2")</div>
-                </div>
+                }
+            }
+            else
+            {
+                <p>No items found.</p>
             }
         </div>
+
+        <!-- 🔹 ACTION BUTTONS -->
+        <div class="action-buttons">
+            @if (Model.FulfillmentStatus == "Processing")
+            {
+                <button class="btn primary">Mark as Shipped</button>
+            }
+            @if (Model.FulfillmentStatus == "Shipped")
+            {
+                <button class="btn success">Mark as Delivered</button>
+            }
+
+        </div>
+
     </section>
 
+    <!-- RIGHT -->
     <aside>
+
+        <!-- BUYER -->
         <div class="detail-card">
             <h3 class="section-title">Buyer</h3>
-            <div class="detail-row">
-                <div class="detail-label">Name</div>
-                <div class="detail-value">@Model.BuyerName</div>
+
+            <div class="buyer-box">
+                <strong>@Model.BuyerName</strong>
+                <p>📞 @Model.ContactNumber</p>
+                <p>📍 @Model.ShippingAddress</p>
             </div>
-            <div class="detail-row">
-                <div class="detail-label">Contact</div>
-                <div class="detail-value">@Model.ContactNumber</div>
-            </div>
-            <div class="detail-row">
-                <div class="detail-label">Address</div>
-                <div class="detail-value">@Model.ShippingAddress</div>
-            </div>
+
             <div class="detail-row">
                 <div class="detail-label">Notes</div>
-                <div class="detail-value">@Model.Notes</div>
+                <div class="detail-value">@Model.Notes ?? "No notes"</div>
             </div>
         </div>
 
-        <div class="detail-card">
+        <!-- PAYMENT -->
+        <div class="detail-card sticky">
             <h3 class="section-title">Payment Summary</h3>
+
             <div class="summary-row">
                 <span>Subtotal</span>
                 <span>&#8369;@Model.Subtotal.ToString("N2")</span>
             </div>
+
             <div class="summary-row">
-                <span>Shipping Fee</span>
+                <span>Shipping</span>
                 <span>&#8369;@Model.ShippingFee.ToString("N2")</span>
             </div>
+
             <div class="summary-row">
                 <span>Discount</span>
                 <span>- &#8369;@Model.Discount.ToString("N2")</span>
             </div>
-            <div class="summary-row summary-total">
+
+            <div class="summary-row total">
                 <span>Total</span>
-                <span>&#8369;@Model.Total.ToString("N2")</span>
+                <strong>&#8369;@Model.Total.ToString("N2")</strong>
             </div>
         </div>
+
     </aside>
 </div>
