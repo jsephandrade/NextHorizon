@@ -1186,7 +1186,10 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
                         TotalAmount = 2650.00m,
                         PaymentStatus = "Paid",
                         FulfillmentStatus = "Pending",
-                        Courier = "J&T Express"
+                        Courier = "J&T Express",
+                        TrackingNumber = "",
+                        ReturnProofImage = "",
+                        ReturnNote = ""
                     },
                     new Order
                     {
@@ -1199,7 +1202,10 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
                         TotalAmount = 1300.00m,
                         PaymentStatus = "COD",
                         FulfillmentStatus = "To Ship",
-                        Courier = "Ninja Van"
+                        Courier = "Ninja Van",
+                        TrackingNumber = "",
+                        ReturnProofImage = "",
+                        ReturnNote = ""
                     },
                     new Order
                     {
@@ -1211,8 +1217,11 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
                         Quantity = 3,
                         TotalAmount = 1950.00m,
                         PaymentStatus = "COD",
-                        FulfillmentStatus = "Ship",
-                        Courier = "LBC"
+                        FulfillmentStatus = "Shipped",
+                        Courier = "J&T Express",
+                        TrackingNumber = "123456789",
+                        ReturnProofImage = "https://picsum.photos/seed/return-proof-1/360/220",
+                        ReturnNote = "Package was sent back after multiple delivery attempts because the buyer could not be reached."
                     },
                     new Order
                     {
@@ -1225,7 +1234,10 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
                         TotalAmount = 850.00m,
                         PaymentStatus = "COD",
                         FulfillmentStatus = "Delivered",
-                        Courier = "LBC"
+                        Courier = "LBC",
+                        TrackingNumber = "LBC-908172635",
+                        ReturnProofImage = "",
+                        ReturnNote = ""
                     },
                     new Order
                     {
@@ -1238,7 +1250,10 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
                         TotalAmount = 450.00m,
                         PaymentStatus = "Paid",
                         FulfillmentStatus = "Cancelled",
-                        Courier = "J&T Express"
+                        Courier = "J&T Express",
+                        TrackingNumber = "",
+                        ReturnProofImage = "",
+                        ReturnNote = ""
                     },
                     new Order
                     {
@@ -1251,7 +1266,10 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
                         TotalAmount = 1200.00m,
                         PaymentStatus = "Paid",
                         FulfillmentStatus = "Return",
-                        Courier = "Ninja Van"
+                        Courier = "Ninja Van",
+                        TrackingNumber = "NV-55120973",
+                        ReturnProofImage = "https://picsum.photos/seed/return-proof-2/360/220",
+                        ReturnNote = "Buyer refused the parcel on delivery, so the shipment was returned to sender."
                     }
                 },
 
