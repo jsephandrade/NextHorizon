@@ -499,3 +499,4 @@ C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\NextHorizon.pdb
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\NextHorizon.genruntimeconfig.cache
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\ref\NextHorizon.dll
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\vd9k4h4uq1-{0}-uvkzntn00x-uvkzntn00x.gz
+C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\vd9k4h4uq1-{0}-0wpesclp7x-0wpesclp7x.gz
