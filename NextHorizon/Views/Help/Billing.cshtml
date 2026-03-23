@@ -1,0 +1,93 @@
+@{
+    ViewData["Title"] = "Billing & Payments - FAQ";
+}
+
+<div class="help-center-page">
+    <a href="/Home" class="help-back-btn">
+        <i class="fas fa-arrow-left"></i> Back to Help Center
+    </a>
+
+    <div class="help-page-header">
+        <div class="help-page-icon">
+            <i class="fa-solid fa-credit-card"></i>
+        </div>
+        <h1>Billing & Payments</h1>
+        <p>Payment methods, issues & refund information</p>
+    </div>
+
+    <div class="help-page-faq">
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>What payment methods are accepted?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Visa, Mastercard, American Express, PayPal, Apple Pay, Google Pay, and Cash on Delivery (select regions).
+            </div>
+        </div>
+        
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>Why was my payment declined?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Common reasons: insufficient funds, incorrect card details, bank security hold, or billing address mismatch. Try another method or contact your bank.
+            </div>
+        </div>
+        
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>Can I change payment method after ordering?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Payment methods cannot be changed after checkout. Cancel the order (if not shipped) and place a new one with the correct payment method.
+            </div>
+        </div>
+
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>Is my payment information secure?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Yes. We use PCI-DSS compliant encryption and never store full card details. All transactions are processed through secure, trusted payment gateways.
+            </div>
+        </div>
+
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>Can I save multiple payment methods?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Yes! Go to <strong>Account Settings</strong> → <strong>Payment Methods</strong> to save multiple cards for faster checkout.
+            </div>
+        </div>
+
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>Do you charge sales tax?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Sales tax is calculated based on your shipping address and local regulations. Tax details appear at checkout before payment.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".help-faq-question").forEach(q => {
+        q.addEventListener("click", () => {
+            const item = q.parentElement;
+            document.querySelectorAll(".help-faq-item").forEach(i => {
+                if (i !== item) i.classList.remove("active");
+            });
+            item.classList.toggle("active");
+        });
+    });
+});
+</script>

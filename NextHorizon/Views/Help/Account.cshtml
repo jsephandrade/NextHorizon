@@ -1,0 +1,93 @@
+@{
+    ViewData["Title"] = "Account Help - FAQ";
+}
+
+<div class="help-center-page">
+    <a href="/Home" class="help-back-btn">
+        <i class="fas fa-arrow-left"></i> Back to Help Center
+    </a>
+
+    <div class="help-page-header">
+        <div class="help-page-icon">
+            <i class="fa-solid fa-user-gear"></i>
+        </div>
+        <h1>Account Help</h1>
+        <p>Profile, security & account settings</p>
+    </div>
+
+    <div class="help-page-faq">
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>I forgot my password</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Click <strong>Forgot Password</strong> on the login page. Enter your email to receive a secure reset link (valid for 1 hour).
+            </div>
+        </div>
+        
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>How do I change my email?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Go to <strong>Account Settings</strong> → <strong>Profile</strong> → <strong>Edit Email</strong>. Verify your new email to complete the change.
+            </div>
+        </div>
+        
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>Why is my account locked?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Accounts lock after too many failed login attempts for security. Wait 30 minutes or reset your password to unlock immediately.
+            </div>
+        </div>
+
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>How do I delete my account?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Go to <strong>Account Settings</strong> → <strong>Privacy</strong> → <strong>Delete Account</strong>. ⚠️ This action is permanent and removes all order history.
+            </div>
+        </div>
+
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>Can I have multiple accounts?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Each user should have one account. Multiple accounts may be suspended for security reasons.
+            </div>
+        </div>
+
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>How do I enable two-factor authentication?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Go to <strong>Account Settings</strong> → <strong>Security</strong> → <strong>Two-Factor Authentication</strong>. Follow the setup instructions with your authenticator app.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".help-faq-question").forEach(q => {
+        q.addEventListener("click", () => {
+            const item = q.parentElement;
+            document.querySelectorAll(".help-faq-item").forEach(i => {
+                if (i !== item) i.classList.remove("active");
+            });
+            item.classList.toggle("active");
+        });
+    });
+});
+</script>

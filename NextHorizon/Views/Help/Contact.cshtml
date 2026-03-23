@@ -1,0 +1,93 @@
+@{
+    ViewData["Title"] = "Contact Support - FAQ";
+}
+
+<div class="help-center-page">
+    <a href="/Home" class="help-back-btn">
+        <i class="fas fa-arrow-left"></i> Back to Help Center
+    </a>
+
+    <div class="help-page-header">
+        <div class="help-page-icon">
+            <i class="fa-solid fa-life-ring"></i>
+        </div>
+        <h1>Contact Support</h1>
+        <p>Get in touch with our team</p>
+    </div>
+
+    <div class="help-page-faq">
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>How do I contact customer support?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Email: <a href="mailto:support@nexthorizon.com">support@nexthorizon.com</a> • Live Chat: Click "Chat with Agent" • Phone: +1 (800) 123-4567 (Mon-Fri, 9AM-6PM)
+            </div>
+        </div>
+        
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>What's your response time?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Live Chat: Immediate • Email: Within 24 hours (business days) • Phone: During business hours only. Urgent issues are prioritized.
+            </div>
+        </div>
+        
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>How do I file a complaint or suggestion?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Email <a href="mailto:support@nexthorizon.com">support@nexthorizon.com</a> with subject "Feedback" and include order number (if applicable) and detailed description.
+            </div>
+        </div>
+
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>Do you support media or partnership inquiries?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Yes! Email <a href="mailto:support@nexthorizon.com">support@nexthorizon.com</a> with subject "Media Inquiry" or "Partnership". Our CSR team will respond within 48 hours.
+            </div>
+        </div>
+
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>What are your support hours?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Live Chat: 24/7 • Email: Mon-Sun (responses within 24 hours) • Phone: Mon-Fri, 9AM-6PM (local time)
+            </div>
+        </div>
+
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>Can I request a callback?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Yes! Email us with your preferred time and phone number. We'll schedule a callback within 24 hours during business hours.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".help-faq-question").forEach(q => {
+        q.addEventListener("click", () => {
+            const item = q.parentElement;
+            document.querySelectorAll(".help-faq-item").forEach(i => {
+                if (i !== item) i.classList.remove("active");
+            });
+            item.classList.toggle("active");
+        });
+    });
+});
+</script>

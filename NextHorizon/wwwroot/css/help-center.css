@@ -1,6 +1,5 @@
 /* ================= CSS VARIABLES ================= */
 :root {
-    /* Color Palette - Strict Monochrome */
     --color-black: #111111;
     --color-black-soft: #1a1a1a;
     --color-white: #ffffff;
@@ -12,19 +11,16 @@
     --color-gray-500: #888888;
     --color-gray-600: #666666;
     
-    /* Gradients */
     --gradient-subtle: linear-gradient(180deg, var(--color-white) 0%, var(--color-gray-50) 100%);
     --gradient-hero: linear-gradient(135deg, var(--color-black) 0%, var(--color-black-soft) 100%);
     --gradient-card-hover: linear-gradient(145deg, var(--color-white), var(--color-gray-100));
     
-    /* Shadows */
     --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
     --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
     --shadow-glow: 0 0 0 1px rgba(17, 17, 17, 0.1), 0 4px 20px rgba(17, 17, 17, 0.08);
     
-    /* Border Radius */
     --radius-xs: 6px;
     --radius-sm: 10px;
     --radius-md: 14px;
@@ -32,7 +28,6 @@
     --radius-xl: 24px;
     --radius-pill: 999px;
     
-    /* Transitions */
     --transition-micro: 150ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-fast: 250ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-normal: 350ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -75,6 +70,16 @@ body {
     to { opacity: 1; }
 }
 
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* ================= HERO SECTION ================= */
 .help-center-hero {
     background: var(--gradient-hero);
@@ -91,11 +96,6 @@ body {
     overflow: hidden;
     animation: slideUp 0.5s ease forwards;
     box-shadow: var(--shadow-lg);
-}
-
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
 }
 
 .help-center-hero::before {
@@ -140,8 +140,7 @@ body {
 }
 
 /* Action Buttons */
-.help-center-action,
-.chat-agent-btn {
+.help-center-action {
     background: var(--color-white);
     color: var(--color-black);
     border-radius: var(--radius-pill);
@@ -160,60 +159,32 @@ body {
     box-shadow: var(--shadow-sm);
 }
 
-.help-center-action:hover,
-.chat-agent-btn:hover {
+.help-center-action:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
     border-color: var(--color-black);
 }
 
-.help-center-action:active,
-.chat-agent-btn:active {
+.help-center-action:active {
     transform: translateY(0);
-}
-
-.chat-agent-btn {
-    position: relative;
-}
-
-/* Agent Status Indicator */
-.agent-status {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--color-gray-500);
-    position: absolute;
-    top: 5px;
-    right: 12px;
-    border: 2px solid var(--color-white);
-    transition: var(--transition-fast);
-}
-
-.agent-status.online {
-    background: var(--color-black);
-    animation: statusPulse 2s ease-in-out infinite;
-}
-
-@keyframes statusPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(17, 17, 17, 0.4); transform: scale(1); }
-    50% { box-shadow: 0 0 0 6px rgba(17, 17, 17, 0); transform: scale(1.1); }
 }
 
 /* ================= HELP GRID - COMPACT ================= */
 .help-center-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 14px;
-    margin-bottom: 32px;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 10px;
+    margin-bottom: 28px;
 }
 
-/* Help Cards - Smaller & Compact */
+/* Help Cards - Reduced Height */
 .help-card {
     background: var(--color-white);
     border-radius: var(--radius-md);
-    padding: 16px 14px;
+    padding: 12px 10px; /* Reduced from 14px 12px */
     display: flex;
-    gap: 12px;
+    flex-direction: column;
+    gap: 6px; /* Reduced from 8px */
     border: 1px solid var(--color-gray-200);
     transition: var(--transition-normal);
     cursor: pointer;
@@ -221,6 +192,8 @@ body {
     animation: slideUp 0.4s ease forwards;
     opacity: 0;
     transform: translateY(12px);
+    text-align: left;
+    min-height: 110px; /* Added to control minimum height */
 }
 
 .help-card::before {
@@ -248,9 +221,10 @@ body {
     transform: scaleX(1);
 }
 
+/* Smaller Icon */
 .help-card-icon {
-    width: 38px;
-    height: 38px;
+    width: 30px; /* Reduced from 32px */
+    height: 30px; /* Reduced from 32px */
     border-radius: var(--radius-sm);
     background: var(--color-black);
     color: var(--color-white);
@@ -261,19 +235,109 @@ body {
     transition: var(--transition-fast);
 }
 
+.help-card-icon i {
+    font-size: 13px; /* Reduced from 14px */
+}
+
 .help-card:hover .help-card-icon {
     transform: scale(1.05);
     box-shadow: 0 4px 12px rgba(17, 17, 17, 0.2);
 }
 
+.help-card-content {
+    flex: 1;
+    min-height: 35px; /* Reduced from 40px */
+}
+
+/* Smaller Title */
 .help-card h3 {
-    margin: 4px 0 0;
-    font-size: 13px;
+    margin: 0 0 2px;
+    font-size: 12px; /* Reduced from 13px */
     font-weight: 600;
     line-height: 1.3;
 }
 
-/* ================= FAQ + CHAT CONTAINER - SIDE BY SIDE ================= */
+/* Smaller Description */
+.help-card-desc {
+    margin: 0;
+    font-size: 10px; /* Reduced from 11px */
+    color: var(--color-gray-600);
+    line-height: 1.25; /* Reduced from 1.3 */
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Limit to 2 lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Smaller View Button */
+.help-card-view {
+    margin-top: 4px; /* Reduced from 6px */
+    align-self: flex-start;
+    background: transparent;
+    color: var(--color-black);
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-pill);
+    padding: 3px 8px; /* Reduced from 4px 10px */
+    font-size: 9px; /* Reduced from 10px */
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.help-card-view:hover {
+    background: var(--color-black);
+    color: var(--color-white);
+    border-color: var(--color-black);
+}
+
+.help-card-view::after {
+    content: '→';
+    font-size: 8px; /* Reduced from 9px */
+    transition: transform var(--transition-fast);
+}
+
+.help-card-view:hover::after {
+    transform: translateX(3px);
+}
+
+/* ================= CATEGORY SEARCH BAR ================= */
+.help-search-bar {
+    position: relative;
+    max-width: 500px;
+    margin: 0 auto 28px;
+}
+
+.help-search-bar input {
+    width: 100%;
+    padding: 12px 40px 12px 16px;
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-pill);
+    font-size: 14px;
+    background: var(--color-white);
+    color: var(--color-black);
+    transition: var(--transition-fast);
+}
+
+.help-search-bar input:focus {
+    border-color: var(--color-black);
+    box-shadow: var(--shadow-glow);
+    outline: none;
+}
+
+.help-search-bar i {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-gray-500);
+    pointer-events: none;
+}
+
+/* ================= FAQ + CHAT CONTAINER LAYOUT ================= */
 .help-content-split {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -281,7 +345,7 @@ body {
     margin-bottom: 32px;
 }
 
-/* FAQ Section */
+/* ================= GENERAL FAQ SECTION ================= */
 .help-center-faq {
     background: var(--color-white);
     border-radius: var(--radius-lg);
@@ -296,7 +360,6 @@ body {
     opacity: 1;
 }
 
-/* FAQ Tabs */
 .faq-tabs {
     display: flex;
     gap: 6px;
@@ -328,7 +391,6 @@ body {
     background: var(--color-black);
 }
 
-/* FAQ Items */
 .faq-list {
     display: none;
     animation: fadeIn 0.3s ease;
@@ -411,275 +473,247 @@ body {
     padding: 6px 0 14px 32px;
 }
 
-/* ================= CHAT BOX - COMPACT ================= */
-.help-chat {
+.faq-header-mini {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--color-gray-200);
+}
+
+.faq-header-mini h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.faq-toggle-all {
+    font-size: 12px;
+    color: var(--color-gray-600);
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.faq-toggle-all:hover {
+    color: var(--color-black);
+}
+
+/* ================= EXPANDABLE FAQ PANELS ================= */
+.help-faq-panels {
+    margin-bottom: 32px;
+}
+
+.help-faq-panel {
+    display: none;
+    background: var(--color-white);
     border: 1px solid var(--color-gray-200);
     border-radius: var(--radius-lg);
+    margin-bottom: 16px;
     overflow: hidden;
-    background: var(--color-white);
-    animation: slideUp 0.4s ease forwards;
-    opacity: 0;
+    animation: slideDown 0.3s ease forwards;
     box-shadow: var(--shadow-sm);
-    display: flex;
-    flex-direction: column;
 }
 
-.help-chat.loaded {
-    opacity: 1;
+.help-faq-panel.active {
+    display: block;
 }
 
-.help-chat-header {
+.help-faq-header {
     background: var(--color-black);
     color: var(--color-white);
-    padding: 12px 16px;
-    font-size: 13px;
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     font-weight: 600;
+    font-size: 14px;
+}
+
+.help-faq-header h4 {
+    margin: 0;
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-.help-chat-header i {
+.help-faq-header i {
     font-size: 14px;
 }
 
-.help-chat-body {
-    height: 240px;
-    overflow-y: auto;
-    padding: 16px;
-    background: var(--color-gray-50);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    flex: 1;
-}
-
-/* Chat Messages */
-.chat-message {
-    max-width: 80%;
-    padding: 10px 14px;
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-    line-height: 1.4;
-    word-wrap: break-word;
-    animation: messageSlide 0.3s ease forwards;
-    opacity: 0;
-    transform: translateY(8px);
-}
-
-@keyframes messageSlide {
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.chat-message.bot {
-    background: var(--color-white);
-    color: var(--color-black);
-    align-self: flex-start;
-    border: 1px solid var(--color-gray-200);
-    border-bottom-left-radius: 4px;
-    box-shadow: var(--shadow-xs);
-}
-
-.chat-message.user {
-    background: var(--color-black);
-    color: var(--color-white);
-    align-self: flex-end;
-    border-bottom-right-radius: 4px;
-    box-shadow: var(--shadow-xs);
-}
-
-/* Typing Indicator */
-.chat-message.bot.loading .typing {
-    display: flex;
-    gap: 4px;
-    padding: 4px 0;
-}
-
-.chat-message.bot.loading .typing span {
-    width: 6px;
-    height: 6px;
-    background: var(--color-gray-400);
-    border-radius: 50%;
-    animation: typingBounce 1.4s infinite ease-in-out;
-}
-
-.chat-message.bot.loading .typing span:nth-child(2) { animation-delay: 0.2s; }
-.chat-message.bot.loading .typing span:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes typingBounce {
-    0%, 60%, 100% { transform: translateY(0); background: var(--color-gray-400); }
-    30% { transform: translateY(-5px); background: var(--color-black); }
-}
-
-/* Chat Input */
-.help-chat-input {
-    display: flex;
-    border-top: 1px solid var(--color-gray-200);
-    background: var(--color-white);
-    padding: 4px;
-}
-
-.help-chat-input input {
-    flex: 1;
+.help-faq-close {
+    background: none;
     border: none;
-    padding: 12px 16px;
-    font-size: 13px;
-    outline: none;
-    background: transparent;
+    color: var(--color-white);
+    font-size: 24px;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity var(--transition-fast);
+    line-height: 1;
+    padding: 0 4px;
+}
+
+.help-faq-close:hover {
+    opacity: 1;
+}
+
+.help-faq-body {
+    padding: 16px 18px;
+}
+
+.help-faq-item {
+    border-bottom: 1px solid var(--color-gray-200);
+    padding: 10px 0;
+}
+
+.help-faq-item:last-child {
+    border-bottom: none;
+}
+
+.help-faq-question {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 4px 0;
+    transition: color var(--transition-fast);
+}
+
+.help-faq-question:hover {
     color: var(--color-black);
 }
 
-.help-chat-input input::placeholder {
+.help-faq-question i {
+    transition: transform var(--transition-fast);
+    font-size: 14px;
     color: var(--color-gray-500);
 }
 
-.help-chat-input button {
-    background: var(--color-black);
-    color: var(--color-white);
-    border: none;
-    border-radius: var(--radius-pill);
-    padding: 10px 20px;
-    font-weight: 600;
+.help-faq-item.active .help-faq-question i {
+    transform: rotate(180deg);
+}
+
+.help-faq-answer {
+    max-height: 0;
+    overflow: hidden;
     font-size: 13px;
-    cursor: pointer;
-    transition: var(--transition-fast);
+    color: var(--color-gray-600);
+    line-height: 1.6;
+    transition: max-height var(--transition-normal), padding var(--transition-normal);
+    padding-left: 4px;
 }
 
-.help-chat-input button:hover {
-    background: var(--color-black-soft);
-    transform: translateY(-1px);
+.help-faq-item.active .help-faq-answer {
+    max-height: 300px;
+    padding: 10px 0 10px 4px;
 }
 
-.help-chat-input button:active {
-    transform: translateY(0);
+.help-faq-answer a {
+    color: var(--color-black);
+    font-weight: 500;
+    text-decoration: none;
+    border-bottom: 1px dotted var(--color-gray-400);
+}
+
+.help-faq-answer a:hover {
+    border-bottom-style: solid;
 }
 
 /* ================= RESPONSIVE ================= */
 @media (max-width: 900px) {
-    /* Stack FAQ + Chat on smaller screens */
     .help-content-split {
         grid-template-columns: 1fr;
         gap: 20px;
     }
-    
-    .help-chat {
-        order: -1; /* Chat appears first on mobile */
-    }
 }
 
 @media (max-width: 768px) {
-    .help-center-page {
-        padding: 24px 16px;
+    .help-center-page { padding: 24px 16px; }
+    .help-center-hero { padding: 28px 20px; border-radius: var(--radius-lg); }
+    .help-center-hero h1 { font-size: 22px; }
+    .help-center-subtitle { font-size: 13px; }
+    .help-center-action { width: 100%; justify-content: center; padding: 12px 18px; font-size: 13px; }
+    
+    .help-center-grid { 
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 8px;
     }
     
-    .help-center-hero {
-        padding: 28px 20px;
-        border-radius: var(--radius-lg);
+    .help-card { 
+        padding: 10px 8px; /* Reduced from 12px 10px */
+        gap: 5px; /* Reduced from 6px */
+        min-height: 100px; /* Reduced from 110px */
     }
     
-    .help-center-hero h1 {
-        font-size: 22px;
+    .help-card-icon { 
+        width: 26px; /* Reduced from 28px */
+        height: 26px; 
     }
     
-    .help-center-subtitle {
-        font-size: 13px;
+    .help-card-icon i {
+        font-size: 11px;
     }
     
-    .help-center-action,
-    .chat-agent-btn {
-        width: 100%;
-        justify-content: center;
-        padding: 12px 18px;
-        font-size: 13px;
+    .help-card h3 { 
+        font-size: 11px; /* Reduced from 12px */
     }
     
-    .help-center-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+    .help-card-desc {
+        font-size: 9px; /* Reduced from 10px */
     }
     
-    .help-card {
-        padding: 14px 12px;
-        gap: 10px;
+    .help-card-view { 
+        width: 100%; 
+        justify-content: center; 
+        padding: 3px 6px;
+        font-size: 9px;
     }
     
-    .help-card-icon {
-        width: 34px;
-        height: 34px;
-    }
-    
-    .help-card h3 {
-        font-size: 12px;
-    }
-    
-    .help-center-faq {
-        padding: 20px 16px;
-    }
-    
-    .faq-tabs {
-        gap: 4px;
-    }
-    
-    .faq-tabs span {
-        padding: 5px 10px;
-        font-size: 12px;
-    }
-    
-    .faq-question {
-        font-size: 13px;
-        padding: 10px 4px;
-    }
-    
-    .faq-answer {
-        font-size: 12px;
-        padding-left: 28px;
-    }
-    
-    .chat-message {
-        max-width: 85%;
-        font-size: 12px;
-    }
-    
-    .help-chat-body {
-        height: 200px;
-        padding: 14px;
-    }
+    .help-center-faq { padding: 20px 16px; }
+    .faq-tabs { gap: 4px; }
+    .faq-tabs span { padding: 5px 10px; font-size: 12px; }
+    .faq-question { font-size: 13px; padding: 10px 4px; }
+    .faq-answer { font-size: 12px; padding-left: 28px; }
+    .help-faq-header { padding: 12px 16px; font-size: 13px; }
+    .help-faq-body { padding: 14px 16px; }
+    .help-search-bar { max-width: 100%; }
 }
 
 @media (max-width: 480px) {
-    .help-center-grid {
-        grid-template-columns: 1fr;
+    .help-center-grid { 
+        grid-template-columns: 1fr; 
+        gap: 8px;
     }
     
-    .help-card {
-        flex-direction: column;
-        text-align: center;
-        padding: 18px 14px;
+    .help-card { 
+        flex-direction: column; 
+        text-align: center; 
+        padding: 12px 10px; /* Reduced from 14px 12px */
+        gap: 5px;
+        min-height: 95px; /* Reduced from 110px */
     }
     
-    .help-card-icon {
-        margin: 0 auto 6px;
+    .help-card-icon { 
+        margin: 0 auto 3px; /* Reduced from 4px */
     }
 }
 
 /* ================= SCROLLBAR ================= */
-.help-chat-body::-webkit-scrollbar,
 .faq-answer::-webkit-scrollbar {
     width: 5px;
 }
 
-.help-chat-body::-webkit-scrollbar-track,
 .faq-answer::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.help-chat-body::-webkit-scrollbar-thumb,
 .faq-answer::-webkit-scrollbar-thumb {
     background: var(--color-gray-300);
     border-radius: 3px;
 }
 
-.help-chat-body::-webkit-scrollbar-thumb:hover,
 .faq-answer::-webkit-scrollbar-thumb:hover {
     background: var(--color-gray-500);
 }
@@ -693,9 +727,6 @@ body {
 }
 
 .help-center-action:focus-visible,
-.chat-agent-btn:focus-visible,
-.help-chat-input input:focus-visible,
-.help-chat-input button:focus-visible,
 .faq-question:focus-visible,
 .help-card:focus-visible {
     outline: 2px solid var(--color-black);

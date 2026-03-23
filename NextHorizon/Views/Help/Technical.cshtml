@@ -1,0 +1,93 @@
+@{
+    ViewData["Title"] = "Technical Support - FAQ";
+}
+
+<div class="help-center-page">
+    <a href="/Home" class="help-back-btn">
+        <i class="fas fa-arrow-left"></i> Back to Help Center
+    </a>
+
+    <div class="help-page-header">
+        <div class="help-page-icon">
+            <i class="fa-solid fa-screwdriver-wrench"></i>
+        </div>
+        <h1>Technical Support</h1>
+        <p>App, website & connectivity issues</p>
+    </div>
+
+    <div class="help-page-faq">
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>The app keeps crashing</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Try: 1) Force close & reopen the app, 2) Clear app cache, 3) Update to the latest version, 4) Reinstall the app. Contact support if issue persists.
+            </div>
+        </div>
+        
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>Website not loading properly</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Try: 1) Clear browser cache & cookies, 2) Disable browser extensions, 3) Try incognito mode, 4) Switch browsers (Chrome/Firefox/Safari recommended).
+            </div>
+        </div>
+        
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>I can't log in to my account</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Check: 1) Correct email/password, 2) Caps Lock is off, 3) Internet connection. Use "Forgot Password" if needed. Contact support for account recovery.
+            </div>
+        </div>
+
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>Payment page won't load</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                This may be due to browser security settings. Try: 1) Allow pop-ups for our site, 2) Disable ad blockers temporarily, 3) Use a different browser or device.
+            </div>
+        </div>
+
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>Images not loading on the app</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Check your internet connection, clear app cache, or try switching between WiFi and mobile data.
+            </div>
+        </div>
+
+        <div class="help-faq-item">
+            <div class="help-faq-question">
+                <span>How do I update the app?</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="help-faq-answer">
+                Go to your device's app store (Google Play or App Store), search for our app, and tap "Update" if available.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".help-faq-question").forEach(q => {
+        q.addEventListener("click", () => {
+            const item = q.parentElement;
+            document.querySelectorAll(".help-faq-item").forEach(i => {
+                if (i !== item) i.classList.remove("active");
+            });
+            item.classList.toggle("active");
+        });
+    });
+});
+</script>
