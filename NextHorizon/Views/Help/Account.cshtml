@@ -1,0 +1,77 @@
+@{
+    ViewData["Title"] = "Account Help";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="/css/help-center.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+}
+
+<div class="help-center-page">
+    <div class="help-center-hero">
+        <div>
+            <p class="help-center-label">Help Center</p>
+            <h1>Account Settings</h1>
+            <p class="help-center-subtitle">Learn how to update your account settings safely.</p>
+        </div>
+        <a class="help-center-action" href="/Help/Index">Back to Help Center</a>
+    </div>
+
+    <div class="help-category-layout">
+        <aside class="help-side-nav">
+            <h3>Shop with NextHorizon</h3>
+            <ul>
+                <li><a href="/Help/Orders">Orders Management</a></li>
+                <li><a href="/Help/Payouts">Payouts & Transactions</a></li>
+                <li><a href="/Help/Account" class="active">Account Settings</a></li>
+                <li><a href="/Help/Shipping">Shipping & Logistics</a></li>
+                <li><a href="/Help/Marketing">Promotions & Marketing</a></li>
+            </ul>
+        </aside>
+
+        <section class="help-content-panel">
+            <h2>Account Settings</h2>
+            <div class="help-article-list">
+
+                <div class="help-article">
+                    <a href="#" class="answer-toggle">
+                        How do I change my password?
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="answer-text">
+                        Go to Account Settings > Security. Enter your current password, then choose a new password and
+                        save changes.
+                    </div>
+                </div>
+
+                <div class="help-article">
+                    <a href="#" class="answer-toggle">
+                        How do I update my email address?
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="answer-text">
+                        Navigate to Account Settings > Personal Info. Enter your new email and confirm using the
+                        verification link sent to your inbox.
+                    </div>
+                </div>
+
+                <div class="help-article">
+                    <a href="#" class="answer-toggle">
+                        How do I set up account security?
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="answer-text">
+                        Enable two-factor authentication in Account Settings > Security. Link your phone or
+                        authenticator app for extra protection.
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="/js/account-help.js"></script>
+}

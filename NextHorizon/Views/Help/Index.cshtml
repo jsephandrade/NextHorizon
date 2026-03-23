@@ -4,13 +4,12 @@
 }
 
 @section Styles {
-    <link rel="stylesheet" href="/css/helpcenter.css" />
+    <link rel="stylesheet" href="/css/help-center.css" />
+    <link rel="stylesheet" href="/css/help-center-chat.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 }
 
 <div class="help-center-page">
-
-    <!-- HERO SECTION -->
     <div class="help-center-hero">
         <div>
             <p class="help-center-label">Support</p>
@@ -19,139 +18,231 @@
                 Explore quick answers, guides, and support options for orders, payouts, shipping, marketing, and account
                 management.
             </p>
+            <div class="help-search" style="margin-top:40px;">
+                <i class="fas fa-search"></i>
+                <input type="text" id="helpSearchInput" placeholder="Search help topics..." />
+            </div>
         </div>
         <a class="help-center-action" href="mailto:support@nexthorizon.com">Email Support</a>
     </div>
 
-    <!-- SEARCH -->
-    <div class="help-search">
-        <i class="fas fa-search"></i>
-        <input type="text" id="helpSearchInput" placeholder="Search help topics..." />
-    </div>
+    <div class="two-column-layout">
+        <!-- ================= LEFT SIDE (HELP CENTER) ================= -->
+        <div class="help-left">
+            <p id="noResultsMessage" class="no-results">No results found.</p>
 
-    <p id="noResultsMessage" class="no-results">No results found.</p>
+            <p id="noResultsMessage" class="no-results">No results found.</p>
 
-    <!-- HELP CARDS GRID -->
-    <h2 class="help-category-header">Categories</h2>
-    <div class="help-center-grid">
-        <div class="help-card" data-title="orders management">
-            <div class="help-card-icon"><i class="fas fa-box-open"></i></div>
-            <div class="help-card-content">
-                <h3>Orders Management</h3>
-                <a href="#">View order guides</a>
+            <!-- CATEGORIES -->
+            <h2 class="help-category-header">Categories</h2>
+            <div class="help-center-grid">
+                <div class="help-card" data-title="orders management">
+                    <div class="help-card-icon"><i class="fas fa-box-open"></i></div>
+                    <div class="help-card-content">
+                        <h3>Orders Management</h3>
+                        <a href="/Help/Orders">View order guides</a>
+                    </div>
+                </div>
+
+                <div class="help-card" data-title="payouts transactions">
+                    <div class="help-card-icon"><i class="fas fa-dollar-sign"></i></div>
+                    <div class="help-card-content">
+                        <h3>Payouts & Transactions</h3>
+                        <a href="/Help/Payouts">View payout help</a>
+                    </div>
+                </div>
+
+                <div class="help-card" data-title="account settings">
+                    <div class="help-card-icon"><i class="fas fa-user-cog"></i></div>
+                    <div class="help-card-content">
+                        <h3>Account Settings</h3>
+                        <a href="/Help/Account">View account help</a>
+                    </div>
+                </div>
+
+                <div class="help-card" data-title="shipping logistics">
+                    <div class="help-card-icon"><i class="fas fa-truck-loading"></i></div>
+                    <div class="help-card-content">
+                        <h3>Shipping & Logistics</h3>
+                        <a href="/Help/Shipping">View shipping help</a>
+                    </div>
+                </div>
+
+                <div class="help-card" data-title="promotions marketing">
+                    <div class="help-card-icon"><i class="fas fa-bullhorn"></i></div>
+                    <div class="help-card-content">
+                        <h3>Promotions & Marketing</h3>
+                        <a href="/Help/Marketing">View marketing help</a>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <div class="help-card" data-title="payouts transactions">
-            <div class="help-card-icon"><i class="fas fa-dollar-sign"></i></div>
-            <div class="help-card-content">
-                <h3>Payouts & Transactions</h3>
-                <a href="#">View payout help</a>
+            <!-- FAQ -->
+            <div class="help-center-faq">
+                <h2>Frequently Asked Questions</h2>
+
+                <div class="faq-item" data-title="manage orders">
+                    <button class="faq-question">How do I manage my orders?</button>
+                    <p class="faq-answer">Go to Orders Management in your seller dashboard and update order statuses.
+                    </p>
+                </div>
+
+                <div class="faq-item" data-title="view payouts">
+                    <button class="faq-question">How do I view my payouts?</button>
+                    <p class="faq-answer">Visit the Payouts & Transactions section to check your payments.</p>
+                </div>
+
+                <div class="faq-item" data-title="account settings">
+                    <button class="faq-question">How do I update my account?</button>
+                    <p class="faq-answer">Go to Account Settings to update your personal information.</p>
+                </div>
+
+                <div class="faq-item" data-title="shipping logistics">
+                    <button class="faq-question">How can I manage shipping?</button>
+                    <p class="faq-answer">Use the Shipping section to manage deliveries and tracking.</p>
+                </div>
+
+                <div class="faq-item" data-title="marketing promotions">
+                    <button class="faq-question">How do I run promotions?</button>
+                    <p class="faq-answer">Go to Promotions & Marketing to create campaigns.</p>
+                </div>
             </div>
+
         </div>
 
-        <div class="help-card" data-title="account settings">
-            <div class="help-card-icon"><i class="fas fa-user-cog"></i></div>
-            <div class="help-card-content">
-                <h3>Account Settings</h3>
-                <a href="#">View account help</a>
+        <!-- ================= RIGHT SIDE (CHAT SUPPORT) ================= -->
+        <div class="help-right">
+
+            <div class="support-container">
+
+                <!-- HEADER -->
+                <div class="support-header">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div class="support-avatar">S</div>
+                        <div>
+                            <h3>Seller Support</h3>
+                            <p>Customer Service</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHAT BODY -->
+                <div class="support-body">
+                    <div class="chat-meta-row">
+                        <div>
+                            <h4 class="chat-title">Live Seller Agent</h4>
+                            <p class="chat-subtitle">Ask about orders, payouts, shipping, and account help.</p>
+                        </div>
+                        <button class="clear-chat-btn" onclick="clearChat()">Clear Chat</button>
+                    </div>
+
+                    <div class="quick-actions">
+                        <div class="quick-item" onclick="handleTopic('Manage Orders')">
+                            <i class="fas fa-box"></i>
+                            <span>Manage Orders</span>
+                        </div>
+                        <div class="quick-item" onclick="handleTopic('Refund Requests')">
+                            <i class="fas fa-undo"></i>
+                            <span>Refund Requests</span>
+                        </div>
+                        <div class="quick-item" onclick="handleTopic('Shipping Issues')">
+                            <i class="fas fa-truck"></i>
+                            <span>Shipping Issues</span>
+                        </div>
+                        <div class="quick-item" onclick="handleTopic('Payouts')">
+                            <i class="fas fa-wallet"></i>
+                            <span>Payouts</span>
+                        </div>
+                    </div>
+
+                    <div class="chat-actions">
+                        <button id="chatWithAgentBtn" class="agent-btn" onclick="openChatInput()">Chat with Agent</button>
+                    </div>
+
+                    <div id="chatThread" class="chat-thread">
+                        <div class="chat-message bot">Welcome Seller, how can we help you today?</div>
+                    </div>
+                    <div id="typingIndicator" class="typing-indicator" style="display:none;">Agent is typing...</div>
+                </div>
+
+                <div id="chatInputRow" class="chat-input-row hidden">
+                    <input type="text" id="agentInput" placeholder="Type your message..." />
+                    <button class="agent-btn" onclick="sendAgentMessage()">Send</button>
+                </div>
+
             </div>
-        </div>
 
-        <div class="help-card" data-title="shipping logistics">
-            <div class="help-card-icon"><i class="fas fa-truck-loading"></i></div>
-            <div class="help-card-content">
-                <h3>Shipping & Logistics</h3>
-                <a href="#">View shipping help</a>
-            </div>
-        </div>
-
-        <div class="help-card" data-title="promotions marketing">
-            <div class="help-card-icon"><i class="fas fa-bullhorn"></i></div>
-            <div class="help-card-content">
-                <h3>Promotions & Marketing</h3>
-                <a href="#">View marketing help</a>
-            </div>
-        </div>
-
-        <div class="help-card" data-title="contact support help">
-            <div class="help-card-icon"><i class="fas fa-life-ring"></i></div>
-            <div class="help-card-content">
-                <h3>Contact Support</h3>
-                <a href="mailto:support@nexthorizon.com">Email support</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- FAQ SECTION -->
-    <div class="help-center-faq">
-        <h2>Frequently Asked Questions</h2>
-
-        <div class="faq-item" data-title="manage orders">
-            <strong>How do I manage my orders?</strong>
-            <p>Go to Orders Management in your seller dashboard and update order statuses or handle returns as needed.
-            </p>
-        </div>
-
-        <div class="faq-item" data-title="view payouts">
-            <strong>How do I view my payouts?</strong>
-            <p>Visit the Payouts & Transactions section to check your payments and resolve any transaction issues.</p>
-        </div>
-
-        <div class="faq-item" data-title="account settings">
-            <strong>How do I update my seller account settings?</strong>
-            <p>Access Account Settings to update personal info, store preferences, and security settings.</p>
-        </div>
-
-        <div class="faq-item" data-title="shipping logistics">
-            <strong>How can I manage shipping and logistics?</strong>
-            <p>Go to Shipping & Logistics to manage shipments, create labels, and process returns efficiently.</p>
-        </div>
-
-        <div class="faq-item" data-title="marketing promotions">
-            <strong>How do I run promotions and marketing campaigns?</strong>
-            <p>Check Promotions & Marketing to create discounts, run campaigns, and improve your product visibility.</p>
-        </div>
-
-        <div class="faq-item" data-title="contact support">
-            <strong>How can I contact support?</strong>
-            <p>Email support@nexthorizon.com for urgent assistance with your seller account or operational issues.</p>
         </div>
     </div>
 </div>
 
 @section Scripts {
+    <script src="/js/helpcenter.js"></script>
     <script>
-                    const searchInput = document.getElementById("helpSearchInput");
-                    const cards = document.querySelectorAll(".help-card");
-                    const faqs = document.querySelectorAll(".faq-item");
-                    const noResults = document.getElementById("noResultsMessage");
+        const chatThread = document.getElementById("chatThread");
+        const agentInput = document.getElementById("agentInput");
+        const typingIndicator = document.getElementById("typingIndicator");
+        const chatWithAgentBtn = document.getElementById("chatWithAgentBtn");
+        const chatInputRow = document.getElementById("chatInputRow");
 
-                    searchInput.addEventListener("keyup", function () {
-                        const value = this.value.toLowerCase();
-                        let visibleCount = 0;
+        function formatDate() {
+            const d = new Date();
+            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
 
-                        cards.forEach(card => {
-                            const title = card.getAttribute("data-title");
-                            if (title.includes(value)) {
-                                card.style.display = "flex";
-                                visibleCount++;
-                            } else {
-                                card.style.display = "none";
-                            }
-                        });
+        function addMessage(text, type) {
+            const msg = document.createElement("div");
+            msg.className = "chat-message " + type;
+            msg.innerHTML = `<div>${text}</div><div class='chat-ts'>${formatDate()}</div>`;
+            chatThread.appendChild(msg);
+            chatThread.scrollTop = chatThread.scrollHeight;
+        }
 
-                        faqs.forEach(faq => {
-                            const title = faq.getAttribute("data-title");
-                            if (title.includes(value)) {
-                                faq.style.display = "block";
-                                visibleCount++;
-                            } else {
-                                faq.style.display = "none";
-                            }
-                        });
+        function setTyping(visible) {
+            typingIndicator.style.display = visible ? 'block' : 'none';
+        }
 
-                        noResults.style.display = visibleCount === 0 ? "block" : "none";
-                    });
+        function openChatInput() {
+            chatWithAgentBtn.classList.add('hidden');
+            chatInputRow.classList.remove('hidden');
+            agentInput.focus();
+            addMessage('Agent: Hello! I am here to help. Type your message below.', 'bot');
+        }
+
+        function handleTopic(topic) {
+            addMessage(topic, 'user');
+            setTyping(true);
+            setTimeout(() => {
+                setTyping(false);
+                addMessage('Agent: Great question! We will help you with ' + topic.toLowerCase() + '.', 'bot');
+            }, 600);
+
+            if (!chatInputRow.classList.contains('hidden')) return;
+            openChatInput();
+        }
+
+        function clearChat() {
+            chatThread.innerHTML = '<div class="chat-message bot">Welcome Seller, how can we help you today?</div>';
+            setTyping(false);
+        }
+
+        function sendAgentMessage() {
+            const text = agentInput.value.trim();
+            if (!text) return;
+            addMessage(text, 'user');
+            agentInput.value = '';
+            setTyping(true);
+            setTimeout(() => {
+                setTyping(false);
+                addMessage('Agent: Thanks for your message! We are looking into this and will respond shortly.', 'bot');
+            }, 700);
+        }
+
+        agentInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                sendAgentMessage();
+            }
+        });
     </script>
 }

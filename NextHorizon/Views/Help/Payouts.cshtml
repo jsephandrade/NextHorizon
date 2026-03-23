@@ -1,0 +1,89 @@
+@{
+    ViewData["Title"] = "Payouts Help";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="/css/help-center.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+}
+
+<div class="help-center-page">
+    <div class="help-center-hero">
+        <div>
+            <p class="help-center-label">Help Center</p>
+            <h1>Payouts & Transactions</h1>
+            <p class="help-center-subtitle">View payout schedules, transaction history, and payment issues.</p>
+        </div>
+        <a class="help-center-action" href="/Help/Index">Back to Help Center</a>
+    </div>
+
+    <div class="help-category-layout">
+        <aside class="help-side-nav">
+            <h3>Shop with NextHorizon</h3>
+            <ul>
+                <li><a href="/Help/Orders">Orders Management</a></li>
+                <li><a href="/Help/Payouts" class="active">Payouts & Transactions</a></li>
+                <li><a href="/Help/Account">Account Settings</a></li>
+                <li><a href="/Help/Shipping">Shipping & Logistics</a></li>
+                <li><a href="/Help/Marketing">Promotions & Marketing</a></li>
+            </ul>
+        </aside>
+
+        <section class="help-content-panel">
+            <h2>Payouts & Transactions</h2>
+
+            <div class="help-article-list">
+
+                <div class="help-article">
+                    <a href="#" class="answer-toggle">
+                        How do I view my payouts?
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="answer-text">
+                        Go to the Payouts section in your dashboard to see your earnings,
+                        payment history, and upcoming payouts.
+                    </div>
+                </div>
+
+                <div class="help-article">
+                    <a href="#" class="answer-toggle">
+                        Why is my payout delayed?
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="answer-text">
+                        Payouts may be delayed due to verification checks, bank processing times,
+                        or unresolved order issues. Check your notifications for details.
+                    </div>
+                </div>
+
+                <div class="help-article">
+                    <a href="#" class="answer-toggle">
+                        How do I update my bank details?
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="answer-text">
+                        Navigate to Account Settings > Payment Methods. Update your bank
+                        information and save changes securely.
+                    </div>
+                </div>
+
+                <div class="help-article">
+                    <a href="#" class="answer-toggle">
+                        How do I resolve payment errors?
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="answer-text">
+                        Review the error message in your transaction history. If the issue persists,
+                        contact support with the transaction ID for assistance.
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="/js/account-help.js"></script>
+}

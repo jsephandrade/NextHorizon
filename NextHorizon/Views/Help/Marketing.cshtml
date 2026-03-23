@@ -1,0 +1,78 @@
+@{
+    ViewData["Title"] = "Marketing Help";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="/css/help-center.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+}
+
+<div class="help-center-page">
+    <div class="help-center-hero">
+        <div>
+            <p class="help-center-label">Help Center</p>
+            <h1>Promotions & Marketing</h1>
+            <p class="help-center-subtitle">Create and monitor promotions and campaigns.</p>
+        </div>
+        <a class="help-center-action" href="/Help/Index">Back to Help Center</a>
+    </div>
+
+    <div class="help-category-layout">
+        <aside class="help-side-nav">
+            <h3>Shop with NextHorizon</h3>
+            <ul>
+                <li><a href="/Help/Orders">Orders Management</a></li>
+                <li><a href="/Help/Payouts">Payouts & Transactions</a></li>
+                <li><a href="/Help/Account">Account Settings</a></li>
+                <li><a href="/Help/Shipping">Shipping & Logistics</a></li>
+                <li><a href="/Help/Marketing" class="active">Promotions & Marketing</a></li>
+            </ul>
+        </aside>
+
+        <section class="help-content-panel">
+            <h2>Promotions & Marketing</h2>
+
+            <div class="help-article-list">
+
+                <div class="help-article">
+                    <a href="#" class="answer-toggle">
+                        How do I create a promotion?
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="answer-text">
+                        Go to the Marketing section in your dashboard. Click "Create Promotion", select products,
+                        set discounts, and define the promotion duration before publishing.
+                    </div>
+                </div>
+
+                <div class="help-article">
+                    <a href="#" class="answer-toggle">
+                        How do I run a campaign?
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="answer-text">
+                        Navigate to Campaign Manager, choose your campaign type, set your budget and audience,
+                        then launch the campaign to start attracting customers.
+                    </div>
+                </div>
+
+                <div class="help-article">
+                    <a href="#" class="answer-toggle">
+                        How do I view campaign performance?
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="answer-text">
+                        Go to Marketing Analytics to track impressions, clicks, and conversions.
+                        Use this data to optimize your future campaigns.
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="/js/account-help.js"></script>
+}

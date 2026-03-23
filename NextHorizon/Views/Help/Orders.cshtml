@@ -1,0 +1,100 @@
+@{
+    ViewData["Title"] = "Orders Help";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="/css/help-center.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+}
+
+<div class="help-center-page">
+    <div class="help-center-hero">
+        <div>
+            <p class="help-center-label">Help Center</p>
+            <h1>Orders Management</h1>
+            <p class="help-center-subtitle">Find answers about order processing, returns, and tracking.</p>
+        </div>
+        <a class="help-center-action" href="/Help/Index">Back to Help Center</a>
+    </div>
+
+    <div class="help-category-layout">
+        <aside class="help-side-nav">
+            <h3>Shop with NextHorizon</h3>
+            <ul>
+                <li><a href="/Help/Orders" class="active">Orders Management</a></li>
+                <li><a href="/Help/Payouts">Payouts & Transactions</a></li>
+                <li><a href="/Help/Account">Account Settings</a></li>
+                <li><a href="/Help/Shipping">Shipping & Logistics</a></li>
+                <li><a href="/Help/Marketing">Promotions & Marketing</a></li>
+            </ul>
+        </aside>
+
+        <section class="help-content-panel">
+            <h2>Orders Management</h2>
+
+            <div class="help-article-list">
+
+                <div class="help-article">
+                    <a href="#" class="answer-toggle">
+                        How do I process new orders?
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="answer-text">
+                        Go to Orders Management in your dashboard. Select a new order, confirm details,
+                        and mark it as "Processing" before preparing it for shipment.
+                    </div>
+                </div>
+
+                <div class="help-article">
+                    <a href="#" class="answer-toggle">
+                        How do I print invoices and packing slips?
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="answer-text">
+                        Open the order details and click "Print الوث". You can download or print
+                        invoices and packing slips directly from there.
+                    </div>
+                </div>
+
+                <div class="help-article">
+                    <a href="#" class="answer-toggle">
+                        What should I do for cancelled orders?
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="answer-text">
+                        Cancelled orders require no shipment. Review the reason for cancellation
+                        and update your inventory if needed.
+                    </div>
+                </div>
+
+                <div class="help-article">
+                    <a href="#" class="answer-toggle">
+                        How do I issue refunds?
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="answer-text">
+                        Go to the specific order, click "Refund", choose the reason, and confirm.
+                        The system will process the refund automatically.
+                    </div>
+                </div>
+
+                <div class="help-article">
+                    <a href="#" class="answer-toggle">
+                        How do I manage order shipping statuses?
+                        <i class="fas fa-chevron-down"></i>
+                    </a>
+                    <div class="answer-text">
+                        Update the order status in real-time from "Processing" to "Shipped" and
+                        "Delivered" to keep customers informed.
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="/js/account-help.js"></script>
+}

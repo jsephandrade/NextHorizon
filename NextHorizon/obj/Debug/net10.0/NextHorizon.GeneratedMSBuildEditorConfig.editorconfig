@@ -70,8 +70,28 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFzaGJvYXJkXF9WaWV3U3RhcnQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Help/Account.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSGVscFxBY2NvdW50LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Help/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSGVscFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Help/Marketing.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSGVscFxNYXJrZXRpbmcuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Help/Orders.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSGVscFxPcmRlcnMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Help/Payouts.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSGVscFxQYXlvdXRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Help/Shipping.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSGVscFxTaGlwcGluZy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/Divine Quijano/NextHorizon/NextHorizon/Views/Home/Index.cshtml]
