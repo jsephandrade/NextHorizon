@@ -117,57 +117,24 @@
 
                 <!-- HEADER -->
                 <div class="support-header">
-                    <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="support-header-left">
                         <div class="support-avatar">S</div>
                         <div>
                             <h3>Seller Support</h3>
                             <p>Customer Service</p>
                         </div>
                     </div>
+                    <button class="clear-chat-btn" onclick="clearChat()">Clear Chat</button>
                 </div>
 
                 <!-- CHAT BODY -->
                 <div class="support-body">
-                    <div class="chat-meta-row">
-                        <div>
-                            <h4 class="chat-title">Live Seller Agent</h4>
-                            <p class="chat-subtitle">Ask about orders, payouts, shipping, and account help.</p>
-                        </div>
-                        <button class="clear-chat-btn" onclick="clearChat()">Clear Chat</button>
-                    </div>
-
-                    <div class="quick-actions">
-                        <div class="quick-item" onclick="handleTopic('Manage Orders')">
-                            <i class="fas fa-box"></i>
-                            <span>Manage Orders</span>
-                        </div>
-                        <div class="quick-item" onclick="handleTopic('Refund Requests')">
-                            <i class="fas fa-undo"></i>
-                            <span>Refund Requests</span>
-                        </div>
-                        <div class="quick-item" onclick="handleTopic('Shipping Issues')">
-                            <i class="fas fa-truck"></i>
-                            <span>Shipping Issues</span>
-                        </div>
-                        <div class="quick-item" onclick="handleTopic('Payouts')">
-                            <i class="fas fa-wallet"></i>
-                            <span>Payouts</span>
-                        </div>
-                    </div>
-
-                    <div class="chat-actions">
-                        <button id="chatWithAgentBtn" class="agent-btn" onclick="openChatInput()">Chat with Agent</button>
-                    </div>
-
-                    <div id="chatThread" class="chat-thread">
-                        <div class="chat-message bot">Welcome Seller, how can we help you today?</div>
-                    </div>
+                    <div id="chatThread" class="chat-thread"></div>
                     <div id="typingIndicator" class="typing-indicator" style="display:none;">Agent is typing...</div>
-                </div>
-
-                <div id="chatInputRow" class="chat-input-row hidden">
-                    <input type="text" id="agentInput" placeholder="Type your message..." />
-                    <button class="agent-btn" onclick="sendAgentMessage()">Send</button>
+                    <div id="chatInputRow" class="chat-input-row hidden">
+                        <input type="text" id="agentInput" placeholder="Type your message..." />
+                        <button class="agent-btn" onclick="sendAgentMessage()">Send</button>
+                    </div>
                 </div>
 
             </div>
@@ -178,71 +145,5 @@
 
 @section Scripts {
     <script src="/js/helpcenter.js"></script>
-    <script>
-        const chatThread = document.getElementById("chatThread");
-        const agentInput = document.getElementById("agentInput");
-        const typingIndicator = document.getElementById("typingIndicator");
-        const chatWithAgentBtn = document.getElementById("chatWithAgentBtn");
-        const chatInputRow = document.getElementById("chatInputRow");
-
-        function formatDate() {
-            const d = new Date();
-            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-
-        function addMessage(text, type) {
-            const msg = document.createElement("div");
-            msg.className = "chat-message " + type;
-            msg.innerHTML = `<div>${text}</div><div class='chat-ts'>${formatDate()}</div>`;
-            chatThread.appendChild(msg);
-            chatThread.scrollTop = chatThread.scrollHeight;
-        }
-
-        function setTyping(visible) {
-            typingIndicator.style.display = visible ? 'block' : 'none';
-        }
-
-        function openChatInput() {
-            chatWithAgentBtn.classList.add('hidden');
-            chatInputRow.classList.remove('hidden');
-            agentInput.focus();
-            addMessage('Agent: Hello! I am here to help. Type your message below.', 'bot');
-        }
-
-        function handleTopic(topic) {
-            addMessage(topic, 'user');
-            setTyping(true);
-            setTimeout(() => {
-                setTyping(false);
-                addMessage('Agent: Great question! We will help you with ' + topic.toLowerCase() + '.', 'bot');
-            }, 600);
-
-            if (!chatInputRow.classList.contains('hidden')) return;
-            openChatInput();
-        }
-
-        function clearChat() {
-            chatThread.innerHTML = '<div class="chat-message bot">Welcome Seller, how can we help you today?</div>';
-            setTyping(false);
-        }
-
-        function sendAgentMessage() {
-            const text = agentInput.value.trim();
-            if (!text) return;
-            addMessage(text, 'user');
-            agentInput.value = '';
-            setTyping(true);
-            setTimeout(() => {
-                setTyping(false);
-                addMessage('Agent: Thanks for your message! We are looking into this and will respond shortly.', 'bot');
-            }, 700);
-        }
-
-        agentInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                sendAgentMessage();
-            }
-        });
-    </script>
+    <script src="/js/help-center-chat.js"></script>
 }
