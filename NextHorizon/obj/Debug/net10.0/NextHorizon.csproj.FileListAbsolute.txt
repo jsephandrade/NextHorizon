@@ -675,6 +675,8 @@ C:\Users\My mobile PC\OneDrive\Documents\NextHorizon\NextHorizon\obj\Debug\net10
 C:\Users\My mobile PC\OneDrive\Documents\NextHorizon\NextHorizon\obj\Debug\net10.0\NextHorizon.pdb
 C:\Users\My mobile PC\OneDrive\Documents\NextHorizon\NextHorizon\obj\Debug\net10.0\NextHorizon.genruntimeconfig.cache
 C:\Users\My mobile PC\OneDrive\Documents\NextHorizon\NextHorizon\obj\Debug\net10.0\ref\NextHorizon.dll
-C:\Users\My mobile PC\OneDrive\Documents\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\o6ptg4nado-{0}-6d5we182qt-6d5we182qt.gz
-C:\Users\My mobile PC\OneDrive\Documents\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\cxkgjsvw8i-{0}-v25xff9bqk-v25xff9bqk.gz
 C:\Users\My mobile PC\OneDrive\Documents\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\fpmqlxdmer-{0}-vdrwj7ef2y-vdrwj7ef2y.gz
+C:\Users\My mobile PC\OneDrive\Documents\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\yd4fjwzix7-{0}-fn25wlygac-fn25wlygac.gz
+C:\Users\My mobile PC\OneDrive\Documents\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\np0lb4rwc9-{0}-wyhu1ec5oi-wyhu1ec5oi.gz
+C:\Users\My mobile PC\OneDrive\Documents\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\o6ptg4nado-{0}-mve60fgkut-mve60fgkut.gz
+C:\Users\My mobile PC\OneDrive\Documents\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\cxkgjsvw8i-{0}-ktkj6bz9j4-ktkj6bz9j4.gz

@@ -1,234 +1,703 @@
-/* ================= GLOBAL ================= */
+/* ================= CSS VARIABLES ================= */
+:root {
+    /* Color Palette - Strict Monochrome */
+    --color-black: #111111;
+    --color-black-soft: #1a1a1a;
+    --color-white: #ffffff;
+    --color-gray-50: #fafafa;
+    --color-gray-100: #f5f5f5;
+    --color-gray-200: #eaeaea;
+    --color-gray-300: #dcdcdc;
+    --color-gray-400: #b8b8b8;
+    --color-gray-500: #888888;
+    --color-gray-600: #666666;
+    
+    /* Gradients */
+    --gradient-subtle: linear-gradient(180deg, var(--color-white) 0%, var(--color-gray-50) 100%);
+    --gradient-hero: linear-gradient(135deg, var(--color-black) 0%, var(--color-black-soft) 100%);
+    --gradient-card-hover: linear-gradient(145deg, var(--color-white), var(--color-gray-100));
+    
+    /* Shadows */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
+    --shadow-glow: 0 0 0 1px rgba(17, 17, 17, 0.1), 0 4px 20px rgba(17, 17, 17, 0.08);
+    
+    /* Border Radius */
+    --radius-xs: 6px;
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 18px;
+    --radius-xl: 24px;
+    --radius-pill: 999px;
+    
+    /* Transitions */
+    --transition-micro: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ================= GLOBAL RESET ================= */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
 body {
-    background: #ffffff;
-    color: #111111;
-    font-family: 'Segoe UI', sans-serif;
+    background: var(--gradient-subtle);
+    color: var(--color-black);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
 }
 
-/* ================= FLOATING BUTTON ================= */
-.help-center-float {
-    position: fixed;
-    right: 20px;
-    bottom: 20px;
-    z-index: 1200;
-
-    width: 52px;
-    height: 52px;
-    aspect-ratio: 1 / 1;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 50%;
-    background: #111;
-    color: #fff;
-    text-decoration: none;
-    font-size: 18px;
-
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-    transition: all 0.25s ease;
+::selection {
+    background: var(--color-black);
+    color: var(--color-white);
 }
 
-/* Subtle hover */
-.help-center-float:hover {
-    transform: translateY(-2px);
-    background: #000;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
-}
-
-/* Soft ring effect */
-.help-center-float::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    border: 2px solid #111;
-    opacity: 0;
-    transform: scale(1.1);
-    transition: all 0.25s ease;
-}
-
-.help-center-float:hover::after {
-    opacity: 0.15;
-    transform: scale(1.2);
-}
-
-/* Icon */
-.help-center-icon {
-    width: 22px;
-    height: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* ================= PAGE ================= */
+/* ================= PAGE CONTAINER ================= */
 .help-center-page {
-    max-width: 1000px;
-    margin: 50px auto;
-    padding: 0 20px;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    animation: fadeIn 0.4s ease forwards;
 }
 
-/* ================= HERO ================= */
-.help-center-hero {
-    background: #111;
-    color: #fff;
-    border-radius: 16px;
-    padding: 30px;
-    margin-bottom: 28px;
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
 
+/* ================= HERO SECTION ================= */
+.help-center-hero {
+    background: var(--gradient-hero);
+    color: var(--color-white);
+    border-radius: var(--radius-xl);
+    padding: 36px 32px;
+    margin-bottom: 32px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 24px;
+    gap: 20px;
+    flex-wrap: wrap;
+    position: relative;
+    overflow: hidden;
+    animation: slideUp 0.5s ease forwards;
+    box-shadow: var(--shadow-lg);
 }
 
-/* Label */
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.help-center-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 20% 80%, rgba(255,255,255,0.03) 0%, transparent 50%);
+    animation: pulse 8s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+}
+
 .help-center-label {
     text-transform: uppercase;
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    color: #888;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--color-gray-400);
     margin-bottom: 10px;
+    font-weight: 600;
 }
 
-/* Title */
 .help-center-hero h1 {
     margin: 0;
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 700;
+    line-height: 1.2;
 }
 
-/* Subtitle */
 .help-center-subtitle {
-    margin-top: 10px;
-    color: #d1d1d1;
-    max-width: 520px;
+    margin-top: 12px;
+    color: var(--color-gray-300);
+    max-width: 500px;
     line-height: 1.5;
+    font-size: 14px;
 }
 
-/* CTA */
-.help-center-action {
-    background: #fff;
-    color: #111;
-    border-radius: 999px;
+/* Action Buttons */
+.help-center-action,
+.chat-agent-btn {
+    background: var(--color-white);
+    color: var(--color-black);
+    border-radius: var(--radius-pill);
     font-weight: 600;
     padding: 10px 20px;
     text-decoration: none;
-    transition: all 0.2s ease;
-    border: 1px solid #ddd;
+    border: 1px solid transparent;
+    transition: var(--transition-fast);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
 }
 
-.help-center-action:hover {
-    background: #f5f5f5;
+.help-center-action:hover,
+.chat-agent-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-black);
 }
 
-/* ================= GRID ================= */
+.help-center-action:active,
+.chat-agent-btn:active {
+    transform: translateY(0);
+}
+
+.chat-agent-btn {
+    position: relative;
+}
+
+/* Agent Status Indicator */
+.agent-status {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--color-gray-500);
+    position: absolute;
+    top: 5px;
+    right: 12px;
+    border: 2px solid var(--color-white);
+    transition: var(--transition-fast);
+}
+
+.agent-status.online {
+    background: var(--color-black);
+    animation: statusPulse 2s ease-in-out infinite;
+}
+
+@keyframes statusPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(17, 17, 17, 0.4); transform: scale(1); }
+    50% { box-shadow: 0 0 0 6px rgba(17, 17, 17, 0); transform: scale(1.1); }
+}
+
+/* ================= HELP GRID - COMPACT ================= */
 .help-center-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 16px;
-    margin-bottom: 28px;
-}
-
-/* ================= CARDS ================= */
-.help-card {
-    background: #fff;
-    border-radius: 14px;
-    padding: 18px;
-
-    display: flex;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 14px;
-
-    border: 1px solid #e5e5e5;
-    transition: all 0.2s ease;
-    cursor: pointer;
+    margin-bottom: 32px;
 }
 
-/* Hover = clean lift */
+/* Help Cards - Smaller & Compact */
+.help-card {
+    background: var(--color-white);
+    border-radius: var(--radius-md);
+    padding: 16px 14px;
+    display: flex;
+    gap: 12px;
+    border: 1px solid var(--color-gray-200);
+    transition: var(--transition-normal);
+    cursor: pointer;
+    position: relative;
+    animation: slideUp 0.4s ease forwards;
+    opacity: 0;
+    transform: translateY(12px);
+}
+
+.help-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--gradient-hero);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--transition-fast);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
 .help-card:hover {
     transform: translateY(-3px);
-    border-color: #111;
+    border-color: var(--color-black);
+    box-shadow: var(--shadow-glow);
+    background: var(--gradient-card-hover);
 }
 
-/* Icon */
-.help-card-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: #111;
-    color: #fff;
+.help-card:hover::before {
+    transform: scaleX(1);
+}
 
+.help-card-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-sm);
+    background: var(--color-black);
+    color: var(--color-white);
     display: flex;
     align-items: center;
     justify-content: center;
-
-    font-size: 16px;
     flex-shrink: 0;
+    transition: var(--transition-fast);
 }
 
-/* Text */
+.help-card:hover .help-card-icon {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(17, 17, 17, 0.2);
+}
+
 .help-card h3 {
-    margin: 0 0 6px;
-    font-size: 16px;
+    margin: 4px 0 0;
+    font-size: 13px;
     font-weight: 600;
+    line-height: 1.3;
 }
 
-.help-card p {
-    margin: 0 0 8px;
-    color: #666;
-    font-size: 14px;
+/* ================= FAQ + CHAT CONTAINER - SIDE BY SIDE ================= */
+.help-content-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
 }
 
-.help-card a {
-    color: #111;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 14px;
-}
-
-.help-card a:hover {
-    text-decoration: underline;
-}
-
-/* ================= FAQ ================= */
+/* FAQ Section */
 .help-center-faq {
-    background: #fff;
-    border-radius: 14px;
-    border: 1px solid #e5e5e5;
-    padding: 20px;
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-gray-200);
+    padding: 24px;
+    animation: slideUp 0.4s ease forwards;
+    opacity: 0;
+    box-shadow: var(--shadow-sm);
 }
 
-.help-center-faq h2 {
-    margin-top: 0;
+.help-center-faq.loaded {
+    opacity: 1;
+}
+
+/* FAQ Tabs */
+.faq-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--color-gray-200);
+    padding-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.faq-tabs span {
+    cursor: pointer;
+    color: var(--color-gray-600);
+    padding: 6px 14px;
+    position: relative;
+    transition: var(--transition-fast);
+    border-radius: var(--radius-pill);
+    font-weight: 500;
+}
+
+.faq-tabs span:hover {
+    color: var(--color-black);
+    background: var(--color-gray-100);
+}
+
+.faq-tabs .active {
+    color: var(--color-white);
+    font-weight: 600;
+    background: var(--color-black);
 }
 
 /* FAQ Items */
+.faq-list {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.faq-list.active {
+    display: block;
+}
+
 .faq-item {
-    margin-bottom: 14px;
-    padding: 10px 0;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--color-gray-200);
+    padding: 2px 0;
 }
 
 .faq-item:last-child {
     border-bottom: none;
 }
 
-.faq-item p {
-    margin: 6px 0 0;
-    color: #666;
+.faq-question {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 14px;
+    gap: 10px;
+    padding: 12px 4px;
+    transition: var(--transition-fast);
+    border-radius: var(--radius-sm);
 }
 
-/* ================= MOBILE ================= */
-@media (max-width: 768px) {
-    .help-center-hero {
-        flex-direction: column;
-        align-items: flex-start;
-    }
+.faq-question:hover {
+    background: var(--color-gray-50);
+    color: var(--color-black);
+}
 
-    .help-center-action {
-        width: 100%;
-        text-align: center;
+.faq-number {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--color-gray-500);
+    background: var(--color-gray-100);
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: var(--transition-fast);
+}
+
+.faq-item.active .faq-number {
+    background: var(--color-black);
+    color: var(--color-white);
+}
+
+.arrow {
+    margin-left: auto;
+    transition: transform var(--transition-normal);
+    font-size: 18px;
+    line-height: 1;
+    color: var(--color-gray-500);
+}
+
+.faq-item.active .arrow {
+    transform: rotate(90deg);
+    color: var(--color-black);
+}
+
+.faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    font-size: 13px;
+    color: var(--color-gray-600);
+    padding-left: 32px;
+    line-height: 1.6;
+    transition: max-height var(--transition-normal), padding var(--transition-normal);
+}
+
+.faq-item.active .faq-answer {
+    max-height: 200px;
+    padding: 6px 0 14px 32px;
+}
+
+/* ================= CHAT BOX - COMPACT ================= */
+.help-chat {
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--color-white);
+    animation: slideUp 0.4s ease forwards;
+    opacity: 0;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+}
+
+.help-chat.loaded {
+    opacity: 1;
+}
+
+.help-chat-header {
+    background: var(--color-black);
+    color: var(--color-white);
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.help-chat-header i {
+    font-size: 14px;
+}
+
+.help-chat-body {
+    height: 240px;
+    overflow-y: auto;
+    padding: 16px;
+    background: var(--color-gray-50);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+
+/* Chat Messages */
+.chat-message {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    line-height: 1.4;
+    word-wrap: break-word;
+    animation: messageSlide 0.3s ease forwards;
+    opacity: 0;
+    transform: translateY(8px);
+}
+
+@keyframes messageSlide {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.chat-message.bot {
+    background: var(--color-white);
+    color: var(--color-black);
+    align-self: flex-start;
+    border: 1px solid var(--color-gray-200);
+    border-bottom-left-radius: 4px;
+    box-shadow: var(--shadow-xs);
+}
+
+.chat-message.user {
+    background: var(--color-black);
+    color: var(--color-white);
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+    box-shadow: var(--shadow-xs);
+}
+
+/* Typing Indicator */
+.chat-message.bot.loading .typing {
+    display: flex;
+    gap: 4px;
+    padding: 4px 0;
+}
+
+.chat-message.bot.loading .typing span {
+    width: 6px;
+    height: 6px;
+    background: var(--color-gray-400);
+    border-radius: 50%;
+    animation: typingBounce 1.4s infinite ease-in-out;
+}
+
+.chat-message.bot.loading .typing span:nth-child(2) { animation-delay: 0.2s; }
+.chat-message.bot.loading .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); background: var(--color-gray-400); }
+    30% { transform: translateY(-5px); background: var(--color-black); }
+}
+
+/* Chat Input */
+.help-chat-input {
+    display: flex;
+    border-top: 1px solid var(--color-gray-200);
+    background: var(--color-white);
+    padding: 4px;
+}
+
+.help-chat-input input {
+    flex: 1;
+    border: none;
+    padding: 12px 16px;
+    font-size: 13px;
+    outline: none;
+    background: transparent;
+    color: var(--color-black);
+}
+
+.help-chat-input input::placeholder {
+    color: var(--color-gray-500);
+}
+
+.help-chat-input button {
+    background: var(--color-black);
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.help-chat-input button:hover {
+    background: var(--color-black-soft);
+    transform: translateY(-1px);
+}
+
+.help-chat-input button:active {
+    transform: translateY(0);
+}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width: 900px) {
+    /* Stack FAQ + Chat on smaller screens */
+    .help-content-split {
+        grid-template-columns: 1fr;
+        gap: 20px;
     }
+    
+    .help-chat {
+        order: -1; /* Chat appears first on mobile */
+    }
+}
+
+@media (max-width: 768px) {
+    .help-center-page {
+        padding: 24px 16px;
+    }
+    
+    .help-center-hero {
+        padding: 28px 20px;
+        border-radius: var(--radius-lg);
+    }
+    
+    .help-center-hero h1 {
+        font-size: 22px;
+    }
+    
+    .help-center-subtitle {
+        font-size: 13px;
+    }
+    
+    .help-center-action,
+    .chat-agent-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 18px;
+        font-size: 13px;
+    }
+    
+    .help-center-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    
+    .help-card {
+        padding: 14px 12px;
+        gap: 10px;
+    }
+    
+    .help-card-icon {
+        width: 34px;
+        height: 34px;
+    }
+    
+    .help-card h3 {
+        font-size: 12px;
+    }
+    
+    .help-center-faq {
+        padding: 20px 16px;
+    }
+    
+    .faq-tabs {
+        gap: 4px;
+    }
+    
+    .faq-tabs span {
+        padding: 5px 10px;
+        font-size: 12px;
+    }
+    
+    .faq-question {
+        font-size: 13px;
+        padding: 10px 4px;
+    }
+    
+    .faq-answer {
+        font-size: 12px;
+        padding-left: 28px;
+    }
+    
+    .chat-message {
+        max-width: 85%;
+        font-size: 12px;
+    }
+    
+    .help-chat-body {
+        height: 200px;
+        padding: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .help-center-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .help-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 18px 14px;
+    }
+    
+    .help-card-icon {
+        margin: 0 auto 6px;
+    }
+}
+
+/* ================= SCROLLBAR ================= */
+.help-chat-body::-webkit-scrollbar,
+.faq-answer::-webkit-scrollbar {
+    width: 5px;
+}
+
+.help-chat-body::-webkit-scrollbar-track,
+.faq-answer::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.help-chat-body::-webkit-scrollbar-thumb,
+.faq-answer::-webkit-scrollbar-thumb {
+    background: var(--color-gray-300);
+    border-radius: 3px;
+}
+
+.help-chat-body::-webkit-scrollbar-thumb:hover,
+.faq-answer::-webkit-scrollbar-thumb:hover {
+    background: var(--color-gray-500);
+}
+
+/* ================= ACCESSIBILITY ================= */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+.help-center-action:focus-visible,
+.chat-agent-btn:focus-visible,
+.help-chat-input input:focus-visible,
+.help-chat-input button:focus-visible,
+.faq-question:focus-visible,
+.help-card:focus-visible {
+    outline: 2px solid var(--color-black);
+    outline-offset: 2px;
 }

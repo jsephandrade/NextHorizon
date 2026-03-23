@@ -7,56 +7,66 @@
     <div class="help-center-hero">
         <div>
             <p class="help-center-label">Support</p>
-            <h1>Need help? We’ve got your back.</h1>
+            <h1>Need help? We've got your back.</h1>
             <p class="help-center-subtitle">
                 Explore quick answers, troubleshooting guides, and support options for
                 orders, payments, and account management.
             </p>
         </div>
         <a class="help-center-action" href="mailto:support@nexthorizon.com">Email Support</a>
+
+        <!-- NEW: CHAT WITH AGENT -->
+        <div class="chat-agent-btn" id="openAgentChat">
+            <i class="fas fa-headset"></i> Chat with Agent
+            <span class="agent-status online" id="agentStatusDot"></span>
+        </div>
     </div>
 
-    <!-- HELP OPTIONS -->
-<div class="help-center-grid">
+    <!-- HELP OPTIONS GRID -->
+    <div class="help-center-grid">
 
-    <div class="help-card" data-help="order">
-        <div class="help-card-icon"><i class="fa-solid fa-box"></i></div>
-        <h3>Order Help</h3>
+        <div class="help-card" data-help="order">
+            <div class="help-card-icon"><i class="fa-solid fa-box"></i></div>
+            <h3>Order Help</h3>
+        </div>
+
+        <div class="help-card" data-help="tracking">
+            <div class="help-card-icon"><i class="fa-solid fa-truck"></i></div>
+            <h3>Order Tracking</h3>
+        </div>
+
+        <div class="help-card" data-help="billing">
+            <div class="help-card-icon"><i class="fa-solid fa-credit-card"></i></div>
+            <h3>Billing & Payments</h3>
+        </div>
+
+        <div class="help-card" data-help="account">
+            <div class="help-card-icon"><i class="fa-solid fa-user-gear"></i></div>
+            <h3>Account Help</h3>
+        </div>
+
+        <div class="help-card" data-help="returns">
+            <div class="help-card-icon"><i class="fa-solid fa-rotate-left"></i></div>
+            <h3>Returns & Refunds</h3>
+        </div>
+
+        <div class="help-card" data-help="technical">
+            <div class="help-card-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+            <h3>Technical Support</h3>
+        </div>
+
+        <div class="help-card" data-help="contact">
+            <div class="help-card-icon"><i class="fa-solid fa-life-ring"></i></div>
+            <h3>Contact Support</h3>
+        </div>
+
     </div>
 
-    <div class="help-card" data-help="tracking">
-        <div class="help-card-icon"><i class="fa-solid fa-truck"></i></div>
-        <h3>Order Tracking</h3>
-    </div>
+    <!-- ✅ FAQ + CHAT SIDE-BY-SIDE CONTAINER -->
+    <div class="help-content-split">
 
-    <div class="help-card" data-help="billing">
-        <div class="help-card-icon"><i class="fa-solid fa-credit-card"></i></div>
-        <h3>Billing & Payments</h3>
-    </div>
-
-    <div class="help-card" data-help="account">
-        <div class="help-card-icon"><i class="fa-solid fa-user-gear"></i></div>
-        <h3>Account Help</h3>
-    </div>
-
-    <div class="help-card" data-help="returns">
-        <div class="help-card-icon"><i class="fa-solid fa-rotate-left"></i></div>
-        <h3>Returns & Refunds</h3>
-    </div>
-
-    <div class="help-card" data-help="technical">
-        <div class="help-card-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
-        <h3>Technical Support</h3>
-    </div>
-
-    <div class="help-card" data-help="contact">
-        <div class="help-card-icon"><i class="fa-solid fa-life-ring"></i></div>
-        <h3>Contact Support</h3>
-    </div>
-
-</div>
- <!-- FAQ -->
-    <div class="help-center-faq">
+        <!-- FAQ SECTION -->
+<div class="help-center-faq">
 
     <!-- Tabs -->
     <div class="faq-tabs">
@@ -65,106 +75,302 @@
         <span data-tab="payment">Payment & Account</span>
     </div>
 
-    <!-- HOT QUESTIONS -->
+    <!-- 🔥 HOT QUESTIONS (5+ items) -->
     <div class="faq-list active" id="hot">
+
         <div class="faq-item">
             <div class="faq-question">
                 <span class="faq-number">1</span>
-                <span>Can I cancel my order?</span>
+                <span>How do I track my order?</span>
                 <span class="arrow">›</span>
             </div>
-            <div class="faq-answer">You can cancel your order before it is shipped.</div>
+            <div class="faq-answer">
+                Go to <strong>My Purchases</strong> → <strong>Track Order</strong> to see real-time delivery updates, carrier info, and estimated arrival date.
+            </div>
         </div>
 
         <div class="faq-item">
             <div class="faq-question">
                 <span class="faq-number">2</span>
-                <span>Why is my order delayed?</span>
+                <span>How do I request a refund?</span>
                 <span class="arrow">›</span>
             </div>
-            <div class="faq-answer">Delays may be due to logistics or high demand.</div>
+            <div class="faq-answer">
+                Open your order details and click <strong>Return / Refund</strong>. Follow the prompts to select a reason and submit. Refunds process within 5-7 business days.
+            </div>
         </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">3</span>
+                <span>Can I cancel my order after placing it?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">
+                Yes, if your order hasn't shipped yet. Go to <strong>My Purchases</strong>, select the order, and click <strong>Cancel Order</strong>. Once shipped, you'll need to request a return after delivery.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">4</span>
+                <span>What if my item arrives damaged?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">
+                Contact us within 48 hours of delivery with photos of the damage. We'll arrange a free replacement or full refund. Email: <a href="mailto:support@nexthorizon.com">support@nexthorizon.com</a>
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">5</span>
+                <span>How long does shipping take?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">
+                Standard shipping: 3-7 business days. Express: 1-3 business days. Delivery times vary by location and carrier. Track your order for real-time updates.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">6</span>
+                <span>Do you ship internationally?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">
+                Yes! We ship to over 50 countries. International shipping times and fees vary. Customs duties may apply and are the responsibility of the recipient.
+            </div>
+        </div>
+
     </div>
 
-    <!-- PRE-SALE -->
+    <!-- 🛒 PRE-SALE (5+ items) -->
     <div class="faq-list" id="presale">
+
         <div class="faq-item">
             <div class="faq-question">
                 <span class="faq-number">1</span>
-                <span>Do you offer discounts?</span>
+                <span>Do you offer discounts or promo codes?</span>
                 <span class="arrow">›</span>
             </div>
-            <div class="faq-answer">Yes, discounts are available during promos.</div>
+            <div class="faq-answer">
+                Yes! Sign up for our newsletter for exclusive offers. Promo codes can be applied at checkout. Some restrictions may apply.
+            </div>
         </div>
 
         <div class="faq-item">
             <div class="faq-question">
                 <span class="faq-number">2</span>
-                <span>Can I reserve an item?</span>
+                <span>Can I ask the seller a question before buying?</span>
                 <span class="arrow">›</span>
             </div>
-            <div class="faq-answer">Currently, reservation is not supported.</div>
+            <div class="faq-answer">
+                Absolutely. Click <strong>Contact Seller</strong> on any product page to send a message. Most sellers respond within 24 hours.
+            </div>
         </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">3</span>
+                <span>Are all items brand new?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">
+                Most items are new, but some sellers offer certified refurbished or open-box products. Check the product description and condition label before purchasing.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">4</span>
+                <span>How do I know if an item is in stock?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">
+                Stock status appears below the price: <strong>In Stock</strong>, <strong>Low Stock</strong>, or <strong>Out of Stock</strong>. You can also enable "Notify Me" for restock alerts.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">5</span>
+                <span>Can I reserve an item before buying?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">
+                We don't offer reservations, but you can add items to your Wishlist or Cart. Items in your Cart are held for 30 minutes during checkout.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">6</span>
+                <span>Do you price match competitors?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">
+                We occasionally run price match promotions. Check our <strong>Price Match Policy</strong> page or contact support for current eligibility.
+            </div>
+        </div>
+
     </div>
 
-    <!-- PAYMENT -->
+    <!-- 💳 PAYMENT & ACCOUNT (5+ items) -->
     <div class="faq-list" id="payment">
+
         <div class="faq-item">
             <div class="faq-question">
                 <span class="faq-number">1</span>
-                <span>What payment methods are accepted?</span>
+                <span>What payment methods do you accept?</span>
                 <span class="arrow">›</span>
             </div>
-            <div class="faq-answer">We accept cards, e-wallets, and COD.</div>
+            <div class="faq-answer">
+                We accept Visa, Mastercard, American Express, PayPal, Apple Pay, Google Pay, and Cash on Delivery (select regions).
+            </div>
         </div>
 
         <div class="faq-item">
             <div class="faq-question">
                 <span class="faq-number">2</span>
+                <span>How do I change my password?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">
+                Go to <strong>Account Settings</strong> → <strong>Security</strong> → <strong>Change Password</strong>. Enter your current password, then create a new one (min. 8 characters).
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">3</span>
                 <span>How do I update my payment method?</span>
                 <span class="arrow">›</span>
             </div>
-            <div class="faq-answer">Go to Account Settings → Payment Methods.</div>
-        </div>
-    </div>
-
-</div>
-
-   <div class="help-chat">
-
-        <!-- CHAT BODY -->
-        <div class="help-chat-body" id="helpChatBox">
-            <div class="chat-message bot">
-                Hi! Select a category above to get help instantly.
+            <div class="faq-answer">
+                Navigate to <strong>Account Settings</strong> → <strong>Payment Methods</strong>. Add, edit, or remove cards. Your default payment method is used at checkout.
             </div>
         </div>
 
-        <!-- CHAT INPUT -->
-        <div class="help-chat-input">
-            <input type="text" id="chatInput" placeholder="Type your message here..." />
-            <button id="sendBtn">Send</button>
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">4</span>
+                <span>Is my payment information secure?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">
+                Yes. We use PCI-DSS compliant encryption and never store full card details. All transactions are processed through secure, trusted payment gateways.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">5</span>
+                <span>How do I delete my account?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">
+                Go to <strong>Account Settings</strong> → <strong>Privacy</strong> → <strong>Delete Account</strong>. Note: This action is permanent and removes all order history.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">6</span>
+                <span>Why was my payment declined?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">
+                Common reasons: insufficient funds, incorrect card details, bank security hold, or billing address mismatch. Try another payment method or contact your bank.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <span class="faq-number">7</span>
+                <span>Can I save multiple shipping addresses?</span>
+                <span class="arrow">›</span>
+            </div>
+            <div class="faq-answer">
+                Yes! Go to <strong>Account Settings</strong> → <strong>Addresses</strong> to add, edit, or set a default shipping address for faster checkout.
+            </div>
         </div>
 
     </div>
 
 </div>
 
+        <!-- CHAT SECTION -->
+        <div class="help-chat">
+            
+            <!-- Chat Header -->
+            <div class="help-chat-header">
+                <i class="fas fa-robot"></i> Quick Help Chat
+            </div>
+
+            <!-- CHAT BODY -->
+            <div class="help-chat-body" id="helpChatBox">
+                <div class="chat-message bot">
+                    Hi! Select a category above to get help instantly.
+                </div>
+            </div>
+
+            <!-- CHAT INPUT -->
+            <div class="help-chat-input">
+                <input type="text" id="chatInput" placeholder="Type your message here..." />
+                <button id="sendBtn">Send</button>
+            </div>
+
+        </div>
+
+    </div>
+    <!-- ✅ END SPLIT CONTAINER -->
+
 </div>
 
+<!-- AGENT CHAT MODAL (unchanged) -->
+<div id="agentChatModal" class="agent-chat-modal">
+
+    <div class="agent-chat-box">
+
+        <!-- HEADER -->
+        <div class="agent-chat-header">
+            <div class="agent-info">
+                <div class="agent-avatar">A</div>
+                <div>
+                    <div class="agent-name">Live Agent</div>
+                    <div class="agent-status-text" id="agentStatusText">Online</div>
+                </div>
+            </div>
+            <span class="close-chat" id="closeAgentChat">&times;</span>
+        </div>
+
+        <!-- BODY -->
+        <div class="agent-chat-body" id="agentChatBody">
+            <div class="chat-message bot">
+                Hello 👋 How can I assist you today?
+            </div>
+        </div>
+
+        <!-- INPUT -->
+        <div class="agent-chat-input">
+            <input type="text" id="agentInput" placeholder="Type message..." />
+            <button id="sendAgentMessage">Send</button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ✅ UPDATED: Scroll to FAQ/Chat split container instead of just chat -->
 <script>
 const responses = {
     order: "You can manage your orders in 'My Purchases'. You can cancel orders before shipment or request returns after delivery.",
-    
     tracking: "To track your order, go to 'My Purchases' and click 'Track Order' to see real-time delivery updates.",
-    
     billing: "You can update your payment methods in Account Settings > Payment Methods.",
-    
     account: "Manage your account by updating your profile, password, and security settings.",
-    
     returns: "To request a return or refund, go to your order and click 'Return/Refund'.",
-    
     technical: "Try clearing cache or switching browser. Contact support if issue continues.",
-    
     contact: "Email us at support@nexthorizon.com or use live chat."
 };
 
@@ -176,7 +382,6 @@ const sendBtn = document.getElementById("sendBtn");
 document.querySelectorAll(".help-card").forEach(card => {
     card.addEventListener("click", () => {
         const type = card.getAttribute("data-help");
-
         addUserMessage(card.querySelector("h3").innerText);
         addBotMessage(responses[type] || "Sorry, I couldn't find help for that.");
     });
@@ -194,7 +399,6 @@ function sendMessage() {
 
     addUserMessage(text);
 
-    // Simple AI-like matching
     let reply = "Sorry, I didn't understand that. Please choose a category above.";
 
     if (text.toLowerCase().includes("track")) reply = responses.tracking;
@@ -206,7 +410,6 @@ function sendMessage() {
     else if (text.toLowerCase().includes("contact")) reply = responses.contact;
 
     setTimeout(() => addBotMessage(reply), 500);
-
     input.value = "";
 }
 
@@ -230,18 +433,9 @@ function addBotMessage(text) {
 function addLoadingMessage() {
     const msg = document.createElement("div");
     msg.className = "chat-message bot loading";
-
-    msg.innerHTML = `
-        <div class="typing">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
-    `;
-
+    msg.innerHTML = `<div class="typing"><span></span><span></span><span></span></div>`;
     chatBox.appendChild(msg);
     scrollToBottom();
-
     return msg;
 }
 
@@ -251,23 +445,23 @@ function scrollToBottom() {
 </script>
 
 <script>
+// FAQ Click - Updated to scroll to split container
 document.querySelectorAll(".faq-question").forEach(q => {
     q.addEventListener("click", () => {
         const item = q.parentElement;
-
-        // accordion (single open)
         document.querySelectorAll(".faq-item").forEach(i => i.classList.remove("active"));
         item.classList.add("active");
 
         const question = q.children[1].innerText;
         const answer = item.querySelector(".faq-answer").innerText;
 
-        // scroll
-        document.querySelector(".help-chat").scrollIntoView({ behavior: "smooth" });
+        // ✅ Scroll to split container for better viewport positioning
+        document.querySelector(".help-content-split")?.scrollIntoView({ 
+            behavior: "smooth", 
+            block: "start" 
+        });
 
-        // chat
         addUserMessage(question);
-
         const loader = addLoadingMessage();
 
         setTimeout(() => {
@@ -282,15 +476,9 @@ document.querySelectorAll(".faq-question").forEach(q => {
 // TAB SWITCHING
 document.querySelectorAll(".faq-tabs span").forEach(tab => {
     tab.addEventListener("click", () => {
-
-        // remove active tab
         document.querySelectorAll(".faq-tabs span").forEach(t => t.classList.remove("active"));
         tab.classList.add("active");
-
-        // hide all lists
         document.querySelectorAll(".faq-list").forEach(list => list.classList.remove("active"));
-
-        // show selected
         document.getElementById(tab.dataset.tab).classList.add("active");
     });
 });
@@ -303,3 +491,7 @@ document.querySelectorAll(".faq-question").forEach(q => {
     });
 });
 </script>
+
+@section Scripts {
+    <script src="~/js/agent-chat.js"></script>
+}
