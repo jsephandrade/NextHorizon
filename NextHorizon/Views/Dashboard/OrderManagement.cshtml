@@ -115,6 +115,12 @@
                                         data-order-id="@order.OrderId">
                                     View Order
                                 </button>
+
+                                <button class="action-menu-item decline-order-btn"
+                                        data-order-id="@order.OrderId"
+                                        data-customer="@order.Customer">
+                                    Decline Order
+                                </button>
                             }
 
                             @if(order.FulfillmentStatus == "To Ship")
@@ -238,7 +244,13 @@
 
         <!-- ACTIONS -->
         <div class="summary-actions">
-            <button class="btn-cancel" onclick="openDeclineModal()">Decline Order</button>
+            <button class="btn-cancel"
+                onclick="openDeclineModal(
+                    document.getElementById('summaryOrderId').textContent,
+                    'Sample Customer' /* replace later if dynamic */
+                )">
+                Decline Order
+            </button>
             <button class="btn-confirm" onclick="confirmOrder()">Confirm & Accept</button>
         </div>
 
@@ -619,6 +631,51 @@
         <div class="bw-actions">
             <button class="bw-btn confirm" onclick="closeConfirmReturnModal()">Okay</button>
         </div>
+    </div>
+</div>
+
+<!-- ===== DECLINE ORDER MODAL ===== -->
+<div id="declineOrderModal" class="notes-modal-overlay">
+    <div class="notes-modal-container">
+
+        <!-- HEADER -->
+        <div class="notes-header">
+            <h3>❌ Decline Order</h3>
+            <span class="notes-close" onclick="closeDeclineModal()">✕</span>
+        </div>
+
+        <!-- ORDER INFO -->
+        <div class="review-info">
+            <p><strong>Order #:</strong> <span id="declineOrderId">00000</span></p>
+            <p><strong>Customer:</strong> <span id="declineCustomer">---</span></p>
+        </div>
+
+        <!-- REASON -->
+        <div class="notes-body">
+            <label>Select Reason <span style="color:red">*</span></label>
+
+            <select id="declineReason" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc;">
+                <option value="">-- Select Reason --</option>
+                <option>Out of Stock</option>
+                <option>Invalid Order</option>
+                <option>Pricing Error</option>
+                <option>Delivery Not Available</option>
+                <option>Other</option>
+            </select>
+
+            <textarea id="declineMessage"
+                      placeholder="Add additional details (optional)..."
+                      style="margin-top:10px;"></textarea>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="notes-actions">
+            <button onclick="closeDeclineModal()">Cancel</button>
+            <button onclick="submitDeclineOrder()" style="background:black; color:white;">
+                Confirm Decline
+            </button>
+        </div>
+
     </div>
 </div>
 

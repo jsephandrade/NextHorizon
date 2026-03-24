@@ -936,3 +936,92 @@
     border-radius: 6px;
     border: 1px solid #ddd;
 }
+
+/* ===== DECLINE MODAL SPECIFIC ===== */
+
+/* textarea spacing */
+#declineMessage {
+    width: 100%;
+    min-height: 90px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    resize: none;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* dropdown spacing */
+#declineReason {
+    margin-top: 8px;
+    margin-bottom: 10px;
+}
+
+/* decline button (make it red for warning) */
+.decline-order-btn {
+    color: #dc2626;
+    font-weight: 500;
+}
+
+.decline-order-btn:hover {
+    background: #fee2e2;
+}
+
+/* confirm decline button */
+.notes-actions button:last-child {
+    background: #dc2626;
+    color: #fff;
+}
+
+.notes-actions button:last-child:hover {
+    background: #b91c1c;
+}
+
+/* ===== DECLINE MODAL BUTTONS ===== */
+
+/* container spacing */
+#declineOrderModal .notes-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+/* base button style */
+#declineOrderModal .notes-actions button {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid #000;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* CANCEL BUTTON */
+#declineOrderModal .notes-actions button:first-child {
+    background: #fff;
+    color: #000;
+}
+
+#declineOrderModal .notes-actions button:first-child:hover {
+    background: #f3f4f6;
+}
+
+/* CONFIRM DECLINE BUTTON */
+#declineOrderModal .notes-actions button:last-child {
+    background: #dc2626;
+    color: #fff;
+    border: none;
+}
+
+#declineOrderModal .notes-actions button:last-child:hover {
+    background: #b91c1c;
+}
+
+/* optional: disabled state (nice UX) */
+#declineOrderModal .notes-actions button:disabled {
+    background: #e5e7eb;
+    color: #9ca3af;
+    border: none;
+    cursor: not-allowed;
+}

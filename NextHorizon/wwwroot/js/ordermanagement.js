@@ -303,8 +303,11 @@ function closeOrderSummaryModal() {
 }
 
 // ===== DECLINE =====
-function openDeclineModal() {
-    alert("Decline reason modal (you can build next)");
+function openDeclineModal(orderId, customer) {
+    document.getElementById("declineOrderId").textContent = orderId;
+    document.getElementById("declineCustomer").textContent = customer;
+
+    document.getElementById("declineOrderModal").style.display = "flex";
 }
 
 function confirmOrder() {
@@ -495,4 +498,40 @@ function completeReturn() {
     closeReturnedInfoModal();
     openConfirmReturnModal();
     applyOrderFilters();
+}
+
+// OPEN DECLINE MODAL
+document.querySelectorAll(".decline-order-btn").forEach(btn => {
+    btn.addEventListener("click", function () {
+        const orderId = this.dataset.orderId;
+        const customer = this.dataset.customer;
+
+        document.getElementById("declineOrderId").textContent = orderId;
+        document.getElementById("declineCustomer").textContent = customer;
+
+        document.getElementById("declineOrderModal").style.display = "flex";
+    });
+});
+
+// CLOSE MODAL
+function closeDeclineModal() {
+    document.getElementById("declineOrderModal").style.display = "none";
+}
+
+// SUBMIT DECLINE
+function submitDeclineOrder() {
+    const reason = document.getElementById("declineReason").value;
+
+    if (!reason) {
+        alert("Please select a reason.");
+        return;
+    }
+
+    const orderId = document.getElementById("declineOrderId").textContent;
+
+    console.log("Declined Order:", orderId, "Reason:", reason);
+
+    closeDeclineModal();
+
+    // OPTIONAL: update UI or send to backend here
 }
