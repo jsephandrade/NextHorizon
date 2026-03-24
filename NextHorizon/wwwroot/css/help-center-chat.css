@@ -258,7 +258,7 @@
 .buttons-two-columns {
     display: flex;
     gap: 8px;
-    width: 150%;
+    width: 200%;
     max-width: 400px;
 }
 
@@ -286,6 +286,7 @@
     text-align: left;
     width: 100%;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+    white-space: nowrap;
 }
 
 .message-btn:hover {
