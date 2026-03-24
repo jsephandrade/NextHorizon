@@ -17,13 +17,19 @@ public sealed class AppDbContext : DbContext
     public DbSet<SellerAccount> SellerAccounts => Set<SellerAccount>();
     public DbSet<MessageConversation> MessageConversations => Set<MessageConversation>();
     public DbSet<ConversationMessage> ConversationMessages => Set<ConversationMessage>();
-    
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<Logistics> Logistics { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
-
-        // ============== EXISTING CONFIGURATIONS ==============
+        base.OnModelCreating(modelBuilder);  
         
+        modelBuilder.Entity<Models.Order>()
+        .ToTable(tb => tb.HasTrigger("SomeTriggerName")); 
+    modelBuilder.Entity<Models.Order>()
+        .Property(o => o.TotalAmount)
+        .HasColumnType("decimal(18,2)");
+
+    base.OnModelCreating(modelBuilder);   
         modelBuilder.Entity<Customer>(entity =>
         {
             entity.ToTable("Customers");

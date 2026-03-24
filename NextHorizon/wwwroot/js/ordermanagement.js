@@ -21,7 +21,57 @@ function applyOrderFilters() {
         row.style.display = (statusMatch && categoryMatch && searchMatch) ? '' : 'none';
     });
 }
+// 1. Opens the premium modal instead of the browser prompt
+function declineOrder() {
+    // Grab the ID from the main summary modal
+    const orderIdText = document.getElementById("summaryOrderId").innerText;
+    
+    // Put that ID into the new decline modal header
+    document.getElementById("declineModalOrderId").innerText = orderIdText;
+    
+    // Hide the main modal, show the new decline modal
+    document.getElementById("orderSummaryModal").style.display = "none";
+    document.getElementById("declineOrderModal").style.display = "flex";
+}
 
+// 2. Closes the decline modal and goes back to the summary
+function closeDeclineModal() {
+    document.getElementById("declineReasonSelect").value = ""; // Reset dropdown
+    document.getElementById("declineOrderModal").style.display = "none";
+    document.getElementById("orderSummaryModal").style.display = "flex";
+}
+
+// 3. Actually sends the data to the server
+async function submitDeclineOrder() {
+    const orderIdText = document.getElementById("declineModalOrderId").innerText; 
+    const orderId = parseInt(orderIdText.replace("ORD-", "").trim()); 
+    const reason = document.getElementById("declineReasonSelect").value;
+
+    if (!reason) {
+        alert("Please select a valid reason from the dropdown.");
+        return;
+    }
+
+    try {
+        const response = await fetch('/Dashboard/DeclineOrder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ OrderId: orderId, Reason: reason })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Success! Refresh the page to move order to Cancelled tab
+            location.reload(); 
+        } else {
+            alert("Failed: " + result.message);
+        }
+    } catch (error) {
+        console.error("Server error:", error);
+        alert("A network error occurred. Please check the terminal.");
+    }
+}
 function toggleOrderMenu(button) {
     const wrap = button.closest('.action-menu-wrap');
     if (!wrap) return;
@@ -169,19 +219,7 @@ function closeReviewRequestModal() {
 
 // ================= EVENTS =================
 document.addEventListener('click', function (event) {
-    // ===== VIEW ORDER (PUT THIS FIRST) =====
-    const viewOrderBtn = event.target.closest('.view-order-btn');
-    if (viewOrderBtn) {
-        event.stopPropagation();
-
-        const orderId = viewOrderBtn.dataset.orderId;
-
-        console.log("Opening modal:", orderId); // DEBUG
-
-        openOrderSummaryModal(orderId);
-
-        return;
-    }
+    
     // Action menu toggle
     const actionBtn = event.target.closest('.action-icon-btn');
     if (actionBtn) {
@@ -299,7 +337,10 @@ function openOrderSummaryModal(orderId) {
 }
 
 function closeOrderSummaryModal() {
-    document.getElementById('orderSummaryModal').classList.remove('active');
+    const modal = document.getElementById("orderSummaryModal");
+    if (modal) {
+        modal.style.display = "none";
+    }
 }
 
 // ===== DECLINE =====
@@ -496,3 +537,249 @@ function completeReturn() {
     openConfirmReturnModal();
     applyOrderFilters();
 }
+// --- PHASE 1: ACCEPT ORDER FLOW ---
+async function confirmAndAcceptOrder() {
+    // 1. Grab the Order ID and selected Courier from the modal
+    const summaryOrderIdElement = document.getElementById("summaryOrderId");
+    if (!summaryOrderIdElement) {
+        alert("Unable to find order ID. Please refresh and try again.");
+        return;
+    }
+
+    const orderIdText = summaryOrderIdElement.innerText;
+    const orderId = Number.parseInt(orderIdText.replace("ORD-", "").trim(), 10);
+    if (Number.isNaN(orderId)) {
+        alert("Invalid order ID. Cannot confirm order.");
+        return;
+    }
+
+    const courierDropdown = document.getElementById("courierSelect"); 
+    const selectedCourierId = courierDropdown.value;
+
+    // ✨ NEW UI VALIDATION: Stop them if they didn't pick a courier
+    if (!selectedCourierId) {
+        // Show the sleek red warning instead of the old browser alert
+        document.getElementById("courierWarning").style.display = "flex";
+        courierDropdown.classList.add("input-error");
+        return; 
+    }
+
+    // 2. Send the data to your C# Controller
+    try {
+        const response = await fetch('/Dashboard/AcceptOrder', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                OrderId: orderId,
+                Courier: selectedCourierId // Sending the ID from the dropdown
+            })
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`HTTP ${response.status}: ${text}`);
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+            // (Optional: You can also replace these alerts with nice UI toast notifications later!)
+            alert("Success: " + result.message);
+            location.reload(); // Refresh to move the order to the 'To Ship' tab
+        } else {
+            alert("Failed: " + result.message);
+        }
+    } catch (error) {
+        console.error("Server error:", error);
+        alert("A network error occurred. Please try again. See console for details.");
+    }
+}
+
+function hideCourierWarning() {
+    const warningEl = document.getElementById("courierWarning");
+    const selectEl = document.getElementById("courierSelect");
+    
+    if (warningEl) warningEl.style.display = "none";
+    if (selectEl) selectEl.classList.remove("input-error");
+}
+async function declineOrder() {
+    // 1. Grab the Order ID from the open Order Summary Modal
+    const orderIdElement = document.getElementById("modalOrderId") || document.getElementById("summaryOrderId");
+    if (!orderIdElement) {
+        alert("Unable to find order ID to decline. Refresh the page and try again.");
+        return;
+    }
+
+    const orderIdText = orderIdElement.innerText;
+    const orderId = Number.parseInt(orderIdText.replace("ORD-", "").trim(), 10);
+    if (Number.isNaN(orderId)) {
+        alert("Invalid order ID. Cannot decline order.");
+        return;
+    }
+
+    // 2. Ask the seller for the reason
+    const reason = prompt("Please enter the reason for declining this order (e.g., Out of stock, Invalid address):");
+
+    // 3. Validation: Stop if they hit cancel or left it empty
+    if (reason === null) {
+        return; 
+    }
+    if (reason.trim() === "") {
+        alert("You must provide a reason to decline an order.");
+        return;
+    }
+
+    // 4. Send the ID and Reason to your C# Controller
+    try {
+        const response = await fetch('/Dashboard/DeclineOrder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                OrderId: orderId,
+                Reason: reason
+            })
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`HTTP ${response.status}: ${text}`);
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert("Order Cancelled: " + result.message);
+            location.reload(); // Refresh to move the order to the 'Cancelled' tab
+        } else {
+            alert("Failed: " + result.message);
+        }
+    } catch (error) {
+        console.error("Server error:", error);
+        alert("A network error occurred. Please try again. See console for details.");
+    }
+}
+
+async function openViewOrderModal(orderId) {
+    console.log("Opening modal for order:", orderId);
+    
+    // Debug: List ALL elements with class containing 'modal'
+    const allModals = document.querySelectorAll('[class*="modal"]');
+    console.log("Found " + allModals.length + " elements with 'modal' in class");
+    allModals.forEach(el => console.log("  -", el.id, el.className));
+    
+    // Try different selector variations
+    let modal = document.getElementById("orderSummaryModal");
+    console.log("getElementById('orderSummaryModal'):", modal);
+    
+    if (!modal) {
+        modal = document.querySelector("[id='orderSummaryModal']");
+        console.log("querySelector with [id='orderSummaryModal']:", modal);
+    }
+    
+    if (!modal) {
+        console.error("ERROR: Modal not found in any way!");
+        return;
+    }
+    
+    console.log("Modal found! Adding active class...");
+    modal.classList.add('active');
+    
+    // Now try to fetch order details
+    try {
+        const response = await fetch(`/Dashboard/GetOrderDetails?orderId=${orderId}`);
+        const result = await response.json();
+
+        if (result.success) {
+            const order = result.data;
+            console.log("ORDER DATA:", order); 
+
+            const realId = order.orderID || order.orderId || order.OrderID;
+            const el = document.getElementById("summaryOrderId");
+            if (el) el.innerText = realId;
+            
+            const rawDate = order.orderDate || order.OrderDate;
+            if (rawDate) {
+                const dateEl = document.getElementById("modalOrderDate");
+                if (dateEl) dateEl.innerText = new Date(rawDate).toLocaleDateString();
+            }
+
+            const payEl = document.getElementById("modalPayment");
+            if (payEl) payEl.innerText = order.paymentMethod || order.PaymentMethod || "N/A";
+            
+            const total = order.totalAmount || order.TotalAmount || 0;
+            const totEl = document.getElementById("modalTotal");
+            if (totEl) totEl.innerText = total.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
+            
+            const custEl = document.getElementById("modalCustomerName");
+            if (custEl) custEl.innerText = order.fullName || order.FullName || "Unknown";
+            // 1. Combine Address Fields
+            const street = order.streetAddress || order.StreetAddress || '';
+            const city = order.city || order.City || '';
+            const postal = order.postalCode || order.PostalCode || '';
+            const fullAddress = `${street}, ${city} ${postal}`.trim();
+            const addrEl = document.getElementById("modalCustomerAddress");
+            if (addrEl) addrEl.innerText = fullAddress || "No address provided";
+
+            // 2. Customer Contact Info
+            const phoneEl = document.getElementById("modalCustomerPhone");
+            if (phoneEl) phoneEl.innerText = order.phoneNumber || order.PhoneNumber || "No phone number";
+
+            const emailEl = document.getElementById("modalCustomerEmail");
+            if (emailEl) emailEl.innerText = order.email || order.Email || "No email";
+
+            const delOptionEl = document.getElementById("modalDeliveryOption");
+            if (delOptionEl) delOptionEl.innerText = order.deliveryOption || order.DeliveryOption || "Standard";
+
+            // 3. Financial Breakdown
+            const qty = order.quantity || order.Quantity || 0;
+            const subtotal = order.subtotal || order.Subtotal || 0;
+            const shipping = order.shippingFee || order.ShippingFee || 0;
+            const grandTotal = order.totalAmount || order.TotalAmount || 0;
+
+            const totItemsEl = document.getElementById("modalTotalItems");
+            if (totItemsEl) totItemsEl.innerText = qty;
+
+            const subtotalEl = document.getElementById("modalSubtotal");
+            if (subtotalEl) subtotalEl.innerText = subtotal.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
+
+            const shipEl = document.getElementById("modalShippingFee");
+            if (shipEl) shipEl.innerText = shipping.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
+
+            const grandEl = document.getElementById("modalGrandTotal");
+            if (grandEl) grandEl.innerText = grandTotal.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
+
+            // 4. Update the Items Table with Variant Data
+            const colors = order.colors || order.Colors;
+            const variantText = colors ? `Color: ${colors}` : "Standard Variant";
+            const productName = order.productName || order.ProductName || "Product Name Unavailable";
+
+            const itemsBodyEl = document.getElementById("modalItemsBody");
+            if (itemsBodyEl) {
+                itemsBodyEl.innerHTML = `
+                    <tr>
+                        <td>
+                            <strong style="display: block; color: #111827;">${productName}</strong>
+                            <span style="font-size: 0.8rem; color: #6b7280;">${variantText}</span>
+                        </td>
+                        <td style="text-align: center; font-weight: 500;">x${qty}</td>
+                        <td style="text-align: right; font-weight: 500;">${subtotal.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' })}</td>
+                    </tr>
+                `;
+            }
+            console.log("Modal data populated successfully");
+
+            const modalEl = document.getElementById("orderSummaryModal");
+            if (modalEl) modalEl.style.display = "flex";
+        } else {
+            console.error("API Error:", result.message);
+            alert("Could not load order details: " + result.message);
+        }
+    } catch (error) {
+        console.error("Error fetching order:", error);
+        alert("Error loading order. Check console for details.");
+    }
+}
+// Function to close the View Order modal
+

@@ -498,5 +498,5 @@ C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\ref\NextHorizon.dll
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\vd9k4h4uq1-{0}-uvkzntn00x-uvkzntn00x.gz
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\vd9k4h4uq1-{0}-0wpesclp7x-0wpesclp7x.gz
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\ojkane33g0-{0}-cxom8xlpq0-cxom8xlpq0.gz
-C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\nrvkognwci-{0}-cj1b96pzfj-cj1b96pzfj.gz
-C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\34dr9ow2gc-{0}-0lnbmignrn-0lnbmignrn.gz
+C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\nrvkognwci-{0}-8vd7ykjas8-8vd7ykjas8.gz
+C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\34dr9ow2gc-{0}-txhuq9lt5n-txhuq9lt5n.gz

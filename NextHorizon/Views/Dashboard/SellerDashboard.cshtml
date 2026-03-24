@@ -73,7 +73,7 @@
                     @foreach (var order in Model.RecentOrders)
                     {
                         <tr>
-                            <td>@order.OrderId</td>
+                            <td>@order.OrderID</td>
                             <td>
                                 <div class="recent-product-cell">
                                     <img src="@order.ProductImage"
@@ -86,8 +86,8 @@
                             </td>
                             <td>@order.Sku</td>
                             <td>@order.Size</td>
-                            <td>@order.Customer</td>
-                            <td>@order.DateTime.ToString("MMM dd, yyyy h:mm tt")</td>
+                            <td>@order.FullName</td>
+                            <td>@order.OrderDate.ToString("MMM dd, yyyy h:mm tt")</td>
                             <td>@order.Courier</td>
                             <td>
                                 <span class="status-badge @order.Status.ToLower().Replace(" ", "-")">

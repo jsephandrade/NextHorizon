@@ -14,6 +14,7 @@ namespace NextHorizon.Controllers
 {
     public class DashboardController : Controller
     {
+        private readonly IOrderService _orderService;
         private readonly ISellerContextService _sellerContextService;
         private readonly ISellerPerformanceService _sellerPerformanceService;
         private readonly IConfiguration _configuration;
@@ -21,11 +22,13 @@ namespace NextHorizon.Controllers
         public DashboardController(
             ISellerContextService sellerContextService,
             ISellerPerformanceService sellerPerformanceService,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IOrderService orderService)
         {
             _sellerContextService = sellerContextService;
             _sellerPerformanceService = sellerPerformanceService;
             _configuration = configuration;
+            _orderService = orderService;
         }
 
         private IActionResult? RedirectIfNotLoggedIn()
@@ -57,13 +60,84 @@ namespace NextHorizon.Controllers
 
         // ============== ORDER MANAGEMENT ==============
         public async Task<IActionResult> OrderManagement(CancellationToken cancellationToken)
-        {
-            var redirect = RedirectIfNotLoggedIn();
-            if (redirect != null) return redirect;
-            
-            return View(await BuildSellerDashboardModelAsync(cancellationToken));
-        }
+       {
+    int? currentSellerId = HttpContext.Session.GetInt32("SellerId");
+    if (currentSellerId == null)
+    {
+        return RedirectToAction("Login", "Account");
+    }
 
+    var realOrders = await _orderService.GetOrdersBySellerAsync(currentSellerId.Value);
+    var couriers = await _orderService.GetCouriersAsync();
+    ViewBag.Couriers = couriers;
+    return View(realOrders);
+    }
+    [HttpGet]
+public async Task<IActionResult> GetOrderDetails(int orderId)
+{
+    // Security Check
+    int? currentSellerId = HttpContext.Session.GetInt32("SellerId");
+    if (currentSellerId == null) return Unauthorized();
+
+var order = await _orderService.GetOrderByIdAsync(orderId, currentSellerId.Value);
+    if (order == null) return NotFound(new { success = false, message = "Order not found" });
+
+    // Return the data as a JSON package so JavaScript can read it
+    return Json(new { success = true, data = order });
+}
+[HttpPost]
+public async Task<IActionResult> AcceptOrder([FromBody] AcceptOrderRequest request)
+{
+    // 1. Get the dynamic Seller ID from the session (Security Check)
+    int? currentSellerId = HttpContext.Session.GetInt32("SellerId");
+    if (currentSellerId == null)
+    {
+        return Json(new { success = false, message = "Session expired. Please log in again." });
+    }
+
+    // 2. Call our shiny new service method
+    bool isSuccess = await _orderService.AcceptOrderAsync(request.OrderId, currentSellerId.Value, request.Courier);
+
+    // 3. Tell the frontend if it worked!
+    if (isSuccess)
+    {
+        return Json(new { success = true, message = "Order successfully moved to To Ship!" });
+    }
+    else
+    {
+        return Json(new { success = false, message = "Failed to accept order. Order not found." });
+    }
+}
+[HttpPost]
+public async Task<IActionResult> DeclineOrder([FromBody] DeclineOrderRequest request)
+{
+    // Security check: Ensure they are logged in
+    int? currentSellerId = HttpContext.Session.GetInt32("SellerId");
+    if (currentSellerId == null)
+    {
+        return Json(new { success = false, message = "Session expired." });
+    }
+
+    // Validation: Ensure they actually typed a reason
+    if (string.IsNullOrWhiteSpace(request.Reason))
+    {
+        return Json(new { success = false, message = "A cancellation reason is required." });
+    }
+
+    bool isSuccess = await _orderService.DeclineOrderAsync(request.OrderId, currentSellerId.Value, request.Reason);
+
+    if (isSuccess)
+    {
+        return Json(new { success = true, message = "Order successfully cancelled." });
+    }
+    
+    return Json(new { success = false, message = "Failed to decline order." });
+}
+public class DeclineOrderRequest
+{
+    public int OrderId { get; set; }
+    public string Reason { get; set; } = string.Empty;
+}
         // ============== ORDER DETAILS ==============
         public async Task<IActionResult> OrderDetails(string id, CancellationToken cancellationToken)
         {
@@ -71,8 +145,7 @@ namespace NextHorizon.Controllers
             if (redirect != null) return redirect;
             
             var dashboard = await BuildSellerDashboardModelAsync(cancellationToken);
-            var order = dashboard.Orders.FirstOrDefault(o =>
-                string.Equals(o.OrderId, id, StringComparison.OrdinalIgnoreCase));
+            var order = dashboard.Orders.FirstOrDefault(o => o.OrderID.ToString() == id.Replace("ORD-", ""));
 
             if (order is null)
             {
@@ -85,20 +158,20 @@ namespace NextHorizon.Controllers
         private static OrderDetailsViewModel BuildOrderDetailsModel(Order order, string sellerName)
         {
             var shippingFee = order.Courier.Contains("LBC", StringComparison.OrdinalIgnoreCase) ? 120.00m : 85.00m;
-            var discount = string.Equals(order.PaymentStatus, "Paid", StringComparison.OrdinalIgnoreCase) ? 50.00m : 0.00m;
+            var discount = string.Equals(order.PaymentMethod, "Paid", StringComparison.OrdinalIgnoreCase) ? 50.00m : 0.00m;
             var subtotal = order.TotalAmount;
             var unitPrice = order.Quantity > 0 ? decimal.Round(order.TotalAmount / order.Quantity, 2) : order.TotalAmount;
 
             return new OrderDetailsViewModel
             {
                 SellerName = sellerName,
-                OrderId = order.OrderId,
-                BuyerName = order.Customer,
-                OrderDateTime = order.DateTime,
-                PaymentStatus = order.PaymentStatus,
-                FulfillmentStatus = order.FulfillmentStatus,
+                OrderId = order.OrderID.ToString(),                
+                BuyerName = order.FullName,
+                OrderDateTime = order.OrderDate,
+                PaymentStatus = order.PaymentMethod,
+                FulfillmentStatus = order.Status,
                 Courier = order.Courier,
-                TrackingNumber = $"TRK-{order.OrderId.Replace("ORD-", string.Empty)}-{order.DateTime:MMdd}",
+                TrackingNumber = $"TRK-{order.OrderID}-{order.OrderDate:MMdd}",
                 ShippingAddress = "1208 Horizon Heights, Bonifacio Global City, Taguig City",
                 ContactNumber = "+63 917 555 0123",
                 Notes = "Leave parcel at concierge if receiver is unavailable.",
@@ -1059,7 +1132,12 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
             var t7D = _sellerPerformanceService.GetTopPerformingProductsAsync(sellerContext.SellerId, topCount: 10, from: now.AddDays(-7), cancellationToken: cancellationToken);
             var t1M = _sellerPerformanceService.GetTopPerformingProductsAsync(sellerContext.SellerId, topCount: 10, from: now.AddDays(-30), cancellationToken: cancellationToken);
             await Task.WhenAll(t1H, t1D, t7D, t1M);
-
+    int? currentSellerId = HttpContext.Session.GetInt32("SellerId");
+    var realOrders = new List<Order>();
+    if (currentSellerId != null)
+    {
+        realOrders = await _orderService.GetOrdersBySellerAsync(currentSellerId.Value);
+    }
             return new SellerDashboardViewModel
             {
                 SellerName = sellerContext.SellerName,
@@ -1077,202 +1155,7 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
                 TotalRevenue = performance.TotalRevenue,
                 TotalVisits = 423,
                 MonthlyRevenueByYear = monthlyRevenue,
-
-                RecentOrders = new List<Order>
-                {
-                    new Order
-                    {
-                        OrderId = "061231",
-                        Customer = "Kiboy",
-                        ProductName = "Nike Air Max 270",
-                        ProductImage = "https://picsum.photos/seed/recent-1/80/80",
-                        Sku = "NH-NK-001",
-                        Size = "US 9",
-                        DateTime = DateTime.Now.AddMinutes(-32),
-                        Courier = "J&T Express",
-                        Status = "Paid",
-                        Amount = 5595.00m
-                    },
-                    new Order
-                    {
-                        OrderId = "061232",
-                        Customer = "Loyd",
-                        ProductName = "Nike Dri-FIT Training Shirt",
-                        ProductImage = "https://picsum.photos/seed/recent-2/80/80",
-                        Sku = "NH-NK-002",
-                        Size = "L",
-                        DateTime = DateTime.Now.AddHours(-1),
-                        Courier = "Ninja Van",
-                        Status = "To Ship",
-                        Amount = 2690.00m
-                    },
-                    new Order
-                    {
-                        OrderId = "061233",
-                        Customer = "Sarah",
-                        ProductName = "Nike React Infinity Run FK 3",
-                        ProductImage = "https://picsum.photos/seed/recent-3/80/80",
-                        Sku = "NH-NK-004",
-                        Size = "US 8",
-                        DateTime = DateTime.Now.AddHours(-3),
-                        Courier = "LBC",
-                        Status = "Pending",
-                        Amount = 7445.00m
-                    },
-                    new Order
-                    {
-                        OrderId = "061234",
-                        Customer = "Discaya",
-                        ProductName = "Nike Pro Training Shorts",
-                        ProductImage = "https://picsum.photos/seed/recent-4/80/80",
-                        Sku = "NH-NK-003",
-                        Size = "M",
-                        DateTime = DateTime.Now.AddHours(-5),
-                        Courier = "J&T Express",
-                        Status = "To Ship",
-                        Amount = 3370.00m
-                    },
-                    new Order
-                    {
-                        OrderId = "061235",
-                        Customer = "Romualdez",
-                        ProductName = "Nike Sport Drawstring Bag",
-                        ProductImage = "https://picsum.photos/seed/recent-5/80/80",
-                        Sku = "NH-NK-005",
-                        Size = "One Size",
-                        DateTime = DateTime.Now.AddHours(-8),
-                        Courier = "SPX Express",
-                        Status = "Pending",
-                        Amount = 980.00m
-                    },
-                    new Order
-                    {
-                        OrderId = "061236",
-                        Customer = "Vins",
-                        ProductName = "Nike Air Max 270",
-                        ProductImage = "https://picsum.photos/seed/recent-6/80/80",
-                        Sku = "NH-NK-001",
-                        Size = "US 10",
-                        DateTime = DateTime.Now.AddHours(-11),
-                        Courier = "LBC",
-                        Status = "Paid",
-                        Amount = 11140.00m
-                    },
-                    new Order
-                    {
-                        OrderId = "061237",
-                        Customer = "Kenneth",
-                        ProductName = "Nike Dri-FIT Training Shirt",
-                        ProductImage = "https://picsum.photos/seed/recent-7/80/80",
-                        Sku = "NH-NK-002",
-                        Size = "XL",
-                        DateTime = DateTime.Now.AddHours(-15),
-                        Courier = "Ninja Van",
-                        Status = "To Ship",
-                        Amount = 3970.00m
-                    }
-                },
-
-                Orders = new List<Order>
-                {
-                    new Order
-                    {
-                        OrderId = "ORD-1001",
-                        Customer = "Kiboy",
-                        DateTime = DateTime.Now.AddHours(-4),
-                        ProductImage = "https://picsum.photos/seed/order-1/80/80",
-                        ProductName = "Nike Shoes",
-                        Quantity = 1,
-                        TotalAmount = 2650.00m,
-                        PaymentStatus = "Paid",
-                        FulfillmentStatus = "Pending",
-                        Courier = "J&T Express",
-                        TrackingNumber = "",
-                        ReturnProofImage = "",
-                        ReturnNote = ""
-                    },
-                    new Order
-                    {
-                        OrderId = "ORD-1002",
-                        Customer = "Loyd",
-                        DateTime = DateTime.Now.AddHours(-3),
-                        ProductImage = "https://picsum.photos/seed/order-2/80/80",
-                        ProductName = "Croptop",
-                        Quantity = 2,
-                        TotalAmount = 1300.00m,
-                        PaymentStatus = "COD",
-                        FulfillmentStatus = "To Ship",
-                        Courier = "Ninja Van",
-                        TrackingNumber = "",
-                        ReturnProofImage = "",
-                        ReturnNote = ""
-                    },
-                    new Order
-                    {
-                        OrderId = "ORD-1003",
-                        Customer = "Sarah",
-                        DateTime = DateTime.Now.AddHours(-2),
-                        ProductImage = "https://picsum.photos/seed/order-3/80/80",
-                        ProductName = "Tumbler",
-                        Quantity = 3,
-                        TotalAmount = 1950.00m,
-                        PaymentStatus = "COD",
-                        FulfillmentStatus = "Shipped",
-                        Courier = "J&T Express",
-                        TrackingNumber = "123456789",
-                        ReturnProofImage = "https://picsum.photos/seed/return-proof-1/360/220",
-                        ReturnNote = "Package was sent back after multiple delivery attempts because the buyer could not be reached."
-                    },
-                    new Order
-                    {
-                        OrderId = "ORD-1004",
-                        Customer = "Discaya",
-                        DateTime = DateTime.Now.AddHours(-6),
-                        ProductImage = "https://picsum.photos/seed/order-4/80/80",
-                        ProductName = "Running Shorts",
-                        Quantity = 1,
-                        TotalAmount = 850.00m,
-                        PaymentStatus = "COD",
-                        FulfillmentStatus = "Delivered",
-                        Courier = "LBC",
-                        TrackingNumber = "LBC-908172635",
-                        ReturnProofImage = "",
-                        ReturnNote = ""
-                    },
-                    new Order
-                    {
-                        OrderId = "ORD-1005",
-                        Customer = "Romualdez",
-                        DateTime = DateTime.Now.AddHours(-10),
-                        ProductImage = "https://picsum.photos/seed/order-5/80/80",
-                        ProductName = "Sports Bottle",
-                        Quantity = 1,
-                        TotalAmount = 450.00m,
-                        PaymentStatus = "Paid",
-                        FulfillmentStatus = "Cancelled",
-                        Courier = "J&T Express",
-                        TrackingNumber = "",
-                        ReturnProofImage = "",
-                        ReturnNote = ""
-                    },
-                    new Order
-                    {
-                        OrderId = "ORD-1006",
-                        Customer = "Kenneth",
-                        DateTime = DateTime.Now.AddHours(-12),
-                        ProductImage = "https://picsum.photos/seed/order-6/80/80",
-                        ProductName = "Training Shirt",
-                        Quantity = 2,
-                        TotalAmount = 1200.00m,
-                        PaymentStatus = "Paid",
-                        FulfillmentStatus = "Return",
-                        Courier = "Ninja Van",
-                        TrackingNumber = "NV-55120973",
-                        ReturnProofImage = "https://picsum.photos/seed/return-proof-2/360/220",
-                        ReturnNote = "Buyer refused the parcel on delivery, so the shipment was returned to sender."
-                    }
-                },
-
+                 RecentOrders = realOrders.Take(5).ToList(),
                 TopProducts = topProducts,
                 TopProductsByRange = new Dictionary<string, List<TopSellingProduct>>
                 {

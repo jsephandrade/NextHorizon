@@ -1,0 +1,14 @@
+using NextHorizon.Models;
+
+namespace NextHorizon.Services
+{
+    public interface IOrderService
+    {
+       
+        Task<List<Order>> GetOrdersBySellerAsync(int sellerId);
+        Task<bool> AcceptOrderAsync(int orderId, int sellerId, string courier);
+        Task<List<Logistics>> GetCouriersAsync();
+        Task<bool> DeclineOrderAsync(int orderId, int sellerId, string reason);
+        Task<Order> GetOrderByIdAsync(int orderId, int sellerId);
+    }
+}

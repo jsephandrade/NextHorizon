@@ -1,11 +1,11 @@
-@model NextHorizon.Models.SellerDashboardViewModel
+@model List<NextHorizon.Models.Order>
 @{
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
 @{
     ViewData["Title"] = "Order Management";
     ViewData["DashboardHeading"] = "Order Management";
-    ViewData["SellerName"] = Model.SellerName;
+    ViewData["SellerName"] = "NextHorizon Seller";
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&amp;display=swap" rel="stylesheet">
@@ -61,19 +61,19 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var order in Model.Orders)
+        @foreach (var order in Model)
         {
             <tr class="order-row"
-                data-order-id="@order.OrderId"
-                data-status="@order.FulfillmentStatus.ToLower().Replace(" ", "-")"
+                data-order-id="@order.OrderID"
+                data-status="@order.Status.ToLower().Replace(" ", "-")"
                 data-courier="@order.Courier"
                 data-tracking="@order.TrackingNumber"
                 data-return-proof="@order.ReturnProofImage"
                 data-return-note="@order.ReturnNote">
 
-                <td>@order.OrderId</td>
-                <td>@order.Customer</td>
-                <td>@order.DateTime.ToString("MMM dd, yyyy")</td>
+                <td>@order.OrderID</td>
+                <td>@order.FullName</td>
+                <td>@order.OrderDate.ToString("MMM dd, yyyy")</td>
 
                 <!-- PRODUCT WITH IMAGE -->
                 <td class="product-cell">
@@ -84,8 +84,8 @@
                 <td>@order.Quantity</td>
                 <td>₱@order.TotalAmount.ToString("N2")</td>
                 <td>
-                    <span class="status-badge @order.FulfillmentStatus.ToLower().Replace(" ", "-")">
-                        @order.FulfillmentStatus
+                    <span class="status-badge @order.Status.ToLower().Replace(" ", "-")">
+                        @order.Status
                     </span>
                 </td>
 
@@ -98,7 +98,7 @@
                             <a class="action-menu-item"
                             asp-controller="Dashboard"
                             asp-action="OrderDetails"
-                            asp-route-id="@order.OrderId">
+                            asp-route-id="@order.OrderID">
                                 View Details
                             </a>
 
@@ -109,45 +109,45 @@
                             </button>
 
                             @* VIEW ORDER - only for Pending *@
-                            @if(order.FulfillmentStatus == "Pending")
+                            @if(order.Status == "Pending")
                             {
-                                <button class="action-menu-item view-order-btn"
-                                        data-order-id="@order.OrderId">
-                                    View Order
-                                </button>
+                               <button class="action-menu-item view-order-btn" 
+                               onclick="openViewOrderModal(@order.OrderID)">
+                                View Order
+                                 </button>
                             }
 
-                            @if(order.FulfillmentStatus == "To Ship")
+                            @if(order.Status == "To Ship")
                             {
                                 <button class="action-menu-item mark-as-shipped-btn"
-                                        data-order-id="@order.OrderId">
+                                        data-order-id="@order.OrderID">
                                     Mark as Shipped
                                 </button>
                             }
 
-                            @if(order.FulfillmentStatus == "Shipped")
+                            @if(order.Status == "Shipped")
                             {
                                 <button class="action-menu-item mark-returned-btn"
-                                        data-order-id="@order.OrderId">
+                                        data-order-id="@order.OrderID">
                                     Mark as Returned
                                 </button>
                             }
 
                             @* ADD NOTE - for Pending, To Ship, Shipped, Completed/Delivered *@
-                            @if(order.FulfillmentStatus == "Pending" 
-                            || order.FulfillmentStatus == "To Ship"
-                            || order.FulfillmentStatus == "Shipped"
-                            || order.FulfillmentStatus == "Delivered")
+                            @if(order.Status == "Pending" 
+                            || order.Status == "To Ship"
+                            || order.Status == "Shipped"
+                            || order.Status == "Delivered")
                             {
                                 <button class="action-menu-item add-note-btn"
-                                        data-order-id="@order.OrderId"
-                                        data-customer="@order.Customer">
+                                        data-order-id="@order.OrderID"
+                                        data-customer="@order.FullName">
                                     Add Note
                                 </button>
                             }
 
                             @* DOWNLOAD RECEIPT - only for Completed/Delivered *@
-                            @if(order.FulfillmentStatus == "Delivered")
+                            @if(order.Status == "Delivered")
                             {
                                 <button class="action-menu-item download-receipt-btn"
                                         onclick='openDownloadReceiptModal(@Html.Raw(Json.Serialize(order)))'>
@@ -163,88 +163,154 @@
     </tbody>
 </table>
 
-<!-- ===== ORDER SUMMARY MODAL ===== -->
-<div id="orderSummaryModal" class="modal-overlay">
-    <div class="order-summary-container">
-
-        <!-- HEADER -->
-        <div class="summary-header">
-            <h3>Order Summary - Order #<span id="summaryOrderId">061231</span></h3>
-            <span class="close-btn" onclick="closeOrderSummaryModal()">✖</span>
+<div id="orderSummaryModal" class="bw-modal-overlay">
+    <div class="premium-modal-container">
+        
+        <div class="premium-header">
+            <h3>Order #<span id="summaryOrderId">Loading...</span></h3>
+            <span class="premium-close-btn" onclick="closeOrderSummaryModal()">✖</span>
         </div>
 
-        <!-- ORDER DETAILS -->
-        <div class="summary-box">
-            <div class="summary-row">
-                <div>
-                    <p>Order Date</p>
-                    <strong>March 2, 2026</strong>
+        <div class="premium-body">
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Date Placed</div>
+                    <div class="metric-value" id="modalOrderDate">...</div>
                 </div>
-                <div>
-                    <p>Payment</p>
-                    <strong>COD</strong>
+                <div class="metric-card">
+                    <div class="metric-label">Payment Method</div>
+                    <div class="metric-value" id="modalPayment">...</div>
                 </div>
-                <div>
-                    <p>Total</p>
-                    <strong>₱2,600.00</strong>
+                <div class="metric-card">
+                    <div class="metric-label">Order Total</div>
+                    <div class="metric-value" id="modalTotal" style="color: #059669;">...</div>
                 </div>
-                <div>
-                    <p>Status</p>
-                    <span class="status-badge pending">PENDING</span>
+                <div class="metric-card">
+                    <div class="metric-label">Status</div>
+                    <div class="metric-value"><span class="status-badge pending">Pending</span></div>
                 </div>
             </div>
-        </div>
 
-        <!-- ITEMS -->
-        <div class="summary-items">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Item</th>
-                        <th>Qty</th>
-                        <th>Price</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Comfort Sculpt Seamless Bra</td>
-                        <td>x4</td>
-                        <td>₱650</td>
-                        <td>₱2,600</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+            <div class="info-section">
+                <h4>Order Items</h4>
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>Item Details</th>
+                            <th style="text-align: center;">Qty</th>
+                            <th style="text-align: right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalItemsBody">
+                        <tr>
+                            <td>
+                                <strong style="display: block; color: #111827;">Comfort Sculpt Seamless Bra</strong>
+                            </td>
+                            <td style="text-align: center; font-weight: 500;">x4</td>
+                            <td style="text-align: right; font-weight: 500;">₱2,600.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-        <!-- CUSTOMER -->
-        <div class="summary-box">
-            <p><strong>Customer:</strong> Harvy</p>
-            <p><strong>Address:</strong> Mandaue, Philippines</p>
-        </div>
+         <div class="details-grid">
+                
+                <div class="info-section" style="margin-bottom: 0;">
+                    <h4>Customer Details</h4>
+                    <div class="premium-box" style="height: 100%;">
+                        <p style="margin: 0 0 4px 0; color: #111827;"><strong><span id="modalCustomerName">...</span></strong></p>
+                        <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 0.85rem;" id="modalCustomerEmail">...</p>
+                        
+                        <p style="margin: 0 0 6px 0; font-size: 0.9rem;">📞 <span id="modalCustomerPhone">...</span></p>
+                        <p style="margin: 0 0 12px 0; font-size: 0.9rem; line-height: 1.4;">📍 <span id="modalCustomerAddress">...</span></p>
+                        
+                        <p style="margin: 0; font-size: 0.85rem; color: #059669; font-weight: 500;">
+                            🚚 Delivery: <span id="modalDeliveryOption">...</span>
+                        </p>
+                    </div>
+                </div>
 
-        <!-- COURIER -->
-        <div class="summary-box">
-            <label>Preferred Courier</label>
-            <div class="courier-row">
-                <select id="courierSelect">
-                    <option>J&T Express</option>
-                    <option>Flash Express</option>
-                    <option>LBC</option>
+                <div class="info-section" style="margin-bottom: 0;">
+                    <h4>Order Summary</h4>
+                    <div class="premium-box" style="height: 100%; display: flex; flex-direction: column; justify-content: center;">
+                        
+                        <div class="summary-line">
+                            <span>Subtotal (<span id="modalTotalItems">0</span> items)</span>
+                            <span id="modalSubtotal">₱0.00</span>
+                        </div>
+                        
+                        <div class="summary-line">
+                            <span>Shipping Fee</span>
+                            <span id="modalShippingFee">₱0.00</span>
+                        </div>
+                        
+                        <hr style="border: 0; border-top: 1px dashed #e5e7eb; margin: 12px 0;" />
+                        
+                        <div class="summary-line total-line">
+                            <span>Grand Total</span>
+                            <span id="modalGrandTotal" style="color: #059669;">₱0.00</span>
+                        </div>
+                        
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="info-section" style="margin-top: 24px;">
+                <h4>Logistics Preference</h4>
+                <select id="courierSelect" class="form-select" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #d1d5db; background: #f9fafb;">
+                    <option value="">Select a Courier...</option>
+                    @if (ViewBag.Couriers != null)
+                    {
+                        foreach (var courier in ViewBag.Couriers)
+                        {
+                            <option value="@courier.logistics_id">@courier.courier_name</option>
+                        }
+                    }
                 </select>
-                <button class="add-courier-btn">+ Add</button>
+                <div id="courierWarning" class="validation-warning">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+        <span>Please select a courier before accepting this order.</span>
             </div>
-        </div>
-
-        <!-- ACTIONS -->
-        <div class="summary-actions">
-            <button class="btn-cancel" onclick="openDeclineModal()">Decline Order</button>
-            <button class="btn-confirm" onclick="confirmOrder()">Confirm & Accept</button>
+        </div> <div class="premium-footer">
+            <button class="btn-secondary danger" onclick="declineOrder()">Decline Order</button>
+            <button class="btn-primary" onclick="confirmAndAcceptOrder()">Confirm & Accept</button>
         </div>
 
     </div>
 </div>
+<div id="declineOrderModal" class="bw-modal-overlay" style="display: none;">
+    <div class="bw-modal-container">
+        
+        <div class="bw-modal-header">
+            <h3>Decline Order #<span id="declineModalOrderId"></span></h3>
+            <span class="bw-close" onclick="closeDeclineModal()">✕</span>
+        </div>
+        
+        <div class="bw-info-box">
+            <p style="margin-bottom: 15px; color: #6b7280; font-size: 14px;">
+                Declining an order will permanently cancel it and notify the customer.
+            </p>
+            <div class="bw-field">
+                <label>Reason for Declining <span class="required">*</span></label>
+                <select id="declineReasonSelect" class="form-select" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db;">
+                    <option value="">-- Select a reason --</option>
+                    <option value="Out of stock">Out of stock</option>
+                    <option value="Invalid address">Invalid delivery address</option>
+                    <option value="Buyer unreachable">Buyer unreachable</option>
+                    <option value="Pricing error">Pricing error</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="bw-actions">
+            <button class="bw-btn cancel" onclick="closeDeclineModal()">Back</button>
+            <button class="bw-btn confirm" style="background-color: #dc2626; color: white;" onclick="submitDeclineOrder()">Confirm Decline</button>
+        </div>
 
+    </div>
+</div>
 
 <!-- ===== PROCESSING MODAL ===== -->
 <div id="processingModal" class="modal-overlay">
@@ -458,7 +524,7 @@
             <p><strong>Customer:</strong> <span id="shipCustomer">---</span></p>
             <p><strong>Items:</strong> <span id="shipItems">0</span></p>
             <p><strong>Total:</strong> ₱<span id="shipTotal">0.00</span></p>
-            <p><strong>Staff:</strong> <span>@Model.SellerName</span></p>
+            <p><strong>Staff:</strong<p><strong>Staff:</strong> <span id="staffName">Staff Team</span></p>
         </div>
 
         <!-- COURIER -->
@@ -622,4 +688,5 @@
     </div>
 </div>
 
-<script src="@Url.Content("~/js/ordermanagement.js")"></script>
+<script src="~/js/ordermanagement.js" asp-append-version="true"></script>
+

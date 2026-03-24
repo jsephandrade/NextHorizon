@@ -29,6 +29,7 @@ builder.Services.AddScoped<ICustomerStoredProcedureService, CustomerStoredProced
 builder.Services.AddScoped<IMessagingRepository, MessagingStoredProcedureRepository>();
 builder.Services.AddScoped<IOrderConversationResolver, SimulatedOrderConversationResolver>();
 builder.Services.AddScoped<IAuthenticatedUserContextService, AuthenticatedUserContextService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 // Anti-forgery
 builder.Services.AddAntiforgery(options =>
 {
