@@ -523,7 +523,7 @@ function submitDeclineOrder() {
     const reason = document.getElementById("declineReason").value;
 
     if (!reason) {
-        alert("Please select a reason.");
+        document.getElementById("declineWarningModal").style.display = "flex";
         return;
     }
 
@@ -534,4 +534,8 @@ function submitDeclineOrder() {
     closeDeclineModal();
 
     // OPTIONAL: update UI or send to backend here
+}
+
+function closeDeclineWarningModal() {
+    document.getElementById("declineWarningModal").style.display = "none";
 }

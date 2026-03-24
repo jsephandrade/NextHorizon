@@ -1025,3 +1025,18 @@
     border: none;
     cursor: not-allowed;
 }
+
+/* warning modal style */
+#declineWarningModal .notes-modal-container {
+    border: 1px solid black;
+}
+
+.btn-confirm {
+    background: black;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+}

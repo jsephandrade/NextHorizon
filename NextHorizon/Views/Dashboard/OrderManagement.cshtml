@@ -679,4 +679,29 @@
     </div>
 </div>
 
+<!-- ===== DECLINE WARNING MODAL ===== -->
+<div id="declineWarningModal" class="notes-modal-overlay">
+    <div class="notes-modal-container" style="max-width:400px; text-align:center;">
+
+        <!-- HEADER -->
+        <div class="notes-header" style="justify-content:center;">
+            <h3 style="color:black;">⚠ Missing Reason</h3>
+        </div>
+
+        <!-- MESSAGE -->
+        <div class="notes-body">
+            <p>Please select a reason before declining the order.</p>
+        </div>
+
+        <!-- ACTION -->
+        <div class="notes-actions" style="justify-content:center;">
+            <button class="btn-confirm" onclick="closeDeclineWarningModal()"
+                style="background:black; color:white; padding:12px 24px; border-radius:8px; border:none; font-size:14px; cursor:pointer;">
+                Okay
+            </button>
+        </div>
+
+    </div>
+</div>
+
 <script src="@Url.Content("~/js/ordermanagement.js")"></script>
