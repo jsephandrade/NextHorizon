@@ -311,6 +311,8 @@
     || currentAction == "pendingpayout"
     || currentAction == "mybalance";
     var isAnalytics = currentAction == "analytics";
+    var currentController = (ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty).ToLowerInvariant();
+    var isProducts = currentController == "seller" && (currentAction == "index" || currentAction == "createproduct" || currentAction == "viewproduct" || currentAction == "viewratings" || currentAction == "sizeguide" || currentAction == "viewsizeguide");
 }
 <body class="@(isMessenger ? "seller-messenger-layout" : string.Empty)">
 
@@ -327,8 +329,8 @@
                     <li class="@(isOrders ? "active" : string.Empty)">
                         <a asp-controller="Dashboard" asp-action="OrderManagement"><i class="fas fa-shopping-bag"></i> Orders</a>
                     </li>
-                    <li>
-                        <a href="#"><i class="fas fa-box"></i> Products</a>
+                    <li class="@(isProducts ? "active" : string.Empty)">
+                        <a asp-controller="Seller" asp-action="Index"><i class="fas fa-box"></i> Products</a>
                     </li>
                     <li class="@(isMessenger ? "active" : string.Empty)">
                         <a asp-controller="Seller" asp-action="SellerMessenger"><i class="fas fa-envelope"></i> Message</a>

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace NextHorizon.Migrations
+namespace NextHorizon.Data.Migrations
 {
     /// <inheritdoc />
     public partial class AddMessagingModule : Migration

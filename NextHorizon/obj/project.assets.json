@@ -3081,29 +3081,31 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Natsumi\\.nuget\\packages\\": {},
+    "C:\\Users\\joachim\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\NextHorizon\\NextHorizon\\NextHorizon.csproj",
+      "projectUniqueName": "C:\\Users\\joachim\\Desktop\\Belocura_NH\\NextHorizon\\NextHorizon.csproj",
       "projectName": "NextHorizon",
-      "projectPath": "C:\\NextHorizon\\NextHorizon\\NextHorizon.csproj",
-      "packagesPath": "C:\\Users\\Natsumi\\.nuget\\packages\\",
-      "outputPath": "C:\\NextHorizon\\NextHorizon\\obj\\",
+      "projectPath": "C:\\Users\\joachim\\Desktop\\Belocura_NH\\NextHorizon\\NextHorizon.csproj",
+      "packagesPath": "C:\\Users\\joachim\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\joachim\\Desktop\\Belocura_NH\\NextHorizon\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\Natsumi\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config"
+        "C:\\Users\\joachim\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net10.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {

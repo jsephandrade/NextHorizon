@@ -17,6 +17,13 @@ public sealed class AppDbContext : DbContext
     public DbSet<SellerAccount> SellerAccounts => Set<SellerAccount>();
     public DbSet<MessageConversation> MessageConversations => Set<MessageConversation>();
     public DbSet<ConversationMessage> ConversationMessages => Set<ConversationMessage>();
+    public DbSet<DbProduct> Products => Set<DbProduct>();
+    public DbSet<DbProductVariant> ProductVariants => Set<DbProductVariant>();
+    public DbSet<DbProductColorImage> ProductColorImages => Set<DbProductColorImage>();
+    public DbSet<DbReview> Reviews => Set<DbReview>();
+    public DbSet<DbReviewImage> ReviewImages => Set<DbReviewImage>();
+    public DbSet<DbSizeGuide> SizeGuides => Set<DbSizeGuide>();
+    public DbSet<DbSizeGuideImage> SizeGuideImages => Set<DbSizeGuideImage>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

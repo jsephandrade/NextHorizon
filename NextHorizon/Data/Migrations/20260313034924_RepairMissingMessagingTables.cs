@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace NextHorizon.Migrations
+namespace NextHorizon.Data.Migrations
 {
     /// <inheritdoc />
     public partial class RepairMissingMessagingTables : Migration

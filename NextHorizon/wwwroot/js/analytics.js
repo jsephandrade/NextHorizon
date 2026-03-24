@@ -281,7 +281,7 @@ function initializeTopProductsTable() {
     function normalizeProductRow(product) {
         return {
             productName: safeText(product.productName, 'Untitled Product'),
-            imageUrl: safeText(product.imageUrl, 'https://via.placeholder.com/60?text=Product'),
+            imageUrl: safeText(product.imageUrl, ''),
             sku: safeText(product.sku, '-'),
             category: safeText(product.category, 'General'),
             unitsSold: Math.max(0, Math.round(toNumber(product.unitsSold))),
@@ -315,7 +315,7 @@ function initializeTopProductsTable() {
 
             return {
                 productName: safeText(product.productName, 'Untitled Product'),
-                imageUrl: safeText(product.imageUrl, 'https://via.placeholder.com/60?text=Product'),
+                imageUrl: safeText(product.imageUrl, ''),
                 sku: safeText(product.sku, '-'),
                 category: safeText(product.category, 'General'),
                 unitsSold: Math.max(0, Math.round(baseUnits * config.unitFactor)),
@@ -386,7 +386,7 @@ function initializeTopProductsTable() {
                         <td>${rank}</td>
                         <td>
                             <div class="analytics-product-cell">
-                                <img src="${escapeHtml(row.imageUrl)}" alt="${escapeHtml(row.productName)}" onerror="this.src='https://via.placeholder.com/60?text=Product'" />
+                                <img src="${escapeHtml(row.imageUrl)}" alt="${escapeHtml(row.productName)}" onerror="this.style.visibility='hidden'" />
                                 <span>${escapeHtml(row.productName)}</span>
                             </div>
                         </td>
