@@ -1,0 +1,171 @@
+Using launch settings from .\NextHorizon\Properties\launchSettings.json...
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (57ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT 1
+info: Microsoft.EntityFrameworkCore.Migrations[20411]
+      Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (45ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      DECLARE @result int;
+      EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+      SELECT @result
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (16ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+      BEGIN
+          CREATE TABLE [__EFMigrationsHistory] (
+              [MigrationId] nvarchar(150) NOT NULL,
+              [ProductVersion] nvarchar(32) NOT NULL,
+              CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+          );
+      END;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (19ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (16ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (29ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT [MigrationId], [ProductVersion]
+      FROM [__EFMigrationsHistory]
+      ORDER BY [MigrationId];
+info: Microsoft.EntityFrameworkCore.Migrations[20402]
+      Applying migration '20260327000100_AddHelpCenterModule'.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (68ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE [HelpCategories] (
+          [HelpCategoryId] int NOT NULL IDENTITY,
+          [Slug] nvarchar(80) NOT NULL,
+          [Title] nvarchar(120) NOT NULL,
+          [Description] nvarchar(500) NOT NULL,
+          [IconKey] nvarchar(80) NOT NULL,
+          [DisplayOrder] int NOT NULL,
+          [IsActive] bit NOT NULL DEFAULT CAST(1 AS bit),
+          CONSTRAINT [PK_HelpCategories] PRIMARY KEY ([HelpCategoryId])
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (36ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE [SupportContactChannels] (
+          [SupportContactChannelId] int NOT NULL IDENTITY,
+          [ChannelType] nvarchar(40) NOT NULL,
+          [Label] nvarchar(80) NOT NULL,
+          [Value] nvarchar(320) NOT NULL,
+          [DisplayText] nvarchar(320) NOT NULL,
+          [ActionHref] nvarchar(400) NOT NULL,
+          [DisplayOrder] int NOT NULL,
+          [IsActive] bit NOT NULL DEFAULT CAST(1 AS bit),
+          CONSTRAINT [PK_SupportContactChannels] PRIMARY KEY ([SupportContactChannelId])
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (39ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE [HelpFaqs] (
+          [HelpFaqId] int NOT NULL IDENTITY,
+          [HelpCategoryId] int NOT NULL,
+          [Question] nvarchar(200) NOT NULL,
+          [Answer] nvarchar(4000) NOT NULL,
+          [SearchKeywords] nvarchar(400) NULL,
+          [DisplayOrder] int NOT NULL,
+          [IsActive] bit NOT NULL DEFAULT CAST(1 AS bit),
+          [IsFeaturedOnHome] bit NOT NULL,
+          CONSTRAINT [PK_HelpFaqs] PRIMARY KEY ([HelpFaqId]),
+          CONSTRAINT [FK_HelpFaqs_HelpCategories_HelpCategoryId] FOREIGN KEY ([HelpCategoryId]) REFERENCES [HelpCategories] ([HelpCategoryId]) ON DELETE CASCADE
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (39ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE [SupportTickets] (
+          [SupportTicketId] int NOT NULL IDENTITY,
+          [ReferenceCode] nvarchar(40) NOT NULL,
+          [UserId] int NOT NULL,
+          [ConsumerId] int NULL,
+          [HelpCategoryId] int NULL,
+          [FaqCategory] nvarchar(120) NULL,
+          [Subject] nvarchar(160) NOT NULL,
+          [Body] nvarchar(4000) NOT NULL,
+          [Status] tinyint NOT NULL,
+          [CreatedAt] datetime2 NOT NULL DEFAULT (SYSUTCDATETIME()),
+          [UpdatedAt] datetime2 NOT NULL DEFAULT (SYSUTCDATETIME()),
+          CONSTRAINT [PK_SupportTickets] PRIMARY KEY ([SupportTicketId]),
+          CONSTRAINT [FK_SupportTickets_Consumers_ConsumerId] FOREIGN KEY ([ConsumerId]) REFERENCES [dbo].[Consumers] ([consumer_id]) ON DELETE NO ACTION,
+          CONSTRAINT [FK_SupportTickets_HelpCategories_HelpCategoryId] FOREIGN KEY ([HelpCategoryId]) REFERENCES [HelpCategories] ([HelpCategoryId]) ON DELETE SET NULL,
+          CONSTRAINT [FK_SupportTickets_Users_UserId] FOREIGN KEY ([UserId]) REFERENCES [dbo].[Users] ([user_id]) ON DELETE NO ACTION
+      );
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (33ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX [IX_HelpCategories_IsActive_DisplayOrder] ON [HelpCategories] ([IsActive], [DisplayOrder]);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (42ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE UNIQUE INDEX [IX_HelpCategories_Slug] ON [HelpCategories] ([Slug]) WHERE [Slug] IS NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (24ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX [IX_HelpFaqs_HelpCategoryId_IsActive_DisplayOrder] ON [HelpFaqs] ([HelpCategoryId], [IsActive], [DisplayOrder]);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (16ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX [IX_HelpFaqs_IsFeaturedOnHome] ON [HelpFaqs] ([IsFeaturedOnHome]);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (16ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX [IX_SupportContactChannels_IsActive_DisplayOrder] ON [SupportContactChannels] ([IsActive], [DisplayOrder]);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (22ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX [IX_SupportTickets_ConsumerId] ON [SupportTickets] ([ConsumerId]);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (27ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX [IX_SupportTickets_HelpCategoryId] ON [SupportTickets] ([HelpCategoryId]);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (16ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE UNIQUE INDEX [IX_SupportTickets_ReferenceCode] ON [SupportTickets] ([ReferenceCode]) WHERE [ReferenceCode] IS NOT NULL;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (27ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX [IX_SupportTickets_Status_CreatedAt] ON [SupportTickets] ([Status], [CreatedAt] DESC);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (50ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE INDEX [IX_SupportTickets_UserId_CreatedAt] ON [SupportTickets] ([UserId], [CreatedAt] DESC);
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (114ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'SupportContactChannelId', N'ChannelType', N'Label', N'Value', N'DisplayText', N'ActionHref', N'DisplayOrder', N'IsActive') AND [object_id] = OBJECT_ID(N'[SupportContactChannels]'))
+          SET IDENTITY_INSERT [SupportContactChannels] ON;
+      INSERT INTO [SupportContactChannels] ([SupportContactChannelId], [ChannelType], [Label], [Value], [DisplayText], [ActionHref], [DisplayOrder], [IsActive])
+      VALUES (1, N'email', N'Email Support', N'support@nexthorizon.com', N'support@nexthorizon.com', N'mailto:support@nexthorizon.com', 1, CAST(1 AS bit));
+      IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'SupportContactChannelId', N'ChannelType', N'Label', N'Value', N'DisplayText', N'ActionHref', N'DisplayOrder', N'IsActive') AND [object_id] = OBJECT_ID(N'[SupportContactChannels]'))
+          SET IDENTITY_INSERT [SupportContactChannels] OFF;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'SupportContactChannelId', N'ChannelType', N'Label', N'Value', N'DisplayText', N'ActionHref', N'DisplayOrder', N'IsActive') AND [object_id] = OBJECT_ID(N'[SupportContactChannels]'))
+          SET IDENTITY_INSERT [SupportContactChannels] ON;
+      INSERT INTO [SupportContactChannels] ([SupportContactChannelId], [ChannelType], [Label], [Value], [DisplayText], [ActionHref], [DisplayOrder], [IsActive])
+      VALUES (2, N'phone', N'Phone Support', N'+18001234567', N'+1 (800) 123-4567', N'tel:+18001234567', 2, CAST(1 AS bit));
+      IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'SupportContactChannelId', N'ChannelType', N'Label', N'Value', N'DisplayText', N'ActionHref', N'DisplayOrder', N'IsActive') AND [object_id] = OBJECT_ID(N'[SupportContactChannels]'))
+          SET IDENTITY_INSERT [SupportContactChannels] OFF;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (64ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'SupportContactChannelId', N'ChannelType', N'Label', N'Value', N'DisplayText', N'ActionHref', N'DisplayOrder', N'IsActive') AND [object_id] = OBJECT_ID(N'[SupportContactChannels]'))
+          SET IDENTITY_INSERT [SupportContactChannels] ON;
+      INSERT INTO [SupportContactChannels] ([SupportContactChannelId], [ChannelType], [Label], [Value], [DisplayText], [ActionHref], [DisplayOrder], [IsActive])
+      VALUES (3, N'chat', N'Live Chat', N'/consumer/messenger/', N'Open live support chat', N'/consumer/messenger/', 3, CAST(1 AS bit));
+      IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'SupportContactChannelId', N'ChannelType', N'Label', N'Value', N'DisplayText', N'ActionHref', N'DisplayOrder', N'IsActive') AND [object_id] = OBJECT_ID(N'[SupportContactChannels]'))
+          SET IDENTITY_INSERT [SupportContactChannels] OFF;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (35ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'SupportContactChannelId', N'ChannelType', N'Label', N'Value', N'DisplayText', N'ActionHref', N'DisplayOrder', N'IsActive') AND [object_id] = OBJECT_ID(N'[SupportContactChannels]'))
+          SET IDENTITY_INSERT [SupportContactChannels] ON;
+      INSERT INTO [SupportContactChannels] ([SupportContactChannelId], [ChannelType], [Label], [Value], [DisplayText], [ActionHref], [DisplayOrder], [IsActive])
+      VALUES (4, N'hours', N'Support Hours', N'Mon-Fri, 9AM-6PM (local time)', N'Mon-Fri, 9AM-6PM (local time)', N'', 4, CAST(1 AS bit));
+      IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'SupportContactChannelId', N'ChannelType', N'Label', N'Value', N'DisplayText', N'ActionHref', N'DisplayOrder', N'IsActive') AND [object_id] = OBJECT_ID(N'[SupportContactChannels]'))
+          SET IDENTITY_INSERT [SupportContactChannels] OFF;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (14ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+      VALUES (N'20260327000100_AddHelpCenterModule', N'10.0.3');
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (24ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      DECLARE @result int;
+      EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+      SELECT @result
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5169
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\dev\NextHorizon\NextHorizon

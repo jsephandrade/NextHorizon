@@ -30,6 +30,46 @@ build_property._RazorSourceGeneratorDebug =
 build_property.EffectiveAnalysisLevelStyle = 10.0
 build_property.EnableCodeStyleSeverity = 
 
+[C:/dev/NextHorizon/NextHorizon/Views/HelpCenter/Account.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSGVscENlbnRlclxBY2NvdW50LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/dev/NextHorizon/NextHorizon/Views/HelpCenter/Assistant.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSGVscENlbnRlclxBc3Npc3RhbnQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/dev/NextHorizon/NextHorizon/Views/HelpCenter/Billing.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSGVscENlbnRlclxCaWxsaW5nLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/dev/NextHorizon/NextHorizon/Views/HelpCenter/Contact.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSGVscENlbnRlclxDb250YWN0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/dev/NextHorizon/NextHorizon/Views/HelpCenter/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSGVscENlbnRlclxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/dev/NextHorizon/NextHorizon/Views/HelpCenter/Order.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSGVscENlbnRlclxPcmRlci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/dev/NextHorizon/NextHorizon/Views/HelpCenter/Returns.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSGVscENlbnRlclxSZXR1cm5zLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/dev/NextHorizon/NextHorizon/Views/HelpCenter/Technical.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSGVscENlbnRlclxUZWNobmljYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/dev/NextHorizon/NextHorizon/Views/HelpCenter/Topic.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSGVscENlbnRlclxUb3BpYy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/dev/NextHorizon/NextHorizon/Views/HelpCenter/Tracking.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSGVscENlbnRlclxUcmFja2luZy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/dev/NextHorizon/NextHorizon/Views/Home/About.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxBYm91dC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 

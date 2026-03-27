@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using NextHorizon.Models;
+using NextHorizon.Models.HelpCenter;
 using NextHorizon.Messaging.Models;
 using NextHorizon.Modules.MemberTracker.Models;
 
@@ -19,6 +20,20 @@ public class ApplicationDbContext : DbContext
     public DbSet<ConversationMessage> ConversationMessages => Set<ConversationMessage>();
 
     public DbSet<Customer> Customers => Set<Customer>();
+
+    public DbSet<HelpCategory> HelpCategories => Set<HelpCategory>();
+
+    public DbSet<HelpFaq> HelpFaqs => Set<HelpFaq>();
+
+    public DbSet<SupportContactChannel> SupportContactChannels => Set<SupportContactChannel>();
+
+    public DbSet<SupportTicket> SupportTickets => Set<SupportTicket>();
+
+    public DbSet<FaqRecord> FaqRecords => Set<FaqRecord>();
+
+    public DbSet<SupportFaqRecord> SupportFaqRecords => Set<SupportFaqRecord>();
+
+    public DbSet<LiveAgentSession> LiveAgentSessions => Set<LiveAgentSession>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -84,6 +99,213 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey(x => x.ConsumerId)
             .HasPrincipalKey(x => x.ConsumerId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        var faqRecord = builder.Entity<FaqRecord>();
+        faqRecord.ToTable("FAQs", "dbo", table => table.ExcludeFromMigrations());
+        faqRecord.HasKey(x => x.FaqId);
+        faqRecord.Property(x => x.FaqId)
+            .HasColumnName("FaqID");
+        faqRecord.Property(x => x.Question)
+            .HasColumnName("Question")
+            .IsRequired()
+            .HasMaxLength(500);
+        faqRecord.Property(x => x.Answer)
+            .HasColumnName("Answer")
+            .IsRequired()
+            .HasMaxLength(4000);
+        faqRecord.Property(x => x.Category)
+            .HasColumnName("Category")
+            .IsRequired()
+            .HasMaxLength(120);
+        faqRecord.Property(x => x.Status)
+            .HasColumnName("Status")
+            .IsRequired()
+            .HasMaxLength(40);
+        faqRecord.Property(x => x.UserId)
+            .HasColumnName("user_id")
+            .IsRequired();
+        faqRecord.Property(x => x.DateAdded)
+            .HasColumnName("DateAdded")
+            .HasColumnType("datetime2");
+        faqRecord.Property(x => x.LastUpdated)
+            .HasColumnName("LastUpdated")
+            .HasColumnType("datetime2");
+        faqRecord.Property(x => x.UserType)
+            .HasColumnName("UserType")
+            .IsRequired()
+            .HasMaxLength(40);
+
+        var supportFaqRecord = builder.Entity<SupportFaqRecord>();
+        supportFaqRecord.ToTable("SupportFAQs", "dbo", table => table.ExcludeFromMigrations());
+        supportFaqRecord.HasKey(x => x.Id);
+        supportFaqRecord.Property(x => x.Id)
+            .HasColumnName("Id");
+        supportFaqRecord.Property(x => x.Category)
+            .HasColumnName("Category")
+            .IsRequired();
+        supportFaqRecord.Property(x => x.Question)
+            .HasColumnName("Question")
+            .IsRequired();
+        supportFaqRecord.Property(x => x.Resolution)
+            .HasColumnName("Resolution")
+            .IsRequired();
+        supportFaqRecord.Property(x => x.DurationMinutes)
+            .HasColumnName("DurationMinutes")
+            .IsRequired();
+        supportFaqRecord.Property(x => x.UserType)
+            .HasColumnName("UserType")
+            .IsRequired();
+        supportFaqRecord.Property(x => x.AgentId)
+            .HasColumnName("AgentId");
+        supportFaqRecord.Property(x => x.CreatedAt)
+            .HasColumnName("CreatedAt")
+            .HasColumnType("datetime2")
+            .IsRequired();
+        var helpCategory = builder.Entity<HelpCategory>();
+        helpCategory.ToTable("HelpCategories");
+        helpCategory.HasKey(x => x.HelpCategoryId);
+        helpCategory.Property(x => x.Slug)
+            .IsRequired()
+            .HasMaxLength(80);
+        helpCategory.Property(x => x.Title)
+            .IsRequired()
+            .HasMaxLength(120);
+        helpCategory.Property(x => x.Description)
+            .IsRequired()
+            .HasMaxLength(500);
+        helpCategory.Property(x => x.IconKey)
+            .IsRequired()
+            .HasMaxLength(80);
+        helpCategory.Property(x => x.IsActive)
+            .HasDefaultValue(true);
+        helpCategory.HasIndex(x => x.Slug)
+            .IsUnique();
+        helpCategory.HasIndex(x => new { x.IsActive, x.DisplayOrder });
+
+        var helpFaq = builder.Entity<HelpFaq>();
+        helpFaq.ToTable("HelpFaqs");
+        helpFaq.HasKey(x => x.HelpFaqId);
+        helpFaq.Property(x => x.Question)
+            .IsRequired()
+            .HasMaxLength(200);
+        helpFaq.Property(x => x.Answer)
+            .IsRequired()
+            .HasMaxLength(4000);
+        helpFaq.Property(x => x.SearchKeywords)
+            .HasMaxLength(400);
+        helpFaq.Property(x => x.IsActive)
+            .HasDefaultValue(true);
+        helpFaq.HasOne(x => x.Category)
+            .WithMany(x => x.Faqs)
+            .HasForeignKey(x => x.HelpCategoryId)
+            .OnDelete(DeleteBehavior.Cascade);
+        helpFaq.HasIndex(x => new { x.HelpCategoryId, x.IsActive, x.DisplayOrder });
+        helpFaq.HasIndex(x => x.IsFeaturedOnHome);
+
+        var supportContactChannel = builder.Entity<SupportContactChannel>();
+        supportContactChannel.ToTable("SupportContactChannels");
+        supportContactChannel.HasKey(x => x.SupportContactChannelId);
+        supportContactChannel.Property(x => x.ChannelType)
+            .IsRequired()
+            .HasMaxLength(40);
+        supportContactChannel.Property(x => x.Label)
+            .IsRequired()
+            .HasMaxLength(80);
+        supportContactChannel.Property(x => x.Value)
+            .IsRequired()
+            .HasMaxLength(320);
+        supportContactChannel.Property(x => x.DisplayText)
+            .IsRequired()
+            .HasMaxLength(320);
+        supportContactChannel.Property(x => x.ActionHref)
+            .IsRequired()
+            .HasMaxLength(400);
+        supportContactChannel.Property(x => x.IsActive)
+            .HasDefaultValue(true);
+        supportContactChannel.HasIndex(x => new { x.IsActive, x.DisplayOrder });
+
+        var supportTicket = builder.Entity<SupportTicket>();
+        supportTicket.ToTable("SupportTickets");
+        supportTicket.HasKey(x => x.SupportTicketId);
+        supportTicket.Property(x => x.ReferenceCode)
+            .IsRequired()
+            .HasMaxLength(40);
+        supportTicket.Property(x => x.FaqCategory)
+            .HasMaxLength(120);
+        supportTicket.Property(x => x.Subject)
+            .IsRequired()
+            .HasMaxLength(160);
+        supportTicket.Property(x => x.Body)
+            .IsRequired()
+            .HasMaxLength(4000);
+        supportTicket.Property(x => x.Status)
+            .IsRequired()
+            .HasConversion<byte>();
+        supportTicket.Property(x => x.CreatedAt)
+            .IsRequired()
+            .HasDefaultValueSql("SYSUTCDATETIME()");
+        supportTicket.Property(x => x.UpdatedAt)
+            .IsRequired()
+            .HasDefaultValueSql("SYSUTCDATETIME()");
+        supportTicket.HasOne(x => x.Category)
+            .WithMany(x => x.SupportTickets)
+            .HasForeignKey(x => x.HelpCategoryId)
+            .OnDelete(DeleteBehavior.SetNull);
+        supportTicket.HasOne<PlatformUser>()
+            .WithMany()
+            .HasForeignKey(x => x.UserId)
+            .HasPrincipalKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+        supportTicket.HasOne<ConsumerRef>()
+            .WithMany()
+            .HasForeignKey(x => x.ConsumerId)
+            .HasPrincipalKey(x => x.ConsumerId)
+            .OnDelete(DeleteBehavior.Restrict);
+        supportTicket.HasIndex(x => x.ReferenceCode)
+            .IsUnique();
+        supportTicket.HasIndex(x => new { x.UserId, x.CreatedAt })
+            .IsDescending(false, true);
+        supportTicket.HasIndex(x => new { x.Status, x.CreatedAt })
+            .IsDescending(false, true);
+
+        var liveAgentSession = builder.Entity<LiveAgentSession>();
+        liveAgentSession.ToTable("LiveAgentSessions");
+        liveAgentSession.HasKey(x => x.LiveAgentSessionId);
+        liveAgentSession.Property(x => x.CategorySlug)
+            .IsRequired()
+            .HasMaxLength(80);
+        liveAgentSession.Property(x => x.CategoryTitle)
+            .IsRequired()
+            .HasMaxLength(120);
+        liveAgentSession.Property(x => x.FirstQuestion)
+            .IsRequired()
+            .HasMaxLength(4000)
+            .HasDefaultValue(string.Empty);
+        liveAgentSession.Property(x => x.Status)
+            .IsRequired()
+            .HasConversion<byte>();
+        liveAgentSession.Property(x => x.CreatedAt)
+            .IsRequired()
+            .HasDefaultValueSql("SYSUTCDATETIME()");
+        liveAgentSession.Property(x => x.UpdatedAt)
+            .IsRequired()
+            .HasDefaultValueSql("SYSUTCDATETIME()");
+        liveAgentSession.HasOne<PlatformUser>()
+            .WithMany()
+            .HasForeignKey(x => x.UserId)
+            .HasPrincipalKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+        liveAgentSession.HasOne<ConsumerRef>()
+            .WithMany()
+            .HasForeignKey(x => x.ConsumerId)
+            .HasPrincipalKey(x => x.ConsumerId)
+            .OnDelete(DeleteBehavior.Restrict);
+        liveAgentSession.HasIndex(x => x.SupportFaqId)
+            .IsUnique();
+        liveAgentSession.HasIndex(x => new { x.UserId, x.Status, x.CreatedAt })
+            .IsDescending(false, false, true);
+
+        supportContactChannel.HasData(HelpCenterSeed.ContactChannels);
 
         var upload = builder.Entity<MemberUpload>();
 
@@ -243,4 +465,6 @@ public class ApplicationDbContext : DbContext
             .IsDescending(false, true);
     }
 }
+
+
 

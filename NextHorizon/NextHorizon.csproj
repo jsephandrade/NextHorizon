@@ -17,6 +17,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="obj_verify\**\*.cs" />
+    <Content Remove="obj_verify\**\*" />
+    <EmbeddedResource Remove="obj_verify\**\*" />
+    <None Remove="obj_verify\**\*" />
+
     <Content Remove="Views\Dashboard\**\*.cshtml" />
     <Content Remove="Views\Home\MyPurchases.cshtml" />
     <Content Remove="Views\Home\PaymentMethods.cshtml" />

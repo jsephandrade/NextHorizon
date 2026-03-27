@@ -239,6 +239,426 @@ namespace NextHorizon.Migrations
                         });
                 });
 
+            modelBuilder.Entity("NextHorizon.Models.HelpCenter.FaqRecord", b =>
+                {
+                    b.Property<int>("FaqId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("FaqID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FaqId"));
+
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)")
+                        .HasColumnName("Answer");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)")
+                        .HasColumnName("Category");
+
+                    b.Property<DateTime>("DateAdded")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DateAdded");
+
+                    b.Property<DateTime>("LastUpdated")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastUpdated");
+
+                    b.Property<string>("Question")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("Question");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("Status");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("user_id");
+
+                    b.Property<string>("UserType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("UserType");
+
+                    b.HasKey("FaqId");
+
+                    b.ToTable("FAQs", "dbo", t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
+            modelBuilder.Entity("NextHorizon.Models.HelpCenter.HelpCategory", b =>
+                {
+                    b.Property<int>("HelpCategoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HelpCategoryId"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("IconKey")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.HasKey("HelpCategoryId");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.HasIndex("IsActive", "DisplayOrder");
+
+                    b.ToTable("HelpCategories", (string)null);
+                });
+
+            modelBuilder.Entity("NextHorizon.Models.HelpCenter.HelpFaq", b =>
+                {
+                    b.Property<int>("HelpFaqId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HelpFaqId"));
+
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("HelpCategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsFeaturedOnHome")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Question")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("SearchKeywords")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.HasKey("HelpFaqId");
+
+                    b.HasIndex("IsFeaturedOnHome");
+
+                    b.HasIndex("HelpCategoryId", "IsActive", "DisplayOrder");
+
+                    b.ToTable("HelpFaqs", (string)null);
+                });
+
+            modelBuilder.Entity("NextHorizon.Models.HelpCenter.LiveAgentSession", b =>
+                {
+                    b.Property<int>("LiveAgentSessionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LiveAgentSessionId"));
+
+                    b.Property<string>("CategorySlug")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("CategoryTitle")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<int?>("ConsumerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<string>("FirstQuestion")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)")
+                        .HasDefaultValue("");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.Property<int>("SupportFaqId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("LiveAgentSessionId");
+
+                    b.HasIndex("ConsumerId");
+
+                    b.HasIndex("SupportFaqId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "Status", "CreatedAt")
+                        .IsDescending(false, false, true);
+
+                    b.ToTable("LiveAgentSessions", (string)null);
+                });
+
+            modelBuilder.Entity("NextHorizon.Models.HelpCenter.SupportContactChannel", b =>
+                {
+                    b.Property<int>("SupportContactChannelId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SupportContactChannelId"));
+
+                    b.Property<string>("ActionHref")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<string>("ChannelType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DisplayText")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
+                    b.HasKey("SupportContactChannelId");
+
+                    b.HasIndex("IsActive", "DisplayOrder");
+
+                    b.ToTable("SupportContactChannels", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            SupportContactChannelId = 1,
+                            ActionHref = "mailto:support@nexthorizon.com",
+                            ChannelType = "email",
+                            DisplayOrder = 1,
+                            DisplayText = "support@nexthorizon.com",
+                            IsActive = true,
+                            Label = "Email Support",
+                            Value = "support@nexthorizon.com"
+                        },
+                        new
+                        {
+                            SupportContactChannelId = 2,
+                            ActionHref = "tel:+18001234567",
+                            ChannelType = "phone",
+                            DisplayOrder = 2,
+                            DisplayText = "+1 (800) 123-4567",
+                            IsActive = true,
+                            Label = "Phone Support",
+                            Value = "+18001234567"
+                        },
+                        new
+                        {
+                            SupportContactChannelId = 3,
+                            ActionHref = "/consumer/messenger/",
+                            ChannelType = "chat",
+                            DisplayOrder = 3,
+                            DisplayText = "Open live support chat",
+                            IsActive = true,
+                            Label = "Live Chat",
+                            Value = "/consumer/messenger/"
+                        },
+                        new
+                        {
+                            SupportContactChannelId = 4,
+                            ActionHref = "",
+                            ChannelType = "hours",
+                            DisplayOrder = 4,
+                            DisplayText = "Mon-Fri, 9AM-6PM (local time)",
+                            IsActive = true,
+                            Label = "Support Hours",
+                            Value = "Mon-Fri, 9AM-6PM (local time)"
+                        });
+                });
+
+            modelBuilder.Entity("NextHorizon.Models.HelpCenter.SupportFaqRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AgentId")
+                        .HasColumnType("int")
+                        .HasColumnName("AgentId");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("Category");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreatedAt");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("int")
+                        .HasColumnName("DurationMinutes");
+
+                    b.Property<string>("Question")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("Question");
+
+                    b.Property<string>("Resolution")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("Resolution");
+
+                    b.Property<string>("UserType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("UserType");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SupportFAQs", "dbo", t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
+            modelBuilder.Entity("NextHorizon.Models.HelpCenter.SupportTicket", b =>
+                {
+                    b.Property<int>("SupportTicketId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SupportTicketId"));
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<int?>("ConsumerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<string>("FaqCategory")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<int?>("HelpCategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReferenceCode")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<byte>("Status")
+                        .HasColumnType("tinyint");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("SupportTicketId");
+
+                    b.HasIndex("ConsumerId");
+
+                    b.HasIndex("HelpCategoryId");
+
+                    b.HasIndex("ReferenceCode")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "CreatedAt")
+                        .IsDescending(false, true);
+
+                    b.HasIndex("UserId", "CreatedAt")
+                        .IsDescending(false, true);
+
+                    b.ToTable("SupportTickets", (string)null);
+                });
+
             modelBuilder.Entity("NextHorizon.Modules.MemberTracker.Models.MemberUpload", b =>
                 {
                     b.Property<int>("UploadId")
@@ -302,14 +722,6 @@ namespace NextHorizon.Migrations
                     b.ToTable("MemberUploads", (string)null);
                 });
 
-            modelBuilder.Entity("NextHorizon.Models.Customer", b =>
-                {
-                    b.HasOne("NextHorizon.Data.ConsumerRef", null)
-                        .WithMany()
-                        .HasForeignKey("ConsumerId")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
             modelBuilder.Entity("NextHorizon.Messaging.Models.ConversationMessage", b =>
                 {
                     b.HasOne("NextHorizon.Messaging.Models.MessageConversation", "Conversation")
@@ -342,6 +754,60 @@ namespace NextHorizon.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("NextHorizon.Models.Customer", b =>
+                {
+                    b.HasOne("NextHorizon.Data.ConsumerRef", null)
+                        .WithMany()
+                        .HasForeignKey("ConsumerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("NextHorizon.Models.HelpCenter.HelpFaq", b =>
+                {
+                    b.HasOne("NextHorizon.Models.HelpCenter.HelpCategory", "Category")
+                        .WithMany("Faqs")
+                        .HasForeignKey("HelpCategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("NextHorizon.Models.HelpCenter.LiveAgentSession", b =>
+                {
+                    b.HasOne("NextHorizon.Data.ConsumerRef", null)
+                        .WithMany()
+                        .HasForeignKey("ConsumerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("NextHorizon.Data.PlatformUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("NextHorizon.Models.HelpCenter.SupportTicket", b =>
+                {
+                    b.HasOne("NextHorizon.Data.ConsumerRef", null)
+                        .WithMany()
+                        .HasForeignKey("ConsumerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("NextHorizon.Models.HelpCenter.HelpCategory", "Category")
+                        .WithMany("SupportTickets")
+                        .HasForeignKey("HelpCategoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("NextHorizon.Data.PlatformUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+                });
+
             modelBuilder.Entity("NextHorizon.Modules.MemberTracker.Models.MemberUpload", b =>
                 {
                     b.HasOne("NextHorizon.Data.ConsumerRef", null)
@@ -354,6 +820,13 @@ namespace NextHorizon.Migrations
             modelBuilder.Entity("NextHorizon.Messaging.Models.MessageConversation", b =>
                 {
                     b.Navigation("Messages");
+                });
+
+            modelBuilder.Entity("NextHorizon.Models.HelpCenter.HelpCategory", b =>
+                {
+                    b.Navigation("Faqs");
+
+                    b.Navigation("SupportTickets");
                 });
 #pragma warning restore 612, 618
         }

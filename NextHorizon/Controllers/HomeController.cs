@@ -9,6 +9,8 @@ namespace NextHorizon.Controllers
     {
         public IActionResult Index()
         {
+            ViewData["ShowConsumerMessengerLink"] = true;
+            ViewData["ConsumerMessengerHref"] = "/consumer/messenger/";
             return View();
         }
 
