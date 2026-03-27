@@ -9,11 +9,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-
+using NextHorizon.Data;
 namespace NextHorizon.Controllers
 {
     public class DashboardController : Controller
     {
+        private readonly AppDbContext _context;
         private readonly IOrderService _orderService;
         private readonly ISellerContextService _sellerContextService;
         private readonly ISellerPerformanceService _sellerPerformanceService;
@@ -23,12 +24,15 @@ namespace NextHorizon.Controllers
             ISellerContextService sellerContextService,
             ISellerPerformanceService sellerPerformanceService,
             IConfiguration configuration,
-            IOrderService orderService)
+            IOrderService orderService,
+            AppDbContext context)
+            
         {
             _sellerContextService = sellerContextService;
             _sellerPerformanceService = sellerPerformanceService;
             _configuration = configuration;
             _orderService = orderService;
+            _context = context;
         }
 
         private IActionResult? RedirectIfNotLoggedIn()
@@ -85,6 +89,7 @@ var order = await _orderService.GetOrderByIdAsync(orderId, currentSellerId.Value
     // Return the data as a JSON package so JavaScript can read it
     return Json(new { success = true, data = order });
 }
+
 [HttpPost]
 public async Task<IActionResult> AcceptOrder([FromBody] AcceptOrderRequest request)
 {
@@ -108,36 +113,43 @@ public async Task<IActionResult> AcceptOrder([FromBody] AcceptOrderRequest reque
         return Json(new { success = false, message = "Failed to accept order. Order not found." });
     }
 }
+
 [HttpPost]
-public async Task<IActionResult> DeclineOrder([FromBody] DeclineOrderRequest request)
+public async Task<IActionResult> MarkOrderShipped([FromBody] ShipmentUpdateModel model)
 {
-    // Security check: Ensure they are logged in
-    int? currentSellerId = HttpContext.Session.GetInt32("SellerId");
-    if (currentSellerId == null)
+    if (model == null || model.OrderId <= 0 || string.IsNullOrWhiteSpace(model.TrackingNumber))
     {
-        return Json(new { success = false, message = "Session expired." });
+        return Json(new { success = false, message = "Invalid shipment data. Tracking number is required." });
     }
 
-    // Validation: Ensure they actually typed a reason
-    if (string.IsNullOrWhiteSpace(request.Reason))
+    try
     {
-        return Json(new { success = false, message = "A cancellation reason is required." });
+
+        var order = await _context.Orders.FindAsync(model.OrderId);
+        if (order == null) return Json(new { success = false, message = "Order not found." });
+
+
+        order.FulfillmentStatus = "Shipped"; 
+        order.TrackingNumber = model.TrackingNumber;
+        order.DateShipped = DateTime.Now;
+        await _context.SaveChangesAsync();
+
+        return Json(new { success = true, message = "Order status updated to Shipped." });
     }
-
-    bool isSuccess = await _orderService.DeclineOrderAsync(request.OrderId, currentSellerId.Value, request.Reason);
-
-    if (isSuccess)
+    catch (Exception ex)
     {
-        return Json(new { success = true, message = "Order successfully cancelled." });
+        
+        return Json(new { success = false, message = "An internal error occurred." });
     }
-    
-    return Json(new { success = false, message = "Failed to decline order." });
 }
-public class DeclineOrderRequest
+
+public class ShipmentUpdateModel
 {
     public int OrderId { get; set; }
-    public string Reason { get; set; } = string.Empty;
+    public string TrackingNumber { get; set; }
 }
+
+[HttpPost]
         // ============== ORDER DETAILS ==============
         public async Task<IActionResult> OrderDetails(string id, CancellationToken cancellationToken)
         {
@@ -156,41 +168,47 @@ public class DeclineOrderRequest
         }
 
         private static OrderDetailsViewModel BuildOrderDetailsModel(Order order, string sellerName)
+{
+    // Combine the new address columns we added to the database
+    var fullAddress = $"{order.StreetAddress}, {order.City} {order.PostalCode}".Trim().Trim(',');
+    if (string.IsNullOrWhiteSpace(fullAddress)) 
+    {
+        fullAddress = "No address provided";
+    }
+
+    // Calculate unit price safely
+    var unitPrice = order.Quantity > 0 ? decimal.Round(order.Subtotal / order.Quantity, 2) : order.Subtotal;
+
+    return new OrderDetailsViewModel
+    {
+        SellerName = sellerName,
+        OrderId = order.OrderID.ToString(),                
+        BuyerName = order.FullName,
+        OrderDateTime = order.OrderDate,
+        PaymentStatus = order.PaymentMethod,
+        FulfillmentStatus = order.Status,
+        
+        
+        Courier = order.Courier ?? "Not Selected",
+        TrackingNumber = order.TrackingNumber ?? "Pending Tracking",
+        ShippingAddress = fullAddress,
+        ContactNumber = order.PhoneNumber ?? "No phone number",
+        Notes = "No special instructions.", 
+        
+        Subtotal = order.Subtotal,
+        ShippingFee = order.ShippingFee,
+        Discount = 0.00m, 
+        Items = new List<OrderLineItemViewModel>
         {
-            var shippingFee = order.Courier.Contains("LBC", StringComparison.OrdinalIgnoreCase) ? 120.00m : 85.00m;
-            var discount = string.Equals(order.PaymentMethod, "Paid", StringComparison.OrdinalIgnoreCase) ? 50.00m : 0.00m;
-            var subtotal = order.TotalAmount;
-            var unitPrice = order.Quantity > 0 ? decimal.Round(order.TotalAmount / order.Quantity, 2) : order.TotalAmount;
-
-            return new OrderDetailsViewModel
+            new OrderLineItemViewModel
             {
-                SellerName = sellerName,
-                OrderId = order.OrderID.ToString(),                
-                BuyerName = order.FullName,
-                OrderDateTime = order.OrderDate,
-                PaymentStatus = order.PaymentMethod,
-                FulfillmentStatus = order.Status,
-                Courier = order.Courier,
-                TrackingNumber = $"TRK-{order.OrderID}-{order.OrderDate:MMdd}",
-                ShippingAddress = "1208 Horizon Heights, Bonifacio Global City, Taguig City",
-                ContactNumber = "+63 917 555 0123",
-                Notes = "Leave parcel at concierge if receiver is unavailable.",
-                Subtotal = subtotal,
-                ShippingFee = shippingFee,
-                Discount = discount,
-                Items = new List<OrderLineItemViewModel>
-                {
-                    new OrderLineItemViewModel
-                    {
-                        ProductName = order.ProductName,
-                        ProductImage = order.ProductImage,
-                        Quantity = order.Quantity,
-                        UnitPrice = unitPrice
-                    }
-                }
-            };
+                ProductName = order.ProductName,
+                Quantity = order.Quantity,
+                UnitPrice = unitPrice
+            }
         }
-
+    };
+}
         // ============== FINANCE DASHBOARD ==============
         public async Task<IActionResult> Finance()
         {
@@ -886,6 +904,28 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
 
         return model;
     }
+    [HttpGet]
+public async Task<IActionResult> OrderDetails(int id)
+{
+    // 1. Use your existing check to see if the user is logged in
+    var loginCheck = RedirectIfNotLoggedIn();
+    if (loginCheck != null) return loginCheck;
+
+    // 2. Use your existing service to get the Seller ID
+    var sellerId = GetSellerIdFromSession();
+if (sellerId == null) return RedirectToAction("Login", "Account");
+
+    // 3. Ask the OrderService to fetch the order for us
+    // (We'll make sure this method exists in the next step!)
+    var order = await _orderService.GetOrderByIdAsync(id, sellerId.Value);
+
+    if (order == null)
+    {
+        return RedirectToAction("OrderManagement");
+    }
+
+    return View(order);
+}
 
     // ============== PROCESS WITHDRAWAL (POST) ==============
     [HttpPost]
@@ -1077,6 +1117,37 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
             }
             return null;
         }
+        // A small class to catch the data from your JavaScript fetch request
+public class DeclineRequest
+{
+    public int OrderId { get; set; }
+    public string Reason { get; set; } = string.Empty;
+}
+
+[HttpPost]
+public async Task<IActionResult> DeclineOrder([FromBody] DeclineRequest request)
+{
+    // 1. Get the Seller ID from the session (your other methods do this!)
+    var sellerId = HttpContext.Session.GetInt32("SellerId");
+    if (sellerId == null) return Unauthorized(new { message = "Please log in." });
+
+    // 2. Find the order using your OrderService
+    var order = await _orderService.GetOrderByIdAsync(request.OrderId, sellerId.Value);
+
+    if (order == null)
+    {
+        return NotFound(new { message = "Order not found." });
+    }
+
+    // 3. Update the status and the reason
+    order.Status = "Cancelled";
+    order.CancellationReason = request.Reason; 
+
+    // 4. Save to database using your service
+    await _orderService.UpdateOrderAsync(order);
+
+    return Ok(new { message = "Order declined successfully" });
+}
 
         private async Task<SellerDashboardViewModel> BuildSellerDashboardModelAsync(CancellationToken cancellationToken = default)
         {
@@ -1166,5 +1237,6 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
                 }
             };
         }
+        
     }
 }

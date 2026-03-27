@@ -1,33 +1,58 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace NextHorizon.Models;
-
 public sealed class Product
 {
+    [Column("ProductId")]
     public int Id { get; set; }
+
+    [Column("ProductName")]
     public string Name { get; set; } = string.Empty;
+
     public string Brand { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
+
+    [NotMapped] // ✨ Doesn't exist in SQL yet
     public string? SubCategory { get; set; }
+
+    [Column("Details")] // ✨ SQL uses 'Details', not 'Description'
     public string Description { get; set; } = string.Empty;
+
     public decimal Price { get; set; }
+
+    [NotMapped] // ✨ Doesn't exist in SQL yet
     public decimal? OriginalPrice { get; set; }
+
+    [Column("ImagePath")] // ✨ SQL uses 'ImagePath', not 'Image'
     public string Image { get; set; } = string.Empty;
+
+    [NotMapped]
     public List<string> Images { get; set; } = new();
+    [NotMapped]
     public List<string> Sizes { get; set; } = new();
+    [NotMapped]
     public List<string> AvailableColors { get; set; } = new();
+    [NotMapped]
     public Dictionary<string, List<string>> ColorImages { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
     public int Stock { get; set; }
-    public bool IsPreOrder { get; set; }
-    public bool IsRestockPreOrder { get; set; }
-    public string? ExpectedReleaseDate { get; set; }
-    public string? PreOrderNote { get; set; }
-    public string? RestockDate { get; set; }
-    public string? RestockNote { get; set; }
-    public double Rating { get; set; }
-    public int ReviewCount { get; set; }
-    public int SellerId { get; set; }
+
+    // ✨ NONE OF THESE EXIST IN SQL YET, SO WE MUST IGNORE THEM ALL! ✨
+    [NotMapped] public bool IsPreOrder { get; set; }
+    [NotMapped] public bool IsRestockPreOrder { get; set; }
+    [NotMapped] public string? ExpectedReleaseDate { get; set; }
+    [NotMapped] public string? PreOrderNote { get; set; }
+    [NotMapped] public string? RestockDate { get; set; }
+    [NotMapped] public string? RestockNote { get; set; }
+    [NotMapped] public double Rating { get; set; }
+    [NotMapped] public int ReviewCount { get; set; }
+    
+    [NotMapped]
     public List<Review> Reviews { get; set; } = new();
+
+    [Column("seller_id")]
+    public int SellerId { get; set; }
 }
 
 public sealed class Seller

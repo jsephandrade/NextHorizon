@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using NextHorizon.Data;
 using NextHorizon.Models;
 
+
 namespace NextHorizon.Services
 {
     public class OrderService : IOrderService
@@ -16,10 +17,15 @@ namespace NextHorizon.Services
 {
     return await _context.Logistics.ToListAsync();
 }
+public async Task UpdateOrderAsync(Order order)
+{
+    _context.Orders.Update(order);
+    await _context.SaveChangesAsync();
+}
        public async Task<List<Order>> GetOrdersBySellerAsync(int sellerId)
 {
     return await _context.Orders
-       
+       .Include(o => o.OrderItems)
       .Where(o => o.seller_id == sellerId) 
         .OrderByDescending(o => o.OrderDate)
         .ToListAsync();
@@ -58,8 +64,29 @@ public async Task<bool> DeclineOrderAsync(int orderId, int sellerId, string reas
 }
 public async Task<Order> GetOrderByIdAsync(int orderId, int sellerId)
 {
-    return await _context.Orders
+    var order = await _context.Orders
+        .Include(o => o.OrderItems)
+            .ThenInclude(i => i.Product)
         .FirstOrDefaultAsync(o => o.OrderID == orderId && o.seller_id == sellerId);
+
+    if (order != null)
+    {
+        foreach (var item in order.OrderItems)
+        {
+            // We search the ProductVariants table for a match on Product, Size, and Color
+            var variant = await _context.Set<ProductVariant>()
+                .FirstOrDefaultAsync(v => v.ProductId == item.ProductID && 
+                                          v.Size == item.Size && 
+                                          v.Style == item.Color); // Note: SQL calls it 'Style', OrderItems calls it 'Color'
+
+            if (variant != null)
+            {
+                item.Sku = variant.SKU;
+            }
+        }
+    }
+
+    return order;
 }
     }
 }

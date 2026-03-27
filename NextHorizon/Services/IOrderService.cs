@@ -4,7 +4,7 @@ namespace NextHorizon.Services
 {
     public interface IOrderService
     {
-       
+       Task UpdateOrderAsync(Order order);
         Task<List<Order>> GetOrdersBySellerAsync(int sellerId);
         Task<bool> AcceptOrderAsync(int orderId, int sellerId, string courier);
         Task<List<Logistics>> GetCouriersAsync();

@@ -18,18 +18,38 @@ public sealed class AppDbContext : DbContext
     public DbSet<MessageConversation> MessageConversations => Set<MessageConversation>();
     public DbSet<ConversationMessage> ConversationMessages => Set<ConversationMessage>();
     public DbSet<Order> Orders => Set<Order>();
-    public DbSet<Logistics> Logistics { get; set; }
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<Product> Products => Set<Product>();
+    public DbSet<Logistics> Logistics => Set<Logistics>(); // Fixed this line to match the rest!
+public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+        // Removed the temporary warning suppressor so your app is clean for production!
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);  
         
-        modelBuilder.Entity<Models.Order>()
-        .ToTable(tb => tb.HasTrigger("SomeTriggerName")); 
-    modelBuilder.Entity<Models.Order>()
-        .Property(o => o.TotalAmount)
-        .HasColumnType("decimal(18,2)");
+        // ============== DECIMAL & TRIGGER FIXES ==============
+        modelBuilder.Entity<Order>(entity =>
+        {
+            entity.ToTable(tb => tb.HasTrigger("SomeTriggerName")); 
+            entity.Property(o => o.TotalAmount).HasColumnType("decimal(18,2)");
+            entity.Property(o => o.ShippingFee).HasColumnType("decimal(18,2)");
+            entity.Property(o => o.Subtotal).HasColumnType("decimal(18,2)");
+        });
 
-    base.OnModelCreating(modelBuilder);   
+        modelBuilder.Entity<OrderItem>()
+            .Property(o => o.UnitPrice)
+            .HasColumnType("decimal(18,2)");
+
+        modelBuilder.Entity<Product>()
+            .Property(p => p.Price)
+            .HasColumnType("decimal(18,2)");
+
+        // ============== EXISTING CONFIGURATIONS ==============
         modelBuilder.Entity<Customer>(entity =>
         {
             entity.ToTable("Customers");

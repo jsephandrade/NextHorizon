@@ -116,6 +116,7 @@ builder.Services.AddRateLimiter(options =>
 var app = builder.Build();
 
 // Apply migrations (optional - don't fail startup if DB unavailable)
+/* Disabled due to schema mismatch issues
 using (var scope = app.Services.CreateScope())
 {
     try
@@ -140,9 +141,10 @@ using (var scope = app.Services.CreateScope())
     {
         Console.WriteLine($"Database operation failed: {ex.Message}");
         Console.WriteLine("Application will continue without database migration.");
-        // Log the error but don't crash the application
+       
     }
 }
+*/
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

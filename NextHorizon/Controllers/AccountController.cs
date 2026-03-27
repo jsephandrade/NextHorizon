@@ -102,9 +102,10 @@ public class AccountController : Controller
             HttpContext.Session.SetInt32("UserId", user.UserId);
             return RedirectToAction("SellerDashboard", "Dashboard");
         }
-        catch
+        catch (Exception ex)
         {
-            ModelState.AddModelError(string.Empty, "An error occurred during login. Please try again.");
+            // This will print the exact reason to your UI temporarily so we can fix it!
+            ModelState.AddModelError(string.Empty, $"DEBUG ERROR: {ex.Message}");
             return View(model);
         }
     }

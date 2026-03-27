@@ -1109,3 +1109,33 @@
     from { opacity: 0; transform: translateY(-4px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+.premium-toast {
+    min-width: 280px;
+    background-color: #ffffff;
+    color: #111827;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-weight: 500;
+    font-size: 0.95rem;
+    border-left: 4px solid #10b981; 
+    animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 0.3s ease;
+}
+
+.premium-toast.error {
+    border-left-color: #ef4444; 
+}
+
+.premium-toast.success .toast-icon { color: #10b981; }
+.premium-toast.error .toast-icon { color: #ef4444; }
+
+@keyframes slideIn {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}

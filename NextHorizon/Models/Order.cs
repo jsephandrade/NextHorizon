@@ -6,7 +6,6 @@ namespace NextHorizon.Models
 {
     public class Order
     {
-        // === DATABASE FIELDS (Must match SQL exactly) ===
         
         [Key]
         public int OrderID { get; set; }
@@ -40,22 +39,28 @@ namespace NextHorizon.Models
         public string Courier { get; set; } = string.Empty;
         
         [NotMapped]
-        public string TrackingNumber { get; set; } = string.Empty;
-        
-        [NotMapped]
         public string ReturnProofImage { get; set; } = string.Empty;
         
         [NotMapped]
         public string ReturnNote { get; set; } = string.Empty;
         public string? CancellationReason { get; set; }
+        [NotMapped] 
+        public decimal CalculatedSubtotal => OrderItems?.Sum(item => item.Quantity * item.UnitPrice) ?? 0;
+        [NotMapped]
+        public decimal CalculatedTotal => CalculatedSubtotal + ShippingFee;
         public decimal Subtotal { get; set; }
-public decimal ShippingFee { get; set; }
-public string? Email { get; set; }
-public string? PhoneNumber { get; set; }
-public string? StreetAddress { get; set; }
-public string? City { get; set; }
-public string? PostalCode { get; set; }
-public string? DeliveryOption { get; set; }
-public string? Colors { get; set; }
+        public decimal ShippingFee { get; set; }
+        public string? Email { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? StreetAddress { get; set; }
+        public string? City { get; set; }
+        public string? PostalCode { get; set; }
+        public string? DeliveryOption { get; set; }
+        [NotMapped]
+        public string? Colors { get; set; }
+        public List<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+        public string? FulfillmentStatus { get; set; }
+        public string? TrackingNumber { get; set; }
+        public DateTime? DateShipped { get; set; }
     }
 }

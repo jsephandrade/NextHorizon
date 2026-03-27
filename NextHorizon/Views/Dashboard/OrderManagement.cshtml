@@ -12,22 +12,23 @@
 <link rel="stylesheet" href="~/css/ordermanagement.css" />
 
 <div class="order-filters">
-    <button class="order-filter-btn active" data-filter="all">All Orders</button>
-    <button class="order-filter-btn" data-filter="pending">Pending</button>
-    <button class="order-filter-btn" data-filter="to-ship">To Ship</button>
-    <button class="order-filter-btn" data-filter="shipped">Shipped</button>
-    <button class="order-filter-btn" data-filter="delivered">Delivered</button>
-    <button class="order-filter-btn" data-filter="cancelled">Cancelled</button>
-    <button class="order-filter-btn" data-filter="return">Return</button>
+    <button type="button" class="order-filter-btn active" data-filter="all">All Orders</button>
+    <button type="button" class="order-filter-btn" data-filter="Pending">Pending</button>
+    <button type="button" class="order-filter-btn" data-filter="To Ship">To Ship</button>
+    <button type="button" class="order-filter-btn" data-filter="Shipped">Shipped</button>
+    <button type="button" class="order-filter-btn" data-filter="Delivered">Delivered</button>
+    <button type="button" class="order-filter-btn" data-filter="Cancelled">Cancelled</button>
+    <button type="button" class="order-filter-btn" data-filter="Return">Return</button>
 </div>
 
 <div class="order-toolbar">
 
     <!-- SEARCH -->
-    <div class="search-box">
-        <input type="search" id="orderSearch" placeholder="Search orders..." />
-        <button id="searchBtn">Search</button>
-    </div>
+    
+   <div class="search-box">
+    <input type="search" id="orderSearch" placeholder="Search orders..." onkeyup="applyOrderFilters()" />
+    <button type="button" id="searchBtn" onclick="applyOrderFilters()">Search</button>
+</div>
 
     <!-- CATEGORY -->
     <select id="categoryFilter" class="order-select">
@@ -65,7 +66,7 @@
         {
             <tr class="order-row"
                 data-order-id="@order.OrderID"
-                data-status="@order.Status.ToLower().Replace(" ", "-")"
+              data-status="@order.Status"
                 data-courier="@order.Courier"
                 data-tracking="@order.TrackingNumber"
                 data-return-proof="@order.ReturnProofImage"
@@ -82,7 +83,7 @@
                 </td>
 
                 <td>@order.Quantity</td>
-                <td>₱@order.TotalAmount.ToString("N2")</td>
+                <td>₱@order.CalculatedTotal.ToString("N2")</td>
                 <td>
                     <span class="status-badge @order.Status.ToLower().Replace(" ", "-")">
                         @order.Status
@@ -139,11 +140,10 @@
                             || order.Status == "Shipped"
                             || order.Status == "Delivered")
                             {
-                                <button class="action-menu-item add-note-btn"
-                                        data-order-id="@order.OrderID"
-                                        data-customer="@order.FullName">
-                                    Add Note
-                                </button>
+                               <button class="action-menu-item add-note-btn"
+                            onclick="openAddNoteModal(@order.OrderID, '@order.FullName')">
+                                 Add Note
+                            </button>
                             }
 
                             @* DOWNLOAD RECEIPT - only for Completed/Delivered *@
@@ -274,7 +274,9 @@
         <span>Please select a courier before accepting this order.</span>
             </div>
         </div> <div class="premium-footer">
-            <button class="btn-secondary danger" onclick="declineOrder()">Decline Order</button>
+          <button type="button" class="btn-outline-danger" onclick="openDeclineModal(document.getElementById('summaryOrderId').innerText)">
+    Decline Order
+</button>
             <button class="btn-primary" onclick="confirmAndAcceptOrder()">Confirm & Accept</button>
         </div>
 
@@ -294,13 +296,15 @@
             </p>
             <div class="bw-field">
                 <label>Reason for Declining <span class="required">*</span></label>
-                <select id="declineReasonSelect" class="form-select" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db;">
-                    <option value="">-- Select a reason --</option>
-                    <option value="Out of stock">Out of stock</option>
-                    <option value="Invalid address">Invalid delivery address</option>
-                    <option value="Buyer unreachable">Buyer unreachable</option>
-                    <option value="Pricing error">Pricing error</option>
-                </select>
+                <select id="declineReasonSelect" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; outline: none; transition: border-color 0.2s;">
+    <option value="">-- Select a reason --</option>
+    <option value="Out of stock">Out of stock</option>
+    <option value="Invalid delivery address">Invalid delivery address</option>
+    <option value="Customer requested cancellation">Customer requested cancellation</option>
+</select>
+<span id="declineReasonError" style="display: none; color: #ef4444; font-size: 0.85rem; margin-top: 4px;">
+    ⚠️ Please select a reason for declining.
+</span>
             </div>
         </div>
         
@@ -341,48 +345,6 @@
     </div>
 </div>
 
-<!-- ADD NOTE MODAL -->
-<div id="addNotesModal" class="notes-modal-overlay">
-    <div class="notes-modal-container">
-
-        <!-- ADD NOTE MODAL HEADER -->
-        <div class="notes-header">
-            <h3 id="customerHeaderText">Customer: </h3> <!-- This will show: Customer: Kiboy - Order #123 -->
-            <span class="notes-close" onclick="closeAddNotesModal()">✕</span>
-        </div>
-
-        <!-- CUSTOMER CARD -->
-        <div class="customer-card">
-            <div class="customer-avatar">
-                <img src="~/images/profile-icon.png" alt="Profile" /> <!-- replace with your profile icon -->
-            </div>
-            <div class="customer-info">
-                <p id="addNotesCustomerText"></p> <!-- optional: duplicate info if needed -->
-            </div>
-        </div>
-
-        <!-- ADD NOTE -->
-        <div class="notes-body">
-            <label>Add Note</label>
-
-            <textarea id="addNotesTextarea"
-                      maxlength="500"
-                      placeholder="Type your message..."></textarea>
-
-            <div class="notes-footer">
-                <span>Type special instruction or reminders here...</span>
-                <span id="charCount">0/500</span>
-            </div>
-        </div>
-
-        <!-- ACTIONS -->
-        <div class="notes-actions">
-            <button id="addNotesCancelBtn">Cancel</button>
-            <button id="addNotesSaveBtn">Save Note</button>
-        </div>
-
-    </div>
-</div>
 
 <!-- ===== REVIEW REQUEST MODAL ===== -->
 <div id="reviewRequestModal" class="notes-modal-overlay">
@@ -688,5 +650,117 @@
     </div>
 </div>
 
-<script src="~/js/ordermanagement.js" asp-append-version="true"></script>
+<!-- add note -->
+<div id="addNotesModal" class="notes-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background: rgba(0,0,0,0.5); justify-content: center; align-items: center;">
+    <div class="notes-modal-container" style="background: white; padding: 20px; border-radius: 8px; width: 400px;">
+        
+        <input type="hidden" id="addNotesOrderId" value="" />
 
+        <div class="notes-header" style="display: flex; justify-content: space-between;">
+            <h3 id="customerHeaderText">Customer: </h3>
+            <span class="notes-close" onclick="closeAddNotesModal()" style="cursor: pointer;">✕</span>
+        </div>
+
+        <div class="customer-card">
+            <div class="customer-avatar">
+                <img src="~/images/profile-icon.png" alt="Profile" /> 
+            </div>
+            <div class="customer-info">
+                <p id="addNotesCustomerText"></p>
+            </div>
+        </div>
+
+        <div class="notes-body">
+            <label>Add Note</label>
+            <textarea id="addNotesTextarea" maxlength="500" placeholder="Type your message..." style="width: 100%; height: 100px;"></textarea>
+            <div class="notes-footer">
+                <span id="charCount">0/500</span>
+            </div>
+        </div>
+
+        <div class="notes-actions" style="margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px;">
+            <button id="addNotesCancelBtn" onclick="closeAddNotesModal()">Cancel</button>
+            <button id="addNotesSaveBtn" onclick="saveOrderNote()" class="btn-primary">Save Note</button>
+        </div>
+    </div>
+</div>
+<div id="declineOrderModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background: rgba(0,0,0,0.5); justify-content: center; align-items: center;">
+    <div style="background: white; padding: 24px; border-radius: 12px; width: 450px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        
+        <input type="hidden" id="declineOrderId" value="" />
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #111827;">Decline Order #<span id="declineOrderNumberDisplay"></span></h3>
+            <span onclick="closeDeclineModal()" style="cursor: pointer; font-size: 1.2rem; color: #6b7280;">✕</span>
+        </div>
+
+        <p style="color: #4b5563; font-size: 0.9rem; margin-bottom: 16px;">Please select a reason for declining this order. This action cannot be undone and the customer will be notified.</p>
+
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="radio" name="declineReason" value="Out of Stock" onchange="toggleDeclineTextarea()" checked>
+                Out of Stock
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="radio" name="declineReason" value="Invalid Delivery Address" onchange="toggleDeclineTextarea()">
+                Invalid Delivery Address
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="radio" name="declineReason" value="Customer Requested Cancellation" onchange="toggleDeclineTextarea()">
+                Customer Requested Cancellation
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="radio" name="declineReason" value="Other" onchange="toggleDeclineTextarea()">
+                Other
+            </label>
+        </div>
+
+        <div id="customReasonContainer" style="display: none; margin-bottom: 20px;">
+            <textarea id="customDeclineReason" placeholder="Please specify the reason..." style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; height: 80px;"></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+            <button onclick="closeDeclineModal()" style="padding: 10px 16px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer;">Cancel</button>
+            <button onclick="submitDeclineOrder()" style="padding: 10px 16px; border: none; background: #ef4444; color: white; border-radius: 6px; cursor: pointer; font-weight: bold;">Confirm Decline</button>
+        </div>
+    </div>
+</div>
+
+<div id="markShippedModal" class="bw-modal-overlay" style="display: none;">
+    <div class="bw-modal-container" style="max-width: 450px;">
+        <div class="bw-modal-header">
+            <h3>Mark as Shipped</h3>
+            <span class="bw-close" onclick="closeMarkShippedModal()">✕</span>
+        </div>
+        <div class="bw-modal-body">
+            <p style="font-size: 0.9rem; color: #4b5563; margin-bottom: 15px;">
+                Order #<strong id="shipModalOrderId"></strong> - <span id="shipModalCustomer"></span>
+            </p>
+
+            <div style="margin-bottom: 16px; padding: 12px; background: #f3f4f6; border-radius: 6px; border: 1px solid #e5e7eb;">
+                <label style="font-size: 0.8rem; color: #6b7280; display: block; margin-bottom: 4px; text-transform: uppercase; font-weight: 600;">Assigned Logistics Partner</label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-truck-fast" style="color: #3b82f6;"></i>
+                    <strong id="shipModalCourier" style="color: #111827; font-size: 1.1rem;">Loading...</strong>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label style="font-size: 0.9rem; font-weight: 500; display: block; margin-bottom: 6px;">Tracking Number <span style="color: #ef4444;">*</span></label>
+                <input type="text" id="shipTrackingNumber" class="bw-input" placeholder="Enter tracking or waybill number" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db;" autocomplete="off">
+            </div>
+
+            <div>
+                <label style="font-size: 0.9rem; font-weight: 500; display: block; margin-bottom: 6px;">Proof of Shipment <span style="font-weight: normal; color: #6b7280;">(Optional)</span></label>
+                <input type="file" id="shipReceiptImage" accept="image/*" style="width: 100%; padding: 8px; font-size: 0.9rem; border: 1px dashed #d1d5db; border-radius: 6px; background: #f9fafb;">
+                <p style="font-size: 0.75rem; color: #9ca3af; margin-top: 6px;">Upload a photo of the courier receipt for dispute protection.</p>
+            </div>
+        </div>
+        <div class="bw-modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 15px; border-top: 1px solid #e5e7eb; margin-top: 20px;">
+            <button class="bw-btn-outline" onclick="closeMarkShippedModal()" style="padding: 8px 16px; border-radius: 6px; border: 1px solid #d1d5db; background: white; cursor: pointer;">Cancel</button>
+            <button class="bw-btn-primary" onclick="submitShipment()" style="padding: 8px 16px; border-radius: 6px; background: #111827; color: white; border: none; cursor: pointer;">Confirm Shipment</button>
+        </div>
+    </div>
+</div>
+<script src="~/js/ordermanagement.js" asp-append-version="true"></script>
+<div id="toastContainer" style="position: fixed; bottom: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 12px;"></div>
