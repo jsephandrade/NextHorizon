@@ -8,6 +8,6 @@ namespace NextHorizon.Models
     public class AcceptOrderRequest
     {
         public int OrderId { get; set; }
-        public string Courier { get; set; } = string.Empty;
+        public int Courier { get; set; }
     }
 }

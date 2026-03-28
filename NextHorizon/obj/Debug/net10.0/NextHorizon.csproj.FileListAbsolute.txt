@@ -423,7 +423,6 @@ C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\j12mqaynox-{0}-woarw7ufu
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\vd9k4h4uq1-{0}-0wpesclp7x-0wpesclp7x.gz
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\pmcr5vk2c6-{0}-jhxun50bt3-jhxun50bt3.gz
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\jspes9obzg-{0}-gidkx2tayo-gidkx2tayo.gz
-C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\34dr9ow2gc-{0}-he1ead1bu3-he1ead1bu3.gz
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\k1ve3f8n1w-{0}-s2gs72us2u-s2gs72us2u.gz
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\54dkji72vi-{0}-kiptk2yyig-kiptk2yyig.gz
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\q635eqxult-{0}-wpxl75rnnx-wpxl75rnnx.gz
@@ -500,3 +499,5 @@ C:\NextHorizon\NextHorizon\obj\Debug\net10.0\refint\NextHorizon.dll
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\NextHorizon.pdb
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\NextHorizon.genruntimeconfig.cache
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\ref\NextHorizon.dll
+C:\NextHorizon\NextHorizon\bin\Debug\net10.0\package-lock.json
+C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\34dr9ow2gc-{0}-s68zx3ogls-s68zx3ogls.gz

@@ -19,7 +19,8 @@ namespace NextHorizon.Models
         public decimal TotalAmount { get; set; }
 
         public int seller_id { get; set; }
-        public int? partner_id { get; set; }
+        
+        public int? logistics_id { get; set; }
         
        [NotMapped]
         public decimal Amount { get; set; }
@@ -62,5 +63,6 @@ namespace NextHorizon.Models
         public string? FulfillmentStatus { get; set; }
         public string? TrackingNumber { get; set; }
         public DateTime? DateShipped { get; set; }
+        public string? SellerNote { get; set; }
     }
 }

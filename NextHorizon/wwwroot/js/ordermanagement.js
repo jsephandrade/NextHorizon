@@ -40,9 +40,9 @@ function applyOrderFilters() {
         }
     });
 }
+
 // 1. Opens the premium modal and sets the exact Order ID
 function declineOrder() {
-    // 1. The Bloodhound: Check all possible IDs your background modal might be using
     let orderIdText = "";
     const el1 = document.getElementById("summaryOrderId");
     const el2 = document.getElementById("modalOrderId");
@@ -52,9 +52,7 @@ function declineOrder() {
     else if (el2 && el2.innerText) orderIdText = el2.innerText;
     else if (el3 && el3.innerText) orderIdText = el3.innerText;
 
-   
     orderIdText = orderIdText.replace("Order", "").replace("ORD-", "").replace("#", "").trim();
-
 
     const declineSpan = document.getElementById("declineModalOrderId");
     if (declineSpan) {
@@ -74,22 +72,17 @@ function declineOrder() {
     
     document.getElementById("declineOrderModal").style.display = "flex";
 }
+
 // Listen for clicks on the Status filter buttons
 document.querySelectorAll('.order-filter-btn').forEach(btn => {
     btn.addEventListener('click', function () {
-        // Update the active status variable
         activeStatusFilter = this.getAttribute('data-filter');
-        
-        // Move the visual 'active' styling to the clicked button
         document.querySelectorAll('.order-filter-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
-        
-        // Run the engine!
         applyOrderFilters();
     });
 });
 
-// 3. Validates and sends the data to the server
 function toggleOrderMenu(button) {
     const wrap = button.closest('.action-menu-wrap');
     if (!wrap) return;
@@ -97,7 +90,6 @@ function toggleOrderMenu(button) {
     const menu = wrap.querySelector('.action-menu');
     const isOpen = menu.classList.contains('open');
 
-    // Close all others
     document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
     
     if (!isOpen) {
@@ -123,12 +115,10 @@ function openMarkShippedModal(orderId, customerName, courierName) {
     const modal = document.getElementById('markShippedModal');
     if (!modal) return;
 
-    // Populate modal with order context
     document.getElementById('shipModalOrderId').innerText = orderId;
     document.getElementById('shipModalCustomer').innerText = customerName;
     document.getElementById('shipModalCourier').innerText = courierName || "NextHorizon Partner";
     
-    // Clear previous input
     const trackingInput = document.getElementById('shipTrackingNumber');
     if(trackingInput) {
         trackingInput.value = "";
@@ -138,9 +128,9 @@ function openMarkShippedModal(orderId, customerName, courierName) {
     modal.style.display = 'flex';
     modal.style.zIndex = '99999';
 
-    // Auto-focus for scanner efficiency
     setTimeout(() => trackingInput?.focus(), 100);
 }
+
 // Step 5: System Execution & Backend Update
 async function submitShipment() {
     const orderId = document.getElementById('shipModalOrderId').innerText;
@@ -167,8 +157,6 @@ async function submitShipment() {
         if (result.success) {
             closeMarkShippedModal();
             showToast(`Order #${orderId} marked as Shipped!`, "success");
-            
-            // Reload to move the order from 'To Ship' tab to 'Shipped' tab
             setTimeout(() => location.reload(), 1500);
         } else {
             showToast(result.message, "error");
@@ -178,9 +166,11 @@ async function submitShipment() {
         showToast("System error. Please try again.", "error");
     }
 }
+
 function closeMarkShippedModal() {
     document.getElementById('markShippedModal').style.display = 'none';
 }
+
 function openTrackingRequiredModal() {
     document.getElementById('trackingRequiredModal').style.display = 'flex';
 }
@@ -217,6 +207,7 @@ function openConfirmReturnModal() {
 function closeConfirmReturnModal() {
     document.getElementById('confirmReturnModal').style.display = 'none';
 }
+
 function openReviewRequestModal(orderId) {
     selectedReviewOrderId = orderId || '';
     document.getElementById('reviewRequestModal')?.classList.add('active');
@@ -226,24 +217,60 @@ function closeReviewRequestModal() {
     document.getElementById('reviewRequestModal')?.classList.remove('active');
 }
 
-// ================= EVENTS =================
+// ================= MASTER CLICK EVENT LISTENER =================
 document.addEventListener('click', function (event) {
     
-    // Action menu toggle
+    // 1. Mark as Shipped Button
+    const markAsShippedBtn = event.target.closest('.mark-as-shipped-btn');
+    if (markAsShippedBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        console.log("BUTTON CLICKED! Catching data...");
+        
+        const orderId = markAsShippedBtn.getAttribute('data-order-id');
+        const customer = markAsShippedBtn.getAttribute('data-customer');
+        const courierId = markAsShippedBtn.getAttribute('data-courier-id'); 
+        const courierName = markAsShippedBtn.getAttribute('data-courier-name'); 
+        
+        console.log("Order:", orderId, "Customer:", customer, "Courier:", courierName);
+        
+        openMarkShippedModal(orderId, customer, courierName);
+        
+        document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+        return;
+    }
+
+    // 2. Add Note Button
+    const addNoteBtn = event.target.closest('.add-note-btn');
+    if (addNoteBtn) {
+        event.preventDefault();
+        event.stopPropagation(); 
+        
+        const orderId = addNoteBtn.dataset.orderId || addNoteBtn.getAttribute('data-order-id') || "Unknown";
+        const customer = addNoteBtn.dataset.customer || addNoteBtn.getAttribute('data-customer') || "Customer";
+        
+        openAddNoteModal(orderId, customer);
+        
+        document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+        return;
+    }
+
+    // 3. Save Note Button (Direct save)
+    if (event.target.id === 'addNotesSaveBtn') {
+        event.preventDefault();
+        saveOrderNote();
+        return; 
+    }
+
+    // 4. Action menu toggle
     const actionBtn = event.target.closest('.action-icon-btn');
     if (actionBtn) {
         toggleOrderMenu(actionBtn);
         return;
     }
 
-    const markAsShippedBtn = event.target.closest('.mark-as-shipped-btn');
-    if (markAsShippedBtn) {
-        event.stopPropagation();
-        document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
-        openMarkShippedModal(markAsShippedBtn.closest('.order-row'));
-        return;
-    }
-
+    // 5. Mark Returned Button
     const markReturnedBtn = event.target.closest('.mark-returned-btn');
     if (markReturnedBtn) {
         event.stopPropagation();
@@ -252,19 +279,19 @@ document.addEventListener('click', function (event) {
         return;
     }
 
-    // Review request
+    // 6. Review request
     const reviewBtn = event.target.closest('.review-request-btn');
     if (reviewBtn) {
         openReviewRequestModal(reviewBtn.dataset.orderId);
         return;
     }
 
-    // Close menus ONLY if not clicking menu items
+    // 7. Close menus ONLY if not clicking menu items
     if (!event.target.closest('.action-menu') && !event.target.classList.contains('action-icon-btn')) {
         document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
     }
 
-    // Close modals on overlay
+    // 8. Close modals on overlay
     if (event.target.id === 'addNotesModal') closeAddNotesModal();
     if (event.target.id === 'reviewRequestModal') closeReviewRequestModal();
     if (event.target.id === 'markShippedModal') closeMarkShippedModal();
@@ -273,7 +300,6 @@ document.addEventListener('click', function (event) {
     if (event.target.id === 'returnedInfoModal') closeReturnedInfoModal();
     if (event.target.id === 'confirmReturnModal') closeConfirmReturnModal();
 });
-
 
 document.getElementById('addNotesCancelBtn')?.addEventListener('click', closeAddNotesModal);
 document.getElementById('reviewRequestCancelBtn')?.addEventListener('click', closeReviewRequestModal);
@@ -304,9 +330,7 @@ document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
         closeAddNotesModal();
         closeReviewRequestModal();
-        closeNoteSavedModal();
         closeMarkShippedModal();
-        closeConfirmShipmentModal();
         closeTrackingRequiredModal();
         closeReturnedInfoModal();
         closeConfirmReturnModal();
@@ -333,27 +357,15 @@ function closeOrderSummaryModal() {
 }
 
 function confirmOrder() {
-    // Hide summary
     closeOrderSummaryModal();
-
-    // Show processing
     const modal = document.getElementById('processingModal');
-    modal.classList.add('active');
+    if(modal) modal.classList.add('active');
 
-    // Simulate backend processing
     setTimeout(() => {
-        // Hide processing
-        modal.classList.remove('active');
-
-        // Update the order row status
+        if(modal) modal.classList.remove('active');
         updateOrderRowStatus(selectedReviewOrderId, 'to-ship', 'TO SHIP');
-
-        // Re-apply filters so the "To Ship" filter sees it
         applyOrderFilters();
-
-        // Open the modal
         openToShipModal(selectedReviewOrderId);
-
     }, 2500);
 }
 
@@ -361,7 +373,7 @@ function confirmOrder() {
 function openToShipModal(orderId) {
     const modal = document.getElementById('orderToShipModal');
     const message = document.getElementById('toShipMessage');
-    message.textContent = `Order #${orderId} has been moved to TO SHIP.`;
+    if(message) message.textContent = `Order #${orderId} has been moved to TO SHIP.`;
     modal?.classList.add('active');
 }
 
@@ -369,7 +381,6 @@ function closeToShipModal() {
     document.getElementById('orderToShipModal')?.classList.remove('active');
 }
 
-// OK button
 document.getElementById('toShipOkBtn')?.addEventListener('click', closeToShipModal);
 
 // ===== DOWNLOAD RECEIPT MODAL =====
@@ -388,7 +399,7 @@ function openDownloadReceiptModal(order) {
     document.getElementById('receiptTotal').textContent = totalAmount.toFixed(2);
 
     const tbody = document.getElementById('receiptItemsBody');
-    tbody.innerHTML = ''; // clear previous items
+    tbody.innerHTML = ''; 
     order.Items = Array.isArray(order?.Items) && order.Items.length
         ? order.Items
         : [{ ProductName: order?.ProductName || '', Quantity: quantity, Price: unitPrice }];
@@ -411,60 +422,17 @@ function closeDownloadReceiptModal() {
     document.getElementById('downloadReceiptModal').classList.remove('active');
 }
 
-// Example download function (you can replace with actual backend/pdf generation)
 function downloadReceipt() {
     alert('Receipt download started! (implement backend PDF)');
     closeDownloadReceiptModal();
 }
 
-document.getElementById('downloadReceiptModal').addEventListener('click', function(e) {
+document.getElementById('downloadReceiptModal')?.addEventListener('click', function(e) {
     if(e.target.id === 'downloadReceiptModal') closeDownloadReceiptModal();
 });
 
 let currentReviewOrder = null;
 
-// Open modal and populate info
-function openReviewRequestModal(order) {
-    currentReviewOrder = order;
-
-    document.getElementById('reviewOrderId').textContent = order.OrderId;
-    document.getElementById('reviewCustomer').textContent = order.Customer;
-    document.getElementById('reviewProduct').textContent = order.ProductName;
-    document.getElementById('reviewReason').textContent = order.ReturnReason;
-
-    const photoContainer = document.getElementById('reviewPhotos');
-    photoContainer.innerHTML = '';
-
-    if (order.Attachments && order.Attachments.length > 0) {
-        order.Attachments.forEach(url => {
-            const img = document.createElement('img');
-            img.src = url;
-            img.style.width = '80px';
-            img.style.height = '80px';
-            img.style.objectFit = 'cover';
-            img.style.marginRight = '10px';
-            img.style.borderRadius = '4px';
-            photoContainer.appendChild(img);
-        });
-    } else {
-        photoContainer.innerHTML = '<p>No attachments provided.</p>';
-    }
-
-    // Clear previous selection
-    const radios = document.getElementsByName('reviewDecision');
-    radios.forEach(r => r.checked = false);
-    document.getElementById('reviewComment').value = '';
-
-    document.getElementById('reviewRequestModal').classList.add('active');
-}
-
-// Close modal
-function closeReviewRequestModal() {
-    document.getElementById('reviewRequestModal').classList.remove('active');
-    currentReviewOrder = null;
-}
-
-// Submit decision
 function submitReviewRequest() {
     if (!currentReviewOrder) return;
 
@@ -476,28 +444,18 @@ function submitReviewRequest() {
         return;
     }
 
-    // TODO: send decision + comment to backend via fetch/ajax
     console.log("Order", currentReviewOrder.OrderId, "Decision:", decision, "Comment:", comment);
-
-    // Close modal
     closeReviewRequestModal();
-
     alert(`Review submitted for order #${currentReviewOrder.OrderId}.`);
 }
 
-// Shipment modal logic is handled through the delegated click listener above.
-
-// CONFIRM SHIPMENT (Step 5)
 function confirmShipment() {
-    const tracking = document.getElementById("trackingNumber").value.trim();
+    const tracking = document.getElementById("trackingNumber")?.value.trim();
 
     if (!tracking) {
         openTrackingRequiredModal();
         return;
     }
-
-    // 🔥 SEND TO BACKEND (AJAX)
-    openConfirmShipmentModal();
 }
 
 function closeReturnModal() {
@@ -517,10 +475,11 @@ function completeReturn() {
 
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
+    if (!container) return;
+    
     const toast = document.createElement('div');
     toast.className = `premium-toast ${type}`;
     
-    // Choose checkmark for success, X for error
     const icon = type === 'success' 
         ? `<svg class="toast-icon" style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`
         : `<svg class="toast-icon" style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
@@ -528,15 +487,14 @@ function showToast(message, type = 'success') {
     toast.innerHTML = `${icon} <span>${message}</span>`;
     container.appendChild(toast);
 
-    // Make it disappear after 3.5 seconds
     setTimeout(() => {
         toast.style.opacity = '0';
         setTimeout(() => toast.remove(), 300);
     }, 3500);
 }
+
 // --- PHASE 1: ACCEPT ORDER FLOW ---
 async function confirmAndAcceptOrder() {
-    // 1. Grab the Order ID and selected Courier from the modal
     const summaryOrderIdElement = document.getElementById("summaryOrderId");
     if (!summaryOrderIdElement) {
         alert("Unable to find order ID. Please refresh and try again.");
@@ -553,15 +511,12 @@ async function confirmAndAcceptOrder() {
     const courierDropdown = document.getElementById("courierSelect"); 
     const selectedCourierId = courierDropdown.value;
 
-    // ✨ NEW UI VALIDATION: Stop them if they didn't pick a courier
     if (!selectedCourierId) {
-        // Show the sleek red warning instead of the old browser alert
         document.getElementById("courierWarning").style.display = "flex";
         courierDropdown.classList.add("input-error");
         return; 
     }
 
-    // 2. Send the data to your C# Controller
     try {
         const response = await fetch('/Dashboard/AcceptOrder', {
             method: 'POST',
@@ -570,7 +525,7 @@ async function confirmAndAcceptOrder() {
             },
             body: JSON.stringify({
                 OrderId: orderId,
-                Courier: selectedCourierId // Sending the ID from the dropdown
+                Courier: parseInt(selectedCourierId)
             })
         });
 
@@ -582,21 +537,16 @@ async function confirmAndAcceptOrder() {
         const result = await response.json();
 
        if (result.success) {
-            // Show the premium toast!
              showToast(`Order #${orderId} was added successfully.`, "success");
-            
-            // Wait 1.5 seconds to let the user read it, THEN reload the page
             setTimeout(() => {
                 location.reload();
             }, 1500);
 
         } else {
-            // Show the red error toast
             showToast(result.message, "error");
         }
     } catch (error) {
         console.error("Server error:", error);
-        // Show the red error toast for network crashes
         showToast("A network error occurred. Please try again.", "error");
     }
 }
@@ -608,39 +558,24 @@ function hideCourierWarning() {
     if (warningEl) warningEl.style.display = "none";
     if (selectEl) selectEl.classList.remove("input-error");
 }
+
 async function openViewOrderModal(orderId) {
     console.log("Opening modal for order:", orderId);
-    
-    // Debug: List ALL elements with class containing 'modal'
-    const allModals = document.querySelectorAll('[class*="modal"]');
-    console.log("Found " + allModals.length + " elements with 'modal' in class");
-    allModals.forEach(el => console.log("  -", el.id, el.className));
-    
-    // Try different selector variations
     let modal = document.getElementById("orderSummaryModal");
-    console.log("getElementById('orderSummaryModal'):", modal);
-    
-    if (!modal) {
-        modal = document.querySelector("[id='orderSummaryModal']");
-        console.log("querySelector with [id='orderSummaryModal']:", modal);
-    }
     
     if (!modal) {
         console.error("ERROR: Modal not found in any way!");
         return;
     }
     
-    console.log("Modal found! Adding active class...");
     modal.classList.add('active');
     
-    // Now try to fetch order details
     try {
         const response = await fetch(`/Dashboard/GetOrderDetails?orderId=${orderId}`);
         const result = await response.json();
 
         if (result.success) {
             const order = result.data;
-            console.log("ORDER DATA:", order); 
 
             const realId = order.orderID || order.orderId || order.OrderID;
             const el = document.getElementById("summaryOrderId");
@@ -661,7 +596,7 @@ async function openViewOrderModal(orderId) {
             
             const custEl = document.getElementById("modalCustomerName");
             if (custEl) custEl.innerText = order.fullName || order.FullName || "Unknown";
-            // 1. Combine Address Fields
+            
             const street = order.streetAddress || order.StreetAddress || '';
             const city = order.city || order.City || '';
             const postal = order.postalCode || order.PostalCode || '';
@@ -669,7 +604,6 @@ async function openViewOrderModal(orderId) {
             const addrEl = document.getElementById("modalCustomerAddress");
             if (addrEl) addrEl.innerText = fullAddress || "No address provided";
 
-            // 2. Customer Contact Info
             const phoneEl = document.getElementById("modalCustomerPhone");
             if (phoneEl) phoneEl.innerText = order.phoneNumber || order.PhoneNumber || "No phone number";
 
@@ -679,7 +613,6 @@ async function openViewOrderModal(orderId) {
             const delOptionEl = document.getElementById("modalDeliveryOption");
             if (delOptionEl) delOptionEl.innerText = order.deliveryOption || order.DeliveryOption || "Standard";
 
-            // 3. Financial Breakdown
             const qty = order.quantity || order.Quantity || 0;
             const subtotal = order.calculatedSubtotal || order.CalculatedSubtotal || order.subtotal || 0;
             const shipping = order.shippingFee || order.ShippingFee || 0;
@@ -697,35 +630,27 @@ async function openViewOrderModal(orderId) {
             if (grandEl) grandEl.innerText = grandTotal.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
             const topTotalEl = document.getElementById("modalTotal");
             if (topTotalEl) {
-            topTotalEl.innerText = grandTotal.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
+                topTotalEl.innerText = grandTotal.toLocaleString('en-PH', { style: 'currency', currency: 'PHP' });
             }
           
            const itemsBodyEl = document.getElementById("modalItemsBody");
 
             if (itemsBodyEl) {
                 itemsBodyEl.innerHTML = "";
-               
                 const itemsList = order.orderItems || order.OrderItems;
 
                 if (itemsList && itemsList.length > 0) {
-                    
-                    //  SCENARIO A: WE HAVE MULTIPLE ITEMS - Loop through them!
                     itemsList.forEach(item => {
-                        // 1. Dig into the linked Product table to get the name
                         const itemName = (item.product && item.product.name) || (item.Product && item.Product.name) || (order.productName) || (order.ProductName) || "Unknown Item";
-                        
-                        // 2. Combine Color and Size from the OrderItem table
                         const color = item.color || item.Color || "";
                         const size = item.size || item.Size || "";
                         let variant = `${color} ${size}`.trim();
-                        if (!variant) variant = "Standard Variant"; // Fallback if no color/size exists
+                        if (!variant) variant = "Standard Variant"; 
 
-                        // 3. Calculate Math
                         const itemQty = item.quantity || item.Quantity || 1;
                         const itemPrice = item.unitPrice || item.UnitPrice || 0;
                         const lineTotal = itemQty * itemPrice;
 
-                        // 4. Build the HTML Row
                         itemsBodyEl.innerHTML += `
                             <tr>
                                 <td>
@@ -737,10 +662,7 @@ async function openViewOrderModal(orderId) {
                             </tr>
                         `;
                     });
-
                 } else {
-                    
-                    //  SCENARIO B: FALLBACK FOR OLD ORDERS
                     const fallbackName = order.productName || order.ProductName || "Product Name Unavailable";
                     const fallbackQty = order.quantity || order.Quantity || 0;
                     const fallbackTotal = order.subtotal || order.Subtotal || 0;
@@ -760,10 +682,7 @@ async function openViewOrderModal(orderId) {
                     `;
                 }
             }
-            console.log("Modal data populated successfully");
-
-            const modalEl = document.getElementById("orderSummaryModal");
-            if (modalEl) modalEl.style.display = "flex";
+            if (modal) modal.style.display = "flex";
         } else {
             console.error("API Error:", result.message);
             alert("Could not load order details: " + result.message);
@@ -773,14 +692,28 @@ async function openViewOrderModal(orderId) {
         alert("Error loading order. Check console for details.");
     }
 }
-// Function to close the View Order modal
 
-// 1. Open the Modal (Wire your "Decline" button to this!)
+function copyCustomerAddress() {
+    const addressElement = document.getElementById("modalCustomerAddress");
+    
+    if (!addressElement || addressElement.innerText.trim() === "" || addressElement.innerText.includes("Loading")) {
+        showToast("No address available to copy.", "error");
+        return;
+    }
+
+    const addressText = addressElement.innerText.trim();
+    navigator.clipboard.writeText(addressText).then(() => {
+        showToast("Address copied to clipboard!", "success");
+    }).catch(err => {
+        console.error('Could not copy text: ', err);
+        showToast("Failed to copy address. Check browser permissions.", "error");
+    });
+}
+
 function openDeclineModal(orderId) {
     document.getElementById('declineOrderId').value = orderId;
     document.getElementById('declineOrderNumberDisplay').innerText = orderId;
     
-    // Reset the form
     document.querySelector('input[name="declineReason"][value="Out of Stock"]').checked = true;
     toggleDeclineTextarea();
     document.getElementById('customDeclineReason').value = "";
@@ -792,7 +725,6 @@ function closeDeclineModal() {
     document.getElementById('declineOrderModal').style.display = 'none';
 }
 
-// 2. Toggle the custom text box
 function toggleDeclineTextarea() {
     const selected = document.querySelector('input[name="declineReason"]:checked').value;
     const customContainer = document.getElementById('customReasonContainer');
@@ -804,31 +736,36 @@ function toggleDeclineTextarea() {
     }
 }
 
-// 3. Submit to Backend
 async function submitDeclineOrder() {
-    const summaryIdElement = document.getElementById("summaryOrderId");
-    const orderIdText = summaryIdElement ? summaryIdElement.innerText : ""; 
-
-    const orderId = parseInt(orderIdText.replace("ORD-", "").replace("#", "").trim()); 
+    // 1. Get Order ID safely from the hidden input
+    const orderIdVal = document.getElementById("declineOrderId").value;
+    const orderId = parseInt(orderIdVal); 
     
     if (isNaN(orderId) || orderId === 0) {
         showToast("System Error: Could not detect the Order ID.", "error");
         return; 
     }
 
-    const reasonSelect = document.getElementById("declineReasonSelect");
-    const reason = reasonSelect.value;
-    const errorText = document.getElementById("declineReasonError");
-
-    if (!reason || reason === "") {
-        reasonSelect.style.borderColor = "#ef4444"; 
-        if(errorText) errorText.style.display = "block"; 
-        return; 
+    // 2. Read the selected Radio Button
+    const selectedRadio = document.querySelector('input[name="declineReason"]:checked');
+    if (!selectedRadio) {
+        showToast("Please select a reason.", "error");
+        return;
     }
 
-    reasonSelect.style.borderColor = "#d1d5db";
-    if(errorText) errorText.style.display = "none";
+    let reason = selectedRadio.value;
 
+    // 3. Handle the "Other" custom text area
+    if (reason === "Other") {
+        reason = document.getElementById("customDeclineReason").value.trim();
+        if (!reason) {
+            document.getElementById("customDeclineReason").style.borderColor = "#ef4444";
+            showToast("Please specify your reason.", "error");
+            return;
+        }
+    }
+
+    // 4. Send to Backend
     try {
         const response = await fetch('/Dashboard/DeclineOrder', {
             method: 'POST',
@@ -850,6 +787,7 @@ async function submitDeclineOrder() {
         showToast("A network error occurred.", "error");
     }
 }
+
 function openAddNoteModal(orderId, customerName) {
     const modal = document.getElementById('addNotesModal');
     if (!modal) {
@@ -857,21 +795,18 @@ function openAddNoteModal(orderId, customerName) {
         return; 
     }
 
-    // Inject data for context
     const idInput = document.getElementById('addNotesOrderId');
     const headerText = document.getElementById('customerHeaderText');
     const textarea = document.getElementById('addNotesTextarea');
 
     if (idInput) idInput.value = orderId;
-    if (headerText) headerText.innerText = `Add Note for Order #${orderId}`; // Phase 3 exact text
+    if (headerText) headerText.innerText = `Add Note for Order #${orderId}`; 
     if (textarea) textarea.value = ""; 
 
-    // Force UI Presentation
     modal.style.display = 'flex';
     modal.style.zIndex = '99999'; 
 }
 
-// Bridge to catch any old HTML button clicks
 function openAddNotesModal(orderId, customerName) {
     openAddNoteModal(orderId, customerName);
 }
@@ -881,7 +816,6 @@ function closeAddNotesModal() {
     if (modal) modal.style.display = 'none';
 }
 
-// STEP 3, 4 & 5: DATA ENTRY, EXECUTION, AND UI FEEDBACK
 async function saveOrderNote() {
     const orderId = document.getElementById('addNotesOrderId').value;
     const noteText = document.getElementById('addNotesTextarea').value;
@@ -892,7 +826,6 @@ async function saveOrderNote() {
     }
 
     try {
-        // Step 4: System Execution
         const response = await fetch(`/Dashboard/SaveOrderNote`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -900,17 +833,13 @@ async function saveOrderNote() {
         });
 
         if (response.ok) {
-            // Step 5: UI Feedback & Visibility
             closeAddNotesModal();
             showToast("Note saved successfully!", "success"); 
             
-            // ✨ THE CRUCIAL UI UPDATE: Add a sticky note icon to the order row!
             const orderRow = document.querySelector(`.order-row[data-order-id="${orderId}"]`);
             if (orderRow) {
-                // Assuming customer name is the 2nd column (index 1). Adjust if needed!
                 const customerCell = orderRow.children[1]; 
                 
-                // Only add the icon if it doesn't already have one
                 if (customerCell && !customerCell.innerHTML.includes('fa-note-sticky')) {
                     customerCell.innerHTML += ` <span title="Has Notes" style="color: #f59e0b; margin-left: 8px;"><i class="fa-solid fa-note-sticky"></i></span>`;
                 }
@@ -923,55 +852,3 @@ async function saveOrderNote() {
         showToast("System error while saving.", "error");
     }
 }
-
-// THE VIP EVENT LISTENER (Catches the click cleanly)
-document.addEventListener('click', function(event) {
-const shipBtn = event.target.closest('.mark-as-shipped-btn');
-if (shipBtn) {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    // Grabbing the pre-selected courier and customer info
-    const orderId = shipBtn.dataset.orderId;
-    const customer = shipBtn.dataset.customer;
-    const courier = shipBtn.dataset.courier; 
-    
-    openMarkShippedModal(orderId, customer, courier);
-    
-    // Close the dropdown menu
-    document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
-    return;
-}
-    const markAsShippedBtn = event.target.closest('.mark-as-shipped-btn');
-if (markAsShippedBtn) {
-    event.preventDefault();
-    event.stopPropagation();
-    
-    // Extract data from the button (Ensure your HTML includes data-courier)
-    const orderId = markAsShippedBtn.dataset.orderId;
-    const customer = markAsShippedBtn.dataset.customer;
-    const courier = markAsShippedBtn.dataset.courier; 
-    
-    openMarkShippedModal(orderId, customer, courier);
-    
-    // Close the action menu
-    document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
-    return;
-}
-    const addNoteBtn = event.target.closest('.add-note-btn');
-    if (addNoteBtn) {
-        event.preventDefault();
-        event.stopPropagation(); 
-        
-        const orderId = addNoteBtn.dataset.orderId || addNoteBtn.getAttribute('data-order-id') || "Unknown";
-        const customer = addNoteBtn.dataset.customer || addNoteBtn.getAttribute('data-customer') || "Customer";
-        
-        openAddNoteModal(orderId, customer);
-    }
-    
-    // Also handle the Save button click directly here so we don't need a separate listener
-    if (event.target.id === 'addNotesSaveBtn') {
-        event.preventDefault();
-        saveOrderNote();
-    }
-}, true);

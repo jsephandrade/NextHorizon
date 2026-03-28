@@ -30,18 +30,15 @@ public async Task UpdateOrderAsync(Order order)
         .OrderByDescending(o => o.OrderDate)
         .ToListAsync();
 }
-    public async Task<bool> AcceptOrderAsync(int orderId, int sellerId, string courier)
+   public async Task<bool> AcceptOrderAsync(int orderId, int sellerId, int courierId)
 {
-    
     var order = await _context.Orders
         .FirstOrDefaultAsync(o => o.OrderID == orderId && o.seller_id == sellerId);
 
-    if (order == null)
-    {
-        return false; 
-    }
+    if (order == null) return false; 
+    
     order.Status = "To Ship";
-    order.Courier = courier; 
+    order.logistics_id = courierId; 
     await _context.SaveChangesAsync();
 
     return true;

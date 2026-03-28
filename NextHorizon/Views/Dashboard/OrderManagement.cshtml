@@ -118,13 +118,30 @@
                                  </button>
                             }
 
-                            @if(order.Status == "To Ship")
-                            {
-                                <button class="action-menu-item mark-as-shipped-btn"
-                                        data-order-id="@order.OrderID">
-                                    Mark as Shipped
-                                </button>
-                            }
+                           @if(order.Status == "To Ship")
+{
+    string actualCourierName = "NextHorizon Partner";
+
+    if (ViewBag.Couriers != null && order.logistics_id != null)
+    {
+        foreach (dynamic courier in ViewBag.Couriers) 
+        {
+            if (Convert.ToInt32(courier.logistics_id) == Convert.ToInt32(order.logistics_id))
+            {
+                actualCourierName = courier.courier_name;
+                break;
+            }
+        }
+    }
+
+    <button class="action-menu-item mark-as-shipped-btn" 
+            data-order-id="@order.OrderID" 
+            data-customer="@order.FullName" 
+            data-courier-id="@order.logistics_id"
+            data-courier-name="@actualCourierName"> 
+        Mark as Shipped
+    </button>
+}
 
                             @if(order.Status == "Shipped")
                             {
@@ -140,10 +157,11 @@
                             || order.Status == "Shipped"
                             || order.Status == "Delivered")
                             {
-                               <button class="action-menu-item add-note-btn"
-                            onclick="openAddNoteModal(@order.OrderID, '@order.FullName')">
-                                 Add Note
-                            </button>
+                             <button class="action-menu-item add-note-btn"
+                                 data-order-id="@order.OrderID" 
+                                     data-customer="@order.FullName">
+                                    Add Note
+                                    </button>
                             }
 
                             @* DOWNLOAD RECEIPT - only for Completed/Delivered *@
@@ -223,14 +241,25 @@
                         <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 0.85rem;" id="modalCustomerEmail">...</p>
                         
                         <p style="margin: 0 0 6px 0; font-size: 0.9rem;">📞 <span id="modalCustomerPhone">...</span></p>
-                        <p style="margin: 0 0 12px 0; font-size: 0.9rem; line-height: 1.4;">📍 <span id="modalCustomerAddress">...</span></p>
+                       <div style="margin-bottom: 15px;">
+    <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 4px;">Shipping Address</p>
+    
+    <div style="display: flex; align-items: flex-start; gap: 10px;">
+        <span id="modalCustomerAddress" style="font-weight: 500; color: #111827; flex: 1;">
+            Loading address...
+        </span>
+        
+        <button onclick="copyCustomerAddress()" title="Copy Address" style="background: none; border: 1px solid #d1d5db; border-radius: 4px; padding: 4px 8px; cursor: pointer; color: #4b5563; transition: all 0.2s;">
+            <i class="fa-regular fa-copy"></i> Copy
+        </button>
+    </div>
                         
                         <p style="margin: 0; font-size: 0.85rem; color: #059669; font-weight: 500;">
                             🚚 Delivery: <span id="modalDeliveryOption">...</span>
                         </p>
                     </div>
                 </div>
-
+   </div>
                 <div class="info-section" style="margin-bottom: 0;">
                     <h4>Order Summary</h4>
                     <div class="premium-box" style="height: 100%; display: flex; flex-direction: column; justify-content: center;">
@@ -255,7 +284,7 @@
                     </div>
                 </div>
 
-            </div>
+         </div>
 
             <div class="info-section" style="margin-top: 24px;">
                 <h4>Logistics Preference</h4>
@@ -281,41 +310,8 @@
         </div>
 
     </div>
-</div>
-<div id="declineOrderModal" class="bw-modal-overlay" style="display: none;">
-    <div class="bw-modal-container">
-        
-        <div class="bw-modal-header">
-            <h3>Decline Order #<span id="declineModalOrderId"></span></h3>
-            <span class="bw-close" onclick="closeDeclineModal()">✕</span>
-        </div>
-        
-        <div class="bw-info-box">
-            <p style="margin-bottom: 15px; color: #6b7280; font-size: 14px;">
-                Declining an order will permanently cancel it and notify the customer.
-            </p>
-            <div class="bw-field">
-                <label>Reason for Declining <span class="required">*</span></label>
-                <select id="declineReasonSelect" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; outline: none; transition: border-color 0.2s;">
-    <option value="">-- Select a reason --</option>
-    <option value="Out of stock">Out of stock</option>
-    <option value="Invalid delivery address">Invalid delivery address</option>
-    <option value="Customer requested cancellation">Customer requested cancellation</option>
-</select>
-<span id="declineReasonError" style="display: none; color: #ef4444; font-size: 0.85rem; margin-top: 4px;">
-    ⚠️ Please select a reason for declining.
-</span>
-            </div>
-        </div>
-        
-        <div class="bw-actions">
-            <button class="bw-btn cancel" onclick="closeDeclineModal()">Back</button>
-            <button class="bw-btn confirm" style="background-color: #dc2626; color: white;" onclick="submitDeclineOrder()">Confirm Decline</button>
-        </div>
-
     </div>
 </div>
-
 <!-- ===== PROCESSING MODAL ===== -->
 <div id="processingModal" class="modal-overlay">
     <div class="processing-box">
@@ -471,58 +467,6 @@
     </div>
 </div>
 
-<!-- ===== MARK AS SHIPPED MODAL ===== -->
-<div id="markShippedModal" class="bw-modal-overlay">
-    <div class="bw-modal-container">
-
-        <!-- HEADER -->
-        <div class="bw-modal-header">
-            <h3>Mark Order #<span id="shipOrderId">00000</span> as Shipped</h3>
-            <span class="bw-close" onclick="closeMarkShippedModal()">✕</span>
-        </div>
-
-        <!-- ORDER INFO -->
-        <div class="bw-info-box">
-            <p><strong>Customer:</strong> <span id="shipCustomer">---</span></p>
-            <p><strong>Items:</strong> <span id="shipItems">0</span></p>
-            <p><strong>Total:</strong> ₱<span id="shipTotal">0.00</span></p>
-            <p><strong>Staff:</strong<p><strong>Staff:</strong> <span id="staffName">Staff Team</span></p>
-        </div>
-
-        <!-- COURIER -->
-        <div class="bw-field">
-            <label>Courier Name</label>
-            <input type="text" id="courierName" value="J&T Express" />
-        </div>
-
-        <!-- TRACKING -->
-        <div class="bw-field">
-            <label>Tracking Number <span class="required">*</span></label>
-            <input type="text" id="trackingNumber" placeholder="e.g., J&T-123456789" />
-        </div>
-
-        <!-- DATE -->
-        <div class="bw-field">
-            <label>Actual Shipment Date</label>
-            <input type="date" id="shipmentDate" />
-        </div>
-
-        <!-- NOTES -->
-        <div class="bw-field">
-            <label>Additional Shipment Notes</label>
-            <textarea id="shipmentNotes"
-                      placeholder="Enter branch location, staff details, or any specifics here."></textarea>
-        </div>
-
-        <!-- ACTIONS -->
-        <div class="bw-actions">
-            <button class="bw-btn cancel" onclick="closeMarkShippedModal()">Cancel</button>
-            <button class="bw-btn confirm" onclick="confirmShipment()">Confirm Shipment</button>
-        </div>
-
-    </div>
-</div>
-
 <div id="confirmShipmentModal" class="bw-modal-overlay">
     <div class="bw-modal-container bw-confirm-container">
         <div class="bw-modal-header">
@@ -669,6 +613,7 @@
                 <p id="addNotesCustomerText"></p>
             </div>
         </div>
+
 
         <div class="notes-body">
             <label>Add Note</label>

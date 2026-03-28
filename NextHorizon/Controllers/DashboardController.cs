@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using NextHorizon.Data;
+using Microsoft.EntityFrameworkCore;
 namespace NextHorizon.Controllers
 {
     public class DashboardController : Controller
@@ -89,7 +90,34 @@ var order = await _orderService.GetOrderByIdAsync(orderId, currentSellerId.Value
     // Return the data as a JSON package so JavaScript can read it
     return Json(new { success = true, data = order });
 }
+public class OrderNoteRequest
+{
+    public int OrderId { get; set; }
+    public string Note { get; set; } = string.Empty;
+}
 
+[HttpPost]
+public async Task<IActionResult> SaveOrderNote([FromBody] OrderNoteRequest request)
+{
+    int? currentSellerId = HttpContext.Session.GetInt32("SellerId");
+    if (!currentSellerId.HasValue) return Json(new { success = false, message = "Session expired." });
+
+    var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderID == request.OrderId);
+    if (order == null || order.seller_id != currentSellerId.Value)
+    {
+        return Json(new { success = false, message = "Order not found or unauthorized." });
+    }
+    order.SellerNote = request.Note;
+    try
+    {
+        await _context.SaveChangesAsync();
+        return Json(new { success = true, message = "Note saved successfully!" });
+    }
+    catch (Exception ex)
+    {
+        return Json(new { success = false, message = "Database error occurred." });
+    }
+}
 [HttpPost]
 public async Task<IActionResult> AcceptOrder([FromBody] AcceptOrderRequest request)
 {
@@ -113,33 +141,40 @@ public async Task<IActionResult> AcceptOrder([FromBody] AcceptOrderRequest reque
         return Json(new { success = false, message = "Failed to accept order. Order not found." });
     }
 }
-
-[HttpPost]
-public async Task<IActionResult> MarkOrderShipped([FromBody] ShipmentUpdateModel model)
+public class MarkShippedRequest
 {
-    if (model == null || model.OrderId <= 0 || string.IsNullOrWhiteSpace(model.TrackingNumber))
+    public int OrderId { get; set; }
+    public string TrackingNumber { get; set; } = string.Empty;
+}
+
+// 2. The Updated Endpoint
+[HttpPost]
+public async Task<IActionResult> MarkOrderShipped([FromBody] MarkShippedRequest request)
+{
+    int? currentSellerId = HttpContext.Session.GetInt32("SellerId");
+    if (!currentSellerId.HasValue)
+        return Json(new { success = false, message = "Session expired. Please log in again." });
+
+    var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderID == request.OrderId);
+    if (order == null || order.seller_id != currentSellerId.Value)
     {
-        return Json(new { success = false, message = "Invalid shipment data. Tracking number is required." });
+        return Json(new { success = false, message = "Order not found or unauthorized." });
     }
+
+    // Dual-Tracking Architecture
+    order.Status = "Shipped";              // Moves it to the Shipped Tab
+    order.FulfillmentStatus = "Shipped";   // Enterprise Logistics State
+    order.TrackingNumber = request.TrackingNumber; 
+    order.DateShipped = DateTime.Now;      
 
     try
     {
-
-        var order = await _context.Orders.FindAsync(model.OrderId);
-        if (order == null) return Json(new { success = false, message = "Order not found." });
-
-
-        order.FulfillmentStatus = "Shipped"; 
-        order.TrackingNumber = model.TrackingNumber;
-        order.DateShipped = DateTime.Now;
         await _context.SaveChangesAsync();
-
-        return Json(new { success = true, message = "Order status updated to Shipped." });
+        return Json(new { success = true, message = "Order marked as shipped successfully!" });
     }
     catch (Exception ex)
     {
-        
-        return Json(new { success = false, message = "An internal error occurred." });
+        return Json(new { success = false, message = "Database error occurred." });
     }
 }
 
