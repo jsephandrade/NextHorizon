@@ -14,9 +14,32 @@
 }
 
 <div class="greeting">
-    <h1>Good Morning, @Model.SellerName!</h1>
-    <p>@Model.CurrentDate.ToString("dddd, MMMM dd, yyyy")</p>
+    <h1 id="greeting-text">Good Morning, @Model.SellerName!</h1>
+    <p>@Model.CurrentDate.ToString("dddd, MMMM dd, yyyy") &nbsp;<span id="live-time" style="font-weight:600;"></span></p>
 </div>
+
+@section Scripts {
+<script>
+    function updateGreetingAndTime() {
+        const now = new Date();
+        const hour = now.getHours();
+        const name = "@Model.SellerName";
+
+        let greeting;
+        if (hour >= 5 && hour < 12)       greeting = 'Good Morning';
+        else if (hour >= 12 && hour < 18) greeting = 'Good Afternoon';
+        else                               greeting = 'Good Evening';
+
+        document.getElementById('greeting-text').textContent = greeting + ', ' + name + '!';
+
+        const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        document.getElementById('live-time').textContent = timeStr;
+    }
+
+    updateGreetingAndTime();
+    setInterval(updateGreetingAndTime, 1000);
+</script>
+}
 
 <section class="section">
     <h2 class="section-title">Critical Action</h2>

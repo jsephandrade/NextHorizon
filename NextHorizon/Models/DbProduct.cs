@@ -19,8 +19,6 @@ namespace NextHorizon.Models
         [NotMapped]
         public double? AverageRating { get; set; }
 
-        // price may also be stored per-variant; do not map if column is gone
-        [NotMapped]
         [Column(TypeName = "decimal(18,2)")]
         public decimal Price { get; set; }
 
@@ -46,6 +44,8 @@ namespace NextHorizon.Models
 
         public string? Status { get; set; } = "active";
 
+        public string? RejectionReason { get; set; }
+
         [Column("seller_id")]
         public int SellerId { get; set; }
 
@@ -61,6 +61,9 @@ namespace NextHorizon.Models
         // new gender column: Men, Women, Unisex, etc.
         [Required]
         public string Gender { get; set; } = string.Empty;
+
+        // Navigation: Product variants (sizes, colors, etc.)
+        public ICollection<DbProductVariant> ProductVariants { get; set; } = new List<DbProductVariant>();
 
         // SKU and dimensions (stored on ProductVariants; keep here for backward compatibility but not mapped to Products table)
         [NotMapped]
@@ -124,6 +127,14 @@ namespace NextHorizon.Models
         [Required]
         [Column("imagePath")]
         public string ImagePath { get; set; } = string.Empty;
+
+        // Binary image data stored directly in DB
+        // Served via /ProductImage/Variant/{VariantId}
+        [Column(TypeName = "varbinary(max)")]
+        public byte[]? ImageData { get; set; }
+
+        [Column(TypeName = "nvarchar(50)")]
+        public string? ImageMimeType { get; set; }
         
         // price specific to this variant; if null, use parent product price
         [Column(TypeName = "decimal(18,2)")]

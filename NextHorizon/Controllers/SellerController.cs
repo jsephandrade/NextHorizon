@@ -80,6 +80,33 @@ public sealed class SellerController : Controller
     {
         var sellerId = HttpContext.Session.GetInt32("SellerId") ?? 0;
         var sellerIndexCacheKey = $"seller:products:index:{sellerId}";
+
+        // ── STEP 4 (Apply Discounts): Load active promotions fresh on every request ──
+        // Never cached — promotions must always reflect current Active status
+        // Fetches from dbo.Promotions where Status = "Active" for this seller
+        var activePromotions = await _db.Promotions
+            .Where(p => p.SellerId == sellerId && p.Status == "Active")
+            .ToListAsync();
+
+        // Build a Dictionary<ProductId, DbPromotion> from SelectedProductIdsJson
+        // SelectedProductIdsJson is stored as integer array e.g. [35, 36]
+        // Only the first promotion per product is kept (first-wins rule)
+        var promotionMap = new Dictionary<int, DbPromotion>();
+        foreach (var promo in activePromotions)
+        {
+            try
+            {
+                // Deserialize [35, 36] → List<int> then map each productId → promotion
+                var ids = System.Text.Json.JsonSerializer.Deserialize<List<int>>(promo.SelectedProductIdsJson) ?? new();
+                foreach (var pid in ids)
+                    if (!promotionMap.ContainsKey(pid))
+                        promotionMap[pid] = promo;
+            }
+            catch { }
+        }
+        // Pass promotionMap to the view — used in Index.cshtml to compute discounted prices
+        ViewBag.PromotionMap = promotionMap;
+
         try
         {
             var products = await _db.Products.Where(p => p.SellerId == sellerId).ToListAsync();
@@ -105,10 +132,13 @@ public sealed class SellerController : Controller
                         .OrderBy(v => v.Id)
                         .Select(v => v.ImagePath)
                         .FirstOrDefault(),
+                    FirstVariantId = g.OrderBy(v => v.Id).Select(v => v.Id).FirstOrDefault(),
+                    HasBinaryImage = g.Any(v => v.ImageData != null),
                     Price = g
                         .Where(v => v.Price.HasValue && v.Price.Value > 0)
                         .Select(v => v.Price)
-                        .Min()
+                        .Min(),
+                    ProductPrice = g.Select(v => v.Product!.Price).FirstOrDefault()
                 })
                 .ToListAsync();
 
@@ -118,8 +148,13 @@ public sealed class SellerController : Controller
             {
                 if (variantMap.TryGetValue(p.ProductId, out var snapshot))
                 {
-                    if (!string.IsNullOrEmpty(snapshot.ImagePath)) p.ImagePath = snapshot.ImagePath;
-                    if (snapshot.Price.HasValue) p.Price = snapshot.Price.Value;
+                    // Use binary image endpoint if available, otherwise fall back to file path
+                    if (snapshot.HasBinaryImage)
+                        p.ImagePath = $"/ProductImage/Variant/{snapshot.FirstVariantId}";
+                    else if (!string.IsNullOrEmpty(snapshot.ImagePath))
+                        p.ImagePath = snapshot.ImagePath;
+                    if (snapshot.Price.HasValue && snapshot.Price.Value > 0)
+                        p.Price = snapshot.Price.Value;
                 }
 
                 if (productRatings.TryGetValue(p.ProductId, out var ratingData))
@@ -223,6 +258,7 @@ public sealed class SellerController : Controller
             }
 
             var colorNameList = (colorNames ?? Array.Empty<string>()).Select(n => n?.Trim()).Where(n => !string.IsNullOrWhiteSpace(n)).ToList();
+            _logger.LogInformation("Files received: {files}", string.Join(", ", Request.Form.Files.Select(f => $"{f.Name}:{f.FileName}")));
             var colorStockList = (colorStocks ?? Array.Empty<string>()).Select(s => int.TryParse(s, out var n) ? n : 0).ToList();
             var colorSizeList = (colorSizes ?? Array.Empty<string>()).Select(s => s?.Trim() ?? "").ToList();
             var skuList = (variantSkus ?? Array.Empty<string>()).Select(s => s?.Trim() ?? "").ToList();
@@ -237,6 +273,17 @@ public sealed class SellerController : Controller
             var usedSkus = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var variantUploadsDir = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "products");
             Directory.CreateDirectory(variantUploadsDir);
+
+            // Read main image bytes once so all variants can reuse it as fallback
+            byte[]? mainImageBytes = null;
+            string? mainImageMime = null;
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                using var mainMs = new MemoryStream();
+                await imageFile.OpenReadStream().CopyToAsync(mainMs);
+                mainImageBytes = mainMs.ToArray();
+                mainImageMime = imageFile.ContentType;
+            }
 
             for (int i = 0; i < colorNameList.Count; i++)
             {
@@ -263,19 +310,34 @@ public sealed class SellerController : Controller
                 usedSkus.Add(variantSku);
 
                 var variantImagePath = model.ImagePath ?? string.Empty;
+                byte[]? variantImageBytes = null;
+                string? variantMimeType = null;
+
                 var colorFiles = Request.Form.Files.GetFiles($"colorFiles_{i}");
+                _logger.LogInformation("Variant {i}: colorFiles count = {count}", i, colorFiles.Count);
                 if (colorFiles.Count > 0)
                 {
                     var file = colorFiles[0];
                     if (file.Length > 0)
                     {
+                        using var ms = new MemoryStream();
+                        await file.CopyToAsync(ms);
+                        variantImageBytes = ms.ToArray();
+                        variantMimeType = file.ContentType;
+
                         var fn = Guid.NewGuid().ToString("N") + Path.GetExtension(file.FileName);
                         var fp = Path.Combine(variantUploadsDir, fn);
-                        using var fs = new FileStream(fp, FileMode.Create);
-                        await file.CopyToAsync(fs);
+                        System.IO.File.WriteAllBytes(fp, variantImageBytes);
                         variantImagePath = "/uploads/products/" + fn;
                         if (string.IsNullOrEmpty(model.ImagePath)) model.ImagePath = variantImagePath;
                     }
+                }
+                else if (mainImageBytes != null && !string.IsNullOrEmpty(model.ImagePath))
+                {
+                    // Fallback: use the main product image binary for this variant
+                    variantImageBytes = mainImageBytes;
+                    variantMimeType = mainImageMime;
+                    variantImagePath = model.ImagePath;
                 }
 
                 variants.Add(new DbProductVariant
@@ -289,6 +351,8 @@ public sealed class SellerController : Controller
                         ? variantAvailabilityInput!
                         : (stock > 0 ? "In Stock" : "Pre-Order"),
                     ImagePath = variantImagePath,
+                    ImageData = variantImageBytes,
+                    ImageMimeType = variantMimeType,
                     Price = i < priceList.Count ? priceList[i] : (decimal?)null,
                     Weight = variantWeight,
                     Length = variantLength,
@@ -450,6 +514,7 @@ public sealed class SellerController : Controller
                     .Select(v => v.Price!.Value)
                     .ToList();
                 if (variantPrices.Count > 0) product.Price = variantPrices.Min();
+                // product.Price already has the DB value if variants have no price
 
                 ViewBag.ProductVariants = variants;
                 return View("~/Views/Dashboard/ViewProduct.cshtml", product);
@@ -878,6 +943,7 @@ public sealed class SellerController : Controller
 
         var variantPrices = productVariants.Where(v => v.Price.HasValue && v.Price.Value > 0).Select(v => v.Price!.Value).ToList();
         if (variantPrices.Count > 0) product.Price = variantPrices.Min();
+        // product.Price already has the DB value if variants have no price
 
         var reviews = await _db.Reviews.AsNoTracking()
             .Where(r => r.ProductId == id).OrderByDescending(r => r.Date).ToListAsync();
@@ -897,10 +963,8 @@ public sealed class SellerController : Controller
             }).ToList()
         };
 
-        return View(model);
+        return View("~/Views/Dashboard/ViewRatings.cshtml", model);
     }
-
-    // ─── Private Helpers ──────────────────────────────────────────────────────
 
     private sealed class SizeGuidePayload
     {
@@ -1071,6 +1135,8 @@ public sealed class SellerController : Controller
                             ? (variant.Quantity > 0 ? "In Stock" : "Pre-Order")
                             : variant.Availability,
                         ImagePath = variant.ImagePath ?? string.Empty,
+                        ImageData = variant.ImageData,
+                        ImageMimeType = variant.ImageMimeType,
                         Price = variant.Price,
                         Weight = variant.Weight,
                         Length = variant.Length,

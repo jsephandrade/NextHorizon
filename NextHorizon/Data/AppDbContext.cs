@@ -24,6 +24,7 @@ public sealed class AppDbContext : DbContext
     public DbSet<DbReviewImage> ReviewImages => Set<DbReviewImage>();
     public DbSet<DbSizeGuide> SizeGuides => Set<DbSizeGuide>();
     public DbSet<DbSizeGuideImage> SizeGuideImages => Set<DbSizeGuideImage>();
+    public DbSet<DbPromotion> Promotions => Set<DbPromotion>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
