@@ -8,7 +8,7 @@ public sealed class SupportFaqRecord
 
     public string Question { get; set; } = string.Empty;
 
-    public string Resolution { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
 
     public int DurationMinutes { get; set; }
 
@@ -17,4 +17,8 @@ public sealed class SupportFaqRecord
     public int? AgentId { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    public DateTime? EndTime { get; set; }
+
+    public DateTime? StartTime { get; set; }
 }

@@ -13,13 +13,34 @@ namespace NextHorizon.Migrations
             migrationBuilder.Sql(
                 """
                 UPDATE [dbo].[SupportFAQs]
-                SET [Resolution] = CASE
-                    WHEN [Resolution] = 'Yes' THEN 'Resolved'
-                    WHEN [Resolution] = 'No' AND LTRIM(RTRIM(COALESCE([Question], ''))) = '' THEN 'Waiting'
-                    WHEN [Resolution] = 'No' THEN 'Active'
-                    ELSE [Resolution]
+                SET [Status] = CASE
+                    WHEN [Status] = 'Yes' THEN 'Resolved'
+                    WHEN [Status] = 'No' THEN 'Waiting'
+                    ELSE [Status]
                 END
-                WHERE [Resolution] IN ('Yes', 'No');
+                WHERE [Status] IN ('Yes', 'No');
+                """);
+
+            migrationBuilder.Sql(
+                """
+                UPDATE [dbo].[SupportFAQs]
+                SET [StartTime] = CASE
+                        WHEN [Status] IN ('Active', 'Resolved') AND [StartTime] IS NULL THEN [CreatedAt]
+                        ELSE [StartTime]
+                    END,
+                    [EndTime] = CASE
+                        WHEN [Status] = 'Resolved' AND [EndTime] IS NULL THEN [CreatedAt]
+                        ELSE [EndTime]
+                    END
+                WHERE [Status] IN ('Active', 'Resolved');
+                """);
+
+            migrationBuilder.Sql(
+                """
+                UPDATE [dbo].[SupportFAQs]
+                SET [StartTime] = NULL,
+                    [DurationMinutes] = 0
+                WHERE [Status] = 'Waiting';
                 """);
 
             migrationBuilder.Sql(
@@ -27,8 +48,7 @@ namespace NextHorizon.Migrations
                 UPDATE [LiveAgentSessions]
                 SET [Status] = CASE
                     WHEN [Status] = 2 THEN 3
-                    WHEN [Status] = 1 AND LTRIM(RTRIM(COALESCE([FirstQuestion], ''))) = '' THEN 1
-                    WHEN [Status] = 1 THEN 2
+                    WHEN [Status] = 1 THEN 1
                     ELSE [Status]
                 END
                 WHERE [Status] IN (1, 2);
@@ -41,12 +61,20 @@ namespace NextHorizon.Migrations
             migrationBuilder.Sql(
                 """
                 UPDATE [dbo].[SupportFAQs]
-                SET [Resolution] = CASE
-                    WHEN [Resolution] = 'Resolved' THEN 'Yes'
-                    WHEN [Resolution] IN ('Waiting', 'Active') THEN 'No'
-                    ELSE [Resolution]
+                SET [Status] = CASE
+                    WHEN [Status] = 'Resolved' THEN 'Yes'
+                    WHEN [Status] IN ('Waiting', 'Active') THEN 'No'
+                    ELSE [Status]
                 END
-                WHERE [Resolution] IN ('Resolved', 'Waiting', 'Active');
+                WHERE [Status] IN ('Resolved', 'Waiting', 'Active');
+                """);
+
+            migrationBuilder.Sql(
+                """
+                UPDATE [dbo].[SupportFAQs]
+                SET [StartTime] = NULL,
+                    [EndTime] = NULL
+                WHERE [Status] IN ('Yes', 'No');
                 """);
 
             migrationBuilder.Sql(

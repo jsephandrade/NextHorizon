@@ -7,11 +7,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const config = {
         botGreeting: "Hi. Select a topic above or ask a question.",
         botNoMatch: "No FAQ matches found. Choose a category, quick action, or refine your question.",
-        agentGreeting: "An agent will assist you shortly.",
+        agentGreeting: "Your Live Agent conversation is active.",
         agentSelectCategoryMessage: "Select a category first to continue with Live Agent.",
         agentWaitingStatus: "Waiting for an available agent",
+        agentAssignedStatus: "Agent assigned",
         agentWaitingReply: "An agent will assist you shortly.",
         agentQueuedHint: "An agent will assist you shortly. Your messages will stay in this queue.",
+        agentAssignedHint: "An agent has already been assigned to this conversation.",
         agentCategoryLockedHint: "Your Live Agent conversation is locked to the selected category until it is resolved or cleared.",
         quickActionsError: "Quick actions are unavailable right now.",
         sessionCreateError: "Unable to start the Live Agent conversation right now.",
@@ -34,13 +36,18 @@ document.addEventListener("DOMContentLoaded", () => {
             agent: [],
         },
         agentAvailability: "queued",
+        agentEndedNotice: null,
         agentTransaction: {
             selectedCategorySlug: "",
             selectedCategoryTitle: "",
             sessionId: null,
+            createdAt: null,
             supportFaqId: null,
             firstQuestionCaptured: false,
+            hasAssignedAgent: false,
+            assignedAgentName: "",
             isStartingSession: false,
+            isSendingMessage: false,
         },
         csrfTokenPromise: null,
         isTyping: false,
@@ -90,6 +97,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!response.ok) {
             const message = payload && typeof payload === "object" && payload.message
                 ? payload.message
+                : typeof payload === "string" && payload.trim()
+                    ? payload
                 : response.status === 401
                     ? "You need to sign in before starting a Live Agent conversation."
                     : "Unable to load help content right now.";
@@ -114,6 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const hasSelectedAgentCategory = () => !!state.agentTransaction.selectedCategorySlug;
+    const hasAssignedAgent = () => !!state.agentTransaction.hasAssignedAgent;
 
     const emitCategoryLockChange = () => {
         document.dispatchEvent(new CustomEvent("help-assistant:category-lock-changed", {
@@ -171,9 +181,13 @@ document.addEventListener("DOMContentLoaded", () => {
             selectedCategorySlug: "",
             selectedCategoryTitle: "",
             sessionId: null,
+            createdAt: null,
             supportFaqId: null,
             firstQuestionCaptured: false,
+            hasAssignedAgent: false,
+            assignedAgentName: "",
             isStartingSession: false,
+            isSendingMessage: false,
         };
         syncQuickActions();
         syncAgentComposerState();
@@ -211,12 +225,102 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const getGreeting = (mode) => {
         if (mode === "agent") {
-            return hasSelectedAgentCategory()
+            if (!hasSelectedAgentCategory()) {
+                return config.agentSelectCategoryMessage;
+            }
+
+            return hasAssignedAgent()
                 ? config.agentGreeting
-                : config.agentSelectCategoryMessage;
+                : config.agentWaitingReply;
         }
 
         return config.botGreeting;
+    };
+
+    const formatChatTimestamp = (timestamp, actionLabel) => {
+        if (!timestamp) {
+            return actionLabel;
+        }
+
+        const date = new Date(timestamp);
+        if (Number.isNaN(date.getTime())) {
+            return actionLabel;
+        }
+
+        const now = new Date();
+        const timeLabel = new Intl.DateTimeFormat(undefined, {
+            hour: "numeric",
+            minute: "2-digit",
+        }).format(date);
+        const isSameDay = date.getFullYear() === now.getFullYear()
+            && date.getMonth() === now.getMonth()
+            && date.getDate() === now.getDate();
+
+        if (isSameDay) {
+            return `${actionLabel} at ${timeLabel}`;
+        }
+
+        const dateLabel = new Intl.DateTimeFormat(undefined, {
+            month: "short",
+            day: "numeric",
+        }).format(date);
+
+        return `${actionLabel} on ${dateLabel} at ${timeLabel}`;
+    };
+
+    const formatConversationStartedLabel = (timestamp) =>
+        formatChatTimestamp(timestamp, "Conversation started");
+
+    const createEndedConversationNoticeMarkup = (mode) => {
+        if (mode !== "agent" || state.agentTransaction.sessionId || !state.agentEndedNotice) {
+            return "";
+        }
+
+        const notice = state.agentEndedNotice;
+        const noticeTitle = notice.endedReason === "Inactive"
+            ? "Your previous Live Agent conversation ended after 5 minutes of inactivity."
+            : "Your previous Live Agent conversation was resolved.";
+        const noticeMeta = `${notice.categoryTitle || "Live Agent"} - ${formatChatTimestamp(notice.endedAt, "Ended")}`;
+
+        return `
+            <div class="chat-session-notice">
+                <div class="chat-session-notice-title">${escapeHtml(noticeTitle)}</div>
+                <div class="chat-session-notice-meta">${escapeHtml(noticeMeta)}</div>
+            </div>`;
+    };
+
+    const createConversationStartedMarkup = (mode) => {
+        if (mode !== "agent" || !state.agentTransaction.sessionId || !state.agentTransaction.createdAt) {
+            return "";
+        }
+
+        const label = formatConversationStartedLabel(state.agentTransaction.createdAt);
+        if (!label) {
+            return "";
+        }
+
+        return `<div class="chat-conversation-start"><span>${escapeHtml(label)}</span></div>`;
+    };
+
+    const createAssignedAgentSpielMarkup = (mode, messages) => {
+        if (mode !== "agent" || !state.agentTransaction.sessionId || !hasAssignedAgent()) {
+            return "";
+        }
+
+        const assignedAgentName = (state.agentTransaction.assignedAgentName || "").trim();
+        const spielText = assignedAgentName
+            ? `Hi! I'm ${assignedAgentName}, and I'll be assisting you today. I'm here to help.`
+            : "Hi! I'm one of the support agents, and I'll be assisting you today. I'm here to help.";
+        const hasTranscriptDuplicate = Array.isArray(messages)
+            && messages.some((message) => !message.html
+                && message.type === "agent"
+                && (message.text || "").trim() === spielText);
+
+        if (hasTranscriptDuplicate) {
+            return "";
+        }
+
+        return `<div class="chat-message agent">${escapeHtml(spielText)}</div>`;
     };
 
     const renderConversation = (mode) => {
@@ -225,14 +329,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const messages = state.conversations[mode];
+        const endedNoticeMarkup = createEndedConversationNoticeMarkup(mode);
+        const conversationStartedMarkup = createConversationStartedMarkup(mode);
+        const assignedAgentSpielMarkup = createAssignedAgentSpielMarkup(mode, messages);
         if (!messages.length) {
             const greeting = getGreeting(mode);
-            elements.chatBox.innerHTML = `<div class="chat-message ${mode}">${escapeHtml(greeting)}</div>`;
+            elements.chatBox.innerHTML = `${endedNoticeMarkup}${conversationStartedMarkup}${assignedAgentSpielMarkup}<div class="chat-message ${mode}">${escapeHtml(greeting)}</div>`;
             scrollToBottom();
             return;
         }
 
-        elements.chatBox.innerHTML = messages
+        elements.chatBox.innerHTML = endedNoticeMarkup + conversationStartedMarkup + assignedAgentSpielMarkup + messages
             .map((message) => {
                 if (message.html) {
                     return `<div class="chat-message ${message.type}">${message.html}</div>`;
@@ -270,6 +377,72 @@ document.addEventListener("DOMContentLoaded", () => {
         scrollToBottom();
     };
 
+    const setEndedLiveAgentNotice = (notice) => {
+        state.agentEndedNotice = notice || null;
+    };
+
+    const removeLastTextMessage = (mode, type, text) => {
+        const messages = state.conversations[mode];
+        for (let index = messages.length - 1; index >= 0; index -= 1) {
+            const message = messages[index];
+            if (message.type === type && message.text === text) {
+                messages.splice(index, 1);
+                break;
+            }
+        }
+
+        if (mode === state.currentMode) {
+            renderConversation(mode);
+        }
+    };
+
+    const mapLiveAgentMessageType = (senderRole) => (
+        (senderRole || "").toLowerCase() === "consumer" ? "user" : "agent"
+    );
+
+    const setAgentConversationFromTranscript = (messages) => {
+        state.conversations.agent = Array.isArray(messages)
+            ? messages.map((message) => ({
+                type: mapLiveAgentMessageType(message.senderRole),
+                text: message.messageText || "",
+            }))
+            : [];
+    };
+
+    const appendAgentTranscriptMessages = (messages, echoedUserText) => {
+        let skippedEcho = false;
+
+        (Array.isArray(messages) ? messages : []).forEach((message) => {
+            const type = mapLiveAgentMessageType(message.senderRole);
+            const text = message.messageText || "";
+
+            if (!skippedEcho && type === "user" && text === echoedUserText) {
+                skippedEcho = true;
+                return;
+            }
+
+            addTextMessage("agent", type, text);
+        });
+    };
+
+    const applyLiveAgentSession = (session) => {
+        setEndedLiveAgentNotice(null);
+        state.agentTransaction.selectedCategorySlug = session.categorySlug || "";
+        state.agentTransaction.selectedCategoryTitle = session.categoryTitle || "";
+        state.agentTransaction.sessionId = session.sessionId || null;
+        state.agentTransaction.createdAt = session.createdAt || null;
+        state.agentTransaction.supportFaqId = session.supportFaqId || null;
+        state.agentTransaction.firstQuestionCaptured = !!session.firstQuestionCaptured;
+        state.agentTransaction.hasAssignedAgent = !!session.hasAssignedAgent;
+        state.agentTransaction.assignedAgentName = session.assignedAgentName || "";
+        state.agentTransaction.isStartingSession = false;
+        state.agentTransaction.isSendingMessage = false;
+        setAgentConversationFromTranscript(session.messages);
+        syncQuickActions();
+        syncAgentComposerState();
+        emitCategoryLockChange();
+    };
+
     const showTypingIndicator = (mode = state.currentMode) => {
         if (state.isTyping || !elements.chatBox) {
             return null;
@@ -298,15 +471,21 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         if (mode === "agent") {
+            const assignedAgent = hasAssignedAgent();
+
             elements.modeIcon.className = "fas fa-headset";
             elements.modeLabel.textContent = "Live Agent";
             elements.statusDot.classList.remove("online");
             elements.statusDot.classList.add("waiting");
-            elements.statusText.textContent = config.agentWaitingStatus;
+            elements.statusText.textContent = assignedAgent
+                ? config.agentAssignedStatus
+                : config.agentWaitingStatus;
             elements.statusText.classList.add("agent-waiting");
-            elements.chatHint.textContent = hasSelectedAgentCategory()
-                ? config.agentCategoryLockedHint
-                : config.agentSelectCategoryMessage;
+            elements.chatHint.textContent = !hasSelectedAgentCategory()
+                ? config.agentSelectCategoryMessage
+                : assignedAgent
+                    ? config.agentAssignedHint
+                    : config.agentCategoryLockedHint;
             syncAgentComposerState();
             syncQuickActions();
             emitCategoryLockChange();
@@ -399,9 +578,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    const captureLiveAgentQuestion = async (sessionId, message) => {
+    const getCurrentLiveAgentSession = async () => fetchJson("/api/help/live-agent/sessions/current");
+    const getLastEndedLiveAgentNotice = async () => fetchJson("/api/help/live-agent/sessions/last-ended");
+
+    const appendLiveAgentMessage = async (sessionId, message) => {
         const token = await ensureCsrfToken();
-        return fetchJson(`/api/help/live-agent/sessions/${encodeURIComponent(sessionId)}/question`, {
+        return fetchJson(`/api/help/live-agent/sessions/${encodeURIComponent(sessionId)}/messages`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -409,6 +591,17 @@ document.addEventListener("DOMContentLoaded", () => {
             },
             body: JSON.stringify({ message }),
         });
+    };
+
+    const restoreLastEndedLiveAgentNotice = async () => {
+        try {
+            const notice = await getLastEndedLiveAgentNotice();
+            setEndedLiveAgentNotice(notice);
+            return !!notice;
+        } catch (error) {
+            setEndedLiveAgentNotice(null);
+            return false;
+        }
     };
 
     const resolveLiveAgentSession = async (sessionId) => {
@@ -467,14 +660,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    const handleAgentResponse = () => {
-        const indicator = showTypingIndicator("agent");
-        window.setTimeout(() => {
-            hideTypingIndicator(indicator);
-            addTextMessage("agent", "agent", config.agentWaitingReply);
-        }, config.agentTypingDelay);
-    };
-
     const setSelectedAgentCategory = async (detail) => {
         const slug = detail?.slug || "";
         const title = detail?.title || "";
@@ -494,12 +679,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             const session = await createLiveAgentSession(slug);
-            state.agentTransaction.selectedCategorySlug = session.categorySlug || slug;
-            state.agentTransaction.selectedCategoryTitle = session.categoryTitle || title;
-            state.agentTransaction.sessionId = session.sessionId;
-            state.agentTransaction.supportFaqId = session.supportFaqId;
-            state.agentTransaction.firstQuestionCaptured = false;
-            return true;
+            applyLiveAgentSession(session);
+            return (session.categorySlug || slug) === slug;
         } catch (error) {
             addTextMessage("agent", "agent", error.message || config.sessionCreateError);
             return false;
@@ -563,27 +744,50 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        if (mode === "agent" && state.agentTransaction.isSendingMessage) {
+            return;
+        }
+
         addTextMessage(mode, "user", text);
         elements.chatInput.value = "";
 
         if (mode === "agent") {
             if (!state.agentTransaction.sessionId) {
+                removeLastTextMessage("agent", "user", text);
                 addTextMessage("agent", "agent", config.sessionCreateError);
                 return;
             }
 
-            if (!state.agentTransaction.firstQuestionCaptured) {
-                try {
-                    await captureLiveAgentQuestion(state.agentTransaction.sessionId, text);
-                    state.agentTransaction.firstQuestionCaptured = true;
-                    syncAgentComposerState();
-                } catch (error) {
-                    addTextMessage("agent", "agent", error.message || config.sessionQuestionError);
+            state.agentTransaction.isSendingMessage = true;
+            const indicator = showTypingIndicator("agent");
+
+            try {
+                const response = await appendLiveAgentMessage(state.agentTransaction.sessionId, text);
+
+                state.agentTransaction.firstQuestionCaptured = !!response.firstQuestionCaptured;
+                state.agentTransaction.hasAssignedAgent = !!response.hasAssignedAgent;
+                state.agentTransaction.assignedAgentName = response.assignedAgentName || "";
+                state.agentTransaction.supportFaqId = response.supportFaqId || state.agentTransaction.supportFaqId;
+                appendAgentTranscriptMessages(response.messages, text);
+                updateModeUi("agent");
+                syncAgentComposerState();
+            } catch (error) {
+                const restoredEndedNotice = await restoreLastEndedLiveAgentNotice();
+                if (restoredEndedNotice) {
+                    resetAgentTransaction();
+                    state.conversations.agent = [];
+                    updateModeUi("agent");
+                    renderConversation("agent");
                     return;
                 }
+
+                removeLastTextMessage("agent", "user", text);
+                addTextMessage("agent", "agent", error.message || config.sessionQuestionError);
+            } finally {
+                hideTypingIndicator(indicator);
+                state.agentTransaction.isSendingMessage = false;
             }
 
-            handleAgentResponse();
             return;
         }
 
@@ -600,6 +804,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             resetAgentTransaction();
+            await restoreLastEndedLiveAgentNotice();
         }
 
         if (state.currentMode === "agent" && !state.agentTransaction.sessionId) {
@@ -625,8 +830,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
         resetAgentTransaction();
         state.conversations.agent = [];
+        await restoreLastEndedLiveAgentNotice();
         updateModeUi("agent");
         renderConversation("agent");
+    };
+
+    const restoreActiveLiveAgentSession = async () => {
+        try {
+            const session = await getCurrentLiveAgentSession();
+            if (!session) {
+                return false;
+            }
+
+            applyLiveAgentSession(session);
+            state.currentMode = "agent";
+            updateModeUi("agent");
+            renderConversation("agent");
+            return true;
+        } catch (error) {
+            if (window.console && typeof window.console.warn === "function") {
+                window.console.warn("Unable to restore the current Live Agent session.", error);
+            }
+
+            return false;
+        }
     };
 
     const bindEvents = () => {
@@ -697,8 +924,17 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    bindEvents();
-    updateModeUi("bot");
-    renderConversation("bot");
-    loadQuickActions();
+    const initialize = async () => {
+        bindEvents();
+        updateModeUi("bot");
+        renderConversation("bot");
+        await loadQuickActions();
+
+        const hasActiveAgentSession = await restoreActiveLiveAgentSession();
+        if (!hasActiveAgentSession) {
+            await restoreLastEndedLiveAgentNotice();
+        }
+    };
+
+    initialize();
 });

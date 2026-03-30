@@ -23,6 +23,11 @@ public sealed class HelpCenterApiController : ControllerBase
     private const string ContactCategoryTitle = "Contact Support";
     private const string ContactCategoryDescription = "Reach support directly or submit a ticket for help.";
     private const string ContactCategoryIcon = "fa-solid fa-life-ring";
+    private const string SupportAgentRole = "Agent";
+    private const string ConsumerSenderRole = "Consumer";
+    private const string LiveAgentQueueWelcomeMessage = "Thank you for reaching out regarding your concern. An agent will be assigned to you shortly. There are currently 3 people ahead of you in the queue.";
+    private const string LiveAgentWaitingReplyMessage = "An agent will assist you shortly.";
+    private static readonly TimeSpan LiveAgentInactivityTimeout = TimeSpan.FromMinutes(5);
 
     private readonly ApplicationDbContext _dbContext;
     private readonly IAuthenticatedUserContextService _authenticatedUserContextService;
@@ -197,7 +202,6 @@ public sealed class HelpCenterApiController : ControllerBase
             ReferenceCode = CreateReferenceCode(),
             UserId = currentUser.UserId,
             ConsumerId = currentUser.ConsumerId,
-            HelpCategoryId = null,
             FaqCategory = categoryName,
             Subject = request.Subject.Trim(),
             Body = request.Body.Trim(),
@@ -219,6 +223,50 @@ public sealed class HelpCenterApiController : ControllerBase
     }
 
     [Authorize]
+    [HttpGet("live-agent/sessions/current")]
+    public async Task<ActionResult<LiveAgentSessionResponse>> GetCurrentLiveAgentSession(CancellationToken cancellationToken)
+    {
+        var currentUser = await _authenticatedUserContextService.GetCurrentAsync(User, cancellationToken);
+        if (currentUser is null)
+        {
+            return Unauthorized();
+        }
+
+        var session = await NormalizeCurrentLiveAgentSessionAsync(currentUser.UserId, cancellationToken);
+        if (session is null)
+        {
+            return NoContent();
+        }
+
+        return Ok(await CreateLiveAgentSessionResponseAsync(session, cancellationToken));
+    }
+
+    [Authorize]
+    [HttpGet("live-agent/sessions/last-ended")]
+    public async Task<ActionResult<LastEndedLiveAgentNoticeResponse>> GetLastEndedLiveAgentNotice(CancellationToken cancellationToken)
+    {
+        var currentUser = await _authenticatedUserContextService.GetCurrentAsync(User, cancellationToken);
+        if (currentUser is null)
+        {
+            return Unauthorized();
+        }
+
+        var activeSession = await NormalizeCurrentLiveAgentSessionAsync(currentUser.UserId, cancellationToken);
+        if (activeSession is not null)
+        {
+            return NoContent();
+        }
+
+        var notice = await CreateLastEndedLiveAgentNoticeAsync(currentUser.UserId, cancellationToken);
+        if (notice is null)
+        {
+            return NoContent();
+        }
+
+        return Ok(notice);
+    }
+
+    [Authorize]
     [HttpPost("live-agent/sessions")]
     [EnableRateLimiting("help-ticket-create")]
     [ConditionalValidateAntiForgeryToken]
@@ -237,22 +285,39 @@ public sealed class HelpCenterApiController : ControllerBase
             return BadRequest("CategorySlug must reference an active consumer FAQ category.");
         }
 
+        var activeSession = await NormalizeCurrentLiveAgentSessionAsync(currentUser.UserId, cancellationToken);
+        if (activeSession is not null)
+        {
+            return Ok(await CreateLiveAgentSessionResponseAsync(activeSession, cancellationToken));
+        }
+
         var timestamp = DateTime.UtcNow;
         var supportFaqRecord = new SupportFaqRecord
         {
             Category = categoryName,
             Question = string.Empty,
-            Resolution = "Waiting",
+            Status = "Waiting",
             DurationMinutes = 0,
             UserType = ConsumerUserType,
             AgentId = null,
             CreatedAt = timestamp,
+            StartTime = null,
+            EndTime = null,
         };
 
         await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
         _dbContext.SupportFaqRecords.Add(supportFaqRecord);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _dbContext.SupportMessages.Add(new SupportMessage
+        {
+            ConversationId = supportFaqRecord.Id,
+            SenderId = 0,
+            SenderRole = SupportAgentRole,
+            MessageText = LiveAgentQueueWelcomeMessage,
+            CreatedAt = timestamp,
+        });
 
         var session = new LiveAgentSession
         {
@@ -273,13 +338,7 @@ public sealed class HelpCenterApiController : ControllerBase
 
         return StatusCode(
             StatusCodes.Status201Created,
-            new LiveAgentSessionResponse(
-                session.LiveAgentSessionId,
-                supportFaqRecord.Id,
-                session.Status.ToString(),
-                session.CreatedAt,
-                session.CategorySlug,
-                session.CategoryTitle));
+            await CreateLiveAgentSessionResponseAsync(session, cancellationToken));
     }
 
     [Authorize]
@@ -299,6 +358,8 @@ public sealed class HelpCenterApiController : ControllerBase
         {
             return BadRequest("Message is required.");
         }
+
+        await NormalizeCurrentLiveAgentSessionAsync(currentUser.UserId, cancellationToken);
 
         var session = await _dbContext.LiveAgentSessions
             .FirstOrDefaultAsync(
@@ -324,30 +385,10 @@ public sealed class HelpCenterApiController : ControllerBase
             return NotFound();
         }
 
-        var timestamp = DateTime.UtcNow;
         if (string.IsNullOrWhiteSpace(session.FirstQuestion))
         {
-            session.FirstQuestion = message;
-            session.UpdatedAt = timestamp;
+            await AppendLiveAgentMessagesAsync(session, supportFaqRecord, currentUser, message, includeWaitingReply: true, cancellationToken);
         }
-
-        if (string.IsNullOrWhiteSpace(supportFaqRecord.Question))
-        {
-            supportFaqRecord.Question = message;
-        }
-
-        if (session.Status == LiveAgentSessionStatus.Waiting)
-        {
-            session.Status = LiveAgentSessionStatus.Active;
-            session.UpdatedAt = timestamp;
-        }
-
-        if (string.Equals(supportFaqRecord.Resolution, "Waiting", StringComparison.Ordinal))
-        {
-            supportFaqRecord.Resolution = "Active";
-        }
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
 
         return Ok(new CaptureLiveAgentQuestionResponse(
             session.LiveAgentSessionId,
@@ -355,6 +396,64 @@ public sealed class HelpCenterApiController : ControllerBase
             session.Status.ToString(),
             supportFaqRecord.Question,
             session.UpdatedAt));
+    }
+
+    [Authorize]
+    [HttpPost("live-agent/sessions/{sessionId:int}/messages")]
+    [EnableRateLimiting("help-ticket-create")]
+    [ConditionalValidateAntiForgeryToken]
+    public async Task<ActionResult<AppendLiveAgentMessageResponse>> AppendLiveAgentMessage(int sessionId, [FromBody] AppendLiveAgentMessageRequest request, CancellationToken cancellationToken)
+    {
+        var currentUser = await _authenticatedUserContextService.GetCurrentAsync(User, cancellationToken);
+        if (currentUser is null)
+        {
+            return Unauthorized();
+        }
+
+        var message = request.Message.Trim();
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return BadRequest("Message is required.");
+        }
+
+        await NormalizeCurrentLiveAgentSessionAsync(currentUser.UserId, cancellationToken);
+
+        var session = await _dbContext.LiveAgentSessions
+            .FirstOrDefaultAsync(
+                item => item.LiveAgentSessionId == sessionId
+                    && item.UserId == currentUser.UserId,
+                cancellationToken);
+
+        if (session is null)
+        {
+            return NotFound();
+        }
+
+        if (session.Status == LiveAgentSessionStatus.Resolved)
+        {
+            return Conflict("This Live Agent session has already been resolved.");
+        }
+
+        var supportFaqRecord = await _dbContext.SupportFaqRecords
+            .FirstOrDefaultAsync(item => item.Id == session.SupportFaqId, cancellationToken);
+
+        if (supportFaqRecord is null)
+        {
+            return NotFound();
+        }
+
+        var messages = await AppendLiveAgentMessagesAsync(session, supportFaqRecord, currentUser, message, includeWaitingReply: true, cancellationToken);
+        var assignedAgentName = await ResolveAssignedAgentNameAsync(supportFaqRecord, cancellationToken);
+
+        return Ok(new AppendLiveAgentMessageResponse(
+            session.LiveAgentSessionId,
+            supportFaqRecord.Id,
+            session.Status.ToString(),
+            !string.IsNullOrWhiteSpace(session.FirstQuestion),
+            HasAssignedAgent(supportFaqRecord),
+            assignedAgentName,
+            session.UpdatedAt,
+            messages));
     }
 
     [Authorize]
@@ -368,6 +467,8 @@ public sealed class HelpCenterApiController : ControllerBase
         {
             return Unauthorized();
         }
+
+        await NormalizeCurrentLiveAgentSessionAsync(currentUser.UserId, cancellationToken);
 
         var session = await _dbContext.LiveAgentSessions
             .FirstOrDefaultAsync(
@@ -391,9 +492,7 @@ public sealed class HelpCenterApiController : ControllerBase
                 return NotFound();
             }
 
-            supportFaqRecord.Resolution = "Resolved";
-            session.Status = LiveAgentSessionStatus.Resolved;
-            session.UpdatedAt = timestamp;
+            ResolveLiveAgentSessionState(session, supportFaqRecord, LiveAgentSessionEndedReason.Resolved, timestamp);
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
@@ -402,6 +501,286 @@ public sealed class HelpCenterApiController : ControllerBase
             session.Status.ToString(),
             session.UpdatedAt));
     }
+
+    private async Task<LiveAgentSession?> NormalizeCurrentLiveAgentSessionAsync(int userId, CancellationToken cancellationToken)
+    {
+        var unresolvedSessions = await _dbContext.LiveAgentSessions
+            .Where(item => item.UserId == userId && item.Status != LiveAgentSessionStatus.Resolved)
+            .OrderByDescending(item => item.CreatedAt)
+            .ThenByDescending(item => item.LiveAgentSessionId)
+            .ToListAsync(cancellationToken);
+
+        if (unresolvedSessions.Count == 0)
+        {
+            return null;
+        }
+
+        var timestamp = DateTime.UtcNow;
+        var supportFaqIds = unresolvedSessions
+            .Select(item => item.SupportFaqId)
+            .Distinct()
+            .ToArray();
+        var supportFaqRecords = supportFaqIds.Length == 0
+            ? new Dictionary<int, SupportFaqRecord>()
+            : await _dbContext.SupportFaqRecords
+                .Where(item => supportFaqIds.Contains(item.Id))
+                .ToDictionaryAsync(item => item.Id, cancellationToken);
+        var hasChanges = false;
+
+        foreach (var inactiveSession in unresolvedSessions.Where(item => IsLiveAgentSessionInactive(item, timestamp)).ToList())
+        {
+            if (supportFaqRecords.TryGetValue(inactiveSession.SupportFaqId, out var supportFaqRecord))
+            {
+                ResolveLiveAgentSessionState(inactiveSession, supportFaqRecord, LiveAgentSessionEndedReason.Inactive, timestamp);
+            }
+            else
+            {
+                ResolveLiveAgentSessionWithoutSupportRecord(inactiveSession, LiveAgentSessionEndedReason.Inactive, timestamp);
+            }
+
+            hasChanges = true;
+        }
+
+        unresolvedSessions = unresolvedSessions
+            .Where(item => item.Status != LiveAgentSessionStatus.Resolved)
+            .ToList();
+
+        if (unresolvedSessions.Count == 0)
+        {
+            if (hasChanges)
+            {
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            return null;
+        }
+
+        if (unresolvedSessions.Count == 1)
+        {
+            if (hasChanges)
+            {
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            return unresolvedSessions[0];
+        }
+
+        var activeSession = unresolvedSessions[0];
+        var duplicateSessions = unresolvedSessions.Skip(1).ToList();
+
+        foreach (var duplicateSession in duplicateSessions)
+        {
+            if (supportFaqRecords.TryGetValue(duplicateSession.SupportFaqId, out var supportFaqRecord))
+            {
+                ResolveLiveAgentSessionState(duplicateSession, supportFaqRecord, LiveAgentSessionEndedReason.Resolved, timestamp);
+            }
+            else
+            {
+                ResolveLiveAgentSessionWithoutSupportRecord(duplicateSession, LiveAgentSessionEndedReason.Resolved, timestamp);
+            }
+
+            hasChanges = true;
+        }
+
+        if (hasChanges)
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return activeSession;
+    }
+
+    private async Task<LastEndedLiveAgentNoticeResponse?> CreateLastEndedLiveAgentNoticeAsync(int userId, CancellationToken cancellationToken)
+    {
+        var session = await _dbContext.LiveAgentSessions
+            .AsNoTracking()
+            .Where(item => item.UserId == userId
+                && item.Status == LiveAgentSessionStatus.Resolved
+                && item.EndedReason != LiveAgentSessionEndedReason.None)
+            .OrderByDescending(item => item.UpdatedAt)
+            .ThenByDescending(item => item.LiveAgentSessionId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (session is null)
+        {
+            return null;
+        }
+
+        return new LastEndedLiveAgentNoticeResponse(
+            session.LiveAgentSessionId,
+            session.CategoryTitle,
+            session.EndedReason.ToString(),
+            session.UpdatedAt);
+    }
+
+    private async Task<LiveAgentSessionResponse> CreateLiveAgentSessionResponseAsync(LiveAgentSession session, CancellationToken cancellationToken)
+    {
+        var supportFaqRecord = await _dbContext.SupportFaqRecords
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Id == session.SupportFaqId, cancellationToken);
+        var hasAssignedAgent = HasAssignedAgent(supportFaqRecord);
+        var assignedAgentName = await ResolveAssignedAgentNameAsync(supportFaqRecord, cancellationToken);
+        var messages = await GetLiveAgentMessagesAsync(session.SupportFaqId, hasAssignedAgent, cancellationToken);
+
+        return new LiveAgentSessionResponse(
+            session.LiveAgentSessionId,
+            session.SupportFaqId,
+            session.Status.ToString(),
+            session.CreatedAt,
+            session.UpdatedAt,
+            session.CategorySlug,
+            session.CategoryTitle,
+            !string.IsNullOrWhiteSpace(session.FirstQuestion),
+            hasAssignedAgent,
+            assignedAgentName,
+            messages);
+    }
+
+    private async Task<string?> ResolveAssignedAgentNameAsync(SupportFaqRecord? supportFaqRecord, CancellationToken cancellationToken)
+    {
+        if (supportFaqRecord?.AgentId is not int agentUserId)
+        {
+            return null;
+        }
+
+        return await _dbContext.SupportAgents
+            .AsNoTracking()
+            .Where(item => item.UserId == agentUserId)
+            .OrderByDescending(item => item.AgentStatus == "available")
+            .ThenByDescending(item => item.ChatId)
+            .Select(item => item.AgentName)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<LiveAgentMessageDto>> GetLiveAgentMessagesAsync(
+        int supportFaqId,
+        bool suppressQueueMessages,
+        CancellationToken cancellationToken)
+    {
+        var messages = await _dbContext.SupportMessages
+            .AsNoTracking()
+            .Where(item => item.ConversationId == supportFaqId)
+            .OrderBy(item => item.CreatedAt)
+            .ThenBy(item => item.Id)
+            .Select(item => new LiveAgentMessageDto(
+                item.Id,
+                item.ConversationId,
+                item.SenderId,
+                item.SenderRole,
+                item.MessageText,
+                item.CreatedAt))
+            .ToListAsync(cancellationToken);
+
+        if (!suppressQueueMessages)
+        {
+            return messages;
+        }
+
+        return messages
+            .Where(item => !IsQueuedSystemMessage(item))
+            .ToList();
+    }
+
+    private async Task<IReadOnlyList<LiveAgentMessageDto>> AppendLiveAgentMessagesAsync(
+        LiveAgentSession session,
+        SupportFaqRecord supportFaqRecord,
+        AuthenticatedUserContext currentUser,
+        string message,
+        bool includeWaitingReply,
+        CancellationToken cancellationToken)
+    {
+        var timestamp = DateTime.UtcNow;
+        var createdMessages = new List<SupportMessage>();
+
+        var userMessage = new SupportMessage
+        {
+            ConversationId = session.SupportFaqId,
+            SenderId = currentUser.ConsumerId ?? currentUser.UserId,
+            SenderRole = ConsumerSenderRole,
+            MessageText = message,
+            CreatedAt = timestamp,
+        };
+
+        createdMessages.Add(userMessage);
+        _dbContext.SupportMessages.Add(userMessage);
+
+        if (string.IsNullOrWhiteSpace(session.FirstQuestion))
+        {
+            session.FirstQuestion = message;
+        }
+
+        if (string.IsNullOrWhiteSpace(supportFaqRecord.Question))
+        {
+            supportFaqRecord.Question = message;
+        }
+
+        session.UpdatedAt = timestamp;
+
+        if (includeWaitingReply && !HasAssignedAgent(supportFaqRecord))
+        {
+            var agentMessage = new SupportMessage
+            {
+                ConversationId = session.SupportFaqId,
+                SenderId = 0,
+                SenderRole = SupportAgentRole,
+                MessageText = LiveAgentWaitingReplyMessage,
+                CreatedAt = timestamp,
+            };
+
+            createdMessages.Add(agentMessage);
+            _dbContext.SupportMessages.Add(agentMessage);
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return createdMessages
+            .Select(item => new LiveAgentMessageDto(
+                item.Id,
+                item.ConversationId,
+                item.SenderId,
+                item.SenderRole,
+                item.MessageText,
+                item.CreatedAt))
+            .ToList();
+    }
+
+    private static bool HasAssignedAgent(SupportFaqRecord? supportFaqRecord)
+        => supportFaqRecord?.AgentId is not null;
+
+    private static bool IsLiveAgentSessionInactive(LiveAgentSession session, DateTime timestamp)
+        => timestamp - session.UpdatedAt >= LiveAgentInactivityTimeout;
+
+    private static void ResolveLiveAgentSessionState(
+        LiveAgentSession session,
+        SupportFaqRecord supportFaqRecord,
+        LiveAgentSessionEndedReason endedReason,
+        DateTime timestamp)
+    {
+        supportFaqRecord.Status = "Resolved";
+        supportFaqRecord.EndTime = timestamp;
+        supportFaqRecord.DurationMinutes = supportFaqRecord.StartTime.HasValue
+            ? Math.Max(0, (int)(timestamp - supportFaqRecord.StartTime.Value).TotalMinutes)
+            : 0;
+
+        session.Status = LiveAgentSessionStatus.Resolved;
+        session.EndedReason = endedReason;
+        session.UpdatedAt = timestamp;
+    }
+
+    private static void ResolveLiveAgentSessionWithoutSupportRecord(
+        LiveAgentSession session,
+        LiveAgentSessionEndedReason endedReason,
+        DateTime timestamp)
+    {
+        session.Status = LiveAgentSessionStatus.Resolved;
+        session.EndedReason = endedReason;
+        session.UpdatedAt = timestamp;
+    }
+
+    private static bool IsQueuedSystemMessage(LiveAgentMessageDto item)
+        => string.Equals(item.SenderRole, SupportAgentRole, StringComparison.Ordinal)
+            && (string.Equals(item.MessageText, LiveAgentWaitingReplyMessage, StringComparison.Ordinal)
+                || string.Equals(item.MessageText, LiveAgentQueueWelcomeMessage, StringComparison.Ordinal));
 
     private IQueryable<FaqRecord> QueryVisibleFaqs()
         => _dbContext.FaqRecords

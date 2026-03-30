@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\CodexSandboxOffline\\.codex\\.sandbox\\cwd\\8eb3fcdc37d27e8f\\NextHorizon.csproj": {}
+    "C:\\dev\\NextHorizon\\NextHorizon\\NextHorizon.csproj": {}
   },
   "projects": {
-    "C:\\Users\\CodexSandboxOffline\\.codex\\.sandbox\\cwd\\8eb3fcdc37d27e8f\\NextHorizon.csproj": {
+    "C:\\dev\\NextHorizon\\NextHorizon\\NextHorizon.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\CodexSandboxOffline\\.codex\\.sandbox\\cwd\\8eb3fcdc37d27e8f\\NextHorizon.csproj",
+        "projectUniqueName": "C:\\dev\\NextHorizon\\NextHorizon\\NextHorizon.csproj",
         "projectName": "NextHorizon",
-        "projectPath": "C:\\Users\\CodexSandboxOffline\\.codex\\.sandbox\\cwd\\8eb3fcdc37d27e8f\\NextHorizon.csproj",
-        "packagesPath": "C:\\Users\\LENOVO\\.nuget\\packages",
-        "outputPath": "C:\\Users\\CodexSandboxOffline\\.codex\\.sandbox\\cwd\\8eb3fcdc37d27e8f\\obj_verify\\",
+        "projectPath": "C:\\dev\\NextHorizon\\NextHorizon\\NextHorizon.csproj",
+        "packagesPath": "C:\\Users\\LENOVO\\.nuget\\packages\\",
+        "outputPath": "C:\\dev\\NextHorizon\\NextHorizon\\obj_verify\\\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

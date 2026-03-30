@@ -84,8 +84,21 @@ public sealed record LiveAgentSessionResponse(
     int SupportFaqId,
     string Status,
     DateTime CreatedAt,
+    DateTime UpdatedAt,
     string CategorySlug,
-    string CategoryTitle);
+    string CategoryTitle,
+    bool FirstQuestionCaptured,
+    bool HasAssignedAgent,
+    string? AssignedAgentName,
+    IReadOnlyList<LiveAgentMessageDto> Messages);
+
+public sealed record LiveAgentMessageDto(
+    int MessageId,
+    int ConversationId,
+    int SenderId,
+    string SenderRole,
+    string MessageText,
+    DateTime CreatedAt);
 
 public sealed class CaptureLiveAgentQuestionRequest
 {
@@ -101,7 +114,30 @@ public sealed record CaptureLiveAgentQuestionResponse(
     string Question,
     DateTime UpdatedAt);
 
+public sealed class AppendLiveAgentMessageRequest
+{
+    [Required]
+    [StringLength(4000, MinimumLength = 1)]
+    public string Message { get; set; } = string.Empty;
+}
+
+public sealed record AppendLiveAgentMessageResponse(
+    int SessionId,
+    int SupportFaqId,
+    string Status,
+    bool FirstQuestionCaptured,
+    bool HasAssignedAgent,
+    string? AssignedAgentName,
+    DateTime UpdatedAt,
+    IReadOnlyList<LiveAgentMessageDto> Messages);
+
 public sealed record ResolveLiveAgentSessionResponse(
     int SessionId,
     string Status,
     DateTime UpdatedAt);
+
+public sealed record LastEndedLiveAgentNoticeResponse(
+    int SessionId,
+    string CategoryTitle,
+    string EndedReason,
+    DateTime EndedAt);

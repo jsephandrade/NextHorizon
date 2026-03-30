@@ -20,8 +20,6 @@ public sealed class SupportTicket
 
     public int? ConsumerId { get; set; }
 
-    public int? HelpCategoryId { get; set; }
-
     [MaxLength(120)]
     public string? FaqCategory { get; set; }
 
@@ -36,7 +34,5 @@ public sealed class SupportTicket
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
-
-    public HelpCategory? Category { get; set; }
 }
 

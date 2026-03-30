@@ -21,10 +21,6 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Customer> Customers => Set<Customer>();
 
-    public DbSet<HelpCategory> HelpCategories => Set<HelpCategory>();
-
-    public DbSet<HelpFaq> HelpFaqs => Set<HelpFaq>();
-
     public DbSet<SupportContactChannel> SupportContactChannels => Set<SupportContactChannel>();
 
     public DbSet<SupportTicket> SupportTickets => Set<SupportTicket>();
@@ -33,7 +29,11 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<SupportFaqRecord> SupportFaqRecords => Set<SupportFaqRecord>();
 
+    public DbSet<SupportMessage> SupportMessages => Set<SupportMessage>();
+
     public DbSet<LiveAgentSession> LiveAgentSessions => Set<LiveAgentSession>();
+
+    public DbSet<SupportAgentRecord> SupportAgents => Set<SupportAgentRecord>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -47,6 +47,20 @@ public class ApplicationDbContext : DbContext
             .ValueGeneratedNever();
         platformUser.Property(x => x.IsActive)
             .HasColumnName("is_active")
+            .IsRequired();
+
+        var supportAgent = builder.Entity<SupportAgentRecord>();
+        supportAgent.ToTable("Agents", "dbo", table => table.ExcludeFromMigrations());
+        supportAgent.HasKey(x => x.ChatId);
+        supportAgent.Property(x => x.ChatId)
+            .HasColumnName("ChatID")
+            .ValueGeneratedNever();
+        supportAgent.Property(x => x.AgentName)
+            .HasColumnName("AgentName");
+        supportAgent.Property(x => x.AgentStatus)
+            .HasColumnName("AgentStatus");
+        supportAgent.Property(x => x.UserId)
+            .HasColumnName("UserID")
             .IsRequired();
 
         var consumer = builder.Entity<ConsumerRef>();
@@ -146,8 +160,8 @@ public class ApplicationDbContext : DbContext
         supportFaqRecord.Property(x => x.Question)
             .HasColumnName("Question")
             .IsRequired();
-        supportFaqRecord.Property(x => x.Resolution)
-            .HasColumnName("Resolution")
+        supportFaqRecord.Property(x => x.Status)
+            .HasColumnName("Status")
             .IsRequired();
         supportFaqRecord.Property(x => x.DurationMinutes)
             .HasColumnName("DurationMinutes")
@@ -161,46 +175,34 @@ public class ApplicationDbContext : DbContext
             .HasColumnName("CreatedAt")
             .HasColumnType("datetime2")
             .IsRequired();
-        var helpCategory = builder.Entity<HelpCategory>();
-        helpCategory.ToTable("HelpCategories");
-        helpCategory.HasKey(x => x.HelpCategoryId);
-        helpCategory.Property(x => x.Slug)
-            .IsRequired()
-            .HasMaxLength(80);
-        helpCategory.Property(x => x.Title)
-            .IsRequired()
-            .HasMaxLength(120);
-        helpCategory.Property(x => x.Description)
-            .IsRequired()
-            .HasMaxLength(500);
-        helpCategory.Property(x => x.IconKey)
-            .IsRequired()
-            .HasMaxLength(80);
-        helpCategory.Property(x => x.IsActive)
-            .HasDefaultValue(true);
-        helpCategory.HasIndex(x => x.Slug)
-            .IsUnique();
-        helpCategory.HasIndex(x => new { x.IsActive, x.DisplayOrder });
+        supportFaqRecord.Property(x => x.EndTime)
+            .HasColumnName("EndTime")
+            .HasColumnType("datetime2");
+        supportFaqRecord.Property(x => x.StartTime)
+            .HasColumnName("StartTime")
+            .HasColumnType("datetime2");
 
-        var helpFaq = builder.Entity<HelpFaq>();
-        helpFaq.ToTable("HelpFaqs");
-        helpFaq.HasKey(x => x.HelpFaqId);
-        helpFaq.Property(x => x.Question)
-            .IsRequired()
-            .HasMaxLength(200);
-        helpFaq.Property(x => x.Answer)
-            .IsRequired()
-            .HasMaxLength(4000);
-        helpFaq.Property(x => x.SearchKeywords)
-            .HasMaxLength(400);
-        helpFaq.Property(x => x.IsActive)
-            .HasDefaultValue(true);
-        helpFaq.HasOne(x => x.Category)
-            .WithMany(x => x.Faqs)
-            .HasForeignKey(x => x.HelpCategoryId)
-            .OnDelete(DeleteBehavior.Cascade);
-        helpFaq.HasIndex(x => new { x.HelpCategoryId, x.IsActive, x.DisplayOrder });
-        helpFaq.HasIndex(x => x.IsFeaturedOnHome);
+        var supportMessage = builder.Entity<SupportMessage>();
+        supportMessage.ToTable("SupportMessages", "dbo", table => table.ExcludeFromMigrations());
+        supportMessage.HasKey(x => x.Id);
+        supportMessage.Property(x => x.Id)
+            .HasColumnName("Id");
+        supportMessage.Property(x => x.ConversationId)
+            .HasColumnName("ConversationId")
+            .IsRequired();
+        supportMessage.Property(x => x.SenderId)
+            .HasColumnName("SenderId")
+            .IsRequired();
+        supportMessage.Property(x => x.SenderRole)
+            .HasColumnName("SenderRole")
+            .IsRequired();
+        supportMessage.Property(x => x.MessageText)
+            .HasColumnName("MessageText")
+            .IsRequired();
+        supportMessage.Property(x => x.CreatedAt)
+            .HasColumnName("CreatedAt")
+            .HasColumnType("datetime2")
+            .IsRequired();
 
         var supportContactChannel = builder.Entity<SupportContactChannel>();
         supportContactChannel.ToTable("SupportContactChannels");
@@ -247,10 +249,6 @@ public class ApplicationDbContext : DbContext
         supportTicket.Property(x => x.UpdatedAt)
             .IsRequired()
             .HasDefaultValueSql("SYSUTCDATETIME()");
-        supportTicket.HasOne(x => x.Category)
-            .WithMany(x => x.SupportTickets)
-            .HasForeignKey(x => x.HelpCategoryId)
-            .OnDelete(DeleteBehavior.SetNull);
         supportTicket.HasOne<PlatformUser>()
             .WithMany()
             .HasForeignKey(x => x.UserId)
@@ -284,6 +282,10 @@ public class ApplicationDbContext : DbContext
         liveAgentSession.Property(x => x.Status)
             .IsRequired()
             .HasConversion<byte>();
+        liveAgentSession.Property(x => x.EndedReason)
+            .IsRequired()
+            .HasConversion<byte>()
+            .HasDefaultValue(LiveAgentSessionEndedReason.None);
         liveAgentSession.Property(x => x.CreatedAt)
             .IsRequired()
             .HasDefaultValueSql("SYSUTCDATETIME()");
@@ -302,6 +304,9 @@ public class ApplicationDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
         liveAgentSession.HasIndex(x => x.SupportFaqId)
             .IsUnique();
+        liveAgentSession.HasIndex(x => x.UserId)
+            .IsUnique()
+            .HasFilter($"[Status] <> {(byte)LiveAgentSessionStatus.Resolved}");
         liveAgentSession.HasIndex(x => new { x.UserId, x.Status, x.CreatedAt })
             .IsDescending(false, false, true);
 

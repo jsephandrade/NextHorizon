@@ -9,6 +9,13 @@ public enum LiveAgentSessionStatus : byte
     Resolved = 3,
 }
 
+public enum LiveAgentSessionEndedReason : byte
+{
+    None = 0,
+    Resolved = 1,
+    Inactive = 2,
+}
+
 public sealed class LiveAgentSession
 {
     public int LiveAgentSessionId { get; set; }
@@ -29,6 +36,8 @@ public sealed class LiveAgentSession
     public string FirstQuestion { get; set; } = string.Empty;
 
     public LiveAgentSessionStatus Status { get; set; } = LiveAgentSessionStatus.Waiting;
+
+    public LiveAgentSessionEndedReason EndedReason { get; set; } = LiveAgentSessionEndedReason.None;
 
     public DateTime CreatedAt { get; set; }
 

@@ -233,6 +233,56 @@
     animation-delay: 0.4s;
 }
 
+.help-assistant-page .chat-conversation-start {
+    align-self: stretch;
+    position: relative;
+    text-align: center;
+    font-size: 11px;
+    color: var(--color-gray-500);
+    margin: 2px 0 6px;
+}
+
+.help-assistant-page .chat-conversation-start::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    border-top: 1px solid var(--color-gray-200);
+}
+
+.help-assistant-page .chat-conversation-start span {
+    position: relative;
+    z-index: 1;
+    display: inline-block;
+    padding: 0 10px;
+    background: var(--color-gray-50);
+    letter-spacing: 0.01em;
+}
+
+.help-assistant-page .chat-session-notice {
+    align-self: stretch;
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    color: var(--color-black);
+    box-shadow: var(--shadow-xs);
+}
+
+.help-assistant-page .chat-session-notice-title {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.help-assistant-page .chat-session-notice-meta {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--color-gray-600);
+    line-height: 1.4;
+}
+
 .help-assistant-page .chat-quick-solutions {
     background: var(--color-white);
     border-top: 1px solid var(--color-gray-200);
