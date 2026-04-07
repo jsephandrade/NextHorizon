@@ -198,3 +198,138 @@
         gap: 8px;
     }
 }
+/* --- Premium Internal Notes Card --- */
+.internal-notes-wrapper {
+    /* This stops it from stretching infinitely on wide monitors */
+    max-width: 700px; 
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+.internal-notes-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px; /* Softer, modern corners */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); /* Premium shadow */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: inherit;
+}
+
+.notes-card-header {
+    background: #f9fafb;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.notes-card-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #111827;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.notes-timeline {
+    padding: 20px;
+    background: #ffffff;
+}
+
+.timeline-item {
+    background: #fef9c3; /* Warmer, premium sticky-note yellow */
+    border-left: 4px solid #facc15; /* Nice visual accent line */
+    padding: 14px 18px;
+    border-radius: 0 6px 6px 0;
+    margin-bottom: 10px;
+}
+
+.timeline-item.system-note {
+    background: #f9fafb;
+    border-left: 4px solid #9ca3af;
+    border-top: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.timeline-content {
+    font-size: 0.95rem;
+    color: #374151;
+    line-height: 1.5;
+}
+
+.notes-card-footer {
+    padding: 20px;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.notes-card-footer textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    resize: vertical;
+    font-size: 0.95rem;
+    margin-bottom: 12px;
+    transition: border-color 0.2s, box-shadow 0.2s; /* Smooth focus effect */
+}
+
+.notes-card-footer textarea:focus {
+    outline: none;
+    border-color: #111827;
+    box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1); /* Modern focus ring */
+}
+
+.notes-footer-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-save-note {
+    background-color: #111827;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+
+.btn-save-note:hover {
+    background-color: #374151;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .internal-notes-wrapper { max-width: 100%; }
+    .notes-card-footer textarea { font-size: 16px; /* Prevents iOS auto-zoom */ }
+}
+.bw-btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: #4b5563; /* A slightly lighter grey/black */
+}
+
+@keyframes checkmark-pop {
+    0% { transform: scale(0); opacity: 0; }
+    70% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.success-animation {
+    padding: 30px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.checkmark-wrapper {
+    font-size: 80px;
+    color: #10b981; /* Success Green */
+    animation: checkmark-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}

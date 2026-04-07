@@ -20,13 +20,14 @@ namespace NextHorizon.Controllers
         private readonly ISellerContextService _sellerContextService;
         private readonly ISellerPerformanceService _sellerPerformanceService;
         private readonly IConfiguration _configuration;
-
+        private readonly IWebHostEnvironment _environment;
         public DashboardController(
             ISellerContextService sellerContextService,
             ISellerPerformanceService sellerPerformanceService,
             IConfiguration configuration,
             IOrderService orderService,
-            AppDbContext context)
+            AppDbContext context,
+            IWebHostEnvironment environment)
             
         {
             _sellerContextService = sellerContextService;
@@ -34,6 +35,7 @@ namespace NextHorizon.Controllers
             _configuration = configuration;
             _orderService = orderService;
             _context = context;
+            _environment = environment;
         }
 
         private IActionResult? RedirectIfNotLoggedIn()
@@ -87,8 +89,27 @@ public async Task<IActionResult> GetOrderDetails(int orderId)
 var order = await _orderService.GetOrderByIdAsync(orderId, currentSellerId.Value);
     if (order == null) return NotFound(new { success = false, message = "Order not found" });
 
-    // Return the data as a JSON package so JavaScript can read it
-    return Json(new { success = true, data = order });
+        // Map to a clean object to avoid JSON Circular Reference Exceptions (HTTP 500)
+        // and precisely match the JavaScript frontend's expected properties.
+        var safeData = new
+        {
+            orderId = order.OrderID,
+            orderDate = order.OrderDate,
+            paymentMethod = order.PaymentMethod,
+            fullName = order.FullName,
+            streetAddress = order.StreetAddress,
+            city = order.City,
+            postalCode = order.PostalCode,
+            phoneNumber = order.PhoneNumber,
+            deliveryOption = order.Courier ?? "Standard",
+            quantity = order.Quantity,
+            subtotal = order.Subtotal,
+            shippingFee = order.ShippingFee,
+            totalAmount = order.Subtotal + order.ShippingFee,
+            productName = order.ProductName
+        };
+
+        return Json(new { success = true, data = safeData });
 }
 public class OrderNoteRequest
 {
@@ -145,11 +166,11 @@ public class MarkShippedRequest
 {
     public int OrderId { get; set; }
     public string TrackingNumber { get; set; } = string.Empty;
+    // IFormFile is what C# uses to catch the uploaded image
+    public IFormFile? ProofOfShipment { get; set; }
 }
-
-// 2. The Updated Endpoint
 [HttpPost]
-public async Task<IActionResult> MarkOrderShipped([FromBody] MarkShippedRequest request)
+public async Task<IActionResult> MarkOrderShipped([FromForm] MarkShippedRequest request)
 {
     int? currentSellerId = HttpContext.Session.GetInt32("SellerId");
     if (!currentSellerId.HasValue)
@@ -161,14 +182,44 @@ public async Task<IActionResult> MarkOrderShipped([FromBody] MarkShippedRequest 
         return Json(new { success = false, message = "Order not found or unauthorized." });
     }
 
+    // --- FILE SAVING BLOCK ---
+    if (request.ProofOfShipment != null && request.ProofOfShipment.Length > 0)
+    {
+        try 
+        {
+            string uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "receipts");
+            
+            if (!Directory.Exists(uploadsFolder)) 
+            {
+                Directory.CreateDirectory(uploadsFolder);
+            }
+            string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetExtension(request.ProofOfShipment.FileName);
+            string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await request.ProofOfShipment.CopyToAsync(fileStream);
+            }
+
+            // INSERTED HERE: Update the order object with the new path
+            order.ProofOfShipmentUrl = "/uploads/receipts/" + uniqueFileName;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("File upload failed: " + ex.Message);
+            // Optionally: return Json(new { success = false, message = "File upload failed." });
+        }
+    }
+
     // Dual-Tracking Architecture
-    order.Status = "Shipped";              // Moves it to the Shipped Tab
-    order.FulfillmentStatus = "Shipped";   // Enterprise Logistics State
+    order.Status = "Shipped";              
+    order.FulfillmentStatus = "Shipped";   
     order.TrackingNumber = request.TrackingNumber; 
     order.DateShipped = DateTime.Now;      
 
     try
     {
+        // This saves BOTH the status changes AND the ProofOfShipmentUrl
         await _context.SaveChangesAsync();
         return Json(new { success = true, message = "Order marked as shipped successfully!" });
     }
@@ -177,30 +228,55 @@ public async Task<IActionResult> MarkOrderShipped([FromBody] MarkShippedRequest 
         return Json(new { success = false, message = "Database error occurred." });
     }
 }
-
 public class ShipmentUpdateModel
 {
     public int OrderId { get; set; }
     public string TrackingNumber { get; set; }
 }
+// ==========================================
+// ORDER DETAILS
+// ==========================================
+[HttpGet]
+public async Task<IActionResult> OrderDetails(string id, CancellationToken cancellationToken)
+{
+    var redirect = RedirectIfNotLoggedIn();
+    if (redirect != null) return redirect;
+    
+    if (!int.TryParse(id.Replace("ORD-", ""), out int orderId))
+    {
+        return BadRequest("Invalid Order ID");
+    }
 
-[HttpPost]
-        // ============== ORDER DETAILS ==============
-        public async Task<IActionResult> OrderDetails(string id, CancellationToken cancellationToken)
-        {
-            var redirect = RedirectIfNotLoggedIn();
-            if (redirect != null) return redirect;
-            
-            var dashboard = await BuildSellerDashboardModelAsync(cancellationToken);
-            var order = dashboard.Orders.FirstOrDefault(o => o.OrderID.ToString() == id.Replace("ORD-", ""));
+    var order = await _context.Orders
+        .Include(o => o.OrderItems)
+        .ThenInclude(i => i.Product) 
+        .FirstOrDefaultAsync(o => o.OrderID == orderId);
 
-            if (order is null)
-            {
-                return NotFound();
-            }
+    if (order == null)
+    {
+        return NotFound();
+    }
 
-            return View(BuildOrderDetailsModel(order, dashboard.SellerName));
-        }
+    // ==========================================
+    // 3. THE COURIER FIX (AGGRESSIVE LOOKUP)
+    // ==========================================
+    if (order.logistics_id.HasValue && order.logistics_id.Value > 0)
+    {
+        var courierName = await _context.Logistics
+            .Where(l => l.logistics_id == order.logistics_id.Value)
+            .Select(l => l.courier_name)
+            .FirstOrDefaultAsync();
+
+        order.Courier = string.IsNullOrEmpty(courierName) ? "NextHorizon Partner" : courierName; 
+    }
+    else
+    {
+        order.Courier = "NextHorizon Partner";
+    }
+
+    return View(order);
+}
+    
 
         private static OrderDetailsViewModel BuildOrderDetailsModel(Order order, string sellerName)
 {
@@ -939,28 +1015,6 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
 
         return model;
     }
-    [HttpGet]
-public async Task<IActionResult> OrderDetails(int id)
-{
-    // 1. Use your existing check to see if the user is logged in
-    var loginCheck = RedirectIfNotLoggedIn();
-    if (loginCheck != null) return loginCheck;
-
-    // 2. Use your existing service to get the Seller ID
-    var sellerId = GetSellerIdFromSession();
-if (sellerId == null) return RedirectToAction("Login", "Account");
-
-    // 3. Ask the OrderService to fetch the order for us
-    // (We'll make sure this method exists in the next step!)
-    var order = await _orderService.GetOrderByIdAsync(id, sellerId.Value);
-
-    if (order == null)
-    {
-        return RedirectToAction("OrderManagement");
-    }
-
-    return View(order);
-}
 
     // ============== PROCESS WITHDRAWAL (POST) ==============
     [HttpPost]
@@ -1158,11 +1212,10 @@ public class DeclineRequest
     public int OrderId { get; set; }
     public string Reason { get; set; } = string.Empty;
 }
-
 [HttpPost]
 public async Task<IActionResult> DeclineOrder([FromBody] DeclineRequest request)
 {
-    // 1. Get the Seller ID from the session (your other methods do this!)
+    // 1. Get the Seller ID from the session
     var sellerId = HttpContext.Session.GetInt32("SellerId");
     if (sellerId == null) return Unauthorized(new { message = "Please log in." });
 
@@ -1174,14 +1227,39 @@ public async Task<IActionResult> DeclineOrder([FromBody] DeclineRequest request)
         return NotFound(new { message = "Order not found." });
     }
 
-    // 3. Update the status and the reason
+    // --- NEW: START CLEANUP LOGIC ---
+    // If there is an existing proof of shipment, delete the file from the server
+    if (!string.IsNullOrEmpty(order.ProofOfShipmentUrl))
+    {
+        try
+        {
+            // Convert the relative URL (/uploads/receipts/file.jpg) back to a physical path
+            string relativePath = order.ProofOfShipmentUrl.TrimStart('/');
+            string fullPath = Path.Combine(_environment.WebRootPath, relativePath);
+
+            // Check if the file actually exists on the server before trying to delete it
+            if (System.IO.File.Exists(fullPath))
+            {
+                System.IO.File.Delete(fullPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log the error (optional) but allow the cancellation to continue
+            Console.WriteLine($"Failed to delete file: {ex.Message}");
+        }
+    }
+    // --- END CLEANUP LOGIC ---
+
+    // 3. Update the status, the reason, and clear the image URL
     order.Status = "Cancelled";
     order.CancellationReason = request.Reason; 
+    order.ProofOfShipmentUrl = null; // Ensure the DB link is removed even if file deletion fails
 
     // 4. Save to database using your service
     await _orderService.UpdateOrderAsync(order);
 
-    return Ok(new { message = "Order declined successfully" });
+    return Ok(new { message = "Order declined successfully and files cleaned up." });
 }
 
         private async Task<SellerDashboardViewModel> BuildSellerDashboardModelAsync(CancellationToken cancellationToken = default)

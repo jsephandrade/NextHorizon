@@ -64,5 +64,6 @@ namespace NextHorizon.Models
         public string? TrackingNumber { get; set; }
         public DateTime? DateShipped { get; set; }
         public string? SellerNote { get; set; }
+        public string? ProofOfShipmentUrl { get; set; }
     }
 }

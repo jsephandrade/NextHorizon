@@ -407,8 +407,6 @@ C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\zdzc7xxxse-{0}-k1g7yxt33
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\3u1lb0na76-{0}-n5kyhqf6n9-n5kyhqf6n9.gz
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\5s5hio2mx9-{0}-de6e4amfgs-de6e4amfgs.gz
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\7ohcn2uasn-{0}-jgng2rb17l-jgng2rb17l.gz
-C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\ojkane33g0-{0}-cxom8xlpq0-cxom8xlpq0.gz
-C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\nrvkognwci-{0}-suqj5bfixf-suqj5bfixf.gz
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\ku7mgs5w91-{0}-qp64g4vqbm-qp64g4vqbm.gz
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\w4bhqzfwb5-{0}-3u52d6dac1-3u52d6dac1.gz
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\f81bugpovd-{0}-2culmxo8zr-2culmxo8zr.gz
@@ -500,4 +498,6 @@ C:\NextHorizon\NextHorizon\obj\Debug\net10.0\NextHorizon.pdb
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\NextHorizon.genruntimeconfig.cache
 C:\NextHorizon\NextHorizon\obj\Debug\net10.0\ref\NextHorizon.dll
 C:\NextHorizon\NextHorizon\bin\Debug\net10.0\package-lock.json
-C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\34dr9ow2gc-{0}-s68zx3ogls-s68zx3ogls.gz
+C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\nrvkognwci-{0}-ibizwwuxc2-ibizwwuxc2.gz
+C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\ojkane33g0-{0}-9esuqiap8q-9esuqiap8q.gz
+C:\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\34dr9ow2gc-{0}-vwm1vx5aax-vwm1vx5aax.gz

@@ -1,9 +1,41 @@
 let activeStatusFilter = 'all';
+
+// Explicitly attach to 'window' so HTML onclick/oninput can ALWAYS find it
+window.applyOrderFilters = function() {
+    const searchInput = document.getElementById('orderSearch');
+    const searchValue = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+    const categorySelect = document.getElementById('categoryFilter');
+    const categoryValue = categorySelect ? categorySelect.value : 'all';
+
+    let currentStatus = 'all';
+    if (typeof activeStatusFilter !== 'undefined') {
+        currentStatus = activeStatusFilter.toLowerCase().trim();
+    }
+
+    const rows = document.querySelectorAll('.order-row');
+    
+    rows.forEach(row => {
+        const status = (row.dataset.status || '').toLowerCase().trim();
+        const rowText = row.innerText.toLowerCase();
+
+        const statusMatch = currentStatus === 'all' || status === currentStatus;
+        const categoryMatch = categoryValue === 'all';
+        const searchMatch = !searchValue || rowText.includes(searchValue);
+
+        if (statusMatch && categoryMatch && searchMatch) {
+            row.style.display = ''; 
+        } else {
+            row.style.display = 'none'; 
+        }
+    });
+};
 let selectedNoteOrderId = '';
 let selectedNoteCustomer = '';
 let selectedReviewOrderId = '';
 let selectedShipmentOrderId = '';
 let selectedReturnOrderId = '';
+
 
 // ================= UTILS =================
 function applyOrderFilters() {
@@ -130,47 +162,84 @@ function openMarkShippedModal(orderId, customerName, courierName) {
 
     setTimeout(() => trackingInput?.focus(), 100);
 }
-
-// Step 5: System Execution & Backend Update
 async function submitShipment() {
+    // 1. Get the elements
     const orderId = document.getElementById('shipModalOrderId').innerText;
     const trackingNumber = document.getElementById('shipTrackingNumber').value.trim();
-
+    const fileInput = document.getElementById('shipReceiptImage');
+    const submitBtn = document.querySelector('#markShippedModal .bw-btn-primary') || document.getElementById('confirmShipmentBtn');
+    // 2. Validation
     if (!trackingNumber) {
-        showToast("Tracking number is required to confirm shipment.", "error");
-        document.getElementById('shipTrackingNumber').style.borderColor = "#ef4444";
+        showToast("Tracking number is required.", "error");
         return;
+    }
+
+    // --- START LOADING STATE ---
+    // Disable the button so they can't click it twice
+    submitBtn.disabled = true;
+    // Change the text and add a spinner icon
+    const originalBtnText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...';
+
+    // 3. Prepare the Data
+    const formData = new FormData();
+    formData.append('OrderId', parseInt(orderId));
+    formData.append('TrackingNumber', trackingNumber);
+    if (fileInput.files.length > 0) {
+        formData.append('ProofOfShipment', fileInput.files[0]);
     }
 
     try {
         const response = await fetch('/Dashboard/MarkOrderShipped', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                orderId: parseInt(orderId), 
-                trackingNumber: trackingNumber 
-            })
+            body: formData // No headers needed for FormData
         });
 
         const result = await response.json();
 
         if (result.success) {
-            closeMarkShippedModal();
-            showToast(`Order #${orderId} marked as Shipped!`, "success");
-            setTimeout(() => location.reload(), 1500);
+            // 1. Target the modal elements to replace them with the animation
+            const modalBody = document.querySelector('#markShippedModal .bw-modal-body');
+            const modalFooter = document.querySelector('#markShippedModal .bw-modal-footer');
+            
+            // 2. Hide the footer (Cancel/Confirm buttons)
+            if(modalFooter) modalFooter.style.display = 'none';
+
+            // 3. Inject the Success Animation HTML into the body
+            modalBody.innerHTML = `
+                <div class="success-animation" style="padding: 40px 20px; display: flex; flex-direction: column; align-items: center;">
+                    <div class="checkmark-wrapper" style="font-size: 70px; color: #10b981; animation: checkmark-pop 0.5s ease-out;">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <h4 style="text-align: center; margin-top: 15px; color: #111827; margin-bottom: 5px;">Order Shipped!</h4>
+                    <p style="text-align: center; font-size: 0.85rem; color: #6b7280;">Updating your dashboard...</p>
+                </div>
+            `;
+
+            // 4. Reload after 2 seconds so they can see the checkmark
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+
         } else {
+            // Handle error case
             showToast(result.message, "error");
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
         }
     } catch (error) {
+        // Handle network error
         console.error("Error:", error);
         showToast("System error. Please try again.", "error");
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
     }
 }
-
 function closeMarkShippedModal() {
     document.getElementById('markShippedModal').style.display = 'none';
+    removePreview(); // Reset the image preview
+    document.getElementById('shipTrackingNumber').value = ""; // Clear the tracking input
 }
-
 function openTrackingRequiredModal() {
     document.getElementById('trackingRequiredModal').style.display = 'flex';
 }
@@ -216,27 +285,36 @@ function openReviewRequestModal(orderId) {
 function closeReviewRequestModal() {
     document.getElementById('reviewRequestModal')?.classList.remove('active');
 }
-
 // ================= MASTER CLICK EVENT LISTENER =================
 document.addEventListener('click', function (event) {
     
-    // 1. Mark as Shipped Button
+    // View Details Button
+    const viewDetailsBtn = event.target.closest('.view-details-btn');
+    if (viewDetailsBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const orderId = viewDetailsBtn.getAttribute('data-order-id') || viewDetailsBtn.dataset.orderId;
+        if (orderId) {
+            openViewOrderModal(orderId);
+        } else {
+            console.warn("View Details button clicked but missing data-order-id attribute!");
+        }
+        document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+        return;
+    }
+
+    // 1. Mark as Shipped Button (Input Tracking)
     const markAsShippedBtn = event.target.closest('.mark-as-shipped-btn');
     if (markAsShippedBtn) {
         event.preventDefault();
         event.stopPropagation();
         
-        console.log("BUTTON CLICKED! Catching data...");
-        
         const orderId = markAsShippedBtn.getAttribute('data-order-id');
         const customer = markAsShippedBtn.getAttribute('data-customer');
-        const courierId = markAsShippedBtn.getAttribute('data-courier-id'); 
         const courierName = markAsShippedBtn.getAttribute('data-courier-name'); 
         
-        console.log("Order:", orderId, "Customer:", customer, "Courier:", courierName);
-        
         openMarkShippedModal(orderId, customer, courierName);
-        
         document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
         return;
     }
@@ -247,11 +325,10 @@ document.addEventListener('click', function (event) {
         event.preventDefault();
         event.stopPropagation(); 
         
-        const orderId = addNoteBtn.dataset.orderId || addNoteBtn.getAttribute('data-order-id') || "Unknown";
-        const customer = addNoteBtn.dataset.customer || addNoteBtn.getAttribute('data-customer') || "Customer";
+        const orderId = addNoteBtn.getAttribute('data-order-id') || addNoteBtn.dataset.orderId || "Unknown";
+        const customer = addNoteBtn.getAttribute('data-customer') || addNoteBtn.dataset.customer || "Customer";
         
         openAddNoteModal(orderId, customer);
-        
         document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
         return;
     }
@@ -308,7 +385,8 @@ document.getElementById('reviewRequestSubmitBtn')?.addEventListener('click', clo
 // Filter buttons
 document.querySelectorAll('.order-filter-btn').forEach(btn => {
     btn.addEventListener('click', function () {
-        activeStatusFilter = this.dataset.filter;
+        // Fallback added here to prevent undefined errors in older browsers
+        activeStatusFilter = this.getAttribute('data-filter') || this.dataset.filter;
         document.querySelectorAll('.order-filter-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
         applyOrderFilters();
@@ -337,11 +415,36 @@ document.addEventListener('keydown', function (event) {
         document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
     }
 });
-
-// ================= INIT =================
+    
+    
+    // ================= INIT & EVENT BINDING =================
 document.addEventListener('DOMContentLoaded', function () {
+    
+    // 1. Bind the Filter Tabs
+    document.querySelectorAll('.order-filter-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            activeStatusFilter = this.getAttribute('data-filter') || this.dataset.filter;
+            document.querySelectorAll('.order-filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            applyOrderFilters();
+        });
+    });
+
+    // 2. Bind the Search Bar and Category Dropdown
+    document.getElementById('orderSearch')?.addEventListener('input', applyOrderFilters);
+    document.getElementById('categoryFilter')?.addEventListener('change', applyOrderFilters);
+    document.getElementById('searchBtn')?.addEventListener('click', applyOrderFilters);
+    
+    document.getElementById('clearDate')?.addEventListener('click', function() {
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        applyOrderFilters();
+    });
+
+    // 3. Apply filters immediately on load just in case
     applyOrderFilters();
 });
+
 
 // ===== ORDER SUMMARY =====
 function openOrderSummaryModal(orderId) {
@@ -560,7 +663,13 @@ function hideCourierWarning() {
 }
 
 async function openViewOrderModal(orderId) {
-    console.log("Opening modal for order:", orderId);
+    if (!orderId) return;
+
+    // Strip non-numeric characters so the backend receives a valid integer
+    const cleanOrderId = String(orderId).replace(/\D/g, '');
+    if (!cleanOrderId) return;
+
+    console.log("Opening modal for order:", cleanOrderId);
     let modal = document.getElementById("orderSummaryModal");
     
     if (!modal) {
@@ -568,10 +677,11 @@ async function openViewOrderModal(orderId) {
         return;
     }
     
-    modal.classList.add('active');
+    modal.style.display = "flex";
     
     try {
-        const response = await fetch(`/Dashboard/GetOrderDetails?orderId=${orderId}`);
+        const response = await fetch(`/Dashboard/GetOrderDetails?orderId=${cleanOrderId}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const result = await response.json();
 
         if (result.success) {
@@ -682,14 +792,15 @@ async function openViewOrderModal(orderId) {
                     `;
                 }
             }
-            if (modal) modal.style.display = "flex";
         } else {
             console.error("API Error:", result.message);
             alert("Could not load order details: " + result.message);
+            if (modal) modal.style.display = "none";
         }
     } catch (error) {
         console.error("Error fetching order:", error);
         alert("Error loading order. Check console for details.");
+        if (modal) modal.style.display = "none";
     }
 }
 
@@ -851,4 +962,56 @@ async function saveOrderNote() {
         console.error("Error:", error);
         showToast("System error while saving.", "error");
     }
+}
+// --- Global function for saving notes on the Order Details page ---
+async function savePageNote(orderId) {
+    const noteInput = document.getElementById('pageNoteInput');
+    
+    if (!noteInput) {
+        console.error("Could not find the note input field.");
+        return;
+    }
+
+    const noteText = noteInput.value;
+
+    try {
+        const response = await fetch('/Dashboard/SaveOrderNote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ OrderId: parseInt(orderId), Note: noteText })
+        });
+
+        const result = await response.json();
+
+        if (result.success === true) {
+            showToast(result.message, "success"); 
+            setTimeout(() => location.reload(), 1500); 
+        } else {
+            showToast("Error: " + result.message, "error"); 
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        showToast("System error while saving.", "error");
+    }
+}
+
+function previewImage(input) {
+    const container = document.getElementById('receiptPreviewContainer');
+    const preview = document.getElementById('receiptPreview');
+
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            container.style.display = 'block';
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function removePreview() {
+    const fileInput = document.getElementById('shipReceiptImage');
+    const container = document.getElementById('receiptPreviewContainer');
+    fileInput.value = ""; // Clears the file selection
+    container.style.display = 'none'; // Hides the preview box
 }

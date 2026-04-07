@@ -23,6 +23,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(defaultConnection));
 
 // Scoped services
+builder.Services.AddHostedService<NextHorizon.Services.AutoCompleteOrderService>();
 builder.Services.AddScoped<ISellerContextService, SellerContextService>();
 builder.Services.AddScoped<ISellerPerformanceService, SellerPerformanceService>();
 builder.Services.AddScoped<ICustomerStoredProcedureService, CustomerStoredProcedureService>();
