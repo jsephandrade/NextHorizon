@@ -3088,7 +3088,7 @@
       "projectName": "NextHorizon",
       "projectPath": "C:\\dev\\NextHorizon\\NextHorizon\\NextHorizon.csproj",
       "packagesPath": "C:\\Users\\LENOVO\\.nuget\\packages\\",
-      "outputPath": "C:\\dev\\NextHorizon\\NextHorizon\\obj_verify\\",
+      "outputPath": "C:\\dev\\NextHorizon\\NextHorizon\\..\\obj_verify2\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

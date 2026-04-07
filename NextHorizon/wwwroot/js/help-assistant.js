@@ -10,22 +10,24 @@ document.addEventListener("DOMContentLoaded", () => {
         grid: page.querySelector("[data-help-assistant-grid]"),
         prev: page.querySelector("[data-help-assistant-prev]"),
         next: page.querySelector("[data-help-assistant-next]"),
-        tabs: page.querySelector("[data-help-assistant-tabs]"),
+        faqViewport: page.querySelector("[data-help-assistant-faq-viewport]"),
+        faqTrack: page.querySelector("[data-help-assistant-faq-track]"),
+        faqPrev: page.querySelector("[data-help-assistant-faq-prev]"),
+        faqNext: page.querySelector("[data-help-assistant-faq-next]"),
         faqList: page.querySelector("[data-help-assistant-faq-list]"),
         toggleAll: page.querySelector("[data-help-assistant-toggle-all]"),
+        chat: page.querySelector("#helpChat"),
     };
 
     const categoryCache = new Map();
-    const categoryLock = {
-        locked: false,
-        selectedSlug: "",
-    };
     let categories = [];
     let visibleCategories = [];
     let activeSlug = "";
     let allExpanded = false;
     let currentPage = 0;
     let visibleCount = 4;
+    let faqPage = 0;
+    let chatViewportFrame = 0;
 
     const fetchJson = async (url) => {
         const response = await fetch(url, {
@@ -52,16 +54,13 @@ document.addEventListener("DOMContentLoaded", () => {
         return payload;
     };
 
-    const emit = (name, detail) => {
-        document.dispatchEvent(new CustomEvent(name, { detail }));
-    };
-
     const setGridMessage = (message, className) => {
         if (!elements.grid) {
             return;
         }
 
         elements.grid.innerHTML = `<div class="${className}">${message}</div>`;
+        scheduleChatViewportSync();
     };
 
     const setFaqMessage = (message, className) => {
@@ -70,6 +69,31 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         elements.faqList.innerHTML = `<div class="${className}">${message}</div>`;
+    };
+
+    const scheduleChatViewportSync = () => {
+        if (chatViewportFrame) {
+            return;
+        }
+
+        chatViewportFrame = window.requestAnimationFrame(() => {
+            chatViewportFrame = 0;
+
+            if (!elements.chat) {
+                return;
+            }
+
+            const headerHeight = document.querySelector("#main-header")?.getBoundingClientRect().height || 0;
+            const pageStyles = window.getComputedStyle(page);
+            const pageBottomPadding = Number.parseFloat(pageStyles.paddingBottom || "0") || 0;
+            const viewportHeight = window.visualViewport?.height || window.innerHeight;
+            const chatTop = elements.chat.getBoundingClientRect().top;
+            const topOffset = Math.max(chatTop, headerHeight + 16);
+            const availableHeight = Math.floor(viewportHeight - topOffset - Math.max(16, pageBottomPadding));
+            const clampedHeight = Math.max(220, availableHeight);
+
+            page.style.setProperty("--help-chat-height", `${clampedHeight}px`);
+        });
     };
 
     const getVisibleCount = () => {
@@ -161,37 +185,78 @@ document.addEventListener("DOMContentLoaded", () => {
         updateCarouselPosition();
     };
 
-    const isCategoryBlocked = (slug) =>
-        categoryLock.locked
-        && !!categoryLock.selectedSlug
-        && categoryLock.selectedSlug !== slug;
+    const getFaqMaxPage = () => {
+        if (!elements.faqViewport || !elements.faqTrack) {
+            return 0;
+        }
 
-    const applyCategoryLockState = () => {
-        elements.grid?.querySelectorAll(".help-card").forEach((card) => {
-            const slug = card.dataset.categorySlug || "";
-            const isSelected = categoryLock.locked && categoryLock.selectedSlug === slug;
-            const isDisabled = isCategoryBlocked(slug);
-            card.classList.toggle("is-selected", isSelected);
-            card.classList.toggle("is-disabled", isDisabled);
-            card.setAttribute("aria-disabled", isDisabled.toString());
-            card.tabIndex = isDisabled ? -1 : 0;
+        const viewportWidth = elements.faqViewport.clientWidth;
+        if (!viewportWidth) {
+            return 0;
+        }
 
-            const link = card.querySelector(".help-card-view");
-            if (link) {
-                link.setAttribute("aria-disabled", isDisabled.toString());
-                link.tabIndex = isDisabled ? -1 : 0;
-            }
-        });
+        return Math.max(0, Math.ceil(elements.faqTrack.scrollWidth / viewportWidth) - 1);
+    };
 
-        elements.tabs?.querySelectorAll("[data-tab-slug]").forEach((tab) => {
-            const slug = tab.dataset.tabSlug || "";
-            const isSelected = categoryLock.locked && categoryLock.selectedSlug === slug;
-            const isDisabled = isCategoryBlocked(slug);
-            tab.classList.toggle("is-selected", isSelected);
-            tab.classList.toggle("is-disabled", isDisabled);
-            tab.setAttribute("aria-disabled", isDisabled.toString());
-            tab.tabIndex = isDisabled ? -1 : 0;
-        });
+    const syncFaqCarouselControls = () => {
+        const maxPage = getFaqMaxPage();
+        const canSlide = maxPage > 0;
+
+        if (elements.faqPrev) {
+            elements.faqPrev.disabled = !canSlide || faqPage <= 0;
+        }
+
+        if (elements.faqNext) {
+            elements.faqNext.disabled = !canSlide || faqPage >= maxPage;
+        }
+    };
+
+    const updateFaqCarouselPosition = () => {
+        if (!elements.faqViewport || !elements.faqTrack) {
+            return;
+        }
+
+        const viewportWidth = elements.faqViewport.clientWidth;
+        if (!viewportWidth) {
+            elements.faqTrack.style.transform = "translateX(0px)";
+            syncFaqCarouselControls();
+            return;
+        }
+
+        const maxOffset = Math.max(0, elements.faqTrack.scrollWidth - viewportWidth);
+        const requestedOffset = faqPage * viewportWidth;
+        const offset = Math.min(requestedOffset, maxOffset);
+        elements.faqTrack.style.transform = `translateX(-${offset}px)`;
+        syncFaqCarouselControls();
+    };
+
+    const ensureActiveFaqChipVisible = (slug) => {
+        if (!slug || !elements.faqViewport || !elements.faqTrack) {
+            return;
+        }
+
+        const chip = elements.faqTrack.querySelector(`[data-faq-category-slug="${slug}"]`);
+        if (!chip) {
+            return;
+        }
+
+        const viewportWidth = elements.faqViewport.clientWidth;
+        if (!viewportWidth) {
+            return;
+        }
+
+        const start = faqPage * viewportWidth;
+        const chipStart = chip.offsetLeft;
+        const chipEnd = chip.offsetLeft + chip.offsetWidth;
+        const end = start + viewportWidth;
+
+        if (chipStart < start) {
+            faqPage = Math.max(0, Math.floor(chipStart / viewportWidth));
+        } else if (chipEnd > end) {
+            faqPage = Math.max(0, Math.floor((chipEnd - 1) / viewportWidth));
+        }
+
+        updateFaqCarouselPosition();
     };
 
     const renderCards = (items) => {
@@ -249,36 +314,46 @@ document.addEventListener("DOMContentLoaded", () => {
             elements.grid.appendChild(card);
         });
 
-        applyCategoryLockState();
-        window.requestAnimationFrame(updateCarouselLayout);
-    };
-
-    const setActiveTab = (slug) => {
-        if (!elements.tabs) {
-            return;
-        }
-
-        elements.tabs.querySelectorAll("[data-tab-slug]").forEach((tab) => {
-            tab.classList.toggle("active", tab.dataset.tabSlug === slug);
+        window.requestAnimationFrame(() => {
+            updateCarouselLayout();
+            scheduleChatViewportSync();
         });
     };
 
-    const renderTabs = (items) => {
-        if (!elements.tabs) {
+    const setActiveCategory = (slug) => {
+        if (!elements.faqTrack) {
             return;
         }
 
-        elements.tabs.innerHTML = "";
+        elements.faqTrack.querySelectorAll("[data-faq-category-slug]").forEach((chip) => {
+            chip.classList.toggle("active", chip.dataset.faqCategorySlug === slug);
+        });
+
+        ensureActiveFaqChipVisible(slug);
+    };
+
+    const renderCategoryOptions = (items) => {
+        if (!elements.faqTrack) {
+            return;
+        }
+
+        elements.faqTrack.innerHTML = "";
+        faqPage = 0;
+
         items.forEach((category, index) => {
-            const tab = document.createElement("span");
-            tab.dataset.tabSlug = category.slug;
-            tab.textContent = category.title;
+            const chip = document.createElement("button");
+            chip.type = "button";
+            chip.className = "faq-category-chip";
+            chip.dataset.faqCategorySlug = category.slug;
+            chip.textContent = category.title;
             if (index === 0) {
-                tab.classList.add("active");
+                chip.classList.add("active");
             }
 
-            elements.tabs.appendChild(tab);
+            elements.faqTrack.appendChild(chip);
         });
+
+        window.requestAnimationFrame(updateFaqCarouselPosition);
     };
 
     const renderFaqs = (faqs) => {
@@ -358,13 +433,13 @@ document.addEventListener("DOMContentLoaded", () => {
         return willExpand;
     };
 
-    const loadCategory = async (slug, announceCategory) => {
+    const loadCategory = async (slug) => {
         if (!slug) {
             return;
         }
 
         activeSlug = slug;
-        setActiveTab(slug);
+        setActiveCategory(slug);
         setFaqMessage("Loading FAQs...", "help-loading-state");
 
         try {
@@ -376,13 +451,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             renderFaqs(detail.faqs || []);
 
-            if (announceCategory) {
-                emit("help-assistant:category-selected", {
-                    slug: detail.slug,
-                    title: detail.title,
-                    faqs: Array.isArray(detail.faqs) ? detail.faqs.slice(0, 5) : [],
-                });
-            }
         } catch (error) {
             setFaqMessage(error.message, "help-error-state");
         }
@@ -429,10 +497,6 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.grid?.addEventListener("click", async (event) => {
             const link = event.target.closest(".help-card-view");
             if (link) {
-                const card = event.target.closest(".help-card");
-                if (card && isCategoryBlocked(card.dataset.categorySlug || "")) {
-                    event.preventDefault();
-                }
                 return;
             }
 
@@ -441,11 +505,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-             if (isCategoryBlocked(card.dataset.categorySlug || "")) {
-                return;
-            }
-
-            await loadCategory(card.dataset.categorySlug || "", true);
+            await loadCategory(card.dataset.categorySlug || "");
         });
 
         elements.grid?.addEventListener("keydown", async (event) => {
@@ -459,23 +519,59 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             event.preventDefault();
-            if (isCategoryBlocked(card.dataset.categorySlug || "")) {
-                return;
-            }
-            await loadCategory(card.dataset.categorySlug || "", true);
+            await loadCategory(card.dataset.categorySlug || "");
         });
 
-        elements.tabs?.addEventListener("click", async (event) => {
-            const tab = event.target.closest("[data-tab-slug]");
-            if (!tab) {
+        elements.faqPrev?.addEventListener("click", () => {
+            if (faqPage <= 0) {
                 return;
             }
 
-            if (isCategoryBlocked(tab.dataset.tabSlug || "")) {
+            faqPage -= 1;
+            updateFaqCarouselPosition();
+        });
+
+        elements.faqNext?.addEventListener("click", () => {
+            const maxPage = getFaqMaxPage();
+            if (faqPage >= maxPage) {
                 return;
             }
 
-            await loadCategory(tab.dataset.tabSlug || "", true);
+            faqPage += 1;
+            updateFaqCarouselPosition();
+        });
+
+        elements.faqTrack?.addEventListener("click", async (event) => {
+            const chip = event.target.closest("[data-faq-category-slug]");
+            if (!chip) {
+                return;
+            }
+
+            const slug = chip.dataset.faqCategorySlug || "";
+            if (!slug) {
+                return;
+            }
+
+            await loadCategory(slug);
+        });
+
+        elements.faqTrack?.addEventListener("keydown", async (event) => {
+            if (event.key !== "Enter" && event.key !== " ") {
+                return;
+            }
+
+            const chip = event.target.closest("[data-faq-category-slug]");
+            if (!chip) {
+                return;
+            }
+
+            event.preventDefault();
+            const slug = chip.dataset.faqCategorySlug || "";
+            if (!slug) {
+                return;
+            }
+
+            await loadCategory(slug);
         });
 
         elements.toggleAll?.addEventListener("click", () => {
@@ -500,14 +596,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            const expanded = toggleFaq(item);
-            if (expanded) {
-                emit("help-assistant:faq-selected", {
-                    categorySlug: activeSlug,
-                    question: item.dataset.faqQuestion || "",
-                    answer: item.dataset.faqAnswer || "",
-                });
-            }
+            toggleFaq(item);
         });
 
         elements.faqList?.addEventListener("keydown", (event) => {
@@ -524,34 +613,16 @@ document.addEventListener("DOMContentLoaded", () => {
             trigger.click();
         });
 
-        document.addEventListener("help-assistant:activate-category", async (event) => {
-            const detail = event.detail || {};
-            const slug = typeof detail.slug === "string" ? detail.slug : "";
-            if (!slug) {
-                return;
-            }
-
-            if (isCategoryBlocked(slug)) {
-                return;
-            }
-
-            await loadCategory(slug, true);
-        });
-
-        document.addEventListener("help-assistant:category-lock-changed", (event) => {
-            const detail = event.detail || {};
-            categoryLock.locked = !!detail.locked;
-            categoryLock.selectedSlug = typeof detail.selectedSlug === "string" ? detail.selectedSlug : "";
-            applyCategoryLockState();
-        });
-
         window.addEventListener("resize", () => {
             updateCarouselLayout();
+            updateFaqCarouselPosition();
+            scheduleChatViewportSync();
         });
     };
 
     const init = async () => {
         bindEvents();
+        scheduleChatViewportSync();
 
         try {
             categories = await fetchJson("/api/help/categories");
@@ -562,9 +633,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             renderCards(categories);
-            renderTabs(categories);
-            applyCategoryLockState();
-            await loadCategory(categories[0].slug, false);
+            renderCategoryOptions(categories);
+            await loadCategory(categories[0].slug);
         } catch (error) {
             setGridMessage(error.message, "help-error-state");
             setFaqMessage(error.message, "help-error-state");
@@ -572,4 +642,6 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     init();
+
+    window.addEventListener("load", scheduleChatViewportSync, { once: true });
 });

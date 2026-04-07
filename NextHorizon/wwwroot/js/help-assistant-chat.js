@@ -125,15 +125,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const hasSelectedAgentCategory = () => !!state.agentTransaction.selectedCategorySlug;
     const hasAssignedAgent = () => !!state.agentTransaction.hasAssignedAgent;
 
-    const emitCategoryLockChange = () => {
-        document.dispatchEvent(new CustomEvent("help-assistant:category-lock-changed", {
-            detail: {
-                locked: state.currentMode === "agent" && hasSelectedAgentCategory(),
-                selectedSlug: state.agentTransaction.selectedCategorySlug,
-            },
-        }));
-    };
-
     const syncQuickActions = () => {
         elements.quickActions?.querySelectorAll(".quick-solution-btn").forEach((button) => {
             const slug = button.dataset.categorySlug || "";
@@ -191,7 +182,6 @@ document.addEventListener("DOMContentLoaded", () => {
         };
         syncQuickActions();
         syncAgentComposerState();
-        emitCategoryLockChange();
     };
 
     const createSuggestionMarkup = (label, items, emptyMessage) => {
@@ -440,7 +430,6 @@ document.addEventListener("DOMContentLoaded", () => {
         setAgentConversationFromTranscript(session.messages);
         syncQuickActions();
         syncAgentComposerState();
-        emitCategoryLockChange();
     };
 
     const showTypingIndicator = (mode = state.currentMode) => {
@@ -480,16 +469,15 @@ document.addEventListener("DOMContentLoaded", () => {
             elements.statusText.textContent = assignedAgent
                 ? config.agentAssignedStatus
                 : config.agentWaitingStatus;
-            elements.statusText.classList.add("agent-waiting");
-            elements.chatHint.textContent = !hasSelectedAgentCategory()
-                ? config.agentSelectCategoryMessage
+        elements.statusText.classList.add("agent-waiting");
+        elements.chatHint.textContent = !hasSelectedAgentCategory()
+            ? config.agentSelectCategoryMessage
                 : assignedAgent
                     ? config.agentAssignedHint
                     : config.agentCategoryLockedHint;
-            syncAgentComposerState();
-            syncQuickActions();
-            emitCategoryLockChange();
-            return;
+        syncAgentComposerState();
+        syncQuickActions();
+        return;
         }
 
         elements.modeIcon.className = "fas fa-robot";
@@ -501,7 +489,6 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.chatHint.textContent = "Tip: Click a category or question for instant help.";
         syncAgentComposerState();
         syncQuickActions();
-        emitCategoryLockChange();
     };
 
     const switchMode = (mode) => {
@@ -513,16 +500,6 @@ document.addEventListener("DOMContentLoaded", () => {
         updateModeUi(mode);
         renderConversation(mode);
         elements.chatInput?.focus();
-    };
-
-    const activateCategory = (slug) => {
-        if (!slug) {
-            return;
-        }
-
-        document.dispatchEvent(new CustomEvent("help-assistant:activate-category", {
-            detail: { slug },
-        }));
     };
 
     const renderQuickActions = (categories) => {
@@ -560,6 +537,14 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
             elements.quickActions.innerHTML = `<div class="help-error-state">${escapeHtml(error.message)}</div>`;
         }
+    };
+
+    const getCategoryDetail = async (slug) => {
+        if (!slug) {
+            return null;
+        }
+
+        return fetchJson(`/api/help/categories/${encodeURIComponent(slug)}`);
     };
 
     const createLiveAgentSession = async (categorySlug) => {
@@ -688,7 +673,6 @@ document.addEventListener("DOMContentLoaded", () => {
             state.agentTransaction.isStartingSession = false;
             syncQuickActions();
             syncAgentComposerState();
-            emitCategoryLockChange();
         }
     };
 
@@ -890,7 +874,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            activateCategory(button.dataset.categorySlug || "");
+            const slug = button.dataset.categorySlug || "";
+            if (!slug) {
+                return;
+            }
+
+            void (async () => {
+                try {
+                    const detail = await getCategoryDetail(slug);
+                    await handleCategorySelection(detail || {}, state.currentMode);
+                } catch (error) {
+                    addTextMessage(state.currentMode, state.currentMode === "agent" ? "agent" : "bot", error.message || config.quickActionsError);
+                }
+            })();
         });
 
         elements.quickToggle?.addEventListener("click", () => {
@@ -914,14 +910,6 @@ document.addEventListener("DOMContentLoaded", () => {
             selectFaq(button.dataset.chatQuestion || "", button.dataset.chatAnswer || "", state.currentMode);
         });
 
-        document.addEventListener("help-assistant:faq-selected", (event) => {
-            const detail = event.detail || {};
-            selectFaq(detail.question || "", detail.answer || "", state.currentMode);
-        });
-
-        document.addEventListener("help-assistant:category-selected", async (event) => {
-            await handleCategorySelection(event.detail || {}, state.currentMode);
-        });
     };
 
     const initialize = async () => {

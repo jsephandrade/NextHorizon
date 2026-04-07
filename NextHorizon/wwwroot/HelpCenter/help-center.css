@@ -197,6 +197,79 @@ body {
     margin-bottom: 28px;
 }
 
+.help-home-category-carousel {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 28px;
+}
+
+.help-home-category-carousel .help-carousel-viewport {
+    overflow: hidden;
+}
+
+.help-home-category-carousel .help-carousel-track {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 0;
+    transform: translateX(0);
+    transition: transform var(--transition-normal);
+    will-change: transform;
+}
+
+.help-home-category-carousel .help-carousel-track > .help-loading-state,
+.help-home-category-carousel .help-carousel-track > .help-empty-state,
+.help-home-category-carousel .help-carousel-track > .help-error-state {
+    width: 100%;
+    flex: 0 0 100%;
+}
+
+.help-home-category-carousel .help-carousel-nav {
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--color-black);
+    border-radius: 50%;
+    background: var(--color-white);
+    color: var(--color-black);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    box-shadow: 0 4px 14px rgba(17, 17, 17, 0.08);
+}
+
+.help-home-category-carousel .help-carousel-nav:hover:not(:disabled) {
+    background: var(--color-black);
+    color: var(--color-white);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(17, 17, 17, 0.12);
+}
+
+.help-home-category-carousel .help-carousel-nav:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba(17, 17, 17, 0.08);
+}
+
+.help-home-category-carousel .help-carousel-nav:disabled {
+    opacity: 1;
+    cursor: not-allowed;
+    background: var(--color-gray-100);
+    color: var(--color-gray-400);
+    border-color: var(--color-gray-300);
+    box-shadow: none;
+}
+
+.help-home-category-carousel .help-carousel-nav-icon {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    stroke-width: 2.15;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .help-assistant-page .help-category-carousel {
     display: grid;
     grid-template-columns: auto 1fr auto;
@@ -226,91 +299,48 @@ body {
 }
 
 .help-assistant-page .help-carousel-nav {
-    position: relative;
     width: 42px;
     height: 42px;
-    border: 1px solid rgba(17, 17, 17, 0.78);
+    border: 1px solid var(--color-black);
     border-radius: 50%;
-    background:
-        linear-gradient(145deg, rgba(236, 236, 236, 0.88) 0%, rgba(214, 214, 214, 0.42) 38%, rgba(194, 194, 194, 0.2) 100%),
-        linear-gradient(315deg, rgba(248, 248, 248, 0.3), rgba(180, 180, 180, 0.12));
-    color: rgba(17, 17, 17, 0.92);
+    background: var(--color-white);
+    color: var(--color-black);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: var(--transition-fast);
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.62),
-        inset 0 -10px 18px rgba(255, 255, 255, 0.06),
-        0 14px 28px rgba(17, 17, 17, 0.08);
-    backdrop-filter: blur(18px) saturate(145%);
-    -webkit-backdrop-filter: blur(18px) saturate(145%);
-    overflow: hidden;
-}
-
-.help-assistant-page .help-carousel-nav::before {
-    content: "";
-    position: absolute;
-    inset: 1px;
-    border-radius: inherit;
-    background:
-        radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.84) 0%, rgba(255, 255, 255, 0.34) 24%, transparent 54%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.04));
-    opacity: 0.92;
-    pointer-events: none;
-}
-
-.help-assistant-page .help-carousel-nav::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
-    pointer-events: none;
+    box-shadow: 0 4px 14px rgba(17, 17, 17, 0.08);
 }
 
 .help-assistant-page .help-carousel-nav:hover:not(:disabled) {
-    border-color: rgba(17, 17, 17, 0.92);
-    background:
-        linear-gradient(145deg, rgba(242, 242, 242, 0.94) 0%, rgba(222, 222, 222, 0.5) 38%, rgba(200, 200, 200, 0.26) 100%),
-        linear-gradient(315deg, rgba(250, 250, 250, 0.34), rgba(186, 186, 186, 0.16));
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.76),
-        inset 0 -12px 22px rgba(255, 255, 255, 0.08),
-        0 18px 34px rgba(17, 17, 17, 0.12);
-    backdrop-filter: blur(22px) saturate(155%);
-    -webkit-backdrop-filter: blur(22px) saturate(155%);
-    transform: translateY(-2px) scale(1.02);
+    background: var(--color-black);
+    color: var(--color-white);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(17, 17, 17, 0.12);
 }
 
 .help-assistant-page .help-carousel-nav:active:not(:disabled) {
-    transform: translateY(0) scale(0.98);
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.6),
-        inset 0 -8px 16px rgba(255, 255, 255, 0.06),
-        0 10px 22px rgba(17, 17, 17, 0.1);
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba(17, 17, 17, 0.08);
 }
 
 .help-assistant-page .help-carousel-nav:disabled {
-    opacity: 0.6;
+    opacity: 1;
     cursor: not-allowed;
-    background:
-        linear-gradient(145deg, rgba(228, 228, 228, 0.74) 0%, rgba(206, 206, 206, 0.28) 40%, rgba(186, 186, 186, 0.12) 100%),
-        linear-gradient(315deg, rgba(242, 242, 242, 0.18), rgba(172, 172, 172, 0.08));
-    border-color: rgba(17, 17, 17, 0.48);
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.38),
-        0 8px 18px rgba(17, 17, 17, 0.04);
+    background: var(--color-gray-100);
+    color: var(--color-gray-400);
+    border-color: var(--color-gray-300);
+    box-shadow: none;
 }
 
-.help-assistant-page .help-carousel-nav span {
-    position: relative;
-    z-index: 1;
-    font-size: 18px;
-    font-weight: 700;
-    line-height: 1;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+.help-assistant-page .help-carousel-nav-icon {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    stroke-width: 2.15;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 /* Help Cards - Reduced Height */
@@ -330,40 +360,19 @@ body {
     transform: translateY(12px);
     text-align: left;
     min-height: 110px; /* Added to control minimum height */
-}
-
-.help-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: var(--gradient-hero);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform var(--transition-fast);
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    box-shadow: 0 8px 18px rgba(17, 17, 17, 0.04);
 }
 
 .help-card:hover {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
     border-color: var(--color-black);
-    box-shadow: var(--shadow-glow);
-    background: var(--gradient-card-hover);
-}
-
-.help-card:hover::before {
-    transform: scaleX(1);
+    box-shadow: 0 12px 24px rgba(17, 17, 17, 0.08);
+    background: var(--color-white);
 }
 
 .help-assistant-page .help-card.is-selected {
     border-color: var(--color-black);
-    box-shadow: var(--shadow-glow);
-}
-
-.help-assistant-page .help-card.is-selected::before {
-    transform: scaleX(1);
+    box-shadow: 0 0 0 1px var(--color-black), 0 10px 22px rgba(17, 17, 17, 0.08);
 }
 
 .help-assistant-page .help-card.is-disabled {
@@ -376,10 +385,6 @@ body {
 .help-assistant-page .help-card.is-disabled:hover {
     border-color: var(--color-gray-200);
     background: var(--color-white);
-}
-
-.help-assistant-page .help-card.is-disabled::before {
-    transform: scaleX(0);
 }
 
 /* Smaller Icon */
@@ -401,8 +406,8 @@ body {
 }
 
 .help-card:hover .help-card-icon {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(17, 17, 17, 0.2);
+    transform: none;
+    box-shadow: none;
 }
 
 .help-card-content {
@@ -434,19 +439,19 @@ body {
 .help-card-view {
     margin-top: 4px; /* Reduced from 6px */
     align-self: flex-start;
-    background: transparent;
+    background: var(--color-white);
     color: var(--color-black);
     border: 1px solid var(--color-gray-300);
     border-radius: var(--radius-pill);
-    padding: 3px 8px; /* Reduced from 4px 10px */
+    padding: 4px 10px;
     font-size: 9px; /* Reduced from 10px */
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     transition: var(--transition-fast);
     text-decoration: none;
     display: inline-flex;
     align-items: center;
-    gap: 3px;
+    gap: 0;
 }
 
 .help-card-view:hover {
@@ -463,6 +468,14 @@ body {
 
 .help-card-view:hover::after {
     transform: translateX(3px);
+}
+
+.help-card-view::after {
+    content: none;
+}
+
+.help-card-view:hover::after {
+    transform: none;
 }
 
 /* ================= CATEGORY SEARCH BAR ================= */
@@ -506,6 +519,15 @@ body {
     margin-bottom: 32px;
 }
 
+.help-assistant-page .help-content-split {
+    align-items: start;
+    min-height: 0;
+}
+
+.help-assistant-page .help-content-split > * {
+    min-height: 0;
+}
+
 /* ================= GENERAL FAQ SECTION ================= */
 .help-center-faq {
     background: var(--color-white);
@@ -521,45 +543,102 @@ body {
     opacity: 1;
 }
 
-.faq-tabs {
-    display: flex;
-    gap: 6px;
+.faq-category-carousel {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 10px;
     margin-bottom: 20px;
-    font-size: 13px;
-    border-bottom: 1px solid var(--color-gray-200);
     padding-bottom: 14px;
-    flex-wrap: wrap;
+    border-bottom: 1px solid var(--color-gray-200);
 }
 
-.faq-tabs span {
-    cursor: pointer;
-    color: var(--color-gray-600);
-    padding: 6px 14px;
-    position: relative;
-    transition: var(--transition-fast);
-    border-radius: var(--radius-pill);
-    font-weight: 500;
-}
-
-.faq-tabs span:hover {
+.faq-category-nav {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--color-black);
+    border-radius: 50%;
+    background: var(--color-white);
     color: var(--color-black);
-    background: var(--color-gray-100);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    box-shadow: 0 3px 10px rgba(17, 17, 17, 0.06);
 }
 
-.help-assistant-page .faq-tabs span.is-disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-}
-
-.help-assistant-page .faq-tabs span.is-disabled:hover {
-    color: var(--color-gray-600);
-    background: transparent;
-}
-
-.faq-tabs .active {
-    color: var(--color-white);
-    font-weight: 600;
+.faq-category-nav:hover:not(:disabled) {
     background: var(--color-black);
+    color: var(--color-white);
+}
+
+.faq-category-nav:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.faq-category-nav:disabled {
+    cursor: not-allowed;
+    background: var(--color-gray-100);
+    color: var(--color-gray-400);
+    border-color: var(--color-gray-300);
+    box-shadow: none;
+}
+
+.faq-category-nav-icon {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    stroke-width: 2.15;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.faq-category-viewport {
+    overflow: hidden;
+}
+
+.faq-category-track {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: max-content;
+    min-width: 100%;
+    transform: translateX(0);
+    transition: transform var(--transition-normal);
+    will-change: transform;
+}
+
+.faq-category-chip {
+    flex: 0 0 auto;
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-pill);
+    background: var(--color-white);
+    color: var(--color-gray-600);
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.faq-category-chip:hover:not(.is-disabled) {
+    border-color: var(--color-black);
+    color: var(--color-black);
+}
+
+.faq-category-chip.active,
+.faq-category-chip.is-selected {
+    background: var(--color-black);
+    border-color: var(--color-black);
+    color: var(--color-white);
+}
+
+.faq-category-chip.is-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 .faq-list {
@@ -814,6 +893,15 @@ body {
     .help-center-action { width: 100%; justify-content: center; padding: 12px 18px; font-size: 13px; }
     .help-center-actions { width: 100%; }
 
+    .help-home-category-carousel {
+        gap: 8px;
+    }
+
+    .help-home-category-carousel .help-carousel-nav {
+        width: 36px;
+        height: 36px;
+    }
+
     .help-assistant-page .help-category-carousel {
         gap: 8px;
     }
@@ -854,8 +942,9 @@ body {
     }
     
     .help-center-faq { padding: 20px 16px; }
-    .faq-tabs { gap: 4px; }
-    .faq-tabs span { padding: 5px 10px; font-size: 12px; }
+    .faq-category-carousel { gap: 8px; }
+    .faq-category-nav { width: 32px; height: 32px; }
+    .faq-category-chip { padding: 7px 12px; font-size: 11px; }
     .faq-question { font-size: 13px; padding: 10px 4px; }
     .faq-answer { font-size: 12px; padding-left: 28px; }
     .help-faq-header { padding: 12px 16px; font-size: 13px; }
@@ -864,6 +953,28 @@ body {
 }
 
 @media (max-width: 480px) {
+    .help-home-category-carousel {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .help-home-category-carousel .help-carousel-viewport {
+        order: 1;
+    }
+
+    .help-home-category-carousel .help-carousel-nav {
+        width: 100%;
+        border-radius: var(--radius-pill);
+    }
+
+    .help-home-category-carousel .help-carousel-nav-prev {
+        order: 2;
+    }
+
+    .help-home-category-carousel .help-carousel-nav-next {
+        order: 3;
+    }
+
     .help-assistant-page .help-category-carousel {
         grid-template-columns: 1fr;
         gap: 10px;
@@ -884,6 +995,21 @@ body {
 
     .help-assistant-page .help-carousel-nav-next {
         order: 3;
+    }
+
+    .faq-category-carousel {
+        grid-template-columns: auto 1fr auto;
+        gap: 8px;
+    }
+
+    .faq-category-nav {
+        width: 30px;
+        height: 30px;
+    }
+
+    .faq-category-chip {
+        padding: 7px 10px;
+        font-size: 11px;
     }
     
     .help-card { 
@@ -926,7 +1052,10 @@ body {
 }
 
 .help-center-action:focus-visible,
+.help-home-category-carousel .help-carousel-nav:focus-visible,
 .help-assistant-page .help-carousel-nav:focus-visible,
+.faq-category-nav:focus-visible,
+.faq-category-chip:focus-visible,
 .faq-question:focus-visible,
 .help-card:focus-visible {
     outline: 2px solid var(--color-black);

@@ -46,8 +46,32 @@
         <div class="help-empty-state" data-help-search-empty hidden>No matching FAQs found.</div>
     </section>
 
-    <section class="help-center-grid" aria-label="Help Center categories" data-help-category-grid>
-        <div class="help-loading-state">Loading help topics...</div>
+    <section class="help-home-category-carousel" aria-label="Help Center categories">
+        <button
+            type="button"
+            class="help-carousel-nav help-carousel-nav-prev"
+            data-help-category-prev
+            aria-label="Show previous help categories">
+            <svg class="help-carousel-nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M11.75 4.75L6.5 10L11.75 15.25" />
+            </svg>
+        </button>
+
+        <div class="help-carousel-viewport" data-help-category-viewport>
+            <div class="help-center-grid help-carousel-track" data-help-category-grid>
+                <div class="help-loading-state">Loading help topics...</div>
+            </div>
+        </div>
+
+        <button
+            type="button"
+            class="help-carousel-nav help-carousel-nav-next"
+            data-help-category-next
+            aria-label="Show next help categories">
+            <svg class="help-carousel-nav-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M8.25 4.75L13.5 10L8.25 15.25" />
+            </svg>
+        </button>
     </section>
 
     <section class="help-center-faq loaded" aria-labelledby="popular-topics-heading">

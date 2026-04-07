@@ -525,6 +525,6 @@ C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\c2dea400d82a1722\NextHorizon\ob
 C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\c2dea400d82a1722\NextHorizon\obj\Debug\net10.0\NextHorizon.genruntimeconfig.cache
 C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\c2dea400d82a1722\NextHorizon\obj\Debug\net10.0\ref\NextHorizon.dll
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\8pse9jlq7t-{0}-xegv1wgifz-xegv1wgifz.gz
-C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\vrj7unavsv-{0}-geivh6gzby-geivh6gzby.gz
-C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\x0kvqvkj93-{0}-x3i268b9m2-x3i268b9m2.gz
-C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\cbqezynx2r-{0}-lembod0cv0-lembod0cv0.gz
+C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\vrj7unavsv-{0}-vn7jdd296j-vn7jdd296j.gz
+C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\x0kvqvkj93-{0}-gadi3ylmdb-gadi3ylmdb.gz
+C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\cbqezynx2r-{0}-72s3psuige-72s3psuige.gz

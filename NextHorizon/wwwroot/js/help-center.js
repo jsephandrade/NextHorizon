@@ -4,7 +4,20 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
+    const view = page.getAttribute("data-help-view");
     let csrfTokenPromise;
+    let homeCategoryPage = 0;
+    let homeVisibleCount = 4;
+    let homeVisibleCategories = [];
+
+    const homeCarousel = view === "index"
+        ? {
+            viewport: page.querySelector("[data-help-category-viewport]"),
+            grid: page.querySelector("[data-help-category-grid]"),
+            prev: page.querySelector("[data-help-category-prev]"),
+            next: page.querySelector("[data-help-category-next]"),
+        }
+        : null;
 
     const fetchJson = async (url, options) => {
         const response = await fetch(url, options);
@@ -165,13 +178,114 @@ document.addEventListener("DOMContentLoaded", () => {
         renderFaqItems(container, faqs, "help-faq-item", "help-faq-question");
     };
 
-    const renderHomeCategories = (categories) => {
-        const grid = page.querySelector("[data-help-category-grid]");
-        if (!grid) {
+    const setHomeCategoryMessage = (message, className) => {
+        if (!homeCarousel?.grid) {
             return;
         }
 
-        grid.innerHTML = "";
+        homeVisibleCategories = [];
+        homeCategoryPage = 0;
+        homeCarousel.grid.innerHTML = `<div class="${className}">${message}</div>`;
+        window.requestAnimationFrame(updateHomeCarouselLayout);
+    };
+
+    const getHomeVisibleCount = () => {
+        const width = window.innerWidth;
+        if (width <= 640) {
+            return 1;
+        }
+
+        if (width <= 900) {
+            return 2;
+        }
+
+        return 4;
+    };
+
+    const getHomeCarouselGap = () => {
+        if (!homeCarousel?.grid) {
+            return 10;
+        }
+
+        const styles = window.getComputedStyle(homeCarousel.grid);
+        const gap = Number.parseFloat(styles.columnGap || styles.gap || "10");
+        return Number.isFinite(gap) ? gap : 10;
+    };
+
+    const getHomeMaxPage = () => {
+        if (!homeVisibleCategories.length) {
+            return 0;
+        }
+
+        return Math.max(0, Math.ceil(homeVisibleCategories.length / homeVisibleCount) - 1);
+    };
+
+    const syncHomeCarouselControls = () => {
+        const maxPage = getHomeMaxPage();
+        const canSlide = homeVisibleCategories.length > homeVisibleCount;
+
+        if (homeCarousel?.prev) {
+            homeCarousel.prev.disabled = !canSlide || homeCategoryPage <= 0;
+        }
+
+        if (homeCarousel?.next) {
+            homeCarousel.next.disabled = !canSlide || homeCategoryPage >= maxPage;
+        }
+    };
+
+    const updateHomeCarouselPosition = () => {
+        if (!homeCarousel?.grid || !homeCarousel.viewport) {
+            return;
+        }
+
+        const viewportWidth = homeCarousel.viewport.clientWidth;
+        if (!viewportWidth) {
+            homeCarousel.grid.style.transform = "translateX(0px)";
+            syncHomeCarouselControls();
+            return;
+        }
+
+        const maxOffset = Math.max(0, homeCarousel.grid.scrollWidth - viewportWidth);
+        const requestedOffset = homeCategoryPage * viewportWidth;
+        const offset = Math.min(requestedOffset, maxOffset);
+        homeCarousel.grid.style.transform = `translateX(-${offset}px)`;
+        syncHomeCarouselControls();
+    };
+
+    function updateHomeCarouselLayout() {
+        if (!homeCarousel?.grid || !homeCarousel.viewport) {
+            return;
+        }
+
+        homeVisibleCount = getHomeVisibleCount();
+        homeCategoryPage = Math.min(homeCategoryPage, getHomeMaxPage());
+
+        const cards = Array.from(homeCarousel.grid.querySelectorAll(".help-card"));
+        if (!cards.length) {
+            homeCarousel.grid.style.transform = "translateX(0px)";
+            syncHomeCarouselControls();
+            return;
+        }
+
+        const viewportWidth = homeCarousel.viewport.clientWidth;
+        const gap = getHomeCarouselGap();
+        const cardWidth = Math.max(0, (viewportWidth - (gap * (homeVisibleCount - 1))) / homeVisibleCount);
+
+        cards.forEach((card) => {
+            card.style.flex = `0 0 ${cardWidth}px`;
+        });
+
+        updateHomeCarouselPosition();
+    }
+
+    const renderHomeCategories = (categories) => {
+        if (!homeCarousel?.grid) {
+            return;
+        }
+
+        homeVisibleCategories = categories;
+        homeCategoryPage = 0;
+        homeCarousel.grid.innerHTML = "";
 
         categories.forEach((category) => {
             const card = document.createElement("article");
@@ -201,8 +315,10 @@ document.addEventListener("DOMContentLoaded", () => {
             card.appendChild(iconWrap);
             card.appendChild(content);
             card.appendChild(link);
-            grid.appendChild(card);
+            homeCarousel.grid.appendChild(card);
         });
+
+        window.requestAnimationFrame(updateHomeCarouselLayout);
     };
 
     const renderFeaturedFaqs = (faqs) => {
@@ -285,18 +401,41 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadIndexPage = async () => {
         try {
             const home = await fetchJson("/api/help/home");
-            renderHomeCategories(home.categories || []);
+            const categories = home.categories || [];
+            if (categories.length) {
+                renderHomeCategories(categories);
+            } else {
+                setHomeCategoryMessage("No help topics are available right now.", "help-empty-state");
+            }
             renderFeaturedFaqs(home.featuredFaqs || []);
         } catch (error) {
-            const grid = page.querySelector("[data-help-category-grid]");
             const featured = page.querySelector("[data-help-featured-faqs]");
-            if (grid) {
-                grid.innerHTML = `<div class="help-error-state">${error.message}</div>`;
-            }
+            setHomeCategoryMessage(error.message, "help-error-state");
             if (featured) {
                 featured.innerHTML = `<div class="help-error-state">${error.message}</div>`;
             }
         }
+
+        homeCarousel?.prev?.addEventListener("click", () => {
+            if (homeCategoryPage <= 0) {
+                return;
+            }
+
+            homeCategoryPage -= 1;
+            updateHomeCarouselPosition();
+        });
+
+        homeCarousel?.next?.addEventListener("click", () => {
+            const maxPage = getHomeMaxPage();
+            if (homeCategoryPage >= maxPage) {
+                return;
+            }
+
+            homeCategoryPage += 1;
+            updateHomeCarouselPosition();
+        });
+
+        window.addEventListener("resize", updateHomeCarouselLayout);
 
         const input = page.querySelector("[data-help-search-input]");
         if (!input) {
@@ -494,7 +633,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    const view = page.getAttribute("data-help-view");
     if (view === "index") {
         loadIndexPage();
         return;
