@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace NextHorizon.Migrations
+namespace NextHorizon.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20260305033240_AddMessagingModule")]

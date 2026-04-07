@@ -11,7 +11,7 @@
     <style>
         /* ===== RESET & BASE ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Poppins', sans-serif; background-color: #f5f7fa; color: #1a1a1a; }
+        body { font-family: 'Poppins', sans-serif; background-color: #f5f7fa; color: #1a1a1a; font-size: 16px; }
 
         /* ===== LAYOUT ===== */
         .dashboard-container { display: flex; min-height: 100vh; }
@@ -26,6 +26,8 @@
             height: 100vh;
             overflow-y: auto;
             transition: all 0.3s ease;
+            font-size: 16px;
+            font-weight: 400;
         }
         .logo {
             display: flex;
@@ -52,6 +54,7 @@
             text-decoration: none;
             transition: all 0.3s ease;
             font-weight: 500;
+            font-size: 16px;
             border-radius: 8px;
         }
         .sidebar-nav a i { width: 20px; text-align: center; }
@@ -64,19 +67,21 @@
         }
 
         /* ===== MAIN CONTENT ===== */
-        .main-content { flex: 1; margin-left: 260px; background-color: #f5f7fa; margin-top: 80px; }
+        .main-content { flex: 1; margin-left: 260px; background-color: #f5f7fa; margin-top: 80px; width: 100%; overflow: hidden; }
 
         /* ===== TOP HEADER ===== */
         .top-header {
             background-color: white;
             padding: 20px 40px;
             display: flex;
-            width: 82%;
+            width: calc(100% - 260px);
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #e1e4e8;
-            position: absolute;
+            position: fixed;
             top: 0;
+            left: 260px;
+            right: 0;
             z-index: 50;
         }
         .section-title {
@@ -139,7 +144,7 @@
         tbody tr:hover { background: #fafafa; }
 
         /* ===== BADGES & BUTTONS ===== */
-        .badge { background: #1a1a1a; color: #fff; padding: 6px 14px; border-radius: 50px; font-size: 12px; font-weight: 600; }
+        .badge { width: 20px !important; height: 20px !important; min-width: 20px !important; padding: 0 !important; background: #1a1a1a; color: #fff; border-radius: 50% !important; font-size: 11px; font-weight: 600; display: inline-flex !important; align-items: center; justify-content: center; flex-shrink: 0; }
         .text-danger { color: #dc3545; text-decoration: none; font-size: 13px; }
         .text-danger:hover { text-decoration: underline; }
         .set-default { color: #1a1a1a; text-decoration: none; font-size: 13px; font-weight: 500; }
@@ -311,6 +316,8 @@
     || currentAction == "pendingpayout"
     || currentAction == "mybalance";
     var isAnalytics = currentAction == "analytics";
+    var currentController = (ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty).ToLowerInvariant();
+    var isProducts = currentController == "seller" && (currentAction == "index" || currentAction == "createproduct" || currentAction == "viewproduct" || currentAction == "viewratings" || currentAction == "sizeguide" || currentAction == "viewsizeguide");
 }
 <body class="@(isMessenger ? "seller-messenger-layout" : string.Empty)">
 
@@ -327,8 +334,8 @@
                     <li class="@(isOrders ? "active" : string.Empty)">
                         <a asp-controller="Dashboard" asp-action="OrderManagement"><i class="fas fa-shopping-bag"></i> Orders</a>
                     </li>
-                    <li>
-                        <a href="#"><i class="fas fa-box"></i> Products</a>
+                    <li class="@(isProducts ? "active" : string.Empty)">
+                        <a asp-controller="Seller" asp-action="Index"><i class="fas fa-box"></i> Products</a>
                     </li>
                     <li class="@(isMessenger ? "active" : string.Empty)">
                         <a asp-controller="Seller" asp-action="SellerMessenger"><i class="fas fa-envelope"></i> Message</a>

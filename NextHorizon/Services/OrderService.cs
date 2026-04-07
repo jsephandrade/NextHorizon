@@ -59,7 +59,7 @@ public async Task<bool> DeclineOrderAsync(int orderId, int sellerId, string reas
     await _context.SaveChangesAsync();
     return true;
 }
-public async Task<Order> GetOrderByIdAsync(int orderId, int sellerId)
+public async Task<Order?> GetOrderByIdAsync(int orderId, int sellerId)
 {
     var order = await _context.Orders
         .Include(o => o.OrderItems)
@@ -71,7 +71,7 @@ public async Task<Order> GetOrderByIdAsync(int orderId, int sellerId)
         foreach (var item in order.OrderItems)
         {
             // We search the ProductVariants table for a match on Product, Size, and Color
-            var variant = await _context.Set<ProductVariant>()
+            var variant = await _context.ProductVariants
                 .FirstOrDefaultAsync(v => v.ProductId == item.ProductID && 
                                           v.Size == item.Size && 
                                           v.Style == item.Color); // Note: SQL calls it 'Style', OrderItems calls it 'Color'
@@ -87,3 +87,4 @@ public async Task<Order> GetOrderByIdAsync(int orderId, int sellerId)
 }
     }
 }
+

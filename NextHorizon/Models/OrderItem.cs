@@ -24,7 +24,7 @@ namespace NextHorizon.Models
         public Order? Order { get; set; }
 
         [ForeignKey("ProductID")]
-        public Product? Product { get; set; }
+        public DbProduct? Product { get; set; }
     
     }
     

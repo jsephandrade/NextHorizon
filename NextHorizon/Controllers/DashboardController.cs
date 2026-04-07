@@ -3,6 +3,7 @@ using NextHorizon.Models;
 using NextHorizon.Services;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
 using Microsoft.Data.SqlClient;
 using System.Linq;
@@ -53,7 +54,7 @@ namespace NextHorizon.Controllers
 
         private string GetConnectionString()
         {
-            return _configuration.GetConnectionString("DefaultConnection");
+            return _configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("DefaultConnection is not configured.");
         }
 
         // ============== SELLER DASHBOARD ==============
@@ -74,10 +75,19 @@ namespace NextHorizon.Controllers
         return RedirectToAction("Login", "Account");
     }
 
-    var realOrders = await _orderService.GetOrdersBySellerAsync(currentSellerId.Value);
-    var couriers = await _orderService.GetCouriersAsync();
-    ViewBag.Couriers = couriers;
-    return View(realOrders);
+    try
+    {
+        var realOrders = await _orderService.GetOrdersBySellerAsync(currentSellerId.Value);
+        var couriers = await _orderService.GetCouriersAsync();
+        ViewBag.Couriers = couriers;
+        return View(realOrders);
+    }
+    catch (Exception ex) when (IsDatabaseConnectionException(ex))
+    {
+        ViewBag.Couriers = new List<Logistics>();
+        TempData["ErrorMessage"] = "Order data is temporarily unavailable because the database connection could not be established.";
+        return View(new List<Order>());
+    }
     }
     [HttpGet]
 public async Task<IActionResult> GetOrderDetails(int orderId)
@@ -134,7 +144,7 @@ public async Task<IActionResult> SaveOrderNote([FromBody] OrderNoteRequest reque
         await _context.SaveChangesAsync();
         return Json(new { success = true, message = "Note saved successfully!" });
     }
-    catch (Exception ex)
+    catch (Exception)
     {
         return Json(new { success = false, message = "Database error occurred." });
     }
@@ -223,7 +233,7 @@ public async Task<IActionResult> MarkOrderShipped([FromForm] MarkShippedRequest 
         await _context.SaveChangesAsync();
         return Json(new { success = true, message = "Order marked as shipped successfully!" });
     }
-    catch (Exception ex)
+    catch (Exception)
     {
         return Json(new { success = false, message = "Database error occurred." });
     }
@@ -231,7 +241,7 @@ public async Task<IActionResult> MarkOrderShipped([FromForm] MarkShippedRequest 
 public class ShipmentUpdateModel
 {
     public int OrderId { get; set; }
-    public string TrackingNumber { get; set; }
+    public string TrackingNumber { get; set; } = string.Empty;
 }
 // ==========================================
 // ORDER DETAILS
@@ -294,10 +304,10 @@ public async Task<IActionResult> OrderDetails(string id, CancellationToken cance
     {
         SellerName = sellerName,
         OrderId = order.OrderID.ToString(),                
-        BuyerName = order.FullName,
+        BuyerName = order.FullName ?? string.Empty,
         OrderDateTime = order.OrderDate,
-        PaymentStatus = order.PaymentMethod,
-        FulfillmentStatus = order.Status,
+        PaymentStatus = order.PaymentMethod ?? string.Empty,
+        FulfillmentStatus = order.Status ?? string.Empty,
         
         
         Courier = order.Courier ?? "Not Selected",
@@ -313,7 +323,7 @@ public async Task<IActionResult> OrderDetails(string id, CancellationToken cance
         {
             new OrderLineItemViewModel
             {
-                ProductName = order.ProductName,
+                ProductName = order.ProductName ?? string.Empty,
                 Quantity = order.Quantity,
                 UnitPrice = unitPrice
             }
@@ -419,8 +429,8 @@ public async Task<IActionResult> OrderDetails(string id, CancellationToken cance
         // ============== TRANSACTION HISTORY ==============
         public async Task<IActionResult> TransactionHistory(
             int page = 1, 
-            string type = null, 
-            string status = null, 
+            string? type = null, 
+            string? status = null, 
             DateTime? fromDate = null, 
             DateTime? toDate = null)
         {
@@ -438,8 +448,8 @@ public async Task<IActionResult> OrderDetails(string id, CancellationToken cance
             int sellerId, 
             int pageNumber, 
             int pageSize,
-            string type = null,
-            string status = null,
+            string? type = null,
+            string? status = null,
             DateTime? fromDate = null,
             DateTime? toDate = null)
         {
@@ -545,7 +555,7 @@ public async Task<IActionResult> OrderDetails(string id, CancellationToken cance
             }
         }
 
-        private async Task<object> GetTransactionDetailsFromSP(int sellerId, string referenceId)
+        private async Task<object?> GetTransactionDetailsFromSP(int sellerId, string referenceId)
         {
             using (var connection = new SqlConnection(GetConnectionString()))
             {
@@ -585,10 +595,10 @@ public async Task<IActionResult> OrderDetails(string id, CancellationToken cance
                                 else
                                 {
                                     // Parse additional details if they exist
-                                    object additionalDetails = null;
+                                    object additionalDetails = new Dictionary<string, string>();
                                     if (reader["AdditionalDetails"] != DBNull.Value)
                                     {
-                                        string details = reader["AdditionalDetails"].ToString();
+                                        string details = reader["AdditionalDetails"]?.ToString() ?? string.Empty;
                                         var detailsDict = new Dictionary<string, string>();
                                         
                                         // Parse the CONCAT string format: "Requested: ... | Processed: ... | Account: ..."
@@ -626,6 +636,13 @@ public async Task<IActionResult> OrderDetails(string id, CancellationToken cance
             return null;
         }
             
+        private static bool IsDatabaseConnectionException(Exception ex)
+        {
+            return ex is SqlException
+                || ex is TimeoutException
+                || ex is Win32Exception
+                || (ex.InnerException != null && IsDatabaseConnectionException(ex.InnerException));
+        }
         // ============== MY BALANCE ==============
         public async Task<IActionResult> MyBalance()
         {
@@ -1074,7 +1091,7 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
     }
 
     // ============== WITHDRAWAL HISTORY ==============
-    public async Task<IActionResult> WithdrawalHistory(int page = 1, string status = null)
+    public async Task<IActionResult> WithdrawalHistory(int page = 1, string? status = null)
     {
         var redirect = RedirectIfNotLoggedIn();
         if (redirect != null) return redirect;
@@ -1086,7 +1103,7 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
         return View(model);
     }
 
-    private async Task<WithdrawalHistoryViewModel> GetWithdrawalHistory(int sellerId, int pageNumber, int pageSize, string status = null)
+    private async Task<WithdrawalHistoryViewModel> GetWithdrawalHistory(int sellerId, int pageNumber, int pageSize, string? status = null)
     {
         var model = new WithdrawalHistoryViewModel
         {
@@ -1262,6 +1279,37 @@ public async Task<IActionResult> DeclineOrder([FromBody] DeclineRequest request)
     return Ok(new { message = "Order declined successfully and files cleaned up." });
 }
 
+        private async Task<List<Order>> GetRecentOrdersAsync(int sellerId, int top, CancellationToken cancellationToken)
+        {
+            var orders = new List<Order>();
+            using var connection = new SqlConnection(GetConnectionString());
+            using var command = new SqlCommand("sp_GetSellerRecentOrders", connection)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+            command.Parameters.AddWithValue("@SellerId", sellerId);
+            command.Parameters.AddWithValue("@Top", top);
+            await connection.OpenAsync(cancellationToken);
+            using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                orders.Add(new Order
+                {
+                    OrderID      = reader["OrderId"] != DBNull.Value ? Convert.ToInt32(reader["OrderId"]) : 0,
+                    FullName     = reader["Customer"].ToString() ?? string.Empty,
+                    ProductName  = reader["ProductName"].ToString() ?? string.Empty,
+                    ProductImage = reader["ProductImage"].ToString() ?? string.Empty,
+                    Size         = reader["Size"].ToString() ?? string.Empty,
+                    Sku          = reader["Sku"].ToString() ?? string.Empty,
+                    OrderDate    = reader["DateTime"] != DBNull.Value ? Convert.ToDateTime(reader["DateTime"]) : DateTime.Now,
+                    Courier      = reader["Courier"].ToString() ?? string.Empty,
+                    Status       = reader["Status"].ToString() ?? string.Empty,
+                    Amount       = reader["TotalAmount"] != DBNull.Value ? Convert.ToDecimal(reader["TotalAmount"]) : 0
+                });
+            }
+            return orders;
+        }
+
         private async Task<SellerDashboardViewModel> BuildSellerDashboardModelAsync(CancellationToken cancellationToken = default)
         {
             var sellerEmail = HttpContext.Session.GetString("SellerEmail");
@@ -1316,12 +1364,9 @@ public async Task<IActionResult> DeclineOrder([FromBody] DeclineRequest request)
             var t7D = _sellerPerformanceService.GetTopPerformingProductsAsync(sellerContext.SellerId, topCount: 10, from: now.AddDays(-7), cancellationToken: cancellationToken);
             var t1M = _sellerPerformanceService.GetTopPerformingProductsAsync(sellerContext.SellerId, topCount: 10, from: now.AddDays(-30), cancellationToken: cancellationToken);
             await Task.WhenAll(t1H, t1D, t7D, t1M);
-    int? currentSellerId = HttpContext.Session.GetInt32("SellerId");
-    var realOrders = new List<Order>();
-    if (currentSellerId != null)
-    {
-        realOrders = await _orderService.GetOrdersBySellerAsync(currentSellerId.Value);
-    }
+            var recentOrders = sellerContext.SellerId > 0
+                ? await GetRecentOrdersAsync(sellerContext.SellerId, 5, cancellationToken)
+                : new List<Order>();
             return new SellerDashboardViewModel
             {
                 SellerName = sellerContext.SellerName,
@@ -1339,7 +1384,7 @@ public async Task<IActionResult> DeclineOrder([FromBody] DeclineRequest request)
                 TotalRevenue = performance.TotalRevenue,
                 TotalVisits = 423,
                 MonthlyRevenueByYear = monthlyRevenue,
-                 RecentOrders = realOrders.Take(5).ToList(),
+                RecentOrders = recentOrders,
                 TopProducts = topProducts,
                 TopProductsByRange = new Dictionary<string, List<TopSellingProduct>>
                 {
@@ -1353,3 +1398,12 @@ public async Task<IActionResult> DeclineOrder([FromBody] DeclineRequest request)
         
     }
 }
+
+
+
+
+
+
+
+
+

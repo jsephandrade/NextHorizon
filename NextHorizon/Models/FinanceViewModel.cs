@@ -37,8 +37,7 @@ namespace NextHorizon.Models
         public int PageSize { get; set; }
         public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
         public List<FinanceTransactionViewModel> Transactions { get; set; } = new();
-        
-        // Filter properties
+
         public string? FilterType { get; set; }
         public string? FilterStatus { get; set; }
         public DateTime? FilterFromDate { get; set; }
@@ -55,22 +54,18 @@ namespace NextHorizon.Models
         public decimal TotalWithdrawn { get; set; }
         public int PendingPayoutCount { get; set; }
         public decimal TotalPendingWithdrawal { get; set; }
-        
-        // Add this property for recent transactions
         public List<FinanceTransactionViewModel> RecentTransactions { get; set; } = new();
     }
 
     public class TransactionDetailDto
     {
-        public string ReferenceId { get; set; }
+        public string ReferenceId { get; set; } = string.Empty;
         public DateTime TransactionDate { get; set; }
-        public string Type { get; set; }
-        public string Method { get; set; }
+        public string Type { get; set; } = string.Empty;
+        public string Method { get; set; } = string.Empty;
         public decimal Amount { get; set; }
-        public string Status { get; set; }
-        public string Source { get; set; }
-        public string AdditionalDetails { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public string Source { get; set; } = string.Empty;
+        public string AdditionalDetails { get; set; } = string.Empty;
     }
-
 }
-

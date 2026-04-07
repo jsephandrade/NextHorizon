@@ -11,6 +11,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="~/css/ordermanagement.css" />
 
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="order-page-alert">@TempData["ErrorMessage"]</div>
+}
+
 <div class="order-filters">
     <button type="button" class="order-filter-btn active" data-filter="all">All Orders</button>
     <button type="button" class="order-filter-btn" data-filter="Pending">Pending</button>
@@ -47,6 +52,7 @@
     </div>
 
 </div>
+
 
 <table class="order-table">
     <thead>
@@ -91,7 +97,7 @@
                 <td>@order.Quantity</td>
                 <td>₱@order.CalculatedTotal.ToString("N2")</td>
                 <td>
-                    <span class="status-badge @order.Status.ToLower().Replace(" ", "-")">
+                    <span class="status-badge @((order.Status ?? string.Empty).ToLower().Replace(" ", "-"))">
                         @order.Status
                     </span>
                 </td>

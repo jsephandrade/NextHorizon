@@ -132,11 +132,11 @@
                         <tr style="border-bottom: 1px solid #f3f4f6;">
                             <td style="padding: 20px;">
                                 <div style="display: flex; align-items: flex-start; gap: 15px;">
-                                    <img src="@(string.IsNullOrEmpty(item.Product?.Image) ? "https://picsum.photos/seed/" + item.ProductID + "/50" : item.Product.Image)" 
+                                    <img src="@(string.IsNullOrEmpty(item.Product?.ImagePath) ? "https://picsum.photos/seed/" + item.ProductID + "/50" : item.Product.ImagePath)" 
                                          style="border-radius: 8px; width: 60px; height: 60px; object-fit: cover; border: 1px solid #f3f4f6;" />
                                     
                                     <div>
-                                        <strong style="display: block; margin-bottom: 4px; color: #111827;">@(item.Product?.Name ?? "Product Name")</strong>
+                                        <strong style="display: block; margin-bottom: 4px; color: #111827;">@(item.Product?.ProductName ?? "Product Name")</strong>
                                         
                                         <div style="font-size: 0.8rem; color: #6b7280; margin-bottom: 4px;">
                                             <span style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px; margin-right: 5px;">

@@ -17,7 +17,7 @@ namespace NextHorizon.Models
 
     public class WithdrawalDetailsViewModel
     {
-        public string SellerName { get; set; }
+        public string SellerName { get; set; } = string.Empty;
         public decimal AvailableBalance { get; set; }
         public decimal PendingBalance { get; set; }
         public decimal TotalEarned { get; set; }
@@ -30,7 +30,7 @@ namespace NextHorizon.Models
     {
         public long WithdrawalId { get; set; }
         public decimal Amount { get; set; }
-        public string Status { get; set; }
+        public string Status { get; set; } = string.Empty;
         public DateTime RequestedAt { get; set; }
 
         // Helper property for formatted amount
@@ -62,7 +62,7 @@ namespace NextHorizon.Models
         public int CurrentPage { get; set; }
         public int PageSize { get; set; }
         public int TotalCount { get; set; }
-        public string FilterStatus { get; set; }
+        public string? FilterStatus { get; set; }
         public List<WithdrawalHistoryItem> Withdrawals { get; set; } = new();
     }
 
@@ -70,7 +70,7 @@ namespace NextHorizon.Models
     {
         public long WithdrawalId { get; set; }
         public decimal Amount { get; set; }
-        public string Status { get; set; }
+        public string Status { get; set; } = string.Empty;
         public DateTime RequestedAt { get; set; }
         public DateTime? ProcessedAt { get; set; }
         

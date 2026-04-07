@@ -30,7 +30,35 @@ window.applyOrderFilters = function() {
         }
     });
 };
-let selectedNoteOrderId = '';
+function applyOrderFilters() {
+    const searchInput = document.getElementById('orderSearch');
+    const searchValue = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+    const categorySelect = document.getElementById('categoryFilter');
+    const categoryValue = categorySelect ? categorySelect.value : 'all';
+
+    let currentStatus = 'all';
+    if (typeof activeStatusFilter !== 'undefined') {
+        currentStatus = activeStatusFilter.toLowerCase().trim();
+    }
+
+    const rows = document.querySelectorAll('.order-row');
+    
+    rows.forEach(row => {
+        const status = (row.dataset.status || '').toLowerCase().trim();
+        const rowText = row.innerText.toLowerCase();
+
+        const statusMatch = currentStatus === 'all' || status === currentStatus;
+        const categoryMatch = categoryValue === 'all';
+        const searchMatch = !searchValue || rowText.includes(searchValue);
+
+        if (statusMatch && categoryMatch && searchMatch) {
+            row.style.display = ''; 
+        } else {
+            row.style.display = 'none'; 
+        }
+    });
+}let selectedNoteOrderId = '';
 let selectedNoteCustomer = '';
 let selectedReviewOrderId = '';
 let selectedShipmentOrderId = '';
@@ -429,6 +457,7 @@ document.addEventListener('DOMContentLoaded', function () {
             applyOrderFilters();
         });
     });
+
 
     // 2. Bind the Search Bar and Category Dropdown
     document.getElementById('orderSearch')?.addEventListener('input', applyOrderFilters);
@@ -1015,3 +1044,5 @@ function removePreview() {
     fileInput.value = ""; // Clears the file selection
     container.style.display = 'none'; // Hides the preview box
 }
+
+

@@ -168,14 +168,15 @@ public sealed class SellerPerformanceService : ISellerPerformanceService
         const string query = @"
             SELECT TOP (@TopCount)
                 COALESCE(NULLIF(LTRIM(RTRIM(p.ProductName)), ''), CONCAT('Product #', oi.ProductID)) AS ProductName,
-                CONCAT('PID-', oi.ProductID) AS Sku,
+                ISNULL(MIN(pv.SKU), '') AS Sku,
                 COALESCE(NULLIF(LTRIM(RTRIM(p.Category)), ''), 'General') AS Category,
-                'https://via.placeholder.com/80?text=Product' AS ImageUrl,
+                COALESCE(MIN(NULLIF(LTRIM(RTRIM(p.ImagePath)), '')), '') AS ImageUrl,
                 SUM(ISNULL(oi.Quantity, 1)) AS UnitsSold,
                 SUM(ISNULL(oi.Quantity, 1) * ISNULL(oi.UnitPrice, 0)) AS RevenueGenerated
             FROM dbo.Orders o
-            INNER JOIN dbo.OrderItems oi ON oi.OrderID = o.OrderID
+            INNER JOIN dbo.OrderItems oi ON oi.OrderID = o.OrderID AND oi.ProductID IS NOT NULL
             LEFT JOIN dbo.Products p ON p.ProductId = oi.ProductID
+            LEFT JOIN dbo.ProductVariants pv ON pv.ProductId = oi.ProductID AND pv.Size = oi.Size
             WHERE o.seller_id = @SellerId
                 AND ISNULL(o.Status, '') <> 'Cancelled'
                 AND (@From IS NULL OR o.OrderDate >= @From)
@@ -217,8 +218,8 @@ public sealed class SellerPerformanceService : ISellerPerformanceService
             SELECT TOP (@TopCount)
                 o.ProductName AS ProductName,
                 '-' AS Sku,
-                'General' AS Category,
-                'https://via.placeholder.com/80?text=Product' AS ImageUrl,
+                COALESCE((SELECT TOP 1 Category FROM dbo.Products WHERE ProductName = o.ProductName), 'General') AS Category,
+                '' AS ImageUrl,
                 SUM(ISNULL(o.Quantity, 1)) AS UnitsSold,
                 SUM(ISNULL(o.TotalAmount, 0)) AS RevenueGenerated
             FROM dbo.Orders o
@@ -256,10 +257,9 @@ public sealed class SellerPerformanceService : ISellerPerformanceService
 
     private static string NormalizeImageUrl(string? raw)
     {
-        const string fallback = "https://via.placeholder.com/80?text=Product";
         if (string.IsNullOrWhiteSpace(raw))
         {
-            return fallback;
+            return string.Empty;
         }
 
         var normalized = raw.Trim().Replace('\\', '/');
@@ -282,3 +282,4 @@ public sealed class SellerPerformanceService : ISellerPerformanceService
         return "/" + normalized;
     }
 }
+

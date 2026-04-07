@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace NextHorizon.Models;
+
 public sealed class Product
 {
     [Column("ProductId")]

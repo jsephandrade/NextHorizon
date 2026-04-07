@@ -71,7 +71,7 @@ namespace NextHorizon.Services
 
                 _logger.LogInformation($"Found {ghostOrders.Count} ghost orders to auto-complete. Processing...");
 
-                string connectionString = configuration.GetConnectionString("DefaultConnection");
+                string connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("DefaultConnection is not configured.");
 
                 foreach (var order in ghostOrders)
                 {

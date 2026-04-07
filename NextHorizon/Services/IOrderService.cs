@@ -9,6 +9,6 @@ namespace NextHorizon.Services
 Task<bool> AcceptOrderAsync(int orderId, int sellerId, int logisticsId);
         Task<List<Logistics>> GetCouriersAsync();
         Task<bool> DeclineOrderAsync(int orderId, int sellerId, string reason);
-        Task<Order> GetOrderByIdAsync(int orderId, int sellerId);
+        Task<Order?> GetOrderByIdAsync(int orderId, int sellerId);
     }
 }

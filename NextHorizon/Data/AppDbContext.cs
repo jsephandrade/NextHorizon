@@ -19,15 +19,22 @@ public sealed class AppDbContext : DbContext
     public DbSet<ConversationMessage> ConversationMessages => Set<ConversationMessage>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
-    public DbSet<Product> Products => Set<Product>();
-    public DbSet<Logistics> Logistics => Set<Logistics>(); // Fixed this line to match the rest!
-public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
+    public DbSet<DbProduct> Products => Set<DbProduct>();
+    public DbSet<DbProductVariant> ProductVariants => Set<DbProductVariant>();
+    public DbSet<Logistics> Logistics => Set<Logistics>();
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         base.OnConfiguring(optionsBuilder);
         // Removed the temporary warning suppressor so your app is clean for production!
     }
 
+    public DbSet<DbProductColorImage> ProductColorImages => Set<DbProductColorImage>();
+    public DbSet<DbReview> Reviews => Set<DbReview>();
+    public DbSet<DbReviewImage> ReviewImages => Set<DbReviewImage>();
+    public DbSet<DbSizeGuide> SizeGuides => Set<DbSizeGuide>();
+    public DbSet<DbSizeGuideImage> SizeGuideImages => Set<DbSizeGuideImage>();
+    public DbSet<DbPromotion> Promotions => Set<DbPromotion>();
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);  
@@ -45,7 +52,7 @@ public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
             .Property(o => o.UnitPrice)
             .HasColumnType("decimal(18,2)");
 
-        modelBuilder.Entity<Product>()
+        modelBuilder.Entity<DbProduct>()
             .Property(p => p.Price)
             .HasColumnType("decimal(18,2)");
 
@@ -255,3 +262,6 @@ public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
         });
     }
 }
+
+
+
