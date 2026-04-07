@@ -21,9 +21,11 @@ document.addEventListener("DOMContentLoaded", () => {
         sessionResolveError: "Unable to resolve the current Live Agent conversation right now.",
         botTypingDelay: 500,
         agentTypingDelay: 1000,
+        liveAgentPollIntervalMs: 3000,
         maxSearchSuggestions: 3,
         maxCategorySuggestions: 5,
         quickActionLimit: 6,
+        chatScrollBottomThreshold: 48,
         defaultInputPlaceholder: "Type your message here...",
         categoryRequiredPlaceholder: "Select a category first...",
         agentInputPlaceholder: "Describe your concern for the selected category...",
@@ -51,6 +53,9 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         csrfTokenPromise: null,
         isTyping: false,
+        liveAgentPollHandle: null,
+        isPollingLiveAgentSession: false,
+        liveAgentSessionSignature: "",
     };
 
     const elements = {
@@ -122,6 +127,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+    const isChatNearBottom = () => {
+        if (!elements.chatBox) {
+            return true;
+        }
+
+        const remainingScroll = elements.chatBox.scrollHeight - elements.chatBox.scrollTop - elements.chatBox.clientHeight;
+        return remainingScroll <= config.chatScrollBottomThreshold;
+    };
+
     const hasSelectedAgentCategory = () => !!state.agentTransaction.selectedCategorySlug;
     const hasAssignedAgent = () => !!state.agentTransaction.hasAssignedAgent;
 
@@ -167,7 +181,18 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.sendBtn.disabled = !hasCategory;
     };
 
+    const stopLiveAgentPolling = () => {
+        if (state.liveAgentPollHandle) {
+            window.clearInterval(state.liveAgentPollHandle);
+            state.liveAgentPollHandle = null;
+        }
+
+        state.isPollingLiveAgentSession = false;
+    };
+
     const resetAgentTransaction = () => {
+        stopLiveAgentPolling();
+        state.liveAgentSessionSignature = "";
         state.agentTransaction = {
             selectedCategorySlug: "",
             selectedCategoryTitle: "",
@@ -313,19 +338,25 @@ document.addEventListener("DOMContentLoaded", () => {
         return `<div class="chat-message agent">${escapeHtml(spielText)}</div>`;
     };
 
-    const renderConversation = (mode) => {
+    const renderConversation = (mode, options = {}) => {
         if (!elements.chatBox) {
             return;
         }
 
         const messages = state.conversations[mode];
+        const shouldStickToBottom = options.forceScroll ?? isChatNearBottom();
+        const previousScrollTop = elements.chatBox.scrollTop;
         const endedNoticeMarkup = createEndedConversationNoticeMarkup(mode);
         const conversationStartedMarkup = createConversationStartedMarkup(mode);
         const assignedAgentSpielMarkup = createAssignedAgentSpielMarkup(mode, messages);
         if (!messages.length) {
             const greeting = getGreeting(mode);
             elements.chatBox.innerHTML = `${endedNoticeMarkup}${conversationStartedMarkup}${assignedAgentSpielMarkup}<div class="chat-message ${mode}">${escapeHtml(greeting)}</div>`;
-            scrollToBottom();
+            if (shouldStickToBottom) {
+                scrollToBottom();
+            } else {
+                elements.chatBox.scrollTop = previousScrollTop;
+            }
             return;
         }
 
@@ -338,7 +369,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 return `<div class="chat-message ${message.type}">${escapeHtml(message.text || "")}</div>`;
             })
             .join("");
-        scrollToBottom();
+        if (shouldStickToBottom) {
+            scrollToBottom();
+        } else {
+            elements.chatBox.scrollTop = previousScrollTop;
+        }
     };
 
     const addTextMessage = (mode, type, text) => {
@@ -390,6 +425,26 @@ document.addEventListener("DOMContentLoaded", () => {
         (senderRole || "").toLowerCase() === "consumer" ? "user" : "agent"
     );
 
+    const buildLiveAgentSessionSignature = (session) => {
+        if (!session || !session.sessionId) {
+            return "";
+        }
+
+        const messages = Array.isArray(session.messages) ? session.messages : [];
+        const lastMessage = messages.length ? messages[messages.length - 1] : null;
+
+        return JSON.stringify({
+            sessionId: session.sessionId,
+            updatedAt: session.updatedAt || "",
+            hasAssignedAgent: !!session.hasAssignedAgent,
+            assignedAgentName: session.assignedAgentName || "",
+            lastMessageId: lastMessage?.messageId || 0,
+            lastMessageCreatedAt: lastMessage?.createdAt || "",
+            lastMessageText: lastMessage?.messageText || "",
+            messageCount: messages.length,
+        });
+    };
+
     const setAgentConversationFromTranscript = (messages) => {
         state.conversations.agent = Array.isArray(messages)
             ? messages.map((message) => ({
@@ -427,6 +482,7 @@ document.addEventListener("DOMContentLoaded", () => {
         state.agentTransaction.assignedAgentName = session.assignedAgentName || "";
         state.agentTransaction.isStartingSession = false;
         state.agentTransaction.isSendingMessage = false;
+        state.liveAgentSessionSignature = buildLiveAgentSessionSignature(session);
         setAgentConversationFromTranscript(session.messages);
         syncQuickActions();
         syncAgentComposerState();
@@ -599,6 +655,65 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
+    const startLiveAgentPolling = () => {
+        if (state.liveAgentPollHandle || !state.agentTransaction.sessionId) {
+            return;
+        }
+
+        state.liveAgentPollHandle = window.setInterval(() => {
+            void pollCurrentLiveAgentSession();
+        }, config.liveAgentPollIntervalMs);
+    };
+
+    const syncAgentSessionEndedFromPolling = async () => {
+        resetAgentTransaction();
+        state.conversations.agent = [];
+        await restoreLastEndedLiveAgentNotice();
+        updateModeUi(state.currentMode);
+        if (state.currentMode === "agent") {
+            renderConversation("agent", { forceScroll: true });
+        }
+    };
+
+    const pollCurrentLiveAgentSession = async () => {
+        if (state.isPollingLiveAgentSession || !state.agentTransaction.sessionId || state.agentTransaction.isSendingMessage) {
+            return;
+        }
+
+        const requestedSessionId = state.agentTransaction.sessionId;
+        state.isPollingLiveAgentSession = true;
+
+        try {
+            const session = await getCurrentLiveAgentSession();
+            if (state.agentTransaction.sessionId !== requestedSessionId) {
+                return;
+            }
+
+            if (!session || !session.sessionId) {
+                await syncAgentSessionEndedFromPolling();
+                return;
+            }
+
+            const nextSignature = buildLiveAgentSessionSignature(session);
+            if (!nextSignature || nextSignature === state.liveAgentSessionSignature) {
+                return;
+            }
+
+            const shouldStickToBottom = state.currentMode === "agent" ? isChatNearBottom() : false;
+            applyLiveAgentSession(session);
+            updateModeUi(state.currentMode);
+            if (state.currentMode === "agent") {
+                renderConversation("agent", { forceScroll: shouldStickToBottom });
+            }
+        } catch (error) {
+            if (window.console && typeof window.console.warn === "function") {
+                window.console.warn("Unable to refresh the current Live Agent session.", error);
+            }
+        } finally {
+            state.isPollingLiveAgentSession = false;
+        }
+    };
+
     const selectFaq = (question, answer, mode = state.currentMode) => {
         if (!question || !answer) {
             return;
@@ -665,6 +780,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const session = await createLiveAgentSession(slug);
             applyLiveAgentSession(session);
+            startLiveAgentPolling();
             return (session.categorySlug || slug) === slug;
         } catch (error) {
             addTextMessage("agent", "agent", error.message || config.sessionCreateError);
@@ -752,6 +868,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 state.agentTransaction.hasAssignedAgent = !!response.hasAssignedAgent;
                 state.agentTransaction.assignedAgentName = response.assignedAgentName || "";
                 state.agentTransaction.supportFaqId = response.supportFaqId || state.agentTransaction.supportFaqId;
+                state.liveAgentSessionSignature = buildLiveAgentSessionSignature({
+                    sessionId: response.sessionId || state.agentTransaction.sessionId,
+                    updatedAt: response.updatedAt,
+                    hasAssignedAgent: response.hasAssignedAgent,
+                    assignedAgentName: response.assignedAgentName,
+                    messages: response.messages,
+                });
                 appendAgentTranscriptMessages(response.messages, text);
                 updateModeUi("agent");
                 syncAgentComposerState();
@@ -827,6 +950,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             applyLiveAgentSession(session);
+            startLiveAgentPolling();
             state.currentMode = "agent";
             updateModeUi("agent");
             renderConversation("agent");
@@ -910,6 +1034,7 @@ document.addEventListener("DOMContentLoaded", () => {
             selectFaq(button.dataset.chatQuestion || "", button.dataset.chatAnswer || "", state.currentMode);
         });
 
+        window.addEventListener("beforeunload", stopLiveAgentPolling);
     };
 
     const initialize = async () => {

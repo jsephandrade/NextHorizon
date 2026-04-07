@@ -71,6 +71,19 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.faqList.innerHTML = `<div class="${className}">${message}</div>`;
     };
 
+    const getMinimumChatHeight = () => {
+        const width = window.innerWidth;
+        if (width <= 640) {
+            return 400;
+        }
+
+        if (width <= 900) {
+            return 470;
+        }
+
+        return 560;
+    };
+
     const scheduleChatViewportSync = () => {
         if (chatViewportFrame) {
             return;
@@ -90,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const chatTop = elements.chat.getBoundingClientRect().top;
             const topOffset = Math.max(chatTop, headerHeight + 16);
             const availableHeight = Math.floor(viewportHeight - topOffset - Math.max(16, pageBottomPadding));
-            const clampedHeight = Math.max(220, availableHeight);
+            const clampedHeight = Math.max(getMinimumChatHeight(), availableHeight);
 
             page.style.setProperty("--help-chat-height", `${clampedHeight}px`);
         });
