@@ -308,13 +308,22 @@
         <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
         <span>Please select a courier before accepting this order.</span>
             </div>
-        </div> <div class="premium-footer">
-          <button type="button" class="btn-outline-danger" onclick="openDeclineModal(document.getElementById('summaryOrderId').innerText)">
-    Decline Order
-</button>
-            <button class="btn-primary" onclick="confirmAndAcceptOrder()">Confirm & Accept</button>
-        </div>
+        </div> 
+       <div class="premium-footer" style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 10px; width: 100%; padding: 16px 24px; background: #fff; border-top: 1px solid #e5e7eb;">
+    
+    <button type="button" 
+            onclick="openDeclineModal(document.getElementById('summaryOrderId').innerText)" 
+            style="flex: 1; padding: 10px 16px; font-size: 13px; font-weight: 500; display: flex; justify-content: center; gap: 8px; align-items: center; border: none; color: #000; background: #e5e5e5; border-radius: 6px; cursor: pointer; white-space: nowrap; transition: background 0.2s ease;"> 
+        <i class="fa-solid fa-xmark"></i> Decline
+    </button>
 
+    <button type="button" 
+            onclick="confirmAndAcceptOrder()" 
+            style="flex: 1; padding: 10px 16px; font-size: 13px; font-weight: 500; display: flex; justify-content: center; gap: 8px; align-items: center; border: none; border-radius: 6px; background-color: #000; color: #fff; cursor: pointer; white-space: nowrap; transition: background 0.2s ease;"> 
+        <i class="fa-solid fa-check"></i> Accept
+    </button>
+    
+</div>
     </div>
     </div>
 </div>
@@ -569,10 +578,12 @@
             <p><strong>Total:</strong> <span id="returnInfoTotal">0.00</span></p>
             <p><strong>Courier:</strong> <span id="returnInfoCourier">J&amp;T Express</span></p>
             <p><strong>Tracking #:</strong> <span id="returnInfoTracking">123456789</span></p>
+             <!-- TO DO static to dynamic -->
             <div class="bw-proof-block">
                 <p class="bw-section-title">Proof</p>
                 <img id="returnInfoProofImage" class="bw-proof-image" src="https://picsum.photos/seed/return-proof-1/360/220" alt="Return proof" />
             </div>
+           
             <div class="bw-note-block">
                 <p class="bw-section-title">Note</p>
                 <p id="returnInfoNote">Package was sent back because the buyer could not be reached.</p>
