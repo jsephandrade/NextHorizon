@@ -79,7 +79,7 @@
         .ToList();
 
     var monthlyRevenueByYear = Model.MonthlyRevenueByYear
-        .Where(entry => entry.Value is { Count: > 0 })
+        .Where(entry => entry.Value != null && entry.Value.Any(v => v > 0))
         .OrderByDescending(entry => entry.Key)
         .ToList();
     var revenueDataJson = JsonSerializer.Serialize(
