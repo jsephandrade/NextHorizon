@@ -1133,3 +1133,22 @@
         max-height: 180px;
     }
 }
+
+.order-empty-row td {
+    padding: 24px 16px;
+    text-align: center;
+}
+
+.order-empty-state {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 72px;
+    padding: 14px 18px;
+    border: 1px dashed #d1d5db;
+    border-radius: 10px;
+    background: #f9fafb;
+    color: #4b5563;
+    font-size: 13px;
+    font-weight: 500;
+}

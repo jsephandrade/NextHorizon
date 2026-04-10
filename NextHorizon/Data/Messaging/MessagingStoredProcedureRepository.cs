@@ -329,7 +329,7 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                     @AttachmentData,
                     @AttachmentContentType,
                     @AttachmentFileName,
-                    SYSUTCDATETIME(),
+                    SYSDATETIME(),
                     0
                 );
 
@@ -464,14 +464,14 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                 """
                 UPDATE dbo.MessagingConversations
                 SET BuyerLastReadAt = CASE
-                        WHEN @ActorConsumerID IS NOT NULL AND BuyerUserId = @ActorConsumerID THEN SYSUTCDATETIME()
+                        WHEN @ActorConsumerID IS NOT NULL AND BuyerUserId = @ActorConsumerID THEN SYSDATETIME()
                         ELSE BuyerLastReadAt
                     END,
                     SellerLastReadAt = CASE
-                        WHEN @ActorSellerID IS NOT NULL AND SellerUserId = @ActorSellerID THEN SYSUTCDATETIME()
+                        WHEN @ActorSellerID IS NOT NULL AND SellerUserId = @ActorSellerID THEN SYSDATETIME()
                         ELSE SellerLastReadAt
                     END,
-                    UpdatedAt = SYSUTCDATETIME()
+                    UpdatedAt = SYSDATETIME()
                 WHERE ConversationId = @ConversationID
                   AND (
                         (@ActorConsumerID IS NOT NULL AND BuyerUserId = @ActorConsumerID)
@@ -566,8 +566,8 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                 NULL,
                 NULL,
                 NULL,
-                SYSUTCDATETIME(),
-                SYSUTCDATETIME()
+                SYSDATETIME(),
+                SYSDATETIME()
             );
             """;
         insertCommand.CommandType = CommandType.Text;
@@ -860,5 +860,6 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
         command.Parameters.Add(parameter);
     }
 }
+
 
 

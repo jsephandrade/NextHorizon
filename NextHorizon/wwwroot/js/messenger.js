@@ -128,7 +128,7 @@
     }
 
     function formatTime(value) {
-        const date = parseUtcDate(value);
+        const date = parseServerDate(value);
         if (Number.isNaN(date.getTime())) {
             return "";
         }
@@ -137,7 +137,7 @@
     }
 
     function formatDateTime(value) {
-        const date = parseUtcDate(value);
+        const date = parseServerDate(value);
         if (Number.isNaN(date.getTime())) {
             return "";
         }
@@ -145,7 +145,7 @@
         return date.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
     }
 
-    function parseUtcDate(value) {
+    function parseServerDate(value) {
         if (!value) {
             return new Date("");
         }
@@ -159,8 +159,7 @@
             return new Date("");
         }
 
-        const hasTimeZone = /([zZ]|[+\-]\d{2}:\d{2})$/.test(source);
-        return new Date(hasTimeZone ? source : source + "Z");
+        return new Date(source);
     }
 
     function attachmentExtension(value) {
@@ -855,6 +854,7 @@
     refreshConversations(true);
     startPolling();
 })();
+
 
 
 

@@ -646,13 +646,13 @@ public sealed class MessagesController : ControllerBase
             CanReply = currentUser.HasMessagingRole,
             ContextType = summary.ContextType == ConversationContextType.Order ? "order" : "general",
             OrderId = summary.OrderId,
-            LastMessageAt = AsUtc(summary.LastMessageAt),
-            BuyerLastReadAt = AsUtc(summary.BuyerLastReadAt),
-            SellerLastReadAt = AsUtc(summary.SellerLastReadAt),
+            LastMessageAt = summary.LastMessageAt,
+            BuyerLastReadAt = summary.BuyerLastReadAt,
+            SellerLastReadAt = summary.SellerLastReadAt,
             LastMessagePreview = summary.LastMessagePreview,
             UnreadCount = summary.UnreadCount,
-            CreatedAt = AsUtc(summary.CreatedAt),
-            UpdatedAt = AsUtc(summary.UpdatedAt),
+            CreatedAt = summary.CreatedAt,
+            UpdatedAt = summary.UpdatedAt,
         };
     }
 
@@ -667,18 +667,12 @@ public sealed class MessagesController : ControllerBase
                 ? BuildAttachmentUrl(item.MessageId, scope)
                 : item.AttachmentUrl,
             HasAttachment = item.HasStoredAttachment || !string.IsNullOrWhiteSpace(item.AttachmentUrl),
-            SentAt = AsUtc(item.SentAt),
+            SentAt = item.SentAt,
             IsDeleted = item.IsDeleted,
         };
 
     private static string BuildAttachmentUrl(long messageId, ConversationActorScope scope)
         => $"/api/messages/messages/{messageId}/attachment?role={(scope == ConversationActorScope.Seller ? "seller" : "consumer")}";
-
-    private static DateTime AsUtc(DateTime value)
-        => value.Kind == DateTimeKind.Utc ? value : DateTime.SpecifyKind(value, DateTimeKind.Utc);
-
-    private static DateTime? AsUtc(DateTime? value)
-        => value.HasValue ? AsUtc(value.Value) : null;
 
     private static string BuildConsumerDisplayName(ConsumerRef consumer)
     {
@@ -696,6 +690,7 @@ public sealed class MessagesController : ControllerBase
         return consumer.Username?.Trim() ?? string.Empty;
     }
 }
+
 
 
 

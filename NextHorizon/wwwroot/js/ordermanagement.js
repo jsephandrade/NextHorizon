@@ -18,9 +18,14 @@ window.applyOrderFilters = function() {
     rows.forEach(row => {
         const status = (row.dataset.status || '').toLowerCase().trim();
         const rowText = row.innerText.toLowerCase();
+        const rowCategories = (row.dataset.categories || '')
+            .split('|')
+            .map(category => category.toLowerCase().trim())
+            .filter(Boolean);
 
         const statusMatch = currentStatus === 'all' || status === currentStatus;
-        const categoryMatch = categoryValue === 'all';
+        const categoryMatch = categoryValue === 'all'
+            || rowCategories.includes(categoryValue.toLowerCase().trim());
         const searchMatch = !searchValue || rowText.includes(searchValue);
 
         if (statusMatch && categoryMatch && searchMatch) {
@@ -47,9 +52,14 @@ function applyOrderFilters() {
     rows.forEach(row => {
         const status = (row.dataset.status || '').toLowerCase().trim();
         const rowText = row.innerText.toLowerCase();
+        const rowCategories = (row.dataset.categories || '')
+            .split('|')
+            .map(category => category.toLowerCase().trim())
+            .filter(Boolean);
 
         const statusMatch = currentStatus === 'all' || status === currentStatus;
-        const categoryMatch = categoryValue === 'all';
+        const categoryMatch = categoryValue === 'all'
+            || rowCategories.includes(categoryValue.toLowerCase().trim());
         const searchMatch = !searchValue || rowText.includes(searchValue);
 
         if (statusMatch && categoryMatch && searchMatch) {
@@ -88,9 +98,14 @@ function applyOrderFilters() {
     rows.forEach(row => {
         const status = (row.dataset.status || '').toLowerCase().trim();
         const rowText = row.innerText.toLowerCase();
+        const rowCategories = (row.dataset.categories || '')
+            .split('|')
+            .map(category => category.toLowerCase().trim())
+            .filter(Boolean);
 
         const statusMatch = currentStatus === 'all' || status === currentStatus;
-        const categoryMatch = categoryValue === 'all';
+        const categoryMatch = categoryValue === 'all'
+            || rowCategories.includes(categoryValue.toLowerCase().trim());
         const searchMatch = !searchValue || rowText.includes(searchValue);
 
         // Show if it matches all criteria, hide if it doesn't
@@ -630,24 +645,31 @@ function showToast(message, type = 'success') {
 async function confirmAndAcceptOrder() {
     const summaryOrderIdElement = document.getElementById("summaryOrderId");
     if (!summaryOrderIdElement) {
-        alert("Unable to find order ID. Please refresh and try again.");
+        showToast("Unable to find order ID. Please refresh and try again.", "error");
         return;
     }
 
     const orderIdText = summaryOrderIdElement.innerText;
     const orderId = Number.parseInt(orderIdText.replace("ORD-", "").trim(), 10);
     if (Number.isNaN(orderId)) {
-        alert("Invalid order ID. Cannot confirm order.");
+        showToast("Invalid order ID. Cannot confirm order.", "error");
         return;
     }
 
-    const courierDropdown = document.getElementById("courierSelect"); 
-    const selectedCourierId = courierDropdown.value;
+    const courierDropdown = document.getElementById("courierSelect");
+    const selectedCourierId = courierDropdown?.value;
+    const acceptButton = document.querySelector('#orderSummaryModal button[onclick="confirmAndAcceptOrder()"]');
+    const originalButtonHtml = acceptButton ? acceptButton.innerHTML : "";
 
     if (!selectedCourierId) {
         document.getElementById("courierWarning").style.display = "flex";
-        courierDropdown.classList.add("input-error");
-        return; 
+        courierDropdown?.classList.add("input-error");
+        return;
+    }
+
+    if (acceptButton) {
+        acceptButton.disabled = true;
+        acceptButton.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Accepting...';
     }
 
     try {
@@ -658,7 +680,7 @@ async function confirmAndAcceptOrder() {
             },
             body: JSON.stringify({
                 OrderId: orderId,
-                Courier: parseInt(selectedCourierId)
+                Courier: parseInt(selectedCourierId, 10)
             })
         });
 
@@ -669,18 +691,23 @@ async function confirmAndAcceptOrder() {
 
         const result = await response.json();
 
-       if (result.success) {
-             showToast(`Order #${orderId} was added successfully.`, "success");
+        if (result.success) {
+            showToast(result.message || `Order #${orderId} accepted successfully.`, 'success');
             setTimeout(() => {
                 location.reload();
-            }, 1500);
-
-        } else {
-            showToast(result.message, "error");
+            }, 1200);
+            return;
         }
+
+        showToast(result.message || 'Unable to accept order.', 'error');
     } catch (error) {
-        console.error("Server error:", error);
-        showToast("A network error occurred. Please try again.", "error");
+        console.error('Server error:', error);
+        showToast('A network error occurred. Please try again.', 'error');
+    } finally {
+        if (acceptButton) {
+            acceptButton.disabled = false;
+            acceptButton.innerHTML = originalButtonHtml;
+        }
     }
 }
 
@@ -1209,4 +1236,141 @@ document.getElementById('returnUploadBox')?.addEventListener('click', function (
 document.getElementById('returnProof')?.addEventListener('change', function () {
     previewReturnProof(this);
 });
+
+
+
+function parseOrderManagementDate(value, inclusiveEnd = false) {
+    if (!value) {
+        return null;
+    }
+
+    const parsedDate = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(parsedDate.getTime())) {
+        return null;
+    }
+
+    if (inclusiveEnd) {
+        parsedDate.setHours(23, 59, 59, 999);
+    }
+
+    return parsedDate;
+}
+
+function updateOrderManagementEmptyState(visibleRowCount) {
+    const noOrdersRow = document.getElementById('noOrdersRow');
+    if (!noOrdersRow) {
+        return;
+    }
+
+    noOrdersRow.style.display = visibleRowCount === 0 ? '' : 'none';
+}
+
+window.applyOrderFilters = function () {
+    const searchInput = document.getElementById('orderSearch');
+    const searchValue = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+    const categorySelect = document.getElementById('categoryFilter');
+    const categoryValue = categorySelect ? categorySelect.value.toLowerCase().trim() : 'all';
+
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    const startDateValue = startDateInput ? startDateInput.value : '';
+    const endDateValue = endDateInput ? endDateInput.value : '';
+    const startDate = parseOrderManagementDate(startDateValue);
+    const endDate = parseOrderManagementDate(endDateValue, true);
+
+    let currentStatus = 'all';
+    if (typeof activeStatusFilter !== 'undefined') {
+        currentStatus = activeStatusFilter.toLowerCase().trim();
+    }
+
+    let visibleRowCount = 0;
+    const rows = document.querySelectorAll('.order-row');
+
+    rows.forEach(row => {
+        const status = (row.dataset.status || '').toLowerCase().trim();
+        const rowText = row.innerText.toLowerCase();
+        const rowCategories = (row.dataset.categories || '')
+            .split('|')
+            .map(category => category.toLowerCase().trim())
+            .filter(Boolean);
+        const rowDate = parseOrderManagementDate(row.dataset.orderDate || '');
+
+        const statusMatch = currentStatus === 'all' || status === currentStatus;
+        const categoryMatch = categoryValue === 'all' || rowCategories.includes(categoryValue);
+        const searchMatch = !searchValue || rowText.includes(searchValue);
+        const startDateMatch = !startDate || (rowDate && rowDate >= startDate);
+        const endDateMatch = !endDate || (rowDate && rowDate <= endDate);
+
+        if (statusMatch && categoryMatch && searchMatch && startDateMatch && endDateMatch) {
+            row.style.display = '';
+            visibleRowCount += 1;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    updateOrderManagementEmptyState(visibleRowCount);
+};
+
+applyOrderFilters = window.applyOrderFilters;
+
+function buildOrderManagementDateFilterUrl() {
+    const url = new URL(window.location.href);
+    const startDateValue = document.getElementById('startDate')?.value?.trim() || '';
+    const endDateValue = document.getElementById('endDate')?.value?.trim() || '';
+
+    if (startDateValue) {
+        url.searchParams.set('startDate', startDateValue);
+    } else {
+        url.searchParams.delete('startDate');
+    }
+
+    if (endDateValue) {
+        url.searchParams.set('endDate', endDateValue);
+    } else {
+        url.searchParams.delete('endDate');
+    }
+
+    return url.toString();
+}
+
+function submitOrderManagementDateFilter() {
+    window.location.assign(buildOrderManagementDateFilterUrl());
+}
+
+function clearOrderManagementDateFilter() {
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+
+    if (startDateInput) {
+        startDateInput.value = '';
+    }
+
+    if (endDateInput) {
+        endDateInput.value = '';
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('startDate');
+    url.searchParams.delete('endDate');
+    window.location.assign(url.toString());
+}
+
+function initializeOrderManagementDateFilter() {
+    document.getElementById('startDate')?.addEventListener('change', submitOrderManagementDateFilter);
+    document.getElementById('endDate')?.addEventListener('change', submitOrderManagementDateFilter);
+    document.getElementById('clearDate')?.addEventListener('click', function (event) {
+        event.preventDefault();
+        clearOrderManagementDateFilter();
+    });
+
+    window.applyOrderFilters();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeOrderManagementDateFilter);
+} else {
+    initializeOrderManagementDateFilter();
+}
 

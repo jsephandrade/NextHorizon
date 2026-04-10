@@ -10,4 +10,10 @@ namespace NextHorizon.Models
         public int OrderId { get; set; }
         public int Courier { get; set; }
     }
+
+    public class AcceptOrderResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+    }
 }

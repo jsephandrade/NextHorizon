@@ -68,7 +68,7 @@ namespace NextHorizon.Controllers
         }
 
         // ============== ORDER MANAGEMENT ==============
-        public async Task<IActionResult> OrderManagement(CancellationToken cancellationToken)
+        public async Task<IActionResult> OrderManagement(DateTime? startDate, DateTime? endDate, CancellationToken cancellationToken)
        {
     int? currentSellerId = HttpContext.Session.GetInt32("SellerId");
     if (currentSellerId == null)
@@ -76,9 +76,20 @@ namespace NextHorizon.Controllers
         return RedirectToAction("Login", "Account");
     }
 
+    var normalizedStartDate = startDate?.Date;
+    var normalizedEndDate = endDate?.Date;
+
+    if (normalizedStartDate.HasValue && normalizedEndDate.HasValue && normalizedStartDate > normalizedEndDate)
+    {
+        (normalizedStartDate, normalizedEndDate) = (normalizedEndDate, normalizedStartDate);
+    }
+
+    ViewBag.StartDate = normalizedStartDate?.ToString("yyyy-MM-dd");
+    ViewBag.EndDate = normalizedEndDate?.ToString("yyyy-MM-dd");
+
     try
     {
-        var realOrders = await _orderService.GetOrdersBySellerAsync(currentSellerId.Value);
+        var realOrders = await _orderService.GetOrdersBySellerAsync(currentSellerId.Value, normalizedStartDate, normalizedEndDate);
         var couriers = await _orderService.GetCouriersAsync();
         ViewBag.Couriers = couriers;
         return View(realOrders);
@@ -153,25 +164,14 @@ public async Task<IActionResult> SaveOrderNote([FromBody] OrderNoteRequest reque
 [HttpPost]
 public async Task<IActionResult> AcceptOrder([FromBody] AcceptOrderRequest request)
 {
-    // 1. Get the dynamic Seller ID from the session (Security Check)
     int? currentSellerId = HttpContext.Session.GetInt32("SellerId");
     if (currentSellerId == null)
     {
         return Json(new { success = false, message = "Session expired. Please log in again." });
     }
 
-    // 2. Call our shiny new service method
-    bool isSuccess = await _orderService.AcceptOrderAsync(request.OrderId, currentSellerId.Value, request.Courier);
-
-    // 3. Tell the frontend if it worked!
-    if (isSuccess)
-    {
-        return Json(new { success = true, message = "Order successfully moved to To Ship!" });
-    }
-    else
-    {
-        return Json(new { success = false, message = "Failed to accept order. Order not found." });
-    }
+    var result = await _orderService.AcceptOrderAsync(request.OrderId, currentSellerId.Value, request.Courier);
+    return Json(new { success = result.Success, message = result.Message });
 }
 public class MarkReturnedRequest
 {
@@ -1555,6 +1555,9 @@ public async Task<IActionResult> DeclineOrder([FromBody] DeclineRequest request)
         
     }
 }
+
+
+
 
 
 

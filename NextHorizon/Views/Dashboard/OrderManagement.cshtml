@@ -6,6 +6,20 @@
     ViewData["Title"] = "Order Management";
     ViewData["DashboardHeading"] = "Order Management";
     ViewData["SellerName"] = "NextHorizon Seller";
+
+    var sellerCategories = Model
+        .SelectMany(order => order.OrderItems ?? Enumerable.Empty<NextHorizon.Models.OrderItem>())
+        .Select(item => item.Product?.Category?.Trim())
+        .Where(category => !string.IsNullOrWhiteSpace(category))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(category => category)
+        .ToList();
+    var startDateValue = ViewBag.StartDate as string ?? string.Empty;
+    var endDateValue = ViewBag.EndDate as string ?? string.Empty;
+    var hasDateFilter = !string.IsNullOrWhiteSpace(startDateValue) || !string.IsNullOrWhiteSpace(endDateValue);
+    var emptyStateMessage = hasDateFilter
+        ? "No orders found within the selected date range."
+        : "No orders match the current filters.";
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&amp;display=swap" rel="stylesheet">
@@ -38,16 +52,17 @@
     <!-- CATEGORY -->
     <select id="categoryFilter" class="order-select">
         <option value="all">All Categories</option>
-        <option value="footwear">Footwear</option>
-        <option value="apparel">Apparel</option>
-        <option value="accessories">Accessories</option>
+        @foreach (var category in sellerCategories)
+        {
+            <option value="@category">@category</option>
+        }
     </select>
 
     <!-- DATE FILTER -->
     <div class="date-filter">
-        <input type="date" id="startDate">
+        <input type="date" id="startDate" value="@startDateValue">
         <span>to</span>
-        <input type="date" id="endDate">
+        <input type="date" id="endDate" value="@endDateValue">
         <button id="clearDate">Clear</button>
     </div>
 
@@ -70,14 +85,22 @@
     <tbody>
         @foreach (var order in Model)
         {
+            var orderCategories = order.OrderItems?
+                .Select(item => item.Product?.Category?.Trim())
+                .Where(category => !string.IsNullOrWhiteSpace(category))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList() ?? new List<string>();
+
             <tr class="order-row"
                 data-order-id="@order.OrderID"
-              data-status="@order.Status"
+                data-status="@order.Status"
+                data-categories="@string.Join("|", orderCategories)"
                 data-courier="@order.Courier"
                 data-tracking="@order.TrackingNumber"
                 data-return-proof="@order.ReturnProofImage"
                 data-return-note="@order.ReturnNote"
-                data-return-reason="@order.ReturnReason">
+                data-return-reason="@order.ReturnReason"
+                data-order-date="@order.OrderDate.ToString("yyyy-MM-dd")">
 
                 <td>@order.OrderID</td>
                 <td>@order.FullName
@@ -198,6 +221,11 @@
                 </td>
             </tr>
         }
+        <tr id="noOrdersRow" class="order-empty-row" style="@(Model.Any() ? "display:none;" : string.Empty)">
+            <td colspan="8">
+                <div class="order-empty-state">@emptyStateMessage</div>
+            </td>
+        </tr>
     </tbody>
 </table>
 
@@ -701,6 +729,11 @@
         }
     }, 500);
 </script>
+
+
+
+
+
 
 
 
