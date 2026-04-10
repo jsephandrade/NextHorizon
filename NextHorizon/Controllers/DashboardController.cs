@@ -1175,6 +1175,31 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
         }
 
         // ============== HELPER METHODS ==============
+        private async Task<int> GetOrderCountByStatusAsync(int sellerId, string status, CancellationToken cancellationToken)
+        {
+            using var connection = new SqlConnection(GetConnectionString());
+            var query = "SELECT COUNT(*) FROM dbo.Orders WHERE seller_id = @SellerId AND Status = @Status";
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@SellerId", sellerId);
+            command.Parameters.AddWithValue("@Status", status);
+            await connection.OpenAsync(cancellationToken);
+            var result = await command.ExecuteScalarAsync(cancellationToken);
+            return result != DBNull.Value ? Convert.ToInt32(result) : 0;
+        }
+
+        private async Task<int> GetLowStockCountAsync(int sellerId, CancellationToken cancellationToken)
+        {
+            using var connection = new SqlConnection(GetConnectionString());
+            var query = @"SELECT COUNT(*) FROM dbo.ProductVariants v
+                          JOIN dbo.Products p ON p.ProductId = v.ProductId
+                          WHERE p.seller_id = @SellerId AND v.Quantity <= 5 AND v.Quantity > 0";
+            using var command = new SqlCommand(query, connection);
+            command.Parameters.AddWithValue("@SellerId", sellerId);
+            await connection.OpenAsync(cancellationToken);
+            var result = await command.ExecuteScalarAsync(cancellationToken);
+            return result != DBNull.Value ? Convert.ToInt32(result) : 0;
+        }
+
         private async Task<decimal> GetAvailableBalance(int sellerId)
         {
             using (var connection = new SqlConnection(GetConnectionString()))
@@ -1372,9 +1397,9 @@ public async Task<IActionResult> DeclineOrder([FromBody] DeclineRequest request)
                 SellerName = sellerContext.SellerName,
                 CurrentDate = DateTime.Now,
 
-                OrdersToShip = 14,
-                PendingOrders = 5,
-                LowStockAlerts = 8,
+                OrdersToShip = await GetOrderCountByStatusAsync(sellerContext.SellerId, "To Ship", cancellationToken),
+                PendingOrders = await GetOrderCountByStatusAsync(sellerContext.SellerId, "Pending", cancellationToken),
+                LowStockAlerts = await GetLowStockCountAsync(sellerContext.SellerId, cancellationToken),
                 WithdrawAmount = 15400.00m,
                 WithdrawStatus = "Processing",
 

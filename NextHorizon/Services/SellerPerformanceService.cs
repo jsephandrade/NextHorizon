@@ -86,7 +86,7 @@ public sealed class SellerPerformanceService : ISellerPerformanceService
                     FROM dbo.Orders
                     WHERE seller_id = @SellerId
                         AND YEAR(OrderDate) = @Year
-                        AND Status IN ('Paid', 'Completed')
+                        AND Status NOT IN ('Cancelled')
                     GROUP BY MONTH(OrderDate)
                     ORDER BY MONTH(OrderDate)
                 ";
