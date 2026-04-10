@@ -12,6 +12,12 @@ public class ConversationMessage
 
     public string? AttachmentUrl { get; set; }
 
+    public byte[]? AttachmentData { get; set; }
+
+    public string? AttachmentContentType { get; set; }
+
+    public string? AttachmentFileName { get; set; }
+
     public DateTime SentAt { get; set; }
 
     public bool IsDeleted { get; set; }

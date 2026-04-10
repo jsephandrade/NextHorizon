@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using NextHorizon.Models;
+using NextHorizon.Models;           
 using NextHorizon.Messaging.Models;
-
 namespace NextHorizon.Data;
 
 public sealed class AppDbContext : DbContext
@@ -9,8 +8,11 @@ public sealed class AppDbContext : DbContext
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
-
-    // Existing DbSets
+    public DbSet<Message> Messages { get; set; } = null!;
+    public DbSet<Faq> FAQs { get; set; }
+    public DbSet<SupportConversation> SupportConversations { get; set; } = null!;
+    public DbSet<SupportMessage> SupportMessages { get; set; } = null!;
+    public DbSet<SupportFAQ> SupportFAQs {get; set;} = null!;
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Consumer> Consumers => Set<Consumer>();
@@ -38,6 +40,7 @@ public sealed class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);  
+        modelBuilder.Ignore<MessagingMessage>();
         
         // ============== DECIMAL & TRIGGER FIXES ==============
         modelBuilder.Entity<Order>(entity =>
@@ -262,6 +265,8 @@ public sealed class AppDbContext : DbContext
         });
     }
 }
+
+
 
 
 

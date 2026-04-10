@@ -31,6 +31,7 @@ public sealed class MessageDto
     public string SenderUserId { get; init; } = string.Empty;
     public string? Body { get; init; }
     public string? AttachmentUrl { get; init; }
+    public bool HasAttachment { get; init; }
     public DateTime SentAt { get; init; }
     public bool IsDeleted { get; init; }
 }

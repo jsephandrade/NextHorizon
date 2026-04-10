@@ -135,7 +135,7 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                         m.IsDeleted
                     FROM dbo.MessagingMessages m
                     WHERE m.ConversationId = b.ConversationId
-                    ORDER BY m.SentAt DESC, m.MessageId DESC
+                    ORDER BY m.MessageId DESC
                 ) lm
                 ORDER BY COALESCE(b.LastMessageAt, b.CreatedAt) DESC, b.ConversationId DESC
                 OFFSET (@Page - 1) * @PageSize ROWS
@@ -248,7 +248,7 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                         m.IsDeleted
                     FROM dbo.MessagingMessages m
                     WHERE m.ConversationId = c.ConversationId
-                    ORDER BY m.SentAt DESC, m.MessageId DESC
+                    ORDER BY m.MessageId DESC
                 ) lm
                 WHERE c.ContextType = @ContextType
                   AND (
@@ -275,7 +275,7 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
     public Task<MessageConversationSummary?> GetConversationAsync(int conversationId, MessageActorContext actor, CancellationToken cancellationToken)
         => WithOpenConnectionAsync(connection => GetConversationForActorAsync(connection, conversationId, actor, cancellationToken), cancellationToken);
 
-    public Task<MessageItem?> SendMessageAsync(int conversationId, MessageActorContext actor, string body, string? attachmentUrl, CancellationToken cancellationToken)
+    public Task<MessageItem?> SendMessageAsync(int conversationId, MessageActorContext actor, string body, MessageAttachmentWriteModel? attachment, CancellationToken cancellationToken)
         => WithOpenConnectionAsync(async connection =>
         {
             if (!await IsConversationParticipantAsync(connection, conversationId, actor, cancellationToken))
@@ -293,6 +293,7 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                     SenderUserID INT,
                     Body NVARCHAR(2000),
                     AttachmentUrl NVARCHAR(400),
+                    HasStoredAttachment BIT,
                     SentAt DATETIME2,
                     IsDeleted BIT
                 );
@@ -303,6 +304,9 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                     SenderUserId,
                     Body,
                     AttachmentUrl,
+                    AttachmentData,
+                    AttachmentContentType,
+                    AttachmentFileName,
                     SentAt,
                     IsDeleted
                 )
@@ -312,6 +316,7 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                     INSERTED.SenderUserId,
                     INSERTED.Body,
                     INSERTED.AttachmentUrl,
+                    CASE WHEN INSERTED.AttachmentData IS NULL OR DATALENGTH(INSERTED.AttachmentData) = 0 THEN CAST(0 AS BIT) ELSE CAST(1 AS BIT) END,
                     INSERTED.SentAt,
                     INSERTED.IsDeleted
                 INTO @Inserted
@@ -320,7 +325,10 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                     @ConversationID,
                     @SenderUserID,
                     @Body,
-                    @AttachmentUrl,
+                    NULL,
+                    @AttachmentData,
+                    @AttachmentContentType,
+                    @AttachmentFileName,
                     SYSUTCDATETIME(),
                     0
                 );
@@ -331,6 +339,7 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                     SenderUserID,
                     Body,
                     AttachmentUrl,
+                    HasStoredAttachment,
                     SentAt,
                     IsDeleted
                 FROM @Inserted;
@@ -340,7 +349,9 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
             AddParameter(insertCommand, "@ConversationID", conversationId, DbType.Int32);
             AddParameter(insertCommand, "@SenderUserID", actor.UserId, DbType.Int32);
             AddParameter(insertCommand, "@Body", body, DbType.String);
-            AddParameter(insertCommand, "@AttachmentUrl", attachmentUrl, DbType.String);
+            AddParameter(insertCommand, "@AttachmentData", attachment?.Data, DbType.Binary);
+            AddParameter(insertCommand, "@AttachmentContentType", attachment?.ContentType, DbType.String);
+            AddParameter(insertCommand, "@AttachmentFileName", attachment?.FileName, DbType.String);
 
             await using var reader = await insertCommand.ExecuteReaderAsync(cancellationToken);
             if (!await reader.ReadAsync(cancellationToken))
@@ -385,12 +396,13 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                     SenderUserId AS SenderUserID,
                     Body AS Body,
                     AttachmentUrl AS AttachmentUrl,
+                    CASE WHEN AttachmentData IS NULL OR DATALENGTH(AttachmentData) = 0 THEN CAST(0 AS BIT) ELSE CAST(1 AS BIT) END AS HasStoredAttachment,
                     SentAt AS SentAt,
                     IsDeleted AS IsDeleted
                 FROM dbo.MessagingMessages
                 WHERE ConversationId = @ConversationID
                   AND (@Before IS NULL OR SentAt < @Before)
-                ORDER BY SentAt DESC, MessageId DESC;
+                ORDER BY MessageId DESC;
                 """;
             command.CommandType = CommandType.Text;
 
@@ -405,10 +417,43 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                 items.Add(MapMessage(reader));
             }
 
-            // SQL fetches newest-first for efficient paging; reverse here so chat threads render chronologically.
             items.Reverse();
-
             return (IReadOnlyList<MessageItem>)items;
+        }, cancellationToken);
+
+    public Task<MessageAttachmentReadModel?> GetMessageAttachmentAsync(long messageId, MessageActorContext actor, CancellationToken cancellationToken)
+        => WithOpenConnectionAsync(async connection =>
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText =
+                """
+                SELECT TOP (1)
+                    m.MessageId AS MessageID,
+                    m.AttachmentContentType AS AttachmentContentType,
+                    m.AttachmentFileName AS AttachmentFileName,
+                    m.AttachmentData AS AttachmentData
+                FROM dbo.MessagingMessages m
+                INNER JOIN dbo.MessagingConversations c ON c.ConversationId = m.ConversationId
+                WHERE m.MessageId = @MessageID
+                  AND m.AttachmentData IS NOT NULL
+                  AND DATALENGTH(m.AttachmentData) > 0
+                  AND (
+                        (@ActorConsumerID IS NOT NULL AND c.BuyerUserId = @ActorConsumerID)
+                     OR (@ActorSellerID IS NOT NULL AND c.SellerUserId = @ActorSellerID)
+                  );
+                """;
+            command.CommandType = CommandType.Text;
+
+            AddParameter(command, "@MessageID", messageId, DbType.Int64);
+            AddActorParameters(command, actor);
+
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                return null;
+            }
+
+            return MapAttachment(reader);
         }, cancellationToken);
 
     public Task<bool> MarkReadAsync(int conversationId, MessageActorContext actor, CancellationToken cancellationToken)
@@ -570,7 +615,7 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                     m.IsDeleted
                 FROM dbo.MessagingMessages m
                 WHERE m.ConversationId = c.ConversationId
-                ORDER BY m.SentAt DESC, m.MessageId DESC
+                ORDER BY m.MessageId DESC
             ) lm
             WHERE c.ConversationId = @ConversationID;
             """;
@@ -630,7 +675,7 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
                     m.IsDeleted
                 FROM dbo.MessagingMessages m
                 WHERE m.ConversationId = c.ConversationId
-                ORDER BY m.SentAt DESC, m.MessageId DESC
+                ORDER BY m.MessageId DESC
             ) lm
             WHERE c.ConversationId = @ConversationID
               AND (
@@ -723,8 +768,33 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
             reader.GetInt32(reader.GetOrdinal("SenderUserID")),
             isDeleted ? null : body,
             GetNullableString(reader, "AttachmentUrl"),
+            GetBoolean(reader, "HasStoredAttachment"),
             reader.GetDateTime(reader.GetOrdinal("SentAt")),
             isDeleted);
+    }
+
+    private static MessageAttachmentReadModel MapAttachment(DbDataReader reader)
+    {
+        var fileName = GetNullableString(reader, "AttachmentFileName");
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            fileName = $"message-attachment-{reader.GetInt64(reader.GetOrdinal("MessageID"))}";
+        }
+
+        var contentType = GetNullableString(reader, "AttachmentContentType");
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            contentType = "application/octet-stream";
+        }
+
+        var dataOrdinal = reader.GetOrdinal("AttachmentData");
+        var data = reader.IsDBNull(dataOrdinal) ? Array.Empty<byte>() : (byte[])reader.GetValue(dataOrdinal);
+
+        return new MessageAttachmentReadModel(
+            reader.GetInt64(reader.GetOrdinal("MessageID")),
+            contentType,
+            fileName,
+            data);
     }
 
     private async Task<T> WithOpenConnectionAsync<T>(Func<DbConnection, Task<T>> action, CancellationToken cancellationToken)
@@ -762,6 +832,12 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
         return reader.IsDBNull(ordinal) ? null : reader.GetInt32(ordinal);
     }
 
+    private static bool GetBoolean(DbDataReader reader, string columnName)
+    {
+        var ordinal = reader.GetOrdinal(columnName);
+        return !reader.IsDBNull(ordinal) && reader.GetBoolean(ordinal);
+    }
+
     private static DateTime? GetNullableDateTime(DbDataReader reader, string columnName)
     {
         var ordinal = reader.GetOrdinal(columnName);
@@ -784,3 +860,5 @@ public sealed class MessagingStoredProcedureRepository : IMessagingRepository
         command.Parameters.Add(parameter);
     }
 }
+
+

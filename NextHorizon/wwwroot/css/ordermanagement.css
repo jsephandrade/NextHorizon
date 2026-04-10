@@ -673,7 +673,9 @@
 
 .bw-modal-container {
     background: #fff;
-    width: 420px;
+    width: min(420px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
     border-radius: 10px;
     padding: 20px;
     font-family: 'Poppins', sans-serif;
@@ -1068,3 +1070,66 @@
 }
 
 
+
+#returnPreviewContainer {
+    display: none;
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #f8fafc;
+    max-height: 320px;
+    overflow: auto;
+}
+
+#returnPreviewContainer img {
+    width: 100%;
+    max-width: 100%;
+    max-height: 220px;
+    object-fit: contain;
+    object-position: center;
+    margin: 0 auto;
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
+    display: block;
+    background: #fff;
+}
+
+.remove-preview-btn {
+    margin-top: 12px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #111827;
+    border-radius: 999px;
+    padding: 8px 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#returnNote {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 12px;
+    resize: vertical;
+    font: inherit;
+}
+
+@media (max-width: 640px) {
+    #markReturnedModal .bw-modal-container {
+        width: calc(100vw - 20px);
+        max-height: calc(100vh - 20px);
+        padding: 16px;
+    }
+
+    #returnPreviewContainer {
+        max-height: 260px;
+        padding: 10px;
+    }
+
+    #returnPreviewContainer img {
+        max-height: 180px;
+    }
+}

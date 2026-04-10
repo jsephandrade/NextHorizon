@@ -25,9 +25,11 @@ public interface IMessagingRepository
 
     Task<MessageConversationSummary?> GetConversationAsync(int conversationId, MessageActorContext actor, CancellationToken cancellationToken);
 
-    Task<MessageItem?> SendMessageAsync(int conversationId, MessageActorContext actor, string body, string? attachmentUrl, CancellationToken cancellationToken);
+    Task<MessageItem?> SendMessageAsync(int conversationId, MessageActorContext actor, string body, MessageAttachmentWriteModel? attachment, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<MessageItem>?> ListMessagesAsync(int conversationId, MessageActorContext actor, DateTime? before, int pageSize, CancellationToken cancellationToken);
+
+    Task<MessageAttachmentReadModel?> GetMessageAttachmentAsync(long messageId, MessageActorContext actor, CancellationToken cancellationToken);
 
     Task<bool> MarkReadAsync(int conversationId, MessageActorContext actor, CancellationToken cancellationToken);
 
@@ -63,11 +65,23 @@ public sealed record MessageConversationSummary(
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
+public sealed record MessageAttachmentWriteModel(
+    byte[] Data,
+    string ContentType,
+    string FileName);
+
+public sealed record MessageAttachmentReadModel(
+    long MessageId,
+    string ContentType,
+    string FileName,
+    byte[] Data);
+
 public sealed record MessageItem(
     long MessageId,
     int ConversationId,
     int SenderUserId,
     string? Body,
     string? AttachmentUrl,
+    bool HasStoredAttachment,
     DateTime SentAt,
     bool IsDeleted);

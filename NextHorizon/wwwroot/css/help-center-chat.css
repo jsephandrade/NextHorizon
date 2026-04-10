@@ -1,0 +1,239 @@
+/* Chat + Support (Black and White theme) */
+.help-right {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.help-right .support-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border: 1px solid #dfdfdf;
+    border-radius: 12px;
+    max-height: 100%;
+    height: 100%;
+    min-height: 420px;
+    overflow: hidden;
+}
+
+.support-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid #e4e4e4;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: #ffffff;
+}
+
+.support-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.support-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #000000;
+    font-weight: 700;
+}
+
+.support-header p {
+    margin: 2px 0 0;
+    font-size: 0.8rem;
+    color: #5f5f5f;
+}
+
+.support-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #000000;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.resolve-chat-btn,
+.clear-chat-btn {
+    border: 1px solid #1f1f1f;
+    background: #ffffff;
+    color: #111111;
+    padding: 7px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.resolve-chat-btn:hover,
+.clear-chat-btn:hover {
+    background: #111111;
+    color: #ffffff;
+}
+
+.support-body {
+    padding: 14px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #ffffff;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.chat-thread {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+
+.typing-indicator {
+    font-size: 0.84rem;
+    color: #6a6a6a;
+    font-style: italic;
+}
+
+.chat-message {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 86%;
+    border-radius: 12px;
+    padding: 10px 12px;
+    line-height: 1.4;
+    font-size: 0.92rem;
+    word-wrap: break-word;
+}
+
+.chat-message.bot {
+    background: #ffffff;
+    color: #111111;
+    border: 1px solid #d7d7d7;
+    align-self: flex-start;
+}
+
+.chat-message.user {
+    background: #000000;
+    color: #ffffff;
+    border: 1px solid #000000;
+    align-self: flex-end;
+}
+
+.chat-ts {
+    font-size: 0.72rem;
+    opacity: 0.75;
+}
+
+.chat-input-row {
+    border-top: 1px solid #e4e4e4;
+    padding: 12px;
+    display: flex;
+    gap: 8px;
+    background: #ffffff;
+    align-items: center;
+}
+
+.chat-input-row input {
+    flex: 1;
+    border: 1px solid #cfcfcf;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 0.92rem;
+    font-family: inherit;
+    outline: none;
+}
+
+.chat-input-row input:focus {
+    border-color: #000000;
+}
+
+.agent-btn,
+.chat-input-row button {
+    border: 1px solid #111111;
+    border-radius: 10px;
+    background: #000000;
+    color: #ffffff;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.88rem;
+    padding: 10px 14px;
+}
+
+.agent-btn:hover,
+.chat-input-row button:hover {
+    background: #262626;
+}
+
+.chat-with-agent-row {
+    margin-top: 14px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.chat-with-agent-btn {
+    border: 1px solid #111111;
+    background: #000000;
+    color: #ffffff;
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.chat-with-agent-btn:hover {
+    background: #202020;
+}
+
+.chat-with-agent-btn:disabled,
+.chat-with-agent-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #cccccc;
+    border-color: #999999;
+    color: #666666;
+    pointer-events: none;
+}
+
+.chat-with-agent-btn:disabled:hover,
+.chat-with-agent-btn.disabled:hover {
+    background: #cccccc;
+}
+
+.help-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #e5e5e5;
+    border-color: #ccc;
+    color: #999;
+    pointer-events: none;
+}
+
+@media (max-width: 1024px) {
+    .two-column-layout {
+        grid-template-columns: 1fr;
+        padding: 14px;
+    }
+
+    .help-right {
+        padding: 0;
+    }
+
+    .help-right .support-container {
+        height: 72vh;
+    }
+}

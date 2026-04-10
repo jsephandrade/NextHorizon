@@ -305,7 +305,7 @@ public sealed class MessagesController : ControllerBase
             return BadRequest("Body must be 2000 characters or less.");
         }
 
-        (string AbsolutePath, string AttachmentUrl)? savedAttachment = null;
+        MessageAttachmentWriteModel? attachment = null;
         if (request.Attachment is not null)
         {
             if (!UploadValidationRules.BeValidMessageAttachment(request.Attachment))
@@ -313,39 +313,22 @@ public sealed class MessagesController : ControllerBase
                 return BadRequest("Attachment must be a valid image or video (jpg, jpeg, png, webp, mp4, webm, mov) and 5MB or smaller.");
             }
 
-            savedAttachment = await SaveAttachmentAsync(request.Attachment, cancellationToken);
+            attachment = await ReadAttachmentAsync(request.Attachment, cancellationToken);
         }
 
-        try
+        var message = await _messagingRepository.SendMessageAsync(
+            conversationId,
+            ToMessageActor(currentUser, scope.Value),
+            body,
+            attachment,
+            cancellationToken);
+
+        if (message is null)
         {
-            var message = await _messagingRepository.SendMessageAsync(
-                conversationId,
-                ToMessageActor(currentUser, scope.Value),
-                body,
-                savedAttachment?.AttachmentUrl,
-                cancellationToken);
-
-            if (message is null)
-            {
-                if (savedAttachment is not null)
-                {
-                    DeleteFileIfExists(savedAttachment.Value.AbsolutePath);
-                }
-
-                return NotFound();
-            }
-
-            return Ok(ToMessageDto(message));
+            return NotFound();
         }
-        catch
-        {
-            if (savedAttachment is not null)
-            {
-                DeleteFileIfExists(savedAttachment.Value.AbsolutePath);
-            }
 
-            throw;
-        }
+        return Ok(ToMessageDto(message, scope.Value));
     }
 
     [HttpGet("conversations/{conversationId:int}/messages")]
@@ -394,7 +377,7 @@ public sealed class MessagesController : ControllerBase
             return NotFound();
         }
 
-        return Ok(messages.Select(ToMessageDto).ToList());
+        return Ok(messages.Select(message => ToMessageDto(message, scope.Value)).ToList());
     }
 
     [HttpPost("conversations/{conversationId:int}/read")]
@@ -453,46 +436,66 @@ public sealed class MessagesController : ControllerBase
         return deleted ? NoContent() : NotFound();
     }
 
-    private async Task<(string AbsolutePath, string AttachmentUrl)> SaveAttachmentAsync(IFormFile attachment, CancellationToken cancellationToken)
+    [HttpGet("messages/{messageId:long}/attachment")]
+    public async Task<IActionResult> GetMessageAttachment(long messageId, [FromQuery] string? role, CancellationToken cancellationToken)
     {
-        var uploadsDirectory = GetAttachmentUploadsDirectory();
-        Directory.CreateDirectory(uploadsDirectory);
-
-        var extension = Path.GetExtension(attachment.FileName).ToLowerInvariant();
-        var fileName = $"{Guid.NewGuid():N}{extension}";
-        var absolutePath = Path.Combine(uploadsDirectory, fileName);
-
-        await using (var stream = System.IO.File.Create(absolutePath))
+        var currentUser = await _authenticatedUserContextService.GetCurrentAsync(User, cancellationToken);
+        if (currentUser is null)
         {
-            await attachment.CopyToAsync(stream, cancellationToken);
+            return Unauthorized();
         }
 
-        return (absolutePath, $"/uploads/message-attachments/{fileName}");
+        if (!currentUser.HasMessagingRole)
+        {
+            return Forbid();
+        }
+
+        var scope = ParseConversationActorScope(role);
+        if (!scope.HasValue)
+        {
+            return BadRequest("Role must be either 'seller' or 'consumer' when provided.");
+        }
+
+        if (scope.Value == ConversationActorScope.Seller && !currentUser.SellerId.HasValue)
+        {
+            return Forbid();
+        }
+
+        if (scope.Value == ConversationActorScope.Consumer && !currentUser.ConsumerId.HasValue)
+        {
+            return Forbid();
+        }
+
+        var attachment = await _messagingRepository.GetMessageAttachmentAsync(messageId, ToMessageActor(currentUser, scope.Value), cancellationToken);
+        if (attachment is null)
+        {
+            return NotFound();
+        }
+
+        return File(attachment.Data, attachment.ContentType, enableRangeProcessing: false);
     }
 
-    private string GetAttachmentUploadsDirectory()
+    private static async Task<MessageAttachmentWriteModel> ReadAttachmentAsync(IFormFile attachment, CancellationToken cancellationToken)
     {
-        var webRoot = _webHostEnvironment.WebRootPath;
-        if (string.IsNullOrWhiteSpace(webRoot))
+        await using var stream = new MemoryStream();
+        await attachment.CopyToAsync(stream, cancellationToken);
+
+        var fileName = Path.GetFileName(attachment.FileName);
+        if (string.IsNullOrWhiteSpace(fileName))
         {
-            webRoot = Path.Combine(_webHostEnvironment.ContentRootPath, "wwwroot");
+            fileName = $"attachment{Path.GetExtension(attachment.FileName)}";
         }
 
-        return Path.Combine(webRoot, "uploads", "message-attachments");
+        var contentType = string.IsNullOrWhiteSpace(attachment.ContentType)
+            ? "application/octet-stream"
+            : attachment.ContentType;
+
+        return new MessageAttachmentWriteModel(stream.ToArray(), contentType, fileName);
     }
 
-    private static void DeleteFileIfExists(string? filePath)
-    {
-        if (string.IsNullOrWhiteSpace(filePath))
-        {
-            return;
-        }
 
-        if (System.IO.File.Exists(filePath))
-        {
-            System.IO.File.Delete(filePath);
-        }
-    }
+
+
 
     private static ConversationContextType? ParseContextType(string contextType)
     {
@@ -643,27 +646,39 @@ public sealed class MessagesController : ControllerBase
             CanReply = currentUser.HasMessagingRole,
             ContextType = summary.ContextType == ConversationContextType.Order ? "order" : "general",
             OrderId = summary.OrderId,
-            LastMessageAt = summary.LastMessageAt,
-            BuyerLastReadAt = summary.BuyerLastReadAt,
-            SellerLastReadAt = summary.SellerLastReadAt,
+            LastMessageAt = AsUtc(summary.LastMessageAt),
+            BuyerLastReadAt = AsUtc(summary.BuyerLastReadAt),
+            SellerLastReadAt = AsUtc(summary.SellerLastReadAt),
             LastMessagePreview = summary.LastMessagePreview,
             UnreadCount = summary.UnreadCount,
-            CreatedAt = summary.CreatedAt,
-            UpdatedAt = summary.UpdatedAt,
+            CreatedAt = AsUtc(summary.CreatedAt),
+            UpdatedAt = AsUtc(summary.UpdatedAt),
         };
     }
 
-    private static MessageDto ToMessageDto(MessageItem item)
+    private static MessageDto ToMessageDto(MessageItem item, ConversationActorScope scope)
         => new()
         {
             MessageId = item.MessageId,
             ConversationId = item.ConversationId,
             SenderUserId = item.SenderUserId.ToString(),
             Body = item.Body,
-            AttachmentUrl = item.AttachmentUrl,
-            SentAt = item.SentAt,
+            AttachmentUrl = item.HasStoredAttachment
+                ? BuildAttachmentUrl(item.MessageId, scope)
+                : item.AttachmentUrl,
+            HasAttachment = item.HasStoredAttachment || !string.IsNullOrWhiteSpace(item.AttachmentUrl),
+            SentAt = AsUtc(item.SentAt),
             IsDeleted = item.IsDeleted,
         };
+
+    private static string BuildAttachmentUrl(long messageId, ConversationActorScope scope)
+        => $"/api/messages/messages/{messageId}/attachment?role={(scope == ConversationActorScope.Seller ? "seller" : "consumer")}";
+
+    private static DateTime AsUtc(DateTime value)
+        => value.Kind == DateTimeKind.Utc ? value : DateTime.SpecifyKind(value, DateTimeKind.Utc);
+
+    private static DateTime? AsUtc(DateTime? value)
+        => value.HasValue ? AsUtc(value.Value) : null;
 
     private static string BuildConsumerDisplayName(ConsumerRef consumer)
     {
@@ -681,3 +696,6 @@ public sealed class MessagesController : ControllerBase
         return consumer.Username?.Trim() ?? string.Empty;
     }
 }
+
+
+

@@ -316,6 +316,7 @@
     || currentAction == "pendingpayout"
     || currentAction == "mybalance";
     var isAnalytics = currentAction == "analytics";
+    var isHelpCenter = currentAction == "helpcenter";
     var currentController = (ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty).ToLowerInvariant();
     var isProducts = currentController == "seller" && (currentAction == "index" || currentAction == "createproduct" || currentAction == "viewproduct" || currentAction == "viewratings" || currentAction == "sizeguide" || currentAction == "viewsizeguide");
 }
@@ -345,6 +346,9 @@
                     </li>
                     <li class="@(isAnalytics ? "active" : string.Empty)">
                         <a asp-controller="Dashboard" asp-action="Analytics"><i class="fas fa-chart-bar"></i> Analytics</a>
+                    </li>
+                    <li class="@(isHelpCenter ? "active" : string.Empty)">
+                        <a asp-controller="Dashboard" asp-action="HelpCenter"><i class="fas fa-circle-question"></i> Help Center</a>
                     </li>
                 </ul>
             </nav>
@@ -407,3 +411,5 @@
 
 </body>
 </html>
+
+

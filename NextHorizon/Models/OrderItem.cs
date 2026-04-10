@@ -10,13 +10,16 @@ namespace NextHorizon.Models
         [Key]
         public int OrderItemID { get; set; }
         public int OrderID { get; set; }
-        public int ProductID { get; set; } 
+        public int ProductID { get; set; }
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public string? Size { get; set; }
         public string? Color { get; set; }
-        [NotMapped] 
+        public int? VariantId { get; set; }
+
+        [NotMapped]
         public string? Sku { get; set; }
+
         public int? SellerId { get; set; }
 
         [ForeignKey("OrderID")]
@@ -25,7 +28,5 @@ namespace NextHorizon.Models
 
         [ForeignKey("ProductID")]
         public DbProduct? Product { get; set; }
-    
     }
-    
 }

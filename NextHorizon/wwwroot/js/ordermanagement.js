@@ -63,6 +63,7 @@ let selectedNoteCustomer = '';
 let selectedReviewOrderId = '';
 let selectedShipmentOrderId = '';
 let selectedReturnOrderId = '';
+let selectedReturnOrderRow = null;
 
 
 // ================= UTILS =================
@@ -402,8 +403,8 @@ document.addEventListener('click', function (event) {
     if (event.target.id === 'markShippedModal') closeMarkShippedModal();
     if (event.target.id === 'confirmShipmentModal') closeConfirmShipmentModal();
     if (event.target.id === 'trackingRequiredModal') closeTrackingRequiredModal();
+    if (event.target.id === 'markReturnedModal') closeReturnModal();
     if (event.target.id === 'returnedInfoModal') closeReturnedInfoModal();
-    if (event.target.id === 'confirmReturnModal') closeConfirmReturnModal();
 });
 
 document.getElementById('addNotesCancelBtn')?.addEventListener('click', closeAddNotesModal);
@@ -438,8 +439,8 @@ document.addEventListener('keydown', function (event) {
         closeReviewRequestModal();
         closeMarkShippedModal();
         closeTrackingRequiredModal();
+        closeReturnModal();
         closeReturnedInfoModal();
-        closeConfirmReturnModal();
         document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
     }
 });
@@ -1045,4 +1046,167 @@ function removePreview() {
     container.style.display = 'none'; // Hides the preview box
 }
 
+
+
+document.getElementById('returnUploadBox')?.addEventListener('click', function () {
+    document.getElementById('returnProof')?.click();
+});
+
+document.getElementById('returnProof')?.addEventListener('change', function () {
+    previewReturnProof(this);
+});
+
+function openMarkReturnedModal(orderRow) {
+    if (!orderRow) return;
+
+    selectedReturnOrderRow = orderRow;
+    selectedReturnOrderId = orderRow.dataset.orderId || '';
+    document.getElementById('returnOrderId').textContent = selectedReturnOrderId;
+    document.getElementById('returnCustomer').textContent = orderRow.children[1]?.innerText.trim() || '---';
+    document.getElementById('returnProduct').textContent = orderRow.children[3]?.innerText.trim() || '---';
+    document.getElementById('returnItems').textContent = orderRow.children[4]?.innerText.trim() || '0';
+    document.getElementById('returnTotal').textContent = orderRow.children[5]?.innerText.trim() || 'P0.00';
+    document.getElementById('returnCourier').textContent = orderRow.dataset.courier || '---';
+    document.getElementById('returnTracking').textContent = orderRow.dataset.tracking || '---';
+    document.getElementById('returnReason').value = '';
+    document.getElementById('returnNote').value = '';
+    removeReturnPreview();
+    document.getElementById('markReturnedModal').style.display = 'flex';
+}
+
+function closeReturnModal() {
+    document.getElementById('markReturnedModal').style.display = 'none';
+    selectedReturnOrderRow = null;
+    removeReturnPreview();
+}
+
+function openReturnedInfoModal(orderRow) {
+    if (!orderRow) return;
+
+    selectedReturnOrderId = orderRow.dataset.orderId || '';
+    document.getElementById('returnInfoOrderId').textContent = selectedReturnOrderId;
+    document.getElementById('returnInfoCustomer').textContent = orderRow.children[1]?.innerText.trim() || '---';
+    document.getElementById('returnInfoProduct').textContent = orderRow.children[3]?.innerText.trim() || '---';
+    document.getElementById('returnInfoQuantity').textContent = orderRow.children[4]?.innerText.trim() || '0';
+    document.getElementById('returnInfoTotal').textContent = orderRow.children[5]?.innerText.trim() || '0.00';
+    document.getElementById('returnInfoCourier').textContent = orderRow.dataset.courier || '---';
+    document.getElementById('returnInfoTracking').textContent = orderRow.dataset.tracking || '---';
+    document.getElementById('returnInfoReason').textContent = orderRow.dataset.returnReason || '---';
+    document.getElementById('returnInfoNote').textContent = orderRow.dataset.returnNote || 'No notes provided.';
+
+    const proofUrl = orderRow.dataset.returnProof || '';
+    const proofBlock = document.getElementById('returnInfoProofBlock');
+    const proofImage = document.getElementById('returnInfoProofImage');
+    if (proofUrl) {
+        proofImage.src = proofUrl;
+        proofBlock.style.display = 'block';
+    } else {
+        proofImage.removeAttribute('src');
+        proofBlock.style.display = 'none';
+    }
+
+    document.getElementById('returnedInfoModal').style.display = 'flex';
+}
+
+function closeReturnedInfoModal() {
+    document.getElementById('returnedInfoModal').style.display = 'none';
+}
+
+function previewReturnProof(input) {
+    const container = document.getElementById('returnPreviewContainer');
+    const preview = document.getElementById('returnPreviewImage');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            preview.src = event.target.result;
+            container.style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function removeReturnPreview() {
+    const fileInput = document.getElementById('returnProof');
+    const container = document.getElementById('returnPreviewContainer');
+    const preview = document.getElementById('returnPreviewImage');
+    if (fileInput) fileInput.value = '';
+    if (preview) preview.removeAttribute('src');
+    if (container) container.style.display = 'none';
+}
+
+async function submitReturnedOrder() {
+    const orderId = parseInt(selectedReturnOrderId, 10);
+    const reason = document.getElementById('returnReason').value.trim();
+    const note = document.getElementById('returnNote').value.trim();
+    const fileInput = document.getElementById('returnProof');
+    const submitBtn = document.getElementById('confirmReturnBtn');
+
+    if (!orderId || !reason) {
+        showToast('Return reason is required.', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('OrderId', orderId);
+    formData.append('ReturnReason', reason);
+    formData.append('ReturnNote', note);
+    if (fileInput && fileInput.files.length > 0) {
+        formData.append('ReturnProof', fileInput.files[0]);
+    }
+
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...';
+
+    try {
+        const response = await fetch('/Dashboard/MarkOrderReturned', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            showToast(result.message, 'success');
+            setTimeout(() => location.reload(), 1200);
+            return;
+        }
+
+        showToast(result.message || 'Unable to mark order as returned.', 'error');
+    } catch (error) {
+        console.error(error);
+        showToast('System error while processing return.', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    }
+}
+
+document.addEventListener('click', function (event) {
+    const markReturnedBtn = event.target.closest('.mark-returned-btn');
+    if (markReturnedBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+        openMarkReturnedModal(markReturnedBtn.closest('.order-row'));
+        return;
+    }
+
+    const viewReturnedBtn = event.target.closest('.view-returned-btn');
+    if (viewReturnedBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+        openReturnedInfoModal(viewReturnedBtn.closest('.order-row'));
+    }
+}, true);
+
+document.getElementById('returnUploadBox')?.addEventListener('click', function () {
+    document.getElementById('returnProof')?.click();
+});
+
+document.getElementById('returnProof')?.addEventListener('change', function () {
+    previewReturnProof(this);
+});
 

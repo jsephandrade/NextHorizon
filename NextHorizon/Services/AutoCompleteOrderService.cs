@@ -53,14 +53,12 @@ namespace NextHorizon.Services
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 
-                // 1. Find the date exactly 7 days ago
-                var tenDaysAgo = DateTime.Now.AddDays(-10);
+                var twentyDaysAgo = DateTime.Now.AddDays(-20);
 
-                // 2. Query the DB: Give me orders that are Shipped AND were shipped over 7 days ago
                 var ghostOrders = await dbContext.Orders
                     .Where(o => o.Status == "Shipped" 
                              && o.DateShipped != null 
-                             && o.DateShipped < tenDaysAgo)
+                             && o.DateShipped < twentyDaysAgo)
                     .ToListAsync(stoppingToken);
 
                 if (!ghostOrders.Any())

@@ -30,7 +30,7 @@
     const state = {
         conversations: [],
         activeConversationId: null,
-        currentUserId: String(config.currentUserId || ""),
+        currentUserId: String(config.actorUserId || config.currentUserId || ""),
         search: "",
         selectedAttachment: null,
         selectedAttachmentPreviewUrl: null,
@@ -128,11 +128,7 @@
     }
 
     function formatTime(value) {
-        if (!value) {
-            return "";
-        }
-
-        const date = new Date(value);
+        const date = parseUtcDate(value);
         if (Number.isNaN(date.getTime())) {
             return "";
         }
@@ -141,16 +137,30 @@
     }
 
     function formatDateTime(value) {
-        if (!value) {
-            return "";
-        }
-
-        const date = new Date(value);
+        const date = parseUtcDate(value);
         if (Number.isNaN(date.getTime())) {
             return "";
         }
 
         return date.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+    }
+
+    function parseUtcDate(value) {
+        if (!value) {
+            return new Date("");
+        }
+
+        if (value instanceof Date) {
+            return value;
+        }
+
+        const source = String(value).trim();
+        if (!source) {
+            return new Date("");
+        }
+
+        const hasTimeZone = /([zZ]|[+\-]\d{2}:\d{2})$/.test(source);
+        return new Date(hasTimeZone ? source : source + "Z");
     }
 
     function attachmentExtension(value) {
@@ -161,6 +171,13 @@
     }
 
     function attachmentKind(value) {
+        const source = String(value || "").toLowerCase();
+
+        // Binary-backed chat attachments are served from the API without a file extension.
+        if (source.includes("/api/messages/messages/") && source.includes("/attachment")) {
+            return "image";
+        }
+
         const extension = attachmentExtension(value);
         if (["jpg", "jpeg", "png", "webp"].includes(extension)) {
             return "image";
@@ -178,8 +195,8 @@
             return "";
         }
 
-        const allowedTypes = ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm", "video/quicktime"];
-        const allowedExtensions = ["jpg", "jpeg", "png", "webp", "mp4", "webm", "mov"];
+        const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+        const allowedExtensions = ["jpg", "jpeg", "png", "webp"];
         const extension = attachmentExtension(file.name || "");
         const type = String(file.type || "").toLowerCase();
 
@@ -188,7 +205,7 @@
         }
 
         if (!allowedTypes.includes(type) && !allowedExtensions.includes(extension)) {
-            return "Attachment must be a jpg, jpeg, png, webp, mp4, webm, or mov file.";
+            return "Attachment must be a jpg, jpeg, png, or webp image.";
         }
 
         return "";
@@ -216,7 +233,7 @@
     function syncConversationHeader(conversation) {
         if (!conversation) {
             elements.title.textContent = "Conversation";
-            elements.subtitle.textContent = "Online";
+            elements.subtitle.textContent = "Select a conversation to start messaging.";
             elements.avatar.textContent = "--";
             setComposerEnabled(false);
             return;
@@ -325,6 +342,57 @@
         });
     }
 
+    function ensureImageViewer() {
+        if (state.imageViewer) {
+            return state.imageViewer;
+        }
+
+        const viewer = document.createElement("div");
+        viewer.className = "messenger-image-viewer";
+        viewer.hidden = true;
+        viewer.innerHTML = [
+            '<button type="button" class="messenger-image-viewer__backdrop" data-image-viewer-close aria-label="Close image viewer"></button>',
+            '<div class="messenger-image-viewer__dialog" role="dialog" aria-modal="true" aria-label="Image viewer">',
+            '  <button type="button" class="messenger-image-viewer__close" data-image-viewer-close aria-label="Close image viewer">&times;</button>',
+            '  <img class="messenger-image-viewer__image" alt="Message attachment preview">',
+            '</div>'
+        ].join("");
+
+        viewer.querySelectorAll("[data-image-viewer-close]").forEach(function (button) {
+            button.addEventListener("click", closeImageViewer);
+        });
+
+        const image = viewer.querySelector(".messenger-image-viewer__image");
+        const dialog = viewer.querySelector(".messenger-image-viewer__dialog");
+        dialog.addEventListener("click", function (event) {
+            event.stopPropagation();
+        });
+
+        document.body.appendChild(viewer);
+        state.imageViewer = viewer;
+        state.imageViewerFrame = dialog;
+        state.imageViewerImage = image;
+        return viewer;
+    }
+
+    function openImageViewer(url) {
+        const viewer = ensureImageViewer();
+        state.imageViewerImage.src = url;
+        viewer.hidden = false;
+        document.body.classList.add("messenger-image-viewer-open");
+    }
+
+    function closeImageViewer() {
+        if (!state.imageViewer) {
+            return;
+        }
+
+        state.imageViewer.hidden = true;
+        if (state.imageViewerImage) {
+            state.imageViewerImage.removeAttribute("src");
+        }
+        document.body.classList.remove("messenger-image-viewer-open");
+    }
     function createAttachmentPreview(url) {
         const kind = attachmentKind(url);
         const wrapper = document.createElement("div");
@@ -335,7 +403,7 @@
             button.type = "button";
             button.className = "attachment-preview-button";
             button.addEventListener("click", function () {
-                window.open(url, "_blank", "noopener");
+                openImageViewer(url);
             });
 
             const image = document.createElement("img");
@@ -787,3 +855,8 @@
     refreshConversations(true);
     startPolling();
 })();
+
+
+
+
+

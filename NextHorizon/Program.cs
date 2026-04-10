@@ -18,6 +18,13 @@ var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnec
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+var configuredUrls = builder.Configuration["ASPNETCORE_URLS"]
+    ?? builder.Configuration["urls"];
+var hasConfiguredHttpsUrl = !string.IsNullOrWhiteSpace(configuredUrls)
+    && configuredUrls
+        .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Any(url => url.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
+
 // Database contexts
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(defaultConnection));
@@ -154,7 +161,10 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts(); // The default HSTS value is 30 days
 }
 
-app.UseHttpsRedirection();
+if (hasConfiguredHttpsUrl)
+{
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 
 app.UseRouting();
