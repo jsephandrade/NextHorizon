@@ -401,12 +401,6 @@ if (agentInput) {
 window.addEventListener('load', async () => {
   loadSupportState();
 
-  const left = document.querySelector('.help-left');
-  const right = document.querySelector('.help-right');
-  if (left && right) {
-    right.style.maxHeight = `${left.offsetHeight}px`;
-  }
-
   if (conversationId) {
     try {
       const stateResponse = await fetch(`/api/support/${conversationId}/state`);
@@ -433,14 +427,6 @@ window.addEventListener('load', async () => {
   }
 });
 
-window.addEventListener('resize', () => {
-  const left = document.querySelector('.help-left');
-  const right = document.querySelector('.help-right');
-  if (left && right) {
-    right.style.maxHeight = `${left.offsetHeight}px`;
-  }
-});
-
 setInterval(() => {
   loadMessages();
 }, 2000);
@@ -449,3 +435,8 @@ window.sendTopic = sendTopic;
 window.sendAgentMessage = sendAgentMessage;
 window.clearChat = clearChat;
 window.resolveChat = resolveChat;
+
+
+
+
+

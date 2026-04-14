@@ -91,12 +91,15 @@ namespace NextHorizon.Controllers
     {
         var realOrders = await _orderService.GetOrdersBySellerAsync(currentSellerId.Value, normalizedStartDate, normalizedEndDate);
         var couriers = await _orderService.GetCouriersAsync();
+        var returnRequests = await GetReturnRequestsBySellerAsync(currentSellerId.Value, normalizedStartDate, normalizedEndDate);
         ViewBag.Couriers = couriers;
+        ViewBag.ReturnRequests = returnRequests;
         return View(realOrders);
     }
     catch (Exception ex) when (IsDatabaseConnectionException(ex))
     {
         ViewBag.Couriers = new List<Logistics>();
+        ViewBag.ReturnRequests = new List<ReturnRequest>();
         TempData["ErrorMessage"] = "Order data is temporarily unavailable because the database connection could not be established.";
         return View(new List<Order>());
     }
@@ -318,8 +321,8 @@ public async Task<IActionResult> MarkOrderReturned([FromForm] MarkReturnedReques
                 : request.ReturnProof.ContentType;
         }
 
-        order.Status = "Return";
-        order.FulfillmentStatus = "Return";
+        order.Status = "Failed Delivery";
+        order.FulfillmentStatus = "Failed Delivery";
         order.ReturnReason = returnReason;
         order.ReturnNote = string.IsNullOrWhiteSpace(request.ReturnNote) ? null : request.ReturnNote.Trim();
         order.ReturnProcessedAt = DateTime.UtcNow;
@@ -335,7 +338,7 @@ public async Task<IActionResult> MarkOrderReturned([FromForm] MarkReturnedReques
             WHERE Seller_Id = {order.seller_id}");
 
         await transaction.CommitAsync();
-        return Json(new { success = true, message = "Order marked as returned, stock restored, and pending funds cancelled." });
+        return Json(new { success = true, message = "Order marked as Delivery Failed, stock restored, and pending funds cancelled." });
     }
     catch (Exception ex)
     {
@@ -373,33 +376,32 @@ public async Task<IActionResult> OrderDetails(string id, CancellationToken cance
 {
     var redirect = RedirectIfNotLoggedIn();
     if (redirect != null) return redirect;
-    
+
     if (!int.TryParse(id.Replace("ORD-", ""), out int orderId))
     {
         return BadRequest("Invalid Order ID");
     }
 
-    var order = await _context.Orders
-        .Include(o => o.OrderItems)
-        .ThenInclude(i => i.Product) 
-        .FirstOrDefaultAsync(o => o.OrderID == orderId);
+    var sellerId = HttpContext.Session.GetInt32("SellerId");
+    if (!sellerId.HasValue)
+    {
+        return RedirectToAction("Login", "Account");
+    }
 
+    var order = await _orderService.GetOrderByIdAsync(orderId, sellerId.Value);
     if (order == null)
     {
         return NotFound();
     }
 
-    // ==========================================
-    // 3. THE COURIER FIX (AGGRESSIVE LOOKUP)
-    // ==========================================
     if (order.logistics_id.HasValue && order.logistics_id.Value > 0)
     {
         var courierName = await _context.Logistics
             .Where(l => l.logistics_id == order.logistics_id.Value)
             .Select(l => l.courier_name)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
-        order.Courier = string.IsNullOrEmpty(courierName) ? "NextHorizon Partner" : courierName; 
+        order.Courier = string.IsNullOrEmpty(courierName) ? "NextHorizon Partner" : courierName;
     }
     else
     {
@@ -451,6 +453,267 @@ public async Task<IActionResult> OrderDetails(string id, CancellationToken cance
             }
         }
     };
+}
+public sealed class SubmitReturnRequestModel
+{
+    public int OrderId { get; set; }
+    public int BuyerId { get; set; }
+    public string Reason { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public IFormFile? ImageProof { get; set; }
+}
+
+public sealed class ReviewReturnRequestModel
+{
+    public int ReturnId { get; set; }
+    public string Decision { get; set; } = string.Empty;
+}
+
+public sealed class ReturnStatusUpdateModel
+{
+    public int ReturnId { get; set; }
+    public bool RestoreStock { get; set; }
+}
+
+[HttpPost]
+public async Task<IActionResult> SubmitReturnRequest([FromForm] SubmitReturnRequestModel request)
+{
+    if (request.OrderId <= 0)
+        return Json(new { success = false, message = "Invalid order." });
+
+    var reason = request.Reason?.Trim() ?? string.Empty;
+    var message = request.Message?.Trim() ?? string.Empty;
+    if (string.IsNullOrWhiteSpace(reason))
+        return Json(new { success = false, message = "Reason is required." });
+
+    var order = await _context.Orders
+        .AsNoTracking()
+        .FirstOrDefaultAsync(o => o.OrderID == request.OrderId);
+
+    if (order == null)
+        return Json(new { success = false, message = "Order not found." });
+
+    if (!string.Equals(order.Status, "Delivered", StringComparison.OrdinalIgnoreCase))
+        return Json(new { success = false, message = "Only delivered orders can be returned." });
+
+    if (request.ImageProof is null || request.ImageProof.Length == 0)
+        return Json(new { success = false, message = "Image proof is required." });
+
+    var isValidProof = request.ImageProof.Length > 0
+        && request.ImageProof.Length <= UploadValidationRules.MaxProofSizeBytes
+        && UploadValidationRules.HaveAllowedExtension(request.ImageProof)
+        && UploadValidationRules.HaveAllowedContentType(request.ImageProof)
+        && UploadValidationRules.HaveMatchingExtensionAndContentType(request.ImageProof)
+        && UploadValidationRules.HaveMatchingSignature(request.ImageProof)
+        && UploadValidationRules.HaveValidImageStructure(request.ImageProof);
+
+    if (!isValidProof)
+        return Json(new { success = false, message = "Proof image must be a valid JPG, JPEG, PNG, or WEBP file and 5MB or smaller." });
+
+    var hasExistingPendingRequest = await _context.ReturnRequests.AnyAsync(r =>
+        r.OrderId == request.OrderId &&
+        r.Status != "Refunded" &&
+        r.Status != "Return Rejected");
+
+    if (hasExistingPendingRequest)
+        return Json(new { success = false, message = "A return request already exists for this order." });
+
+    await using var memory = new MemoryStream();
+    await request.ImageProof.CopyToAsync(memory);
+
+    var buyerId = request.BuyerId > 0 ? request.BuyerId : 0;
+    var returnRequest = new ReturnRequest
+    {
+        OrderId = order.OrderID,
+        UserId = buyerId,
+        SellerId = order.seller_id,
+        Reason = reason,
+        Message = string.IsNullOrWhiteSpace(message) ? null : message,
+        FileName = Path.GetFileName(request.ImageProof.FileName),
+        ContentType = string.IsNullOrWhiteSpace(request.ImageProof.ContentType) ? "application/octet-stream" : request.ImageProof.ContentType,
+        ImageData = memory.ToArray(),
+        Status = "Return Requested",
+        CreatedAt = DateTime.UtcNow,
+        UpdatedAt = DateTime.UtcNow
+    };
+
+    _context.ReturnRequests.Add(returnRequest);
+    await _context.SaveChangesAsync();
+
+    return Json(new { success = true, message = "Return request submitted successfully." });
+}
+
+[HttpPost]
+public async Task<IActionResult> ReviewReturnRequest([FromBody] ReviewReturnRequestModel request)
+{
+    var sellerId = HttpContext.Session.GetInt32("SellerId");
+    if (!sellerId.HasValue)
+        return Json(new { success = false, message = "Session expired. Please log in again." });
+
+    var returnRequest = await _context.ReturnRequests.FirstOrDefaultAsync(r => r.ReturnId == request.ReturnId && r.SellerId == sellerId.Value);
+    if (returnRequest == null)
+        return Json(new { success = false, message = "Return request not found." });
+
+    if (!string.Equals(returnRequest.Status, "Return Requested", StringComparison.OrdinalIgnoreCase))
+        return Json(new { success = false, message = "Only new return requests can be reviewed." });
+
+    var decision = request.Decision?.Trim() ?? string.Empty;
+    if (string.Equals(decision, "approve", StringComparison.OrdinalIgnoreCase))
+    {
+        returnRequest.Status = "Return Approved";
+    }
+    else if (string.Equals(decision, "reject", StringComparison.OrdinalIgnoreCase))
+    {
+        returnRequest.Status = "Return Rejected";
+    }
+    else
+    {
+        return Json(new { success = false, message = "Invalid review decision." });
+    }
+
+    returnRequest.UpdatedAt = DateTime.UtcNow;
+    await _context.SaveChangesAsync();
+
+    return Json(new { success = true, message = $"Return request {returnRequest.Status.ToLowerInvariant()}." });
+}
+
+[HttpPost]
+public async Task<IActionResult> MarkReturnItemReceived([FromBody] ReturnStatusUpdateModel request)
+{
+    var sellerId = HttpContext.Session.GetInt32("SellerId");
+    if (!sellerId.HasValue)
+        return Json(new { success = false, message = "Session expired. Please log in again." });
+
+    var returnRequest = await _context.ReturnRequests.FirstOrDefaultAsync(r => r.ReturnId == request.ReturnId && r.SellerId == sellerId.Value);
+    if (returnRequest == null)
+        return Json(new { success = false, message = "Return request not found." });
+
+    if (!string.Equals(returnRequest.Status, "Return Approved", StringComparison.OrdinalIgnoreCase))
+        return Json(new { success = false, message = "Only approved returns can be marked as returned." });
+
+    returnRequest.Status = "Item Returned";
+    returnRequest.UpdatedAt = DateTime.UtcNow;
+    await _context.SaveChangesAsync();
+
+    return Json(new { success = true, message = "Item marked as returned." });
+}
+
+[HttpPost]
+public async Task<IActionResult> ConfirmReturnRefund([FromBody] ReturnStatusUpdateModel request)
+{
+    var sellerId = HttpContext.Session.GetInt32("SellerId");
+    if (!sellerId.HasValue)
+        return Json(new { success = false, message = "Session expired. Please log in again." });
+
+    var returnRequest = await _context.ReturnRequests.FirstOrDefaultAsync(r => r.ReturnId == request.ReturnId && r.SellerId == sellerId.Value);
+    if (returnRequest == null)
+        return Json(new { success = false, message = "Return request not found." });
+
+    if (!string.Equals(returnRequest.Status, "Item Returned", StringComparison.OrdinalIgnoreCase))
+        return Json(new { success = false, message = "Only returned items can be refunded." });
+
+    if (request.RestoreStock)
+    {
+        var order = await _context.Orders
+            .Include(o => o.OrderItems)
+            .FirstOrDefaultAsync(o => o.OrderID == returnRequest.OrderId && o.seller_id == sellerId.Value);
+
+        if (order != null)
+        {
+            await RestoreStockForOrderAsync(order);
+        }
+    }
+
+    returnRequest.Status = "Refunded";
+    returnRequest.UpdatedAt = DateTime.UtcNow;
+    await _context.SaveChangesAsync();
+
+    return Json(new { success = true, message = "Refund confirmed." });
+}
+
+private async Task<List<ReturnRequest>> GetReturnRequestsBySellerAsync(int sellerId, DateTime? startDate = null, DateTime? endDate = null)
+{
+    var query = _context.ReturnRequests
+        .AsNoTracking()
+        .Where(r => r.SellerId == sellerId);
+
+    if (startDate.HasValue)
+    {
+        var normalizedStartDate = startDate.Value.Date;
+        query = query.Where(r => r.CreatedAt >= normalizedStartDate);
+    }
+
+    if (endDate.HasValue)
+    {
+        var exclusiveEndDate = endDate.Value.Date.AddDays(1);
+        query = query.Where(r => r.CreatedAt < exclusiveEndDate);
+    }
+
+    var returnRequests = await query
+        .OrderByDescending(r => r.CreatedAt)
+        .ToListAsync();
+
+    var orderIds = returnRequests.Select(r => r.OrderId).Distinct().ToList();
+    if (orderIds.Count == 0)
+        return returnRequests;
+
+    var orders = await _context.Orders
+        .AsNoTracking()
+        .Where(o => orderIds.Contains(o.OrderID))
+        .Select(o => new { o.OrderID, o.FullName, o.OrderDate })
+        .ToDictionaryAsync(o => o.OrderID);
+
+    foreach (var returnRequest in returnRequests)
+    {
+        if (orders.TryGetValue(returnRequest.OrderId, out var order))
+        {
+            returnRequest.BuyerName = order.FullName ?? "Buyer";
+            returnRequest.OrderDate = order.OrderDate;
+        }
+    }
+
+    return returnRequests;
+}
+
+
+[HttpGet]
+public async Task<IActionResult> ReturnRequestImage(int returnId)
+{
+    var sellerId = HttpContext.Session.GetInt32("SellerId");
+    if (!sellerId.HasValue)
+        return Unauthorized();
+
+    var returnRequest = await _context.ReturnRequests
+        .AsNoTracking()
+        .FirstOrDefaultAsync(r => r.ReturnId == returnId && r.SellerId == sellerId.Value);
+
+    if (returnRequest == null || returnRequest.ImageData == null || returnRequest.ImageData.Length == 0)
+        return NotFound();
+
+    return File(returnRequest.ImageData, returnRequest.ContentType ?? "application/octet-stream");
+}
+private async Task RestoreStockForOrderAsync(Order order)
+{
+    foreach (var item in order.OrderItems)
+    {
+        DbProductVariant? variant = null;
+
+        if (item.VariantId.HasValue)
+        {
+            variant = await _context.ProductVariants.FirstOrDefaultAsync(v => v.Id == item.VariantId.Value);
+        }
+
+        variant ??= await _context.ProductVariants.FirstOrDefaultAsync(v =>
+            v.ProductId == item.ProductID &&
+            (item.Size == null || v.Size == item.Size) &&
+            (item.Color == null || v.Style == item.Color));
+
+        if (variant == null)
+            continue;
+
+        variant.Quantity += item.Quantity;
+        variant.Availability = variant.Quantity > 0 ? "In Stock" : "Out of Stock";
+    }
 }
         // ============== FINANCE DASHBOARD ==============
         public async Task<IActionResult> Finance()
@@ -1297,6 +1560,14 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
             return View("~/Views/Dashboard/HelpCenter.cshtml");
         }
 
+        public IActionResult HelpCenterDrawer()
+        {
+            var redirect = RedirectIfNotLoggedIn();
+            if (redirect != null) return redirect;
+
+            return View("~/Views/Dashboard/HelpCenterDrawer.cshtml");
+        }
+
         // ============== ACCOUNT SETTINGS ==============
         public IActionResult AccountSettings()
         {
@@ -1555,15 +1826,6 @@ public async Task<IActionResult> DeclineOrder([FromBody] DeclineRequest request)
         
     }
 }
-
-
-
-
-
-
-
-
-
 
 
 

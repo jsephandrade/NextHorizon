@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Seller Help Center";
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
 }
@@ -9,82 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 }
 
-<div class="help-center-page">
-    <div class="help-center-hero">
-        <div>
-            <p class="help-center-label">Support</p>
-            <h1>Need help managing your seller account?</h1>
-            <p class="help-center-subtitle">
-                Explore quick answers, guides, and support options for orders, payouts, shipping, marketing, and account
-                management.
-            </p>
-            <div class="help-search" style="margin-top:40px;">
-                <i class="fas fa-search"></i>
-                <input type="text" id="helpSearchInput" placeholder="Search help topics..." />
-            </div>
-        </div>
-        <a class="help-center-action" href="mailto:support@nexthorizon.com">Email Support</a>
-    </div>
-
-    <div class="two-column-layout">
-        <!-- ================= LEFT SIDE (HELP CENTER) ================= -->
-        <div class="help-left">
-            <p id="noResultsMessage" class="no-results">No results found.</p>
-
-            <!-- CATEGORIES -->
-            <h2 class="help-category-header">Categories</h2>
-            <div class="carousel-container">
-                <button class="carousel-arrow carousel-arrow-left" id="carouselLeft">&larr;</button>
-                <div id="helpCenterGrid" class="help-center-grid">
-                    <!-- Categories will be injected here dynamically -->
-                </div>
-                <button class="carousel-arrow carousel-arrow-right" id="carouselRight">&rarr;</button>
-            </div>
-
-            <!-- FAQ -->
-            <div class="help-center-faq">
-                <h2>Frequently Asked Questions</h2>
-                <div id="faqContainer">
-                    <!-- FAQs will be injected here dynamically -->
-                </div>
-                <div id="chatWithAgentRow" class="chat-with-agent-row hidden">
-                    <button id="chatWithAgentBtn" type="button" class="chat-with-agent-btn" onclick="openChatWithAgent()">
-                        Chat with Agent
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ================= RIGHT SIDE (CHAT SUPPORT) ================= -->
-        <div class="help-right">
-            <div class="support-container">
-                <!-- HEADER -->
-                <div class="support-header">
-                    <div class="support-header-left">
-                        <div class="support-avatar">S</div>
-                        <div>
-                            <h3>Seller Support</h3>
-                            <p>Customer Service</p>
-                        </div>
-                    </div>
-                    <button id="resolveChatBtn" class="resolve-chat-btn hidden" onclick="resolveChat()">Resolve</button>
-                    <button class="clear-chat-btn" onclick="clearChat()">Clear Chat</button>
-                </div>
-
-                <!-- CHAT BODY -->
-                <div class="support-body">
-                    <div id="chatThread" class="chat-thread"></div>
-                    <div id="typingIndicator" class="typing-indicator" style="display:none;">Agent is typing...</div>
-
-                    <div id="chatInputRow" class="chat-input-row hidden">
-                        <input type="text" id="agentInput" placeholder="Type your message..." />
-                        <button class="agent-btn" onclick="sendAgentMessage()">Send</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<partial name="_HelpCenterContent" />
 
 @section Scripts {
 <script src="/js/helpcenter.js"></script>
@@ -93,7 +18,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     let selectedHelpCategory = null;
 
-    // Load categories from DB (api/faqs/categories), fallback to hardcoded if needed
     async function loadCategories() {
         let categories = [];
         try {
@@ -164,7 +88,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Fetch and display FAQs for the selected category
     window.loadFaqs = async function(category) {
         try {
             selectedHelpCategory = category;
@@ -193,8 +116,6 @@ document.addEventListener('DOMContentLoaded', function() {
             faqs.forEach(faq => {
                 const item = document.createElement('div');
                 item.className = 'faq-item';
-                
-                // Log the faq object to see its structure
                 console.log('FAQ item:', faq);
 
                 item.innerHTML = `
@@ -205,7 +126,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 container.appendChild(item);
             });
 
-            // Toggle FAQ answer display
             document.querySelectorAll('.faq-question').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const p = btn.nextElementSibling;
@@ -233,7 +153,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Load categories when page loads
     loadCategories();
 });
 </script>

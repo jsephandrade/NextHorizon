@@ -8,6 +8,7 @@
     <!-- FONT & ICONS -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/global-help-center.css" asp-append-version="true" />
     <style>
         /* ===== RESET & BASE ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -389,7 +390,13 @@
         </main>
     </div>
 
+    @if (!isHelpCenter)
+    {
+        <partial name="_GlobalHelpCenterLauncher" />
+    }
+
     @await RenderSectionAsync("Scripts", required: false)
+    <script src="~/js/global-help-center.js" asp-append-version="true"></script>
     <script>
         function toggleProfileMenu() {
             var menu = document.getElementById("profileMenu");
@@ -411,5 +418,9 @@
 
 </body>
 </html>
+
+
+
+
 
 

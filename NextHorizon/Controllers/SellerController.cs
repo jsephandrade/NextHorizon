@@ -492,21 +492,23 @@ public sealed class SellerController : Controller
             {
                 var variants = await _db.ProductVariants
                     .Where(v => v.ProductId == id.Value)
+                    .OrderBy(v => v.Id)
                     .ToListAsync();
 
+                await BackfillProductVariantImagesAsync(variants);
+
                 ViewBag.AllColorImages = variants
-                    .Where(v => !string.IsNullOrWhiteSpace(v.ImagePath))
-                    .Select(v => v.ImagePath)
-                    .Distinct()
+                    .Select(GetVariantImageUrl)
+                    .Where(url => !string.IsNullOrWhiteSpace(url))
                     .ToList();
 
                 ViewBag.ImagesByStyle = variants
-                    .GroupBy(v => v.Style)
-                    .ToDictionary(g => g.Key, g => g
-                        .Where(v => !string.IsNullOrWhiteSpace(v.ImagePath))
-                        .Select(v => v.ImagePath)
-                        .Distinct()
-                        .ToList());
+                    .GroupBy(v => string.IsNullOrWhiteSpace(v.Style) ? "Default" : v.Style)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(GetVariantImageUrl)
+                            .Where(url => !string.IsNullOrWhiteSpace(url))
+                            .ToList());
 
                 var variantPrices = variants
                     .Where(v => v.Price.HasValue && v.Price.Value > 0)
@@ -590,13 +592,19 @@ public sealed class SellerController : Controller
             Tables = new List<SizeGuideTableItem>()
         };
 
-        var productImage = await _db.ProductVariants
-            .AsNoTracking()
-            .Where(v => v.ProductId == product.ProductId && v.ImagePath != null && v.ImagePath != "")
+        var productImageVariant = await _db.ProductVariants
+            .Where(v => v.ProductId == product.ProductId && (v.ImageData != null || (v.ImagePath != null && v.ImagePath != "")))
             .OrderBy(v => v.Id)
-            .Select(v => v.ImagePath)
             .FirstOrDefaultAsync();
-        model.ProductImageUrl = productImage ?? string.Empty;
+        if (productImageVariant != null)
+        {
+            await BackfillProductVariantImagesAsync(new List<DbProductVariant> { productImageVariant });
+            model.ProductImageUrl = GetVariantImageUrl(productImageVariant);
+        }
+        else
+        {
+            model.ProductImageUrl = string.Empty;
+        }
 
         var existingGuide = await _db.SizeGuides
             .Include(g => g.Images)
@@ -672,13 +680,19 @@ public sealed class SellerController : Controller
             Tables = new List<SizeGuideTableItem>()
         };
 
-        var productImage = await _db.ProductVariants
-            .AsNoTracking()
-            .Where(v => v.ProductId == product.ProductId && v.ImagePath != null && v.ImagePath != "")
+        var productImageVariant = await _db.ProductVariants
+            .Where(v => v.ProductId == product.ProductId && (v.ImageData != null || (v.ImagePath != null && v.ImagePath != "")))
             .OrderBy(v => v.Id)
-            .Select(v => v.ImagePath)
             .FirstOrDefaultAsync();
-        model.ProductImageUrl = productImage ?? string.Empty;
+        if (productImageVariant != null)
+        {
+            await BackfillProductVariantImagesAsync(new List<DbProductVariant> { productImageVariant });
+            model.ProductImageUrl = GetVariantImageUrl(productImageVariant);
+        }
+        else
+        {
+            model.ProductImageUrl = string.Empty;
+        }
 
         var existingGuide = await _db.SizeGuides
             .Include(g => g.Images)
@@ -1108,6 +1122,57 @@ public sealed class SellerController : Controller
         };
     }
 
+    private async Task BackfillProductVariantImagesAsync(IEnumerable<DbProductVariant> variants)
+    {
+        var changed = false;
+
+        foreach (var variant in variants)
+        {
+            if (await TryPopulateVariantImageDataAsync(variant))
+                changed = true;
+        }
+
+        if (changed)
+            await _db.SaveChangesAsync();
+    }
+
+    private async Task<bool> TryPopulateVariantImageDataAsync(DbProductVariant variant)
+    {
+        if (variant.ImageData is { Length: > 0 } || string.IsNullOrWhiteSpace(variant.ImagePath))
+            return false;
+
+        var relativePath = variant.ImagePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+        var physicalPath = Path.Combine(_webHostEnvironment.WebRootPath, relativePath);
+
+        if (!System.IO.File.Exists(physicalPath))
+            return false;
+
+        variant.ImageData = await System.IO.File.ReadAllBytesAsync(physicalPath);
+
+        if (string.IsNullOrWhiteSpace(variant.ImageMimeType))
+        {
+            variant.ImageMimeType = Path.GetExtension(physicalPath).ToLowerInvariant() switch
+            {
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".gif" => "image/gif",
+                ".webp" => "image/webp",
+                ".bmp" => "image/bmp",
+                _ => "application/octet-stream"
+            };
+        }
+
+        return true;
+    }
+
+    private string GetVariantImageUrl(DbProductVariant variant)
+    {
+        if (variant.ImageData is { Length: > 0 } || !string.IsNullOrWhiteSpace(variant.ImagePath))
+            return Url.Action("Variant", "ProductImage", new { variantId = variant.Id }) ?? $"/ProductImage/Variant/{variant.Id}";
+
+        return string.Empty;
+    }
+
     private async Task SaveProductVariantsAsync(int productId, List<DbProductVariant> variants)
     {
         try
@@ -1170,3 +1235,5 @@ public sealed class SellerController : Controller
                innerIoe.Message.Contains("connection from the pool", StringComparison.OrdinalIgnoreCase);
     }
 }
+
+

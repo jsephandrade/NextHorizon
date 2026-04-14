@@ -300,7 +300,7 @@ function openReturnedInfoModal(orderRow) {
     document.getElementById('returnInfoCustomer').textContent = orderRow.children[1]?.innerText || '---';
     document.getElementById('returnInfoProduct').textContent = orderRow.children[3]?.innerText || '---';
     document.getElementById('returnInfoQuantity').textContent = orderRow.children[4]?.innerText || '0';
-    document.getElementById('returnInfoTotal').textContent = orderRow.children[5]?.innerText || '0.00';
+    document.getElementById('returnInfoTotal').textContent = orderRow.children[5]?.innerText || '\u20B10.00';
     document.getElementById('returnInfoCourier').textContent = orderRow.dataset.courier || 'J&T Express';
     document.getElementById('returnInfoTracking').textContent = orderRow.dataset.tracking || '123456789';
     document.getElementById('returnInfoProofImage').src = orderRow.dataset.returnProof || 'https://picsum.photos/seed/return-proof-1/360/220';
@@ -615,7 +615,7 @@ function confirmReturn() {
 }
 
 function completeReturn() {
-    updateOrderRowStatus(selectedReturnOrderId, 'return', 'Return');
+    updateOrderRowStatus(selectedReturnOrderId, 'failed-delivery', 'Failed Delivery');
     closeReturnedInfoModal();
     openConfirmReturnModal();
     applyOrderFilters();
@@ -1092,7 +1092,7 @@ function openMarkReturnedModal(orderRow) {
     document.getElementById('returnCustomer').textContent = orderRow.children[1]?.innerText.trim() || '---';
     document.getElementById('returnProduct').textContent = orderRow.children[3]?.innerText.trim() || '---';
     document.getElementById('returnItems').textContent = orderRow.children[4]?.innerText.trim() || '0';
-    document.getElementById('returnTotal').textContent = orderRow.children[5]?.innerText.trim() || 'P0.00';
+    document.getElementById('returnTotal').textContent = orderRow.children[5]?.innerText.trim() || '\u20B10.00';
     document.getElementById('returnCourier').textContent = orderRow.dataset.courier || '---';
     document.getElementById('returnTracking').textContent = orderRow.dataset.tracking || '---';
     document.getElementById('returnReason').value = '';
@@ -1115,7 +1115,7 @@ function openReturnedInfoModal(orderRow) {
     document.getElementById('returnInfoCustomer').textContent = orderRow.children[1]?.innerText.trim() || '---';
     document.getElementById('returnInfoProduct').textContent = orderRow.children[3]?.innerText.trim() || '---';
     document.getElementById('returnInfoQuantity').textContent = orderRow.children[4]?.innerText.trim() || '0';
-    document.getElementById('returnInfoTotal').textContent = orderRow.children[5]?.innerText.trim() || '0.00';
+    document.getElementById('returnInfoTotal').textContent = orderRow.children[5]?.innerText.trim() || '\u20B10.00';
     document.getElementById('returnInfoCourier').textContent = orderRow.dataset.courier || '---';
     document.getElementById('returnInfoTracking').textContent = orderRow.dataset.tracking || '---';
     document.getElementById('returnInfoReason').textContent = orderRow.dataset.returnReason || '---';
@@ -1357,6 +1357,27 @@ function clearOrderManagementDateFilter() {
     window.location.assign(url.toString());
 }
 
+function initializeOrderManagementStatusFromUrl() {
+    const url = new URL(window.location.href);
+    const requestedStatus = (url.searchParams.get('status') || '').trim().toLowerCase();
+    if (!requestedStatus) {
+        return;
+    }
+
+    const matchingButton = Array.from(document.querySelectorAll('.order-filter-btn')).find(function (button) {
+        return (button.getAttribute('data-filter') || '').trim().toLowerCase() === requestedStatus;
+    });
+
+    if (!matchingButton) {
+        return;
+    }
+
+    activeStatusFilter = matchingButton.getAttribute('data-filter') || matchingButton.dataset.filter || 'all';
+    document.querySelectorAll('.order-filter-btn').forEach(function (button) {
+        button.classList.remove('active');
+    });
+    matchingButton.classList.add('active');
+}
 function initializeOrderManagementDateFilter() {
     document.getElementById('startDate')?.addEventListener('change', submitOrderManagementDateFilter);
     document.getElementById('endDate')?.addEventListener('change', submitOrderManagementDateFilter);
@@ -1365,6 +1386,7 @@ function initializeOrderManagementDateFilter() {
         clearOrderManagementDateFilter();
     });
 
+    initializeOrderManagementStatusFromUrl();
     window.applyOrderFilters();
 }
 
@@ -1373,4 +1395,209 @@ if (document.readyState === 'loading') {
 } else {
     initializeOrderManagementDateFilter();
 }
+
+
+
+let selectedReturnRequestRow = null;
+
+function openReturnDetailsModalFromRow(row) {
+    if (!row) {
+        return;
+    }
+
+    selectedReturnRequestRow = row;
+    const returnId = row.dataset.returnId || '';
+    const orderId = row.dataset.orderId || '';
+    const buyer = row.dataset.buyer || 'Buyer';
+    const reason = row.dataset.reason || 'Not provided';
+    const message = row.dataset.message || 'No additional message provided.';
+    const imageUrl = row.dataset.imageUrl || '';
+    const status = row.dataset.status || 'Return Requested';
+
+    document.getElementById('returnDetailsOrderId').textContent = orderId;
+    document.getElementById('returnDetailsBuyer').textContent = buyer;
+    document.getElementById('returnDetailsReason').textContent = reason;
+    document.getElementById('returnDetailsMessage').textContent = message;
+
+    const statusBadge = document.getElementById('returnDetailsStatus');
+    statusBadge.textContent = status;
+    statusBadge.className = 'status-badge ' + status.toLowerCase().replace(/\s+/g, '-');
+
+    const imageElement = document.getElementById('returnDetailsImage');
+    imageElement.src = imageUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="720" height="250"%3E%3Crect width="100%25" height="100%25" rx="18" fill="%23f8fafc"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2364758b" font-family="Arial" font-size="20"%3ENo image uploaded%3C/text%3E%3C/svg%3E';
+    imageElement.alt = 'Return evidence for order #' + orderId;
+
+    const refundWrap = document.getElementById('refundStockWrap');
+    const restoreStockCheckbox = document.getElementById('restoreStockCheckbox');
+    restoreStockCheckbox.checked = false;
+    refundWrap.style.display = status === 'Item Returned' ? '' : 'none';
+
+    const actions = document.getElementById('returnDetailsActions');
+    actions.innerHTML = '';
+
+    if (status === 'Return Requested') {
+        actions.appendChild(buildReturnActionButton('Reject', 'return-btn return-btn-secondary', function () {
+            updateReturnRequestStatus('/Dashboard/ReviewReturnRequest', { returnId: parseInt(returnId, 10), decision: 'reject' });
+        }));
+        actions.appendChild(buildReturnActionButton('Approve', 'return-btn return-btn-primary', function () {
+            updateReturnRequestStatus('/Dashboard/ReviewReturnRequest', { returnId: parseInt(returnId, 10), decision: 'approve' });
+        }));
+    } else if (status === 'Return Approved') {
+        actions.appendChild(buildReturnActionButton('Mark as Item Returned', 'return-btn return-btn-primary', function () {
+            updateReturnRequestStatus('/Dashboard/MarkReturnItemReceived', { returnId: parseInt(returnId, 10) });
+        }));
+    } else if (status === 'Item Returned') {
+        actions.appendChild(buildReturnActionButton('Confirm Refund', 'return-btn return-btn-primary', function () {
+            updateReturnRequestStatus('/Dashboard/ConfirmReturnRefund', {
+                returnId: parseInt(returnId, 10),
+                restoreStock: document.getElementById('restoreStockCheckbox').checked
+            });
+        }));
+    }
+
+    document.getElementById('returnDetailsModal').style.display = 'flex';
+}
+
+function closeReturnDetailsModal() {
+    document.getElementById('returnDetailsModal').style.display = 'none';
+    selectedReturnRequestRow = null;
+}
+
+function buildReturnActionButton(label, className, onClick) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = className;
+    button.textContent = label;
+    button.addEventListener('click', onClick);
+    return button;
+}
+
+async function updateReturnRequestStatus(url, payload) {
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        if (!result.success) {
+            showToast(result.message || 'Unable to update return request.', 'error');
+            return;
+        }
+
+        showToast(result.message || 'Return request updated.', 'success');
+        setTimeout(function () {
+            location.reload();
+        }, 800);
+    } catch (error) {
+        console.error(error);
+        showToast('System error while updating the return request.', 'error');
+    }
+}
+
+function toggleOrderManagementPanels(currentStatus) {
+    const ordersPanel = document.getElementById('ordersPanel');
+    const returnsPanel = document.getElementById('returnsPanel');
+    const isReturnView = currentStatus === 'return';
+
+    if (ordersPanel) {
+        ordersPanel.style.display = isReturnView ? 'none' : '';
+    }
+
+    if (returnsPanel) {
+        returnsPanel.style.display = isReturnView ? '' : 'none';
+    }
+}
+
+window.applyOrderFilters = function () {
+    const searchInput = document.getElementById('orderSearch');
+    const searchValue = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+    const categorySelect = document.getElementById('categoryFilter');
+    const categoryValue = categorySelect ? categorySelect.value.toLowerCase().trim() : 'all';
+
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    const startDate = parseOrderManagementDate(startDateInput ? startDateInput.value : '');
+    const endDate = parseOrderManagementDate(endDateInput ? endDateInput.value : '', true);
+
+    let currentStatus = 'all';
+    if (typeof activeStatusFilter !== 'undefined') {
+        currentStatus = activeStatusFilter.toLowerCase().trim();
+    }
+
+    toggleOrderManagementPanels(currentStatus);
+
+    if (currentStatus === 'return') {
+        const returnRows = document.querySelectorAll('.return-row');
+        let visibleReturnRows = 0;
+
+        returnRows.forEach(function (row) {
+            const rowText = row.innerText.toLowerCase();
+            const rowDate = parseOrderManagementDate(row.dataset.date || '');
+            const searchMatch = !searchValue || rowText.includes(searchValue);
+            const startDateMatch = !startDate || (rowDate && rowDate >= startDate);
+            const endDateMatch = !endDate || (rowDate && rowDate <= endDate);
+
+            if (searchMatch && startDateMatch && endDateMatch) {
+                row.style.display = '';
+                visibleReturnRows += 1;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        return;
+    }
+
+    let visibleRowCount = 0;
+    const rows = document.querySelectorAll('.order-row');
+
+    rows.forEach(function (row) {
+        const status = (row.dataset.status || '').toLowerCase().trim();
+        const rowText = row.innerText.toLowerCase();
+        const rowCategories = (row.dataset.categories || '')
+            .split('|')
+            .map(function (category) { return category.toLowerCase().trim(); })
+            .filter(Boolean);
+        const rowDate = parseOrderManagementDate(row.dataset.orderDate || '');
+
+        const statusMatch = currentStatus === 'all' || status === currentStatus;
+        const categoryMatch = categoryValue === 'all' || rowCategories.includes(categoryValue);
+        const searchMatch = !searchValue || rowText.includes(searchValue);
+        const startDateMatch = !startDate || (rowDate && rowDate >= startDate);
+        const endDateMatch = !endDate || (rowDate && rowDate <= endDate);
+
+        if (statusMatch && categoryMatch && searchMatch && startDateMatch && endDateMatch) {
+            row.style.display = '';
+            visibleRowCount += 1;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    updateOrderManagementEmptyState(visibleRowCount);
+};
+
+applyOrderFilters = window.applyOrderFilters;
+
+document.addEventListener('click', function (event) {
+    const returnDetailsBtn = event.target.closest('.return-view-details-btn');
+    if (returnDetailsBtn) {
+        event.preventDefault();
+        openReturnDetailsModalFromRow(returnDetailsBtn.closest('.return-row'));
+        return;
+    }
+
+    if (event.target.id === 'returnDetailsModal') {
+        closeReturnDetailsModal();
+    }
+});
+
+document.getElementById('returnDetailsImage')?.addEventListener('click', function () {
+    if (this.src) {
+        window.open(this.src, '_blank');
+    }
+});
 

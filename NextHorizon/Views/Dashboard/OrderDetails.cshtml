@@ -132,7 +132,7 @@
                         <tr style="border-bottom: 1px solid #f3f4f6;">
                             <td style="padding: 20px;">
                                 <div style="display: flex; align-items: flex-start; gap: 15px;">
-                                    <img src="@(string.IsNullOrEmpty(item.Product?.ImagePath) ? "https://picsum.photos/seed/" + item.ProductID + "/50" : item.Product.ImagePath)" 
+                                    <img src="@(string.IsNullOrWhiteSpace(item.Product?.ImagePath) ? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Crect width='60' height='60' rx='8' fill='%23e5e7eb'/%3E%3C/svg%3E" : item.Product.ImagePath)" 
                                          style="border-radius: 8px; width: 60px; height: 60px; object-fit: cover; border: 1px solid #f3f4f6;" />
                                     
                                     <div>
@@ -262,3 +262,4 @@
 @section Scripts {
     <script src="~/js/ordermanagement.js" asp-append-version="true"></script>
 }
+

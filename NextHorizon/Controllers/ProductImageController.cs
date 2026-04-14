@@ -7,10 +7,12 @@ namespace NextHorizon.Controllers;
 public class ProductImageController : Controller
 {
     private readonly AppDbContext _db;
+    private readonly IWebHostEnvironment _environment;
 
-    public ProductImageController(AppDbContext db)
+    public ProductImageController(AppDbContext db, IWebHostEnvironment environment)
     {
         _db = db;
+        _environment = environment;
     }
 
     // Serves binary image for a variant: <img src="/ProductImage/Variant/42" />
@@ -25,18 +27,65 @@ public class ProductImageController : Controller
 
         if (variant == null) return NotFound();
 
-        // Serve binary data if available
         if (variant.ImageData != null && variant.ImageData.Length > 0)
         {
             var mime = string.IsNullOrEmpty(variant.ImageMimeType) ? "image/jpeg" : variant.ImageMimeType;
             return File(variant.ImageData, mime);
         }
 
-        // Fallback: redirect to file path if binary not yet migrated
         if (!string.IsNullOrEmpty(variant.ImagePath))
             return Redirect(variant.ImagePath);
 
         return NotFound();
+    }
+
+    // Returns every stored image for a product and backfills missing VARBINARY data from disk when available.
+    [HttpGet("/ProductImage/Product/{productId:int}")]
+    public async Task<IActionResult> Product(int productId)
+    {
+        var variants = await _db.ProductVariants
+            .Where(v => v.ProductId == productId)
+            .OrderBy(v => v.Id)
+            .ToListAsync();
+
+        if (variants.Count == 0)
+            return NotFound(new { message = "Product has no variants or images.", productId });
+
+        var changed = false;
+        var images = new List<object>();
+
+        foreach (var variant in variants)
+        {
+            if (!HasUsableImage(variant.ImageData, variant.ImagePath))
+                continue;
+
+            if (await TryPopulateVariantImageDataAsync(variant))
+                changed = true;
+
+            images.Add(new
+            {
+                variantId = variant.Id,
+                variant.ProductId,
+                variant.Style,
+                variant.Size,
+                imageUrl = Url.Action(nameof(Variant), "ProductImage", new { variantId = variant.Id }) ?? $"/ProductImage/Variant/{variant.Id}",
+                imagePath = variant.ImagePath,
+                mimeType = variant.ImageMimeType,
+                imageData = variant.ImageData,
+                byteLength = variant.ImageData?.Length ?? 0,
+                hasBinaryData = variant.ImageData is { Length: > 0 }
+            });
+        }
+
+        if (changed)
+            await _db.SaveChangesAsync();
+
+        return Ok(new
+        {
+            productId,
+            imageCount = images.Count,
+            images
+        });
     }
 
     // ONE-TIME MIGRATION: Converts existing file-path images to VARBINARY for a seller's variants
@@ -57,31 +106,14 @@ public class ProductImageController : Controller
 
         foreach (var variant in variants)
         {
-            var relativePath = variant.ImagePath.TrimStart('/');
-            var physicalPath = Path.Combine(
-                Directory.GetCurrentDirectory(), "wwwroot",
-                relativePath.Replace('/', Path.DirectorySeparatorChar));
-
-            if (!System.IO.File.Exists(physicalPath))
+            if (!await TryPopulateVariantImageDataAsync(variant))
             {
                 results.Add($"VariantId {variant.Id}: SKIPPED - file not found");
                 skipped++;
                 continue;
             }
 
-            var bytes = await System.IO.File.ReadAllBytesAsync(physicalPath);
-            var ext = Path.GetExtension(physicalPath).ToLowerInvariant();
-            variant.ImageData = bytes;
-            variant.ImageMimeType = ext switch
-            {
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".png"            => "image/png",
-                ".gif"            => "image/gif",
-                ".webp"           => "image/webp",
-                _                 => "image/jpeg"
-            };
-
-            results.Add($"VariantId {variant.Id}: OK - {bytes.Length} bytes ({variant.ImageMimeType})");
+            results.Add($"VariantId {variant.Id}: OK - {variant.ImageData!.Length} bytes ({variant.ImageMimeType})");
             converted++;
         }
 
@@ -92,5 +124,46 @@ public class ProductImageController : Controller
             message = $"Migration complete. Converted: {converted}, Skipped: {skipped}",
             details = results
         });
+    }
+
+    private async Task<bool> TryPopulateVariantImageDataAsync(NextHorizon.Models.DbProductVariant variant)
+    {
+        if (variant.ImageData is { Length: > 0 } || string.IsNullOrWhiteSpace(variant.ImagePath))
+            return false;
+
+        var physicalPath = ResolvePhysicalPath(variant.ImagePath);
+        if (string.IsNullOrWhiteSpace(physicalPath) || !System.IO.File.Exists(physicalPath))
+            return false;
+
+        variant.ImageData = await System.IO.File.ReadAllBytesAsync(physicalPath);
+        variant.ImageMimeType = NormalizeMimeType(Path.GetExtension(physicalPath));
+        return true;
+    }
+
+    private string? ResolvePhysicalPath(string? imagePath)
+    {
+        if (string.IsNullOrWhiteSpace(imagePath))
+            return null;
+
+        var relativePath = imagePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+        return Path.Combine(_environment.WebRootPath, relativePath);
+    }
+
+    private static bool HasUsableImage(byte[]? imageData, string? imagePath)
+    {
+        return imageData is { Length: > 0 } || !string.IsNullOrWhiteSpace(imagePath);
+    }
+
+    private static string NormalizeMimeType(string? extension)
+    {
+        return extension?.ToLowerInvariant() switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            ".bmp" => "image/bmp",
+            _ => "application/octet-stream"
+        };
     }
 }

@@ -229,6 +229,19 @@
         }) || null;
     }
 
+    function conversationSignature(conversation) {
+        if (!conversation) {
+            return "";
+        }
+
+        return [
+            conversation.conversationId,
+            conversation.updatedAt || "",
+            conversation.lastMessagePreview || "",
+            conversation.unreadCount || 0
+        ].join("|");
+    }
+
     function syncConversationHeader(conversation) {
         if (!conversation) {
             elements.title.textContent = "Conversation";
@@ -592,6 +605,8 @@
         }
 
         state.isRefreshingConversations = true;
+        const previousActiveConversationId = state.activeConversationId;
+        const previousActiveSignature = state.activeConversationSignature;
 
         return listConversations()
             .then(function (conversations) {
@@ -599,6 +614,7 @@
 
                 if (!conversations.length) {
                     state.activeConversationId = null;
+                    state.activeConversationSignature = "";
                     renderConversationList();
                     syncConversationHeader(null);
                     renderEmptyMessages("No conversations yet.");
@@ -610,11 +626,19 @@
                     state.activeConversationId = chooseInitialConversationId();
                 }
 
-                renderConversationList();
-                syncConversationHeader(activeConversation());
+                const currentActiveConversation = activeConversation();
+                const currentActiveSignature = conversationSignature(currentActiveConversation);
+                const shouldReloadMessages = forceMessages !== false
+                    || previousActiveConversationId !== state.activeConversationId
+                    || previousActiveSignature !== currentActiveSignature;
 
-                if (forceMessages !== false) {
-                    return loadMessages(true);
+                state.activeConversationSignature = currentActiveSignature;
+
+                renderConversationList();
+                syncConversationHeader(currentActiveConversation);
+
+                if (shouldReloadMessages) {
+                    return loadMessages(forceMessages !== false);
                 }
 
                 setStatus("", false);
@@ -645,6 +669,7 @@
         return listMessages(conversation.conversationId)
             .then(function (messages) {
                 renderMessages(messages);
+                state.activeConversationSignature = conversationSignature(conversation);
                 setStatus("", false);
 
                 if (markReadAfterLoad && conversation.unreadCount > 0) {
@@ -792,7 +817,7 @@
                 return;
             }
 
-            refreshConversations(true);
+            refreshConversations(false);
         }, pollIntervalMs);
     }
 
@@ -845,7 +870,7 @@
 
     document.addEventListener("visibilitychange", function () {
         if (!document.hidden) {
-            refreshConversations(true);
+            refreshConversations(false);
         }
     });
 
@@ -854,6 +879,11 @@
     refreshConversations(true);
     startPolling();
 })();
+
+
+
+
+
 
 
 

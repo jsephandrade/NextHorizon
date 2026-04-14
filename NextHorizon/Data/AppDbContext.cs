@@ -21,6 +21,7 @@ public sealed class AppDbContext : DbContext
     public DbSet<ConversationMessage> ConversationMessages => Set<ConversationMessage>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<ReturnRequest> ReturnRequests => Set<ReturnRequest>();
     public DbSet<DbProduct> Products => Set<DbProduct>();
     public DbSet<DbProductVariant> ProductVariants => Set<DbProductVariant>();
     public DbSet<Logistics> Logistics => Set<Logistics>();
@@ -49,6 +50,30 @@ public sealed class AppDbContext : DbContext
             entity.Property(o => o.TotalAmount).HasColumnType("decimal(18,2)");
             entity.Property(o => o.ShippingFee).HasColumnType("decimal(18,2)");
             entity.Property(o => o.Subtotal).HasColumnType("decimal(18,2)");
+        });
+
+        modelBuilder.Entity<ReturnRequest>(entity =>
+        {
+            entity.ToTable("returns");
+            entity.HasKey(r => r.ReturnId);
+            entity.Property(r => r.ReturnId).HasColumnName("ReturnId");
+            entity.Property(r => r.OrderId).HasColumnName("OrderId");
+            entity.Property(r => r.UserId).HasColumnName("UserId");
+            entity.Property(r => r.SellerId).HasColumnName("SellerId");
+            entity.Property(r => r.Reason).HasColumnName("Reason").HasMaxLength(150).IsRequired();
+            entity.Property(r => r.Message).HasColumnName("Message").HasColumnType("nvarchar(max)");
+            entity.Property(r => r.FileName).HasColumnName("FileName").HasMaxLength(260);
+            entity.Property(r => r.ContentType).HasColumnName("ContentType").HasMaxLength(100);
+            entity.Property(r => r.ImageData).HasColumnName("ImageData").HasColumnType("varbinary(max)");
+            entity.Property(r => r.Status).HasColumnName("Status").HasMaxLength(50).IsRequired();
+            entity.Property(r => r.CreatedAt).HasColumnName("CreatedAt").HasColumnType("datetime2");
+            entity.Property(r => r.UpdatedAt).HasColumnName("UpdatedAt").HasColumnType("datetime2");
+            entity.Ignore(r => r.BuyerName);
+            entity.Ignore(r => r.OrderDate);
+            entity.Ignore(r => r.ImageUrl);
+            entity.Ignore(r => r.HasImage);
+            entity.HasIndex(r => new { r.SellerId, r.Status });
+            entity.HasIndex(r => r.OrderId);
         });
 
         modelBuilder.Entity<OrderItem>()
@@ -265,6 +290,8 @@ public sealed class AppDbContext : DbContext
         });
     }
 }
+
+
 
 
 

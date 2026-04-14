@@ -20,6 +20,7 @@
     var emptyStateMessage = hasDateFilter
         ? "No orders found within the selected date range."
         : "No orders match the current filters.";
+    var returnRequests = ViewBag.ReturnRequests as List<NextHorizon.Models.ReturnRequest> ?? new List<NextHorizon.Models.ReturnRequest>();
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&amp;display=swap" rel="stylesheet">
@@ -37,9 +38,11 @@
     <button type="button" class="order-filter-btn" data-filter="Shipped">Shipped</button>
     <button type="button" class="order-filter-btn" data-filter="Delivered">Delivered</button>
     <button type="button" class="order-filter-btn" data-filter="Cancelled">Cancelled</button>
+    <button type="button" class="order-filter-btn" data-filter="Failed Delivery">Failed Delivery</button>
     <button type="button" class="order-filter-btn" data-filter="Return">Return</button>
 </div>
 
+<div id="ordersPanel">
 <div class="order-toolbar">
 
     <!-- SEARCH -->
@@ -114,21 +117,21 @@
 
                 <!-- PRODUCT WITH IMAGE -->
                 <td class="product-cell">
-                    <img src="https://picsum.photos/50" class="product-img" />
+                    <img src="@(string.IsNullOrWhiteSpace(order.ProductImage) ? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50'%3E%3Crect width='50' height='50' rx='6' fill='%23e5e7eb'/%3E%3C/svg%3E" : order.ProductImage)" class="product-img" alt="@order.ProductName" />
                     <span>@order.ProductName</span>
                 </td>
 
                 <td>@order.Quantity</td>
-                <td>₱@order.CalculatedTotal.ToString("N2")</td>
+                <td class="order-total-cell">&#8369;@order.CalculatedTotal.ToString("N2")</td>
                 <td>
                     <span class="status-badge @((order.Status ?? string.Empty).ToLower().Replace(" ", "-"))">
                         @order.Status
                     </span>
                 </td>
 
-                <td>
+                <td class="order-action-cell">
                     <div class="action-menu-wrap">
-                        <button class="action-icon-btn">⋮</button>
+                        <button class="action-icon-btn" type="button" aria-label="Open order actions">&#8942;</button>
 
                             <div class="action-menu">
                             @* VIEW DETAILS - always visible *@
@@ -170,27 +173,20 @@
         }
     }
 
-    <button class="action-menu-item mark-as-shipped-btn" 
-            data-order-id="@order.OrderID" 
-            data-customer="@order.FullName" 
-            data-courier-id="@order.logistics_id"
-            data-courier-name="@actualCourierName"> 
-        Mark as Shipped
-    </button>
 }
 
                             @if(order.Status == "Shipped")
                             {
                                 <button class="action-menu-item mark-returned-btn"
                                         data-order-id="@order.OrderID">
-                                    Mark as Returned
+                                    Failed Delivery
                                 </button>
                             }
-                            else if (order.Status == "Return")
+                            else if (order.Status == "Failed Delivery")
                             {
                                 <button class="action-menu-item view-returned-btn"
                                         data-order-id="@order.OrderID">
-                                    View Return Details
+                                    View FD Details
                                 </button>
                             }
 
@@ -228,13 +224,117 @@
         </tr>
     </tbody>
 </table>
+</div>
+
+<div id="returnsPanel" class="returns-panel" style="display:none;">
+    <div class="returns-table-card shadow-sm rounded-xl">
+        <table class="returns-table">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Buyer</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (returnRequests.Count == 0)
+                {
+                    <tr>
+                        <td colspan="6">
+                            <div class="order-empty-state">No return requests match the current filters.</div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var returnRequest in returnRequests)
+                    {
+                        <tr class="return-row"
+                            data-return-id="@returnRequest.ReturnId"
+                            data-order-id="@returnRequest.OrderId"
+                            data-buyer="@returnRequest.BuyerName"
+                            data-reason="@returnRequest.Reason"
+                            data-message="@(returnRequest.Message ?? string.Empty)"
+                            data-image-url="@returnRequest.ImageUrl"
+                            data-status="@returnRequest.Status"
+                            data-date="@returnRequest.CreatedAt.ToString("yyyy-MM-dd")">
+                            <td>@returnRequest.OrderId</td>
+                            <td>@returnRequest.BuyerName</td>
+                            <td>@returnRequest.Reason</td>
+                            <td>
+                                <span class="status-badge @((returnRequest.Status ?? string.Empty).ToLower().Replace(" ", "-"))">
+                                    @returnRequest.Status
+                                </span>
+                            </td>
+                            <td>@returnRequest.CreatedAt.ToString("MMM dd, yyyy")</td>
+                            <td>
+                                <button type="button" class="return-view-details-btn">View Details</button>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="returnDetailsModal" class="return-modal-overlay">
+    <div class="return-modal-card shadow-sm rounded-xl">
+        <div class="return-modal-header">
+            <div>
+                <p class="return-eyebrow">Return Request</p>
+                <h3>Order #<span id="returnDetailsOrderId">00000</span></h3>
+                <p class="return-buyer-line">Buyer: <span id="returnDetailsBuyer">Buyer</span></p>
+            </div>
+            <div class="return-modal-header-right">
+                <span id="returnDetailsStatus" class="status-badge return-requested">Return Requested</span>
+                <button type="button" class="return-modal-close" onclick="closeReturnDetailsModal()">�</button>
+            </div>
+        </div>
+
+        <div class="return-modal-body">
+            <div class="return-detail-card">
+                <p class="return-card-title">Buyer Request</p>
+                <div class="return-copy-grid">
+                    <div>
+                        <p class="return-label">Reason</p>
+                        <p id="returnDetailsReason" class="return-value strong">Reason</p>
+                    </div>
+                    <div>
+                        <p class="return-label">Message</p>
+                        <p id="returnDetailsMessage" class="return-value muted">Message</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="return-detail-card">
+                <p class="return-card-title">Evidence Preview</p>
+                <div class="return-evidence-frame">
+                    <img id="returnDetailsImage" src="" alt="Return evidence" />
+                </div>
+            </div>
+
+            <div id="refundStockWrap" class="refund-stock-wrap" style="display:none;">
+                <label class="refund-stock-toggle">
+                    <input type="checkbox" id="restoreStockCheckbox" />
+                    <span>Restore stock after refund if the item is still in good condition</span>
+                </label>
+            </div>
+        </div>
+
+        <div id="returnDetailsActions" class="return-modal-actions"></div>
+    </div>
+</div>
 
 <div id="orderSummaryModal" class="bw-modal-overlay">
     <div class="premium-modal-container">
         
         <div class="premium-header">
             <h3>Order #<span id="summaryOrderId">Loading...</span></h3>
-            <span class="premium-close-btn" onclick="closeOrderSummaryModal()">✖</span>
+            <span class="premium-close-btn" onclick="closeOrderSummaryModal()">&times;</span>
         </div>
 
         <div class="premium-body">
@@ -274,7 +374,7 @@
                                 <strong style="display: block; color: #111827;">Comfort Sculpt Seamless Bra</strong>
                             </td>
                             <td style="text-align: center; font-weight: 500;">x4</td>
-                            <td style="text-align: right; font-weight: 500;">₱2,600.00</td>
+                            <td style="text-align: right; font-weight: 500;">&#8369;2,600.00</td>
                         </tr>
                     </tbody>
                 </table>
@@ -288,7 +388,7 @@
                         <p style="margin: 0 0 4px 0; color: #111827;"><strong><span id="modalCustomerName">...</span></strong></p>
                         <p style="margin: 0 0 12px 0; color: #6b7280; font-size: 0.85rem;" id="modalCustomerEmail">...</p>
                         
-                        <p style="margin: 0 0 6px 0; font-size: 0.9rem;">📞 <span id="modalCustomerPhone">...</span></p>
+                        <p style="margin: 0 0 6px 0; font-size: 0.9rem;"><i class="fa-solid fa-phone" style="margin-right: 6px;"></i><span id="modalCustomerPhone">...</span></p>
                        <div style="margin-bottom: 15px;">
     <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 4px;">Shipping Address</p>
     
@@ -314,19 +414,19 @@
                         
                         <div class="summary-line">
                             <span>Subtotal (<span id="modalTotalItems">0</span> items)</span>
-                            <span id="modalSubtotal">₱0.00</span>
+                            <span id="modalSubtotal">&#8369;0.00</span>
                         </div>
                         
                         <div class="summary-line">
                             <span>Shipping Fee</span>
-                            <span id="modalShippingFee">₱0.00</span>
+                            <span id="modalShippingFee">&#8369;0.00</span>
                         </div>
                         
                         <hr style="border: 0; border-top: 1px dashed #e5e7eb; margin: 12px 0;" />
                         
                         <div class="summary-line total-line">
                             <span>Grand Total</span>
-                            <span id="modalGrandTotal" style="color: #059669;">₱0.00</span>
+                            <span id="modalGrandTotal" style="color: #059669;">&#8369;0.00</span>
                         </div>
                         
                     </div>
@@ -488,7 +588,7 @@
             <p><strong>Order #:</strong> <span id="receiptOrderId">12345</span></p>
             <p><strong>Customer:</strong> <span id="receiptCustomer">Harvy</span></p>
             <p><strong>Date:</strong> <span id="receiptDate">Mar 02, 2026</span></p>
-            <p><strong>Total:</strong> ₱<span id="receiptTotal">2,600.00</span></p>
+            <p><strong>Total:</strong> &#8369;<span id="receiptTotal">2,600.00</span></p>
         </div>
 
         <!-- ITEMS TABLE -->
@@ -559,7 +659,7 @@
 <div id="markReturnedModal" class="bw-modal-overlay">
     <div class="bw-modal-container">
         <div class="bw-modal-header">
-            <h3>Mark Order #<span id="returnOrderId">00000</span> as Returned</h3>
+            <h3>Mark Order #<span id="returnOrderId">00000</span> as Failed Delivery</h3>
             <span class="bw-close" onclick="closeReturnModal()">&times;</span>
         </div>
 
@@ -567,7 +667,7 @@
             <p><strong>Customer:</strong> <span id="returnCustomer">---</span></p>
             <p><strong>Product:</strong> <span id="returnProduct">---</span></p>
             <p><strong>Quantity:</strong> <span id="returnItems">0</span></p>
-            <p><strong>Total:</strong> <span id="returnTotal">P0.00</span></p>
+            <p><strong>Total:</strong> <span id="returnTotal">&#8369;0.00</span></p>
             <p><strong>Courier:</strong> <span id="returnCourier">---</span></p>
             <p><strong>Tracking #:</strong> <span id="returnTracking">---</span></p>
         </div>
@@ -610,14 +710,14 @@
 <div id="returnedInfoModal" class="bw-modal-overlay">
     <div class="bw-modal-container bw-confirm-container">
         <div class="bw-modal-header bw-centered-header">
-            <h3>Returned Order #<span id="returnInfoOrderId">00000</span></h3>
+            <h3>Failed Delivery Order #<span id="returnInfoOrderId">00000</span></h3>
             <span class="bw-close" onclick="closeReturnedInfoModal()">&times;</span>
         </div>
         <div class="bw-info-box bw-fulfillment-box">
             <p><strong>Customer:</strong> <span id="returnInfoCustomer">---</span></p>
             <p><strong>Product:</strong> <span id="returnInfoProduct">---</span></p>
             <p><strong>Quantity:</strong> <span id="returnInfoQuantity">0</span></p>
-            <p><strong>Total:</strong> <span id="returnInfoTotal">0.00</span></p>
+            <p><strong>Total:</strong> <span id="returnInfoTotal">&#8369;0.00</span></p>
             <p><strong>Courier:</strong> <span id="returnInfoCourier">---</span></p>
             <p><strong>Tracking #:</strong> <span id="returnInfoTracking">---</span></p>
             <p><strong>Reason:</strong> <span id="returnInfoReason">---</span></p>

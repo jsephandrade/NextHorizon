@@ -7,10 +7,10 @@
     var variants = ViewBag.ProductVariants as List<NextHorizon.Models.DbProductVariant> ?? new List<NextHorizon.Models.DbProductVariant>();
 
     var variantImages = variants
-        .Where(v => !string.IsNullOrWhiteSpace(v.ImagePath))
-        .Select(v => v.ImagePath!.Trim())
+        .Where(v => (v.ImageData != null && v.ImageData.Length > 0) || !string.IsNullOrWhiteSpace(v.ImagePath))
+        .Select(v => Url.Action("Variant", "ProductImage", new { variantId = v.Id }) ?? $"/ProductImage/Variant/{v.Id}")
         .Where(p => !string.IsNullOrEmpty(p))
-        .Distinct()
+        .Distinct(StringComparer.OrdinalIgnoreCase)
         .ToList();
 
     var galleryImgList = new List<string>();
@@ -144,7 +144,7 @@
         <div class="variants-list">
             @foreach (var v in variants)
             {
-                var vImg = !string.IsNullOrEmpty(v.ImagePath) ? v.ImagePath : initialImage;
+                var vImg = ((v.ImageData != null && v.ImageData.Length > 0) || !string.IsNullOrEmpty(v.ImagePath)) ? (Url.Action("Variant", "ProductImage", new { variantId = v.Id }) ?? $"/ProductImage/Variant/{v.Id}") : initialImage;
                 var vPrice = v.Price ?? Model.Price;
                 <div class="variant-card">
                     <img src="@vImg" class="variant-thumb" alt="Variant image">
@@ -238,9 +238,16 @@
 
         @{
             var jsGalleryList = new System.Collections.Generic.List<string>();
-            if (!string.IsNullOrEmpty(Model.ImagePath)) jsGalleryList.Add(Model.ImagePath);
             var colorImgList = ViewBag.AllColorImages as System.Collections.Generic.List<string>;
-            if (colorImgList != null) foreach (var ci in colorImgList) jsGalleryList.Add(ci);
+            if (colorImgList != null)
+            {
+                foreach (var ci in colorImgList.Where(ci => !string.IsNullOrWhiteSpace(ci)).Distinct(System.StringComparer.OrdinalIgnoreCase))
+                    jsGalleryList.Add(ci);
+            }
+            else if (!string.IsNullOrEmpty(Model.ImagePath))
+            {
+                jsGalleryList.Add(Model.ImagePath);
+            }
             if (jsGalleryList.Count == 0) jsGalleryList.Add(placeholderSvg);
         }
         const galleryImages = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(jsGalleryList));
@@ -269,3 +276,5 @@
         function submitDeleteForm() { document.getElementById('deleteForm').submit(); }
     </script>
 }
+
+

@@ -27,7 +27,9 @@ public async Task UpdateOrderAsync(Order order)
     var query = _context.Orders
         .Include(o => o.OrderItems)
             .ThenInclude(item => item.Product)
-        .Where(o => o.seller_id == sellerId);
+        .Where(o => o.seller_id == sellerId)
+        .AsNoTracking()
+        .AsSplitQuery();
 
     if (startDate.HasValue)
     {
@@ -41,9 +43,12 @@ public async Task UpdateOrderAsync(Order order)
         query = query.Where(o => o.OrderDate < exclusiveEndDate);
     }
 
-    return await query
+    var orders = await query
         .OrderByDescending(o => o.OrderDate)
         .ToListAsync();
+
+    await PopulateOrdersWithVariantDataAsync(orders);
+    return orders;
 }
    public async Task<AcceptOrderResult> AcceptOrderAsync(int orderId, int sellerId, int courierId)
 {
@@ -124,6 +129,178 @@ WHERE VariantId = {variant.Id} AND Quantity >= {item.Quantity}");
     };
 }
 
+private async Task PopulateOrdersWithVariantDataAsync(IEnumerable<Order> orders)
+{
+    var orderList = orders?.ToList() ?? new List<Order>();
+    if (orderList.Count == 0)
+    {
+        return;
+    }
+
+    var allItems = orderList
+        .SelectMany(order => order.OrderItems ?? new List<OrderItem>())
+        .ToList();
+
+    if (allItems.Count == 0)
+    {
+        foreach (var order in orderList)
+        {
+            order.ProductImage = string.Empty;
+        }
+        return;
+    }
+
+    var variantMap = await BuildVariantLookupAsync(allItems);
+
+    foreach (var item in allItems)
+    {
+        if (!TryResolveVariant(item, variantMap, out var variant) || variant == null)
+        {
+            continue;
+        }
+
+        item.Sku = variant.SKU;
+        if (item.Product != null)
+        {
+            item.Product.ImagePath = BuildVariantImageUrl(variant);
+        }
+    }
+
+    foreach (var order in orderList)
+    {
+        var primaryItem = order.OrderItems?
+            .OrderBy(item => item.OrderItemID)
+            .FirstOrDefault();
+
+        if (primaryItem != null && TryResolveVariant(primaryItem, variantMap, out var variant) && variant != null)
+        {
+            order.ProductImage = BuildVariantImageUrl(variant);
+        }
+        else
+        {
+            order.ProductImage = string.Empty;
+        }
+    }
+}
+
+private sealed class VariantLookupData
+{
+    public Dictionary<int, DbProductVariant> ById { get; } = new();
+    public Dictionary<string, DbProductVariant> ByCompositeKey { get; } = new(StringComparer.OrdinalIgnoreCase);
+}
+
+private async Task<VariantLookupData> BuildVariantLookupAsync(IEnumerable<OrderItem> items)
+{
+    var itemList = items.ToList();
+    var lookup = new VariantLookupData();
+
+    var variantIds = itemList
+        .Where(item => item.VariantId.HasValue)
+        .Select(item => item.VariantId!.Value)
+        .Distinct()
+        .ToList();
+
+    if (variantIds.Count > 0)
+    {
+        var directVariants = await _context.ProductVariants
+            .AsNoTracking()
+            .Where(v => variantIds.Contains(v.Id))
+            .ToListAsync();
+
+        foreach (var variant in directVariants)
+        {
+            lookup.ById[variant.Id] = variant;
+        }
+    }
+
+    var unresolvedProductIds = itemList
+        .Where(item => !item.VariantId.HasValue || !lookup.ById.ContainsKey(item.VariantId.Value))
+        .Select(item => item.ProductID)
+        .Distinct()
+        .ToList();
+
+    if (unresolvedProductIds.Count > 0)
+    {
+        var fallbackVariants = await _context.ProductVariants
+            .AsNoTracking()
+            .Where(v => unresolvedProductIds.Contains(v.ProductId))
+            .OrderBy(v => v.Id)
+            .ToListAsync();
+
+        foreach (var variant in fallbackVariants)
+        {
+            var key = BuildVariantLookupKey(variant.ProductId, variant.Size, variant.Style);
+            if (!lookup.ByCompositeKey.ContainsKey(key))
+            {
+                lookup.ByCompositeKey[key] = variant;
+            }
+        }
+    }
+
+    return lookup;
+}
+
+private static string BuildVariantLookupKey(int productId, string? size, string? color)
+{
+    return string.Join('|', new[]
+    {
+        productId.ToString(),
+        (size ?? string.Empty).Trim().ToLowerInvariant(),
+        (color ?? string.Empty).Trim().ToLowerInvariant()
+    });
+}
+
+private static bool TryResolveVariant(OrderItem item, VariantLookupData lookup, out DbProductVariant? variant)
+{
+    variant = null;
+
+    if (item.VariantId.HasValue && lookup.ById.TryGetValue(item.VariantId.Value, out var directVariant))
+    {
+        variant = directVariant;
+        return true;
+    }
+
+    var exactKey = BuildVariantLookupKey(item.ProductID, item.Size, item.Color);
+    if (lookup.ByCompositeKey.TryGetValue(exactKey, out var exactVariant))
+    {
+        variant = exactVariant;
+        return true;
+    }
+
+    var sizeAgnosticKey = BuildVariantLookupKey(item.ProductID, null, item.Color);
+    if (lookup.ByCompositeKey.TryGetValue(sizeAgnosticKey, out var colorVariant))
+    {
+        variant = colorVariant;
+        return true;
+    }
+
+    var colorAgnosticKey = BuildVariantLookupKey(item.ProductID, item.Size, null);
+    if (lookup.ByCompositeKey.TryGetValue(colorAgnosticKey, out var sizeVariant))
+    {
+        variant = sizeVariant;
+        return true;
+    }
+
+    var defaultKey = BuildVariantLookupKey(item.ProductID, null, null);
+    if (lookup.ByCompositeKey.TryGetValue(defaultKey, out var defaultVariant))
+    {
+        variant = defaultVariant;
+        return true;
+    }
+
+    return false;
+}
+
+private static string BuildVariantImageUrl(DbProductVariant variant)
+{
+    if (variant.ImageData is { Length: > 0 } || !string.IsNullOrWhiteSpace(variant.ImagePath))
+    {
+        return $"/ProductImage/Variant/{variant.Id}";
+    }
+
+    return string.Empty;
+}
+
 private async Task<DbProductVariant?> ResolveVariantForOrderItemAsync(OrderItem item)
 {
     if (item.VariantId.HasValue)
@@ -159,31 +336,27 @@ public async Task<bool> DeclineOrderAsync(int orderId, int sellerId, string reas
 public async Task<Order?> GetOrderByIdAsync(int orderId, int sellerId)
 {
     var order = await _context.Orders
+        .AsNoTracking()
         .Include(o => o.OrderItems)
             .ThenInclude(i => i.Product)
+        .AsSplitQuery()
         .FirstOrDefaultAsync(o => o.OrderID == orderId && o.seller_id == sellerId);
 
     if (order != null)
     {
-        foreach (var item in order.OrderItems)
-        {
-            // We search the ProductVariants table for a match on Product, Size, and Color
-            var variant = await _context.ProductVariants
-                .FirstOrDefaultAsync(v => v.ProductId == item.ProductID && 
-                                          v.Size == item.Size && 
-                                          v.Style == item.Color); // Note: SQL calls it 'Style', OrderItems calls it 'Color'
-
-            if (variant != null)
-            {
-                item.Sku = variant.SKU;
-            }
-        }
+        await PopulateOrdersWithVariantDataAsync(new[] { order });
     }
 
     return order;
 }
     }
 }
+
+
+
+
+
+
 
 
 
