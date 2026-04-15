@@ -76,6 +76,10 @@ namespace NextHorizon.Models
         [NotMapped]
         public string? Colors { get; set; }
 
+        
+        [NotMapped]
+        public string EffectiveStatus { get; set; } = string.Empty;
+
         public List<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
         public string? FulfillmentStatus { get; set; }
         public string? TrackingNumber { get; set; }

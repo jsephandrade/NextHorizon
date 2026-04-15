@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using NextHorizon.Data;
 using NextHorizon.Models;
+using System.Threading;
 
 
 namespace NextHorizon.Services
@@ -48,6 +49,7 @@ public async Task UpdateOrderAsync(Order order)
         .ToListAsync();
 
     await PopulateOrdersWithVariantDataAsync(orders);
+    await ApplySellerFacingStatusesAsync(sellerId, orders);
     return orders;
 }
    public async Task<AcceptOrderResult> AcceptOrderAsync(int orderId, int sellerId, int courierId)
@@ -345,11 +347,73 @@ public async Task<Order?> GetOrderByIdAsync(int orderId, int sellerId)
     if (order != null)
     {
         await PopulateOrdersWithVariantDataAsync(new[] { order });
+        await ApplySellerFacingStatusesAsync(sellerId, new[] { order });
     }
 
     return order;
 }
+public async Task ApplySellerFacingStatusesAsync(int sellerId, IList<Order> orders, CancellationToken cancellationToken = default)
+{
+    if (orders == null || orders.Count == 0)
+    {
+        return;
     }
+    var orderIds = orders
+        .Select(order => order.OrderID)
+        .Where(orderId => orderId > 0)
+        .Distinct()
+        .ToList();
+    Dictionary<int, string> latestReturnStatusesByOrderId = new();
+    if (orderIds.Count > 0)
+    {
+        var latestReturnStatuses = await _context.ReturnRequests
+            .AsNoTracking()
+            .Where(request => request.SellerId == sellerId && orderIds.Contains(request.OrderId))
+            .OrderByDescending(request => request.CreatedAt)
+            .ThenByDescending(request => request.ReturnId)
+            .Select(request => new
+            {
+                request.OrderId,
+                request.Status
+            })
+            .ToListAsync(cancellationToken);
+        latestReturnStatusesByOrderId = latestReturnStatuses
+            .GroupBy(request => request.OrderId)
+            .ToDictionary(
+                group => group.Key,
+                group => NormalizeStatus(group.First().Status));
+    }
+    foreach (var order in orders)
+    {
+        latestReturnStatusesByOrderId.TryGetValue(order.OrderID, out var returnStatus);
+        order.EffectiveStatus = ResolveSellerFacingStatus(order.Status, returnStatus);
+    }
+}
+public async Task<int> CountOrdersBySellerFacingStatusAsync(int sellerId, string status, CancellationToken cancellationToken = default)
+{
+    var orders = await _context.Orders
+        .AsNoTracking()
+        .Where(order => order.seller_id == sellerId)
+        .Select(order => new Order
+        {
+            OrderID = order.OrderID,
+            Status = order.Status,
+            seller_id = order.seller_id
+        })
+        .ToListAsync(cancellationToken);
+    await ApplySellerFacingStatusesAsync(sellerId, orders, cancellationToken);
+    return orders.Count(order => string.Equals(order.EffectiveStatus, status, StringComparison.OrdinalIgnoreCase));
+}
+private static string ResolveSellerFacingStatus(string? orderStatus, string? returnStatus)
+{
+    return !string.IsNullOrWhiteSpace(returnStatus)
+        ? NormalizeStatus(returnStatus)
+        : NormalizeStatus(orderStatus);
+}
+private static string NormalizeStatus(string? status)
+{
+    return status?.Trim() ?? string.Empty;
+}    }
 }
 
 

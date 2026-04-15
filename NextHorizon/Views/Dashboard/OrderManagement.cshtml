@@ -21,6 +21,12 @@
         ? "No orders found within the selected date range."
         : "No orders match the current filters.";
     var returnRequests = ViewBag.ReturnRequests as List<NextHorizon.Models.ReturnRequest> ?? new List<NextHorizon.Models.ReturnRequest>();
+    var returnStatuses = returnRequests
+        .Select(request => request.Status?.Trim())
+        .Where(status => !string.IsNullOrWhiteSpace(status))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(status => status)
+        .ToList();
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&amp;display=swap" rel="stylesheet">
@@ -88,6 +94,10 @@
     <tbody>
         @foreach (var order in Model)
         {
+            var matchingReturnRequest = returnRequests.FirstOrDefault(request => request.OrderId == order.OrderID);
+            var orderDisplayStatus = string.IsNullOrWhiteSpace(order.EffectiveStatus)
+                ? order.Status ?? string.Empty
+                : order.EffectiveStatus;
             var orderCategories = order.OrderItems?
                 .Select(item => item.Product?.Category?.Trim())
                 .Where(category => !string.IsNullOrWhiteSpace(category))
@@ -97,12 +107,22 @@
             <tr class="order-row"
                 data-order-id="@order.OrderID"
                 data-status="@order.Status"
+                data-display-status="@orderDisplayStatus"
+                data-return-status="@(matchingReturnRequest?.Status ?? order.EffectiveStatus ?? string.Empty)"
                 data-categories="@string.Join("|", orderCategories)"
                 data-courier="@order.Courier"
                 data-tracking="@order.TrackingNumber"
                 data-return-proof="@order.ReturnProofImage"
                 data-return-note="@order.ReturnNote"
                 data-return-reason="@order.ReturnReason"
+                data-return-id="@(matchingReturnRequest?.ReturnId ?? 0)"
+                data-buyer="@(matchingReturnRequest?.BuyerName ?? order.FullName ?? string.Empty)"
+                data-reason="@(matchingReturnRequest?.Reason ?? order.ReturnReason ?? string.Empty)"
+                data-message="@(matchingReturnRequest?.Message ?? string.Empty)"
+                data-image-url="@(matchingReturnRequest?.ImageUrl ?? string.Empty)"
+                data-seller-decision-reason="@(matchingReturnRequest?.SellerDecisionReason ?? string.Empty)"
+                data-seller-decision-note="@(matchingReturnRequest?.SellerDecisionNote ?? string.Empty)"
+                data-reviewed-at="@(matchingReturnRequest?.ReviewedAt?.ToLocalTime().ToString("MMM dd, yyyy h:mm tt") ?? string.Empty)"
                 data-order-date="@order.OrderDate.ToString("yyyy-MM-dd")">
 
                 <td>@order.OrderID</td>
@@ -124,8 +144,8 @@
                 <td>@order.Quantity</td>
                 <td class="order-total-cell">&#8369;@order.CalculatedTotal.ToString("N2")</td>
                 <td>
-                    <span class="status-badge @((order.Status ?? string.Empty).ToLower().Replace(" ", "-"))">
-                        @order.Status
+                    <span class="status-badge @(orderDisplayStatus.ToLower().Replace(" ", "-"))">
+                        @orderDisplayStatus
                     </span>
                 </td>
 
@@ -135,12 +155,21 @@
 
                             <div class="action-menu">
                             @* VIEW DETAILS - always visible *@
-                            <a class="action-menu-item"
-                            asp-controller="Dashboard"
-                            asp-action="OrderDetails"
-                            asp-route-id="@order.OrderID">
-                                View Details
-                            </a>
+                            @if (matchingReturnRequest != null)
+                            {
+                                <button type="button" class="action-menu-item return-view-details-btn" onclick="openReturnDetailsModalFromRow(this.closest('.order-row'))">
+                                    View Request
+                                </button>
+                            }
+                            else
+                            {
+                                <a class="action-menu-item"
+                                asp-controller="Dashboard"
+                                asp-action="OrderDetails"
+                                asp-route-id="@order.OrderID">
+                                    View Details
+                                </a>
+                            }
 
                             @* CONTACT CUSTOMER - always visible *@
                             <button class="action-menu-item"
@@ -227,60 +256,93 @@
 </div>
 
 <div id="returnsPanel" class="returns-panel" style="display:none;">
-    <div class="returns-table-card shadow-sm rounded-xl">
-        <table class="returns-table">
-            <thead>
-                <tr>
-                    <th>Order ID</th>
-                    <th>Buyer</th>
-                    <th>Reason</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th>Action</th>
+    <div class="order-toolbar">
+        <div class="search-box">
+            <input type="search" id="returnSearch" placeholder="Search returns..." onkeyup="applyOrderFilters()" />
+            <button type="button" id="returnSearchBtn" onclick="applyOrderFilters()">Search</button>
+        </div>
+
+        <select id="returnStatusFilter" class="order-select">
+            <option value="all">All Statuses</option>
+            @foreach (var status in returnStatuses)
+            {
+                <option value="@status">@status</option>
+            }
+        </select>
+
+        <div class="date-filter">
+            <input type="date" id="returnStartDate">
+            <span>to</span>
+            <input type="date" id="returnEndDate">
+            <button type="button" id="clearReturnDate">Clear</button>
+        </div>
+    </div>
+
+    <table class="order-table">
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Buyer</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (returnRequests.Count == 0)
+            {
+                <tr id="noReturnsRow" class="order-empty-row">
+                    <td colspan="6">
+                        <div class="order-empty-state">No return requests match the current filters.</div>
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                @if (returnRequests.Count == 0)
+            }
+            else
+            {
+                @foreach (var returnRequest in returnRequests)
                 {
-                    <tr>
-                        <td colspan="6">
-                            <div class="order-empty-state">No return requests match the current filters.</div>
+                    <tr class="return-row"
+                        data-return-id="@returnRequest.ReturnId"
+                        data-order-id="@returnRequest.OrderId"
+                        data-buyer="@returnRequest.BuyerName"
+                        data-reason="@returnRequest.Reason"
+                        data-message="@(returnRequest.Message ?? string.Empty)"
+                        data-image-url="@returnRequest.ImageUrl"
+                        data-status="@returnRequest.Status"
+                        data-seller-decision-reason="@(returnRequest.SellerDecisionReason ?? string.Empty)"
+                        data-seller-decision-note="@(returnRequest.SellerDecisionNote ?? string.Empty)"
+                        data-reviewed-at="@(returnRequest.ReviewedAt?.ToLocalTime().ToString("MMM dd, yyyy h:mm tt") ?? string.Empty)"
+                        data-date="@returnRequest.CreatedAt.ToString("yyyy-MM-dd")">
+                        <td>@returnRequest.OrderId</td>
+                        <td>@returnRequest.BuyerName</td>
+                        <td>@returnRequest.Reason</td>
+                        <td>
+                            <span class="status-badge @((returnRequest.Status ?? string.Empty).ToLower().Replace(" ", "-"))">
+                                @returnRequest.Status
+                            </span>
+                        </td>
+                        <td>@returnRequest.CreatedAt.ToString("MMM dd, yyyy")</td>
+                        <td class="order-action-cell">
+                            <div class="action-menu-wrap">
+                                <button class="action-icon-btn" type="button" aria-label="Open return actions">&#8942;</button>
+                                <div class="action-menu">
+                                    <button type="button" class="action-menu-item return-view-details-btn">View Request</button>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 }
-                else
-                {
-                    @foreach (var returnRequest in returnRequests)
-                    {
-                        <tr class="return-row"
-                            data-return-id="@returnRequest.ReturnId"
-                            data-order-id="@returnRequest.OrderId"
-                            data-buyer="@returnRequest.BuyerName"
-                            data-reason="@returnRequest.Reason"
-                            data-message="@(returnRequest.Message ?? string.Empty)"
-                            data-image-url="@returnRequest.ImageUrl"
-                            data-status="@returnRequest.Status"
-                            data-date="@returnRequest.CreatedAt.ToString("yyyy-MM-dd")">
-                            <td>@returnRequest.OrderId</td>
-                            <td>@returnRequest.BuyerName</td>
-                            <td>@returnRequest.Reason</td>
-                            <td>
-                                <span class="status-badge @((returnRequest.Status ?? string.Empty).ToLower().Replace(" ", "-"))">
-                                    @returnRequest.Status
-                                </span>
-                            </td>
-                            <td>@returnRequest.CreatedAt.ToString("MMM dd, yyyy")</td>
-                            <td>
-                                <button type="button" class="return-view-details-btn">View Details</button>
-                            </td>
-                        </tr>
-                    }
-                }
-            </tbody>
-        </table>
-    </div>
-</div>
 
+                <tr id="noReturnsRow" class="order-empty-row" style="display:none;">
+                    <td colspan="6">
+                        <div class="order-empty-state">No return requests match the current filters.</div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
 <div id="returnDetailsModal" class="return-modal-overlay">
     <div class="return-modal-card shadow-sm rounded-xl">
         <div class="return-modal-header">
@@ -291,7 +353,7 @@
             </div>
             <div class="return-modal-header-right">
                 <span id="returnDetailsStatus" class="status-badge return-requested">Return Requested</span>
-                <button type="button" class="return-modal-close" onclick="closeReturnDetailsModal()">×</button>
+                <button type="button" class="return-modal-close" onclick="closeReturnDetailsModal()">&times;</button>
             </div>
         </div>
 
@@ -323,9 +385,68 @@
                     <span>Restore stock after refund if the item is still in good condition</span>
                 </label>
             </div>
+
+            <div id="sellerReviewCard" class="return-detail-card" style="display:none;">
+                <p class="return-card-title">Seller Review</p>
+                <div class="return-copy-grid">
+                    <div>
+                        <p class="return-label">Decision Reason</p>
+                        <p id="returnDecisionReason" class="return-value strong">Reason</p>
+                    </div>
+                    <div>
+                        <p class="return-label">Additional Note</p>
+                        <p id="returnDecisionNote" class="return-value muted">No additional note provided.</p>
+                        <p class="return-label">Reviewed At</p>
+                        <p id="returnReviewedAt" class="return-value muted">Not recorded.</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="returnDetailsActions" class="return-modal-actions"></div>
+    </div>
+</div>
+
+
+<div id="rejectReturnModal" class="notes-modal-overlay">
+    <div class="return-review-modal">
+        <div class="return-review-header">
+            <div>
+                <p class="return-eyebrow">Seller Decision</p>
+                <h3>Reject Return Request</h3>
+                <p class="return-review-subtitle">Select a rejection reason before submitting. You can also include an optional note for additional context.</p>
+            </div>
+            <button type="button" class="return-modal-close" onclick="closeRejectReturnModal()">&times;</button>
+        </div>
+
+        <div class="return-review-body">
+            <input type="hidden" id="rejectReturnId" value="" />
+
+            <div class="return-review-field">
+                <label for="rejectReturnReason">Rejection Reason <span class="required">*</span></label>
+                <select id="rejectReturnReason" class="order-select">
+                    <option value="">Select a reason</option>
+                    <option value="Item not eligible for return">Item not eligible for return</option>
+                    <option value="Return period expired">Return period expired</option>
+                    <option value="Insufficient or unclear proof">Insufficient or unclear proof</option>
+                    <option value="Damage not valid / not seller&#39;s fault">Damage not valid / not seller&#39;s fault</option>
+                    <option value="Item already used or altered">Item already used or altered</option>
+                    <option value="Missing parts or incomplete item">Missing parts or incomplete item</option>
+                    <option value="Change of mind not allowed">Change of mind not allowed</option>
+                </select>
+                <p id="rejectReturnReasonError" class="return-review-error" style="display:none;">Please select a rejection reason.</p>
+            </div>
+
+            <div class="return-review-field">
+                <label for="rejectReturnNote">Additional Explanation</label>
+                <textarea id="rejectReturnNote" rows="4" placeholder="Add an optional explanation for the buyer."></textarea>
+            </div>
+        </div>
+
+        <div class="return-review-actions">
+            <button type="button" class="return-btn return-btn-secondary" onclick="closeRejectReturnModal()">Cancel</button>
+            <button type="button" class="return-btn return-btn-primary" onclick="submitRejectReturnRequest()">Submit Rejection</button>
+        </div>
     </div>
 </div>
 

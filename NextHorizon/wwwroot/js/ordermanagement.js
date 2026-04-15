@@ -446,6 +446,16 @@ document.getElementById('clearDate')?.addEventListener('click', function() {
     document.getElementById('endDate').value = '';
     applyOrderFilters();
 });
+document.getElementById('returnSearch')?.addEventListener('input', applyOrderFilters);
+document.getElementById('returnStatusFilter')?.addEventListener('change', applyOrderFilters);
+document.getElementById('returnSearchBtn')?.addEventListener('click', applyOrderFilters);
+document.getElementById('returnStartDate')?.addEventListener('change', applyOrderFilters);
+document.getElementById('returnEndDate')?.addEventListener('change', applyOrderFilters);
+document.getElementById('clearReturnDate')?.addEventListener('click', function() {
+    document.getElementById('returnStartDate').value = '';
+    document.getElementById('returnEndDate').value = '';
+    applyOrderFilters();
+});
 
 // ESC key
 document.addEventListener('keydown', function (event) {
@@ -483,6 +493,16 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('clearDate')?.addEventListener('click', function() {
         document.getElementById('startDate').value = '';
         document.getElementById('endDate').value = '';
+        applyOrderFilters();
+    });
+    document.getElementById('returnSearch')?.addEventListener('input', applyOrderFilters);
+    document.getElementById('returnStatusFilter')?.addEventListener('change', applyOrderFilters);
+    document.getElementById('returnSearchBtn')?.addEventListener('click', applyOrderFilters);
+    document.getElementById('returnStartDate')?.addEventListener('change', applyOrderFilters);
+    document.getElementById('returnEndDate')?.addEventListener('change', applyOrderFilters);
+    document.getElementById('clearReturnDate')?.addEventListener('click', function() {
+        document.getElementById('returnStartDate').value = '';
+        document.getElementById('returnEndDate').value = '';
         applyOrderFilters();
     });
 
@@ -1265,6 +1285,14 @@ function updateOrderManagementEmptyState(visibleRowCount) {
     noOrdersRow.style.display = visibleRowCount === 0 ? '' : 'none';
 }
 
+function updateReturnManagementEmptyState(visibleRowCount) {
+    const noReturnsRow = document.getElementById('noReturnsRow');
+    if (!noReturnsRow) {
+        return;
+    }
+
+    noReturnsRow.style.display = visibleRowCount === 0 ? '' : 'none';
+}
 window.applyOrderFilters = function () {
     const searchInput = document.getElementById('orderSearch');
     const searchValue = searchInput ? searchInput.value.toLowerCase().trim() : '';
@@ -1412,7 +1440,10 @@ function openReturnDetailsModalFromRow(row) {
     const reason = row.dataset.reason || 'Not provided';
     const message = row.dataset.message || 'No additional message provided.';
     const imageUrl = row.dataset.imageUrl || '';
-    const status = row.dataset.status || 'Return Requested';
+    const status = row.dataset.returnStatus || row.dataset.displayStatus || row.dataset.status || 'Return Requested';
+    const sellerDecisionReason = row.dataset.sellerDecisionReason || '';
+    const sellerDecisionNote = row.dataset.sellerDecisionNote || '';
+    const reviewedAt = row.dataset.reviewedAt || ''; 
 
     document.getElementById('returnDetailsOrderId').textContent = orderId;
     document.getElementById('returnDetailsBuyer').textContent = buyer;
@@ -1432,35 +1463,123 @@ function openReturnDetailsModalFromRow(row) {
     restoreStockCheckbox.checked = false;
     refundWrap.style.display = status === 'Item Returned' ? '' : 'none';
 
+    renderReturnSellerReview(status, sellerDecisionReason, sellerDecisionNote, reviewedAt);
+    renderReturnDetailsActions(status, returnId, orderId);
+    document.getElementById('returnDetailsModal').style.display = 'flex';
+}
+
+function renderReturnSellerReview(status, sellerDecisionReason, sellerDecisionNote, reviewedAt) {
+    const sellerReviewCard = document.getElementById('sellerReviewCard');
+    const decisionReasonElement = document.getElementById('returnDecisionReason');
+    const decisionNoteElement = document.getElementById('returnDecisionNote');
+    const reviewedAtElement = document.getElementById('returnReviewedAt');
+
+    if (!sellerReviewCard || !decisionReasonElement || !decisionNoteElement || !reviewedAtElement) {
+        return;
+    }
+
+    const shouldShow = status === 'Return Rejected' && (!!sellerDecisionReason || !!sellerDecisionNote || !!reviewedAt);
+    sellerReviewCard.style.display = shouldShow ? '' : 'none';
+    decisionReasonElement.textContent = sellerDecisionReason || 'No reason provided.';
+    decisionNoteElement.textContent = sellerDecisionNote || 'No additional note provided.';
+    reviewedAtElement.textContent = reviewedAt || 'Not recorded.';
+}
+
+function renderReturnDetailsActions(status, returnId, orderId) {
     const actions = document.getElementById('returnDetailsActions');
     actions.innerHTML = '';
 
-    if (status === 'Return Requested') {
+    const parsedReturnId = parseInt(returnId, 10);
+    const hasReturnId = Number.isFinite(parsedReturnId) && parsedReturnId > 0;
+
+    if (status === 'Return Requested' && hasReturnId) {
         actions.appendChild(buildReturnActionButton('Reject', 'return-btn return-btn-secondary', function () {
-            updateReturnRequestStatus('/Dashboard/ReviewReturnRequest', { returnId: parseInt(returnId, 10), decision: 'reject' });
+            openRejectReturnModal(parsedReturnId, orderId);
         }));
         actions.appendChild(buildReturnActionButton('Approve', 'return-btn return-btn-primary', function () {
-            updateReturnRequestStatus('/Dashboard/ReviewReturnRequest', { returnId: parseInt(returnId, 10), decision: 'approve' });
+            updateReturnRequestStatus('/Dashboard/ReviewReturnRequest', { returnId: parsedReturnId, decision: 'approve' });
         }));
-    } else if (status === 'Return Approved') {
+        return;
+    }
+
+    if (status === 'Return Approved' && hasReturnId) {
         actions.appendChild(buildReturnActionButton('Mark as Item Returned', 'return-btn return-btn-primary', function () {
-            updateReturnRequestStatus('/Dashboard/MarkReturnItemReceived', { returnId: parseInt(returnId, 10) });
+            updateReturnRequestStatus('/Dashboard/MarkReturnItemReceived', { returnId: parsedReturnId });
         }));
-    } else if (status === 'Item Returned') {
+        return;
+    }
+
+    if (status === 'Item Returned' && hasReturnId) {
         actions.appendChild(buildReturnActionButton('Confirm Refund', 'return-btn return-btn-primary', function () {
             updateReturnRequestStatus('/Dashboard/ConfirmReturnRefund', {
-                returnId: parseInt(returnId, 10),
+                returnId: parsedReturnId,
                 restoreStock: document.getElementById('restoreStockCheckbox').checked
             });
         }));
+        return;
     }
 
-    document.getElementById('returnDetailsModal').style.display = 'flex';
+    if (status === 'Return Rejected') {
+        actions.appendChild(buildReturnStatusNote('This return request has been rejected. No further action is available.'));
+        return;
+    }
+
+    if (status === 'Refunded') {
+        actions.appendChild(buildReturnStatusNote('This return request has already been refunded and completed.'));
+        return;
+    }
+
+    if (hasReturnId) {
+        actions.appendChild(buildReturnStatusNote('This return request is already up to date.'));
+    }
 }
 
 function closeReturnDetailsModal() {
     document.getElementById('returnDetailsModal').style.display = 'none';
     selectedReturnRequestRow = null;
+}
+
+function openRejectReturnModal(returnId, orderId) {
+    document.getElementById('rejectReturnId').value = returnId || '';
+    document.getElementById('rejectReturnReason').value = '';
+    document.getElementById('rejectReturnNote').value = '';
+    document.getElementById('rejectReturnReasonError').style.display = 'none';
+    document.getElementById('returnDetailsModal').style.display = 'none';
+    document.getElementById('rejectReturnModal').classList.add('active');
+}
+
+function closeRejectReturnModal() {
+    document.getElementById('rejectReturnModal').classList.remove('active');
+    if (selectedReturnRequestRow) {
+        document.getElementById('returnDetailsModal').style.display = 'flex';
+    }
+}
+
+async function submitRejectReturnRequest() {
+    const returnId = parseInt(document.getElementById('rejectReturnId').value, 10);
+    const rejectionReason = (document.getElementById('rejectReturnReason').value || '').trim();
+    const rejectionNote = (document.getElementById('rejectReturnNote').value || '').trim();
+    const errorElement = document.getElementById('rejectReturnReasonError');
+
+    if (!rejectionReason) {
+        errorElement.style.display = 'block';
+        return;
+    }
+
+    errorElement.style.display = 'none';
+    await updateReturnRequestStatus('/Dashboard/ReviewReturnRequest', {
+        returnId: returnId,
+        decision: 'reject',
+        rejectionReason: rejectionReason,
+        rejectionNote: rejectionNote
+    });
+}
+
+function buildReturnStatusNote(message) {
+    const note = document.createElement('div');
+    note.className = 'return-action-note';
+    note.textContent = message;
+    return note;
 }
 
 function buildReturnActionButton(label, className, onClick) {
@@ -1519,8 +1638,10 @@ window.applyOrderFilters = function () {
 
     const startDateInput = document.getElementById('startDate');
     const endDateInput = document.getElementById('endDate');
-    const startDate = parseOrderManagementDate(startDateInput ? startDateInput.value : '');
-    const endDate = parseOrderManagementDate(endDateInput ? endDateInput.value : '', true);
+    const startDateValue = startDateInput ? startDateInput.value : '';
+    const endDateValue = endDateInput ? endDateInput.value : '';
+    const startDate = parseOrderManagementDate(startDateValue);
+    const endDate = parseOrderManagementDate(endDateValue, true);
 
     let currentStatus = 'all';
     if (typeof activeStatusFilter !== 'undefined') {
@@ -1530,17 +1651,27 @@ window.applyOrderFilters = function () {
     toggleOrderManagementPanels(currentStatus);
 
     if (currentStatus === 'return') {
+        const returnSearchInput = document.getElementById('returnSearch');
+        const returnSearchValue = returnSearchInput ? returnSearchInput.value.toLowerCase().trim() : '';
+        const returnStatusSelect = document.getElementById('returnStatusFilter');
+        const returnStatusValue = returnStatusSelect ? returnStatusSelect.value.toLowerCase().trim() : 'all';
+        const returnStartDateInput = document.getElementById('returnStartDate');
+        const returnEndDateInput = document.getElementById('returnEndDate');
+        const returnStartDate = parseOrderManagementDate(returnStartDateInput ? returnStartDateInput.value : '');
+        const returnEndDate = parseOrderManagementDate(returnEndDateInput ? returnEndDateInput.value : '', true);
         const returnRows = document.querySelectorAll('.return-row');
         let visibleReturnRows = 0;
 
         returnRows.forEach(function (row) {
             const rowText = row.innerText.toLowerCase();
             const rowDate = parseOrderManagementDate(row.dataset.date || '');
-            const searchMatch = !searchValue || rowText.includes(searchValue);
-            const startDateMatch = !startDate || (rowDate && rowDate >= startDate);
-            const endDateMatch = !endDate || (rowDate && rowDate <= endDate);
+            const rowStatus = (row.dataset.status || '').toLowerCase().trim();
+            const searchMatch = !returnSearchValue || rowText.includes(returnSearchValue);
+            const statusMatch = returnStatusValue === 'all' || rowStatus === returnStatusValue;
+            const startDateMatch = !returnStartDate || (rowDate && rowDate >= returnStartDate);
+            const endDateMatch = !returnEndDate || (rowDate && rowDate <= returnEndDate);
 
-            if (searchMatch && startDateMatch && endDateMatch) {
+            if (searchMatch && statusMatch && startDateMatch && endDateMatch) {
                 row.style.display = '';
                 visibleReturnRows += 1;
             } else {
@@ -1548,6 +1679,7 @@ window.applyOrderFilters = function () {
             }
         });
 
+        updateReturnManagementEmptyState(visibleReturnRows);
         return;
     }
 
@@ -1586,12 +1718,17 @@ document.addEventListener('click', function (event) {
     const returnDetailsBtn = event.target.closest('.return-view-details-btn');
     if (returnDetailsBtn) {
         event.preventDefault();
-        openReturnDetailsModalFromRow(returnDetailsBtn.closest('.return-row'));
+        const sourceRow = returnDetailsBtn.closest('.return-row') || returnDetailsBtn.closest('.order-row');
+        openReturnDetailsModalFromRow(sourceRow);
         return;
     }
 
     if (event.target.id === 'returnDetailsModal') {
         closeReturnDetailsModal();
+    }
+
+    if (event.target.id === 'rejectReturnModal') {
+        closeRejectReturnModal();
     }
 });
 

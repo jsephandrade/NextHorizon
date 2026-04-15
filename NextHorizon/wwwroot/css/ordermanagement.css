@@ -99,7 +99,8 @@
     color: #555;
 }
 
-#clearDate {
+#clearDate,
+#clearReturnDate {
     background: #000;
     color: #fff;
     border: none;
@@ -108,7 +109,18 @@
     font-size: 12px;
     cursor: pointer;
 }
-#clearDate:hover { background: #333; }
+#clearDate:hover,
+#clearReturnDate:hover { background: #333; }
+
+#clearReturnDate {
+    background: #000;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+}
 
 /* ===== TABLE ===== */
 .order-table {
@@ -378,7 +390,6 @@
 .status-badge.failed-delivery {
     background-color: #ffedd5;
     color: #ea580c;
-    border: 1px solid #fdba74;
     white-space: nowrap;
 }
 .status-badge.all { background: #e2e3e5; color: #6c757d; }
@@ -1387,6 +1398,17 @@
     border-top: 1px solid #eef2f7;
 }
 
+.return-action-note {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
 .return-btn {
     min-width: 160px;
     padding: 12px 18px;
@@ -1513,4 +1535,80 @@
 #modalCustomerEmail,
 #modalCustomerPhone {
     word-break: break-word;
+}
+
+.return-review-modal {
+    width: min(520px, 100%);
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+    overflow: hidden;
+}
+
+.return-review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 24px;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.return-review-subtitle {
+    margin: 8px 0 0;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.return-review-body {
+    padding: 24px;
+    display: grid;
+    gap: 18px;
+}
+
+.return-review-field {
+    display: grid;
+    gap: 8px;
+}
+
+.return-review-field label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.return-review-field textarea {
+    width: 100%;
+    min-height: 112px;
+    padding: 12px 14px;
+    border: 1px solid #d7dee8;
+    border-radius: 12px;
+    font: inherit;
+    color: #0f172a;
+    resize: vertical;
+}
+
+.return-review-field textarea:focus,
+.return-review-field select:focus {
+    outline: none;
+    border-color: #0f172a;
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
+}
+
+.return-review-error {
+    margin: 0;
+    color: #b91c1c;
+    font-size: 13px;
+}
+
+.return-review-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 20px 24px 24px;
+    border-top: 1px solid #eef2f7;
+}
+#rejectReturnModal {
+    z-index: 10002;
 }

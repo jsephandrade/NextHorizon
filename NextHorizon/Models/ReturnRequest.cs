@@ -42,6 +42,16 @@ public class ReturnRequest
     [StringLength(50)]
     public string Status { get; set; } = "Return Requested";
 
+    [Column("SellerDecisionReason")]
+    [StringLength(150)]
+    public string? SellerDecisionReason { get; set; }
+
+    [Column("SellerDecisionNote")]
+    public string? SellerDecisionNote { get; set; }
+
+    [Column("ReviewedAt")]
+    public DateTime? ReviewedAt { get; set; }
+
     [Column("CreatedAt")]
     public DateTime CreatedAt { get; set; }
 

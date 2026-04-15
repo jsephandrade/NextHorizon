@@ -66,6 +66,9 @@ public sealed class AppDbContext : DbContext
             entity.Property(r => r.ContentType).HasColumnName("ContentType").HasMaxLength(100);
             entity.Property(r => r.ImageData).HasColumnName("ImageData").HasColumnType("varbinary(max)");
             entity.Property(r => r.Status).HasColumnName("Status").HasMaxLength(50).IsRequired();
+            entity.Property(r => r.SellerDecisionReason).HasColumnName("SellerDecisionReason").HasMaxLength(150);
+            entity.Property(r => r.SellerDecisionNote).HasColumnName("SellerDecisionNote").HasColumnType("nvarchar(max)");
+            entity.Property(r => r.ReviewedAt).HasColumnName("ReviewedAt").HasColumnType("datetime2");
             entity.Property(r => r.CreatedAt).HasColumnName("CreatedAt").HasColumnType("datetime2");
             entity.Property(r => r.UpdatedAt).HasColumnName("UpdatedAt").HasColumnType("datetime2");
             entity.Ignore(r => r.BuyerName);

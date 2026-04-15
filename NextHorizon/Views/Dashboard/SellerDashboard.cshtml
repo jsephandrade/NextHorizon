@@ -44,12 +44,12 @@
 <section class="section">
     <h2 class="section-title">Critical Action</h2>
     <div class="cards-grid">
-        <a class="card critical-card critical-action-link" asp-controller="Dashboard" asp-action="OrderManagement" asp-route-status="To Ship">
+        <a class="card critical-card critical-action-link" asp-controller="Dashboard" asp-action="OrderManagement" asp-route-status="Return">
             <div class="card-content">
                 <div class="card-info">
-                    <span class="card-label">Orders to Ship (Urgent)</span>
+                    <span class="card-label">Return Requests</span>
                 </div>
-                <div class="card-badge urgent">@Model.OrdersToShip</div>
+                <div class="card-badge urgent">@Model.ReturnRequests</div>
             </div>
         </a>
 
@@ -95,6 +95,9 @@
                 <tbody>
                     @foreach (var order in Model.RecentOrders)
                     {
+                        var orderDisplayStatus = string.IsNullOrWhiteSpace(order.EffectiveStatus)
+                            ? order.Status ?? string.Empty
+                            : order.EffectiveStatus;
                         <tr>
                             <td>@order.OrderID</td>
                             <td>
@@ -113,8 +116,8 @@
                             <td>@order.OrderDate.ToString("MMM dd, yyyy h:mm tt")</td>
                             <td>@order.Courier</td>
                             <td>
-                                <span class="status-badge @((order.Status ?? string.Empty).ToLower().Replace(" ", "-"))">
-                                    @order.Status
+                                <span class="status-badge @(orderDisplayStatus.ToLower().Replace(" ", "-"))">
+                                    @orderDisplayStatus
                                 </span>
                             </td>
                             <td>&#8369;@order.Amount.ToString("N2")</td>

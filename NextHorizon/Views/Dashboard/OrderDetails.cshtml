@@ -2,6 +2,9 @@
 @{
     Layout = "~/Views/Shared/_DashboardLayout.cshtml";
     ViewData["Title"] = "Order Details";
+    var orderDisplayStatus = string.IsNullOrWhiteSpace(Model?.EffectiveStatus)
+        ? Model?.Status ?? string.Empty
+        : Model.EffectiveStatus;
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
@@ -19,15 +22,14 @@
         </div>
         <div style="display: flex; gap: 10px;">
             <button onclick="window.print()" style="padding: 10px 20px; border: 1px solid #d1d5db; background: white; border-radius: 8px; cursor: pointer; font-weight: 500;">Print Invoice</button>
-            @if (Model != null && !string.IsNullOrEmpty(Model.Status))
+            @if (Model != null && !string.IsNullOrEmpty(orderDisplayStatus))
             {
-                <span class="status-badge @Model.Status.ToLower().Replace(" ", "-")" style="padding: 10px 20px; font-size: 0.9rem;">
-                    @Model.Status
+                <span class="status-badge @orderDisplayStatus.ToLower().Replace(" ", "-")" style="padding: 10px 20px; font-size: 0.9rem;">
+                    @orderDisplayStatus
                 </span>
             }
         </div>
     </div>
-
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
         
         <div class="premium-box" style="padding: 20px; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
@@ -102,7 +104,7 @@
     else
     {
         <p style="margin: 0; font-size: 0.8rem; color: #6b7280; text-align: center;">
-            Order is currently @(Model?.Status).
+            Order is currently @orderDisplayStatus.
         </p>
     }
 </div>

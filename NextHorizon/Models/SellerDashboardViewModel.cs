@@ -9,7 +9,7 @@ namespace NextHorizon.Models
         public DateTime CurrentDate { get; set; }
 
         // Critical Actions
-        public int OrdersToShip { get; set; }
+        public int ReturnRequests { get; set; }
         public int PendingOrders { get; set; }
         public int LowStockAlerts { get; set; }
         public decimal WithdrawAmount { get; set; }

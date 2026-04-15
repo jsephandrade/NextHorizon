@@ -126,6 +126,7 @@ var order = await _orderService.GetOrderByIdAsync(orderId, currentSellerId.Value
             city = order.City,
             postalCode = order.PostalCode,
             phoneNumber = order.PhoneNumber,
+            email = order.Email,
             deliveryOption = order.Courier ?? "Standard",
             quantity = order.Quantity,
             subtotal = order.Subtotal,
@@ -467,6 +468,8 @@ public sealed class ReviewReturnRequestModel
 {
     public int ReturnId { get; set; }
     public string Decision { get; set; } = string.Empty;
+    public string RejectionReason { get; set; } = string.Empty;
+    public string RejectionNote { get; set; } = string.Empty;
 }
 
 public sealed class ReturnStatusUpdateModel
@@ -561,16 +564,29 @@ public async Task<IActionResult> ReviewReturnRequest([FromBody] ReviewReturnRequ
     if (string.Equals(decision, "approve", StringComparison.OrdinalIgnoreCase))
     {
         returnRequest.Status = "Return Approved";
+        returnRequest.SellerDecisionReason = null;
+        returnRequest.SellerDecisionNote = null;
     }
     else if (string.Equals(decision, "reject", StringComparison.OrdinalIgnoreCase))
     {
+        var rejectionReason = request.RejectionReason?.Trim() ?? string.Empty;
+        var rejectionNote = request.RejectionNote?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(rejectionReason))
+        {
+            return Json(new { success = false, message = "A rejection reason is required." });
+        }
+
         returnRequest.Status = "Return Rejected";
+        returnRequest.SellerDecisionReason = rejectionReason;
+        returnRequest.SellerDecisionNote = string.IsNullOrWhiteSpace(rejectionNote) ? null : rejectionNote;
     }
     else
     {
         return Json(new { success = false, message = "Invalid review decision." });
     }
 
+    returnRequest.SellerId = sellerId.Value;
+    returnRequest.ReviewedAt = DateTime.UtcNow;
     returnRequest.UpdatedAt = DateTime.UtcNow;
     await _context.SaveChangesAsync();
 
@@ -1580,16 +1596,16 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
         // ============== HELPER METHODS ==============
         private async Task<int> GetOrderCountByStatusAsync(int sellerId, string status, CancellationToken cancellationToken)
         {
-            using var connection = new SqlConnection(GetConnectionString());
-            var query = "SELECT COUNT(*) FROM dbo.Orders WHERE seller_id = @SellerId AND Status = @Status";
-            using var command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@SellerId", sellerId);
-            command.Parameters.AddWithValue("@Status", status);
-            await connection.OpenAsync(cancellationToken);
-            var result = await command.ExecuteScalarAsync(cancellationToken);
-            return result != DBNull.Value ? Convert.ToInt32(result) : 0;
+            return await _orderService.CountOrdersBySellerFacingStatusAsync(sellerId, status, cancellationToken);
         }
 
+
+        private async Task<int> GetReturnRequestCountAsync(int sellerId, CancellationToken cancellationToken)
+        {
+            return await _context.ReturnRequests
+                .AsNoTracking()
+                .CountAsync(r => r.SellerId == sellerId && r.Status == "Return Requested", cancellationToken);
+        }
         private async Task<int> GetLowStockCountAsync(int sellerId, CancellationToken cancellationToken)
         {
             using var connection = new SqlConnection(GetConnectionString());
@@ -1735,9 +1751,10 @@ public async Task<IActionResult> DeclineOrder([FromBody] DeclineRequest request)
                     Amount       = reader["TotalAmount"] != DBNull.Value ? Convert.ToDecimal(reader["TotalAmount"]) : 0
                 });
             }
+
+            await _orderService.ApplySellerFacingStatusesAsync(sellerId, orders, cancellationToken);
             return orders;
         }
-
         private async Task<SellerDashboardViewModel> BuildSellerDashboardModelAsync(CancellationToken cancellationToken = default)
         {
             var sellerEmail = HttpContext.Session.GetString("SellerEmail");
@@ -1800,7 +1817,7 @@ public async Task<IActionResult> DeclineOrder([FromBody] DeclineRequest request)
                 SellerName = sellerContext.SellerName,
                 CurrentDate = DateTime.Now,
 
-                OrdersToShip = await GetOrderCountByStatusAsync(sellerContext.SellerId, "To Ship", cancellationToken),
+                ReturnRequests = await GetReturnRequestCountAsync(sellerContext.SellerId, cancellationToken),
                 PendingOrders = await GetOrderCountByStatusAsync(sellerContext.SellerId, "Pending", cancellationToken),
                 LowStockAlerts = await GetLowStockCountAsync(sellerContext.SellerId, cancellationToken),
                 WithdrawAmount = 15400.00m,
