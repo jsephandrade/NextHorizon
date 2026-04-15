@@ -252,6 +252,15 @@ document.addEventListener("DOMContentLoaded", () => {
         return config.botGreeting;
     };
 
+    const localTimeFormatter = new Intl.DateTimeFormat(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+    });
+    const localDateFormatter = new Intl.DateTimeFormat(undefined, {
+        month: "short",
+        day: "numeric",
+    });
+
     const formatChatTimestamp = (timestamp, actionLabel) => {
         if (!timestamp) {
             return actionLabel;
@@ -263,10 +272,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const now = new Date();
-        const timeLabel = new Intl.DateTimeFormat(undefined, {
-            hour: "numeric",
-            minute: "2-digit",
-        }).format(date);
+        const timeLabel = localTimeFormatter.format(date);
         const isSameDay = date.getFullYear() === now.getFullYear()
             && date.getMonth() === now.getMonth()
             && date.getDate() === now.getDate();
@@ -275,10 +281,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return `${actionLabel} at ${timeLabel}`;
         }
 
-        const dateLabel = new Intl.DateTimeFormat(undefined, {
-            month: "short",
-            day: "numeric",
-        }).format(date);
+        const dateLabel = localDateFormatter.format(date);
 
         return `${actionLabel} on ${dateLabel} at ${timeLabel}`;
     };

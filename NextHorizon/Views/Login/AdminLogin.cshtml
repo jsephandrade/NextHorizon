@@ -1,0 +1,165 @@
+@model NextHorizon.Models.LoginViewModel
+@{
+    ViewData["Title"] = "QA Portal Login";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="~/css/adminLogin.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="monochromeToast" class="toast toast-monochrome hide" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="toastMessage"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="floating-login-card">
+        <div class="card-brand-header">
+            <h1>NH</h1>
+            <p>Quality Assurance Workspace</p>
+        </div>
+
+        <div class="card-body-content">
+            <div class="welcome-text text-center">
+                <h3>QA Portal Access</h3>
+                <p>Sign in with your staff credentials to review conversations and ratings.</p>
+            </div>
+
+            <form id="mainLoginForm">
+                <div class="mb-3">
+                    <label class="form-label" for="username">Username</label>
+                    <input id="username" type="text" class="form-control" placeholder="USR-000-000" required />
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label mb-0" for="password">Password</label>
+                        <a href="#" class="forgot-link" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">Forgot Password?</a>
+                    </div>
+                    <input id="password" type="password" class="form-control" placeholder="••••••••" required />
+                </div>
+
+                <button type="submit" class="btn btn-access">ACCESS QA</button>
+
+                <div class="auth-footer">
+                    <i class="bi bi-shield-lock-fill"></i>
+                    AUTHORIZED QA PERSONNEL ONLY
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header border-0">
+                    <h5 class="fw-bold m-0">Reset Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4 text-center">
+                    <i class="bi bi-envelope-at fs-1 text-muted mb-3 d-block"></i>
+                    <p class="text-muted small px-3">Enter your work email address to receive a one-time password.</p>
+                    <div class="mt-4 text-start px-3">
+                        <label class="form-label" for="resetEmail">Work Email Address</label>
+                        <input type="email" id="resetEmail" class="form-control" placeholder="staff@nexthorizon.com" />
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-access m-0" onclick="sendResetLink()">SEND OTP</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="otpVerificationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header border-0">
+                    <h5 class="fw-bold m-0">Verify OTP Code</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4 text-center">
+                    <i class="bi bi-shield-lock-fill fs-1 text-muted mb-3 d-block"></i>
+                    <p class="text-muted small px-3">Enter the 6-digit OTP sent to your email.</p>
+                    <div class="mt-4 text-start px-3">
+                        <label class="form-label">OTP Code</label>
+                        <div class="d-flex gap-2 justify-content-between mb-2">
+                            <input type="text" id="otp1" class="form-control text-center" maxlength="1" style="width: 50px;" onkeyup="moveToNext(this, 'otp2')" />
+                            <input type="text" id="otp2" class="form-control text-center" maxlength="1" style="width: 50px;" onkeyup="moveToNext(this, 'otp3')" />
+                            <input type="text" id="otp3" class="form-control text-center" maxlength="1" style="width: 50px;" onkeyup="moveToNext(this, 'otp4')" />
+                            <input type="text" id="otp4" class="form-control text-center" maxlength="1" style="width: 50px;" onkeyup="moveToNext(this, 'otp5')" />
+                            <input type="text" id="otp5" class="form-control text-center" maxlength="1" style="width: 50px;" onkeyup="moveToNext(this, 'otp6')" />
+                            <input type="text" id="otp6" class="form-control text-center" maxlength="1" style="width: 50px;" onkeyup="moveToNext(this, null)" />
+                        </div>
+                        <div class="mt-2 text-end">
+                            <small class="text-muted">Didn't receive it? <a href="#" onclick="resendOTP(); return false;">Resend</a></small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-access m-0" onclick="verifyOTP()">VERIFY OTP</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header border-0">
+                    <h5 class="fw-bold m-0">Reset Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-key-fill fs-1 text-muted"></i>
+                    </div>
+                    <div class="mt-2 px-3">
+                        <label class="form-label" for="newPassword">New Password</label>
+                        <div class="input-group">
+                            <input type="password" id="newPassword" class="form-control" placeholder="••••••••" />
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('newPassword', this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">Minimum 8 characters</small>
+                    </div>
+                    <div class="mt-3 px-3">
+                        <label class="form-label" for="confirmPassword">Confirm Password</label>
+                        <div class="input-group">
+                            <input type="password" id="confirmPassword" class="form-control" placeholder="••••••••" />
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('confirmPassword', this)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-3 px-3">
+                        <div class="progress" style="height: 5px;">
+                            <div id="passwordStrength" class="progress-bar" role="progressbar" style="width: 0%;"></div>
+                        </div>
+                        <small id="passwordStrengthText" class="text-muted">Enter password</small>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-access m-0" onclick="submitNewPassword()">RESET PASSWORD</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/adminLogin.js" asp-append-version="true"></script>
+</body>
+</html>

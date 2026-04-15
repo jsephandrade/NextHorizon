@@ -13,6 +13,7 @@
             || string.Equals(actionName, "MyActivity", StringComparison.OrdinalIgnoreCase));
     var showDevMessagingLink = WebHostEnvironment.IsDevelopment() &&
         Configuration.GetValue("Features:EnableDevMessaging", false);
+    var isQaAuthenticated = Context.Session.GetInt32("StaffId").HasValue;
     var bodyClass = isStorefrontPage ? "app-shell storefront-shell" : "app-shell member-shell";
 }
 <!DOCTYPE html>
@@ -172,6 +173,15 @@
                             </button>
                             <div class="profile-dropdown" id="profile-dropdown">
                                 <a asp-controller="MemberTracker" asp-action="UploadActivity" class="profile-dropdown-link">MemberTracker Uploads</a>
+                                @if (isQaAuthenticated)
+                                {
+                                    <a asp-controller="QA" asp-action="Dashboard" class="profile-dropdown-link">Open QA Workspace</a>
+                                    <a asp-controller="Login" asp-action="Logout" class="profile-dropdown-link">Sign Out of QA</a>
+                                }
+                                else
+                                {
+                                    <a asp-controller="Login" asp-action="AdminLogin" class="profile-dropdown-link">QA Login</a>
+                                }
                             </div>
                         </div>
                     </div>

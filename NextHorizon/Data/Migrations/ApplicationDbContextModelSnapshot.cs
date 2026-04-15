@@ -74,6 +74,24 @@ namespace NextHorizon.Migrations
                         });
                 });
 
+            modelBuilder.Entity("NextHorizon.Data.SellerRef", b =>
+                {
+                    b.Property<int>("SellerId")
+                        .HasColumnType("int")
+                        .HasColumnName("seller_id");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("SellerId");
+
+                    b.ToTable("Sellers", "dbo", t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
             modelBuilder.Entity("NextHorizon.Data.SupportAgentRecord", b =>
                 {
                     b.Property<int>("ChatId")
@@ -95,24 +113,6 @@ namespace NextHorizon.Migrations
                     b.HasKey("ChatId");
 
                     b.ToTable("Agents", "dbo", t =>
-                        {
-                            t.ExcludeFromMigrations();
-                        });
-                });
-
-            modelBuilder.Entity("NextHorizon.Data.SellerRef", b =>
-                {
-                    b.Property<int>("SellerId")
-                        .HasColumnType("int")
-                        .HasColumnName("seller_id");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("SellerId");
-
-                    b.ToTable("Sellers", "dbo", t =>
                         {
                             t.ExcludeFromMigrations();
                         });
@@ -645,6 +645,134 @@ namespace NextHorizon.Migrations
                     b.ToTable("SupportTickets", (string)null);
                 });
 
+            modelBuilder.Entity("NextHorizon.Models.QA.QaReview", b =>
+                {
+                    b.Property<int>("QaReviewId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("QaReviewId"));
+
+                    b.Property<decimal>("AccuracyAverage")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("InlineCommentsJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValue("{}");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<decimal>("OverallPercent")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<decimal>("ResolutionAverage")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<string>("ReviewerName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("ReviewerStaffId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("SubmittedToAgent")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("SubmittedToAgentAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SupportFaqId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("ToneAverage")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("QaReviewId");
+
+                    b.HasIndex("SupportFaqId")
+                        .IsUnique();
+
+                    b.ToTable("QaReviews", (string)null);
+                });
+
+            modelBuilder.Entity("NextHorizon.Models.QA.QaReviewInlineCommentDraft", b =>
+                {
+                    b.Property<int>("QaReviewInlineCommentDraftId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("QaReviewInlineCommentDraftId"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("InlineCommentsJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValue("{}");
+
+                    b.Property<int>("SupportFaqId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedByName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("UpdatedByStaffId")
+                        .HasColumnType("int");
+
+                    b.HasKey("QaReviewInlineCommentDraftId");
+
+                    b.HasIndex("SupportFaqId")
+                        .IsUnique();
+
+                    b.ToTable("QaReviewInlineCommentDrafts", (string)null);
+                });
+
+            modelBuilder.Entity("NextHorizon.Models.QA.QaReviewQuestionScore", b =>
+                {
+                    b.Property<int>("QaReviewQuestionScoreId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("QaReviewQuestionScoreId"));
+
+                    b.Property<int>("QaReviewId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("QuestionKey")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<int>("Score")
+                        .HasColumnType("int");
+
+                    b.HasKey("QaReviewQuestionScoreId");
+
+                    b.HasIndex("QaReviewId", "QuestionKey")
+                        .IsUnique();
+
+                    b.ToTable("QaReviewQuestionScores", (string)null);
+                });
+
             modelBuilder.Entity("NextHorizon.Modules.MemberTracker.Models.MemberUpload", b =>
                 {
                     b.Property<int>("UploadId")
@@ -776,6 +904,17 @@ namespace NextHorizon.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("NextHorizon.Models.QA.QaReviewQuestionScore", b =>
+                {
+                    b.HasOne("NextHorizon.Models.QA.QaReview", "Review")
+                        .WithMany("QuestionScores")
+                        .HasForeignKey("QaReviewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Review");
+                });
+
             modelBuilder.Entity("NextHorizon.Modules.MemberTracker.Models.MemberUpload", b =>
                 {
                     b.HasOne("NextHorizon.Data.ConsumerRef", null)
@@ -788,6 +927,11 @@ namespace NextHorizon.Migrations
             modelBuilder.Entity("NextHorizon.Messaging.Models.MessageConversation", b =>
                 {
                     b.Navigation("Messages");
+                });
+
+            modelBuilder.Entity("NextHorizon.Models.QA.QaReview", b =>
+                {
+                    b.Navigation("QuestionScores");
                 });
 #pragma warning restore 612, 618
         }

@@ -134,6 +134,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxXcml0ZVJldmlldy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/dev/NextHorizon/NextHorizon/Views/Login/AdminLogin.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTG9naW5cQWRtaW5Mb2dpbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/dev/NextHorizon/NextHorizon/Views/MemberTracker/MyActivity.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVtYmVyVHJhY2tlclxNeUFjdGl2aXR5LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
@@ -144,6 +148,30 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/dev/NextHorizon/NextHorizon/Views/Messaging/DevMessaging.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVzc2FnaW5nXERldk1lc3NhZ2luZy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/dev/NextHorizon/NextHorizon/Views/QA/AgentTickets.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUUFcQWdlbnRUaWNrZXRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/dev/NextHorizon/NextHorizon/Views/QA/AllAgents.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUUFcQWxsQWdlbnRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/dev/NextHorizon/NextHorizon/Views/QA/AllResolvedTickets.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUUFcQWxsUmVzb2x2ZWRUaWNrZXRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/dev/NextHorizon/NextHorizon/Views/QA/Dashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUUFcRGFzaGJvYXJkLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/dev/NextHorizon/NextHorizon/Views/QA/RatedHistory.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUUFcUmF0ZWRIaXN0b3J5LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/dev/NextHorizon/NextHorizon/Views/QA/Rating.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUUFcUmF0aW5nLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/dev/NextHorizon/NextHorizon/Views/Seller/SellerMessenger.cshtml]
@@ -164,6 +192,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/dev/NextHorizon/NextHorizon/Views/Shared/_LoginPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9Mb2dpblBhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/dev/NextHorizon/NextHorizon/Views/Shared/_QALayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9RQUxheW91dC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/dev/NextHorizon/NextHorizon/Views/Shared/_ValidationScriptsPartial.cshtml]

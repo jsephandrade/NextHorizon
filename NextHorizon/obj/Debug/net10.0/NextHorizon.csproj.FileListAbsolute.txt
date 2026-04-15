@@ -523,8 +523,10 @@ C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\c2dea400d82a1722\NextHorizon\ob
 C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\c2dea400d82a1722\NextHorizon\obj\Debug\net10.0\NextHori.317B266A.Up2Date
 C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\c2dea400d82a1722\NextHorizon\obj\Debug\net10.0\NextHorizon.genruntimeconfig.cache
 C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\c2dea400d82a1722\NextHorizon\obj\Debug\net10.0\ref\NextHorizon.dll
-C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\x0kvqvkj93-{0}-gadi3ylmdb-gadi3ylmdb.gz
-C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\8pse9jlq7t-{0}-m1kon8gjhc-m1kon8gjhc.gz
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\vrj7unavsv-{0}-yebbos3dmn-yebbos3dmn.gz
-C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\cbqezynx2r-{0}-cvybkiyb8u-cvybkiyb8u.gz
 C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\hdcs6molcg-{0}-3uqeg5os29-3uqeg5os29.gz
+C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\8pse9jlq7t-{0}-8ngcfmzj0n-8ngcfmzj0n.gz
+C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\cbqezynx2r-{0}-8t7cq847jj-8t7cq847jj.gz
+C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\x0kvqvkj93-{0}-gmr5j4x5qe-gmr5j4x5qe.gz
+C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\awxl9kx1zp-{0}-adzmt71xcr-adzmt71xcr.gz
+C:\dev\NextHorizon\NextHorizon\obj\Debug\net10.0\compressed\xlwh9a8mq6-{0}-ap654ntxim-ap654ntxim.gz

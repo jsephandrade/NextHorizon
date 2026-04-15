@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using NextHorizon.Models;
 using NextHorizon.Models.HelpCenter;
+using NextHorizon.Models.QA;
 using NextHorizon.Messaging.Models;
 using NextHorizon.Modules.MemberTracker.Models;
 
@@ -34,6 +35,12 @@ public class ApplicationDbContext : DbContext
     public DbSet<LiveAgentSession> LiveAgentSessions => Set<LiveAgentSession>();
 
     public DbSet<SupportAgentRecord> SupportAgents => Set<SupportAgentRecord>();
+
+    public DbSet<QaReview> QaReviews => Set<QaReview>();
+
+    public DbSet<QaReviewQuestionScore> QaReviewQuestionScores => Set<QaReviewQuestionScore>();
+
+    public DbSet<QaReviewInlineCommentDraft> QaReviewInlineCommentDrafts => Set<QaReviewInlineCommentDraft>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -309,6 +316,62 @@ public class ApplicationDbContext : DbContext
             .HasFilter($"[Status] <> {(byte)LiveAgentSessionStatus.Resolved}");
         liveAgentSession.HasIndex(x => new { x.UserId, x.Status, x.CreatedAt })
             .IsDescending(false, false, true);
+
+        var qaReview = builder.Entity<QaReview>();
+        qaReview.ToTable("QaReviews");
+        qaReview.HasKey(x => x.QaReviewId);
+        qaReview.Property(x => x.ReviewerName)
+            .IsRequired()
+            .HasMaxLength(200);
+        qaReview.Property(x => x.Notes)
+            .HasMaxLength(4000);
+        qaReview.Property(x => x.AccuracyAverage)
+            .HasColumnType("decimal(5,2)");
+        qaReview.Property(x => x.ToneAverage)
+            .HasColumnType("decimal(5,2)");
+        qaReview.Property(x => x.ResolutionAverage)
+            .HasColumnType("decimal(5,2)");
+        qaReview.Property(x => x.OverallPercent)
+            .HasColumnType("decimal(5,2)");
+        qaReview.Property(x => x.InlineCommentsJson)
+            .HasDefaultValue("{}");
+        qaReview.Property(x => x.CreatedAtUtc)
+            .IsRequired();
+        qaReview.Property(x => x.UpdatedAtUtc)
+            .IsRequired();
+        qaReview.HasIndex(x => x.SupportFaqId)
+            .IsUnique();
+
+        var qaReviewInlineCommentDraft = builder.Entity<QaReviewInlineCommentDraft>();
+        qaReviewInlineCommentDraft.ToTable("QaReviewInlineCommentDrafts");
+        qaReviewInlineCommentDraft.HasKey(x => x.QaReviewInlineCommentDraftId);
+        qaReviewInlineCommentDraft.Property(x => x.UpdatedByName)
+            .IsRequired()
+            .HasMaxLength(200);
+        qaReviewInlineCommentDraft.Property(x => x.InlineCommentsJson)
+            .IsRequired()
+            .HasDefaultValue("{}");
+        qaReviewInlineCommentDraft.Property(x => x.CreatedAtUtc)
+            .IsRequired();
+        qaReviewInlineCommentDraft.Property(x => x.UpdatedAtUtc)
+            .IsRequired();
+        qaReviewInlineCommentDraft.HasIndex(x => x.SupportFaqId)
+            .IsUnique();
+
+        var qaReviewQuestionScore = builder.Entity<QaReviewQuestionScore>();
+        qaReviewQuestionScore.ToTable("QaReviewQuestionScores");
+        qaReviewQuestionScore.HasKey(x => x.QaReviewQuestionScoreId);
+        qaReviewQuestionScore.Property(x => x.QuestionKey)
+            .IsRequired()
+            .HasMaxLength(40);
+        qaReviewQuestionScore.Property(x => x.Score)
+            .IsRequired();
+        qaReviewQuestionScore.HasOne(x => x.Review)
+            .WithMany(x => x.QuestionScores)
+            .HasForeignKey(x => x.QaReviewId)
+            .OnDelete(DeleteBehavior.Cascade);
+        qaReviewQuestionScore.HasIndex(x => new { x.QaReviewId, x.QuestionKey })
+            .IsUnique();
 
         supportContactChannel.HasData(HelpCenterSeed.ContactChannels);
 

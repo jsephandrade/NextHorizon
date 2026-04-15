@@ -19,12 +19,28 @@ var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnec
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(8);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(defaultConnection));
 builder.Services.AddScoped<ICustomerStoredProcedureService, CustomerStoredProcedureService>();
 builder.Services.AddScoped<IMemberUploadRepository, MemberUploadStoredProcedureRepository>();
 builder.Services.AddScoped<IMessagingRepository, MessagingStoredProcedureRepository>();
 builder.Services.AddScoped<IOrderConversationResolver, SimulatedOrderConversationResolver>();
 builder.Services.AddScoped<IAuthenticatedUserContextService, AuthenticatedUserContextService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IQaAgentTicketsService, QaAgentTicketsService>();
+builder.Services.AddScoped<IQaAgentsService, QaAgentsService>();
+builder.Services.AddScoped<IQaDashboardService, QaDashboardService>();
+builder.Services.AddScoped<IQaRatingQueueService, QaRatingQueueService>();
+builder.Services.AddScoped<IQaRatedHistoryService, QaRatedHistoryService>();
+builder.Services.AddScoped<IQaResolvedTicketsService, QaResolvedTicketsService>();
+builder.Services.AddScoped<IQaReviewService, QaReviewService>();
+builder.Services.AddSingleton<IEmailService, EmailService>();
 builder.Services.AddTransient<IValidator<CreateMemberUploadRequest>, CreateMemberUploadRequestValidator>();
 builder.Services.AddTransient<IValidator<UpdateMemberUploadRequest>, UpdateMemberUploadRequestValidator>();
 builder.Services.AddAntiforgery(options =>
@@ -117,6 +133,7 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseRateLimiter();
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
