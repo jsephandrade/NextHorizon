@@ -22,7 +22,7 @@ document.getElementById('mainLoginForm').addEventListener('submit', async functi
     const password = document.getElementById('password').value;
 
     if (!username || !password) {
-        showToast('Please enter both username and password.', false);
+        showToast('Please enter both username and password', false);
         return;
     }
 
@@ -51,12 +51,12 @@ document.getElementById('mainLoginForm').addEventListener('submit', async functi
             return;
         }
 
-        showToast(data.message || 'Invalid username or password.', false);
+        showToast(data.message || 'Invalid username or password', false);
     } catch {
         showToast('Connection error. Please try again.', false);
     } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'ACCESS QA';
+        submitBtn.textContent = 'ACCESS PORTAL';
     }
 });
 
@@ -64,7 +64,7 @@ async function sendResetLink() {
     const email = document.getElementById('resetEmail').value.trim();
 
     if (!email) {
-        showToast('Please enter your email address.', false);
+        showToast('Please enter your email address', false);
         return;
     }
 
@@ -92,9 +92,9 @@ async function sendResetLink() {
             return;
         }
 
-        showToast(data.message || 'Failed to send OTP.', false);
+        showToast(data.message || 'Failed to send OTP', false);
     } catch {
-        showToast('Error sending OTP.', false);
+        showToast('Error sending OTP', false);
     } finally {
         resetBtn.disabled = false;
         resetBtn.textContent = 'SEND OTP';
@@ -112,7 +112,7 @@ async function verifyOTP() {
     const otp = Array.from({ length: 6 }, (_, index) => document.getElementById(`otp${index + 1}`).value).join('');
 
     if (!email || otp.length !== 6) {
-        showToast('Please enter the complete 6-digit OTP.', false);
+        showToast('Please enter the complete 6-digit OTP', false);
         return;
     }
 
@@ -129,7 +129,7 @@ async function verifyOTP() {
 
         const data = await response.json();
         if (data.status === 'Valid') {
-            showToast('OTP verified successfully.', true);
+            showToast('OTP verified successfully', true);
             bootstrap.Modal.getInstance(document.getElementById('otpVerificationModal')).hide();
 
             sessionStorage.setItem('resetToken', data.resetToken);
@@ -139,9 +139,9 @@ async function verifyOTP() {
             return;
         }
 
-        showToast(data.message || 'Invalid OTP code.', false);
+        showToast(data.message || 'Invalid OTP code', false);
     } catch {
-        showToast('Error verifying OTP.', false);
+        showToast('Error verifying OTP', false);
     } finally {
         verifyBtn.disabled = false;
         verifyBtn.textContent = 'VERIFY OTP';
@@ -151,7 +151,7 @@ async function verifyOTP() {
 async function resendOTP() {
     const email = sessionStorage.getItem('resetEmail');
     if (!email) {
-        showToast('No reset email found.', false);
+        showToast('No reset email found', false);
         return;
     }
 
@@ -163,9 +163,9 @@ async function resendOTP() {
         });
 
         const data = await response.json();
-        showToast(data.message || 'New OTP sent.', !!data.success);
+        showToast(data.message || 'New OTP sent', !!data.success);
     } catch {
-        showToast('Error resending OTP.', false);
+        showToast('Error resending OTP', false);
     }
 }
 
@@ -181,12 +181,12 @@ async function submitNewPassword() {
     }
 
     if (!newPassword || newPassword.length < 8) {
-        showToast('Password must be at least 8 characters.', false);
+        showToast('Password must be at least 8 characters', false);
         return;
     }
 
     if (newPassword !== confirmPassword) {
-        showToast('Passwords do not match.', false);
+        showToast('Passwords do not match', false);
         return;
     }
 
@@ -208,7 +208,7 @@ async function submitNewPassword() {
 
         const data = await response.json();
         if (data.status === 'Success') {
-            showToast('Password reset successfully. You can now sign in.', true);
+            showToast('Password reset successfully. You can now login.', true);
             bootstrap.Modal.getInstance(document.getElementById('resetPasswordModal')).hide();
             sessionStorage.removeItem('resetEmail');
             sessionStorage.removeItem('resetToken');
@@ -217,9 +217,9 @@ async function submitNewPassword() {
             return;
         }
 
-        showToast(data.message || 'Password reset failed.', false);
+        showToast(data.message || 'Password reset failed', false);
     } catch {
-        showToast('Error resetting password.', false);
+        showToast('Error resetting password', false);
     } finally {
         resetBtn.disabled = false;
         resetBtn.textContent = 'RESET PASSWORD';

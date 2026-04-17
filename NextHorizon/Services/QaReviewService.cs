@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using NextHorizon.Data;
+using NextHorizon.Models.Agent;
 using NextHorizon.Models.HelpCenter;
 using NextHorizon.Models.QA;
 
@@ -19,11 +20,16 @@ public sealed class QaReviewService : IQaReviewService
 
     private readonly ApplicationDbContext _dbContext;
     private readonly IQaRatingQueueService _qaRatingQueueService;
+    private readonly IAgentRankingService _agentRankingService;
 
-    public QaReviewService(ApplicationDbContext dbContext, IQaRatingQueueService qaRatingQueueService)
+    public QaReviewService(
+        ApplicationDbContext dbContext,
+        IQaRatingQueueService qaRatingQueueService,
+        IAgentRankingService agentRankingService)
     {
         _dbContext = dbContext;
         _qaRatingQueueService = qaRatingQueueService;
+        _agentRankingService = agentRankingService;
     }
 
     public async Task<QaRatingPageData?> GetRatingPageAsync(
@@ -221,6 +227,8 @@ public sealed class QaReviewService : IQaReviewService
             cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await _agentRankingService.RecomputeMonthAsync(AgentRankingMetricType.QaScore, review.CreatedAtUtc, cancellationToken);
+        await _agentRankingService.RecomputeMonthAsync(AgentRankingMetricType.AverageHandlingTime, review.CreatedAtUtc, cancellationToken);
         return new QaReviewMutationResponse(true, "QA review saved.");
     }
 

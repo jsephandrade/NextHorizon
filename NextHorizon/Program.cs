@@ -1,6 +1,7 @@
 using FluentValidation;
 using NextHorizon.Data;
 using NextHorizon.Data.Messaging;
+using NextHorizon.Models.Agent;
 using NextHorizon.Models;
 using NextHorizon.Modules.MemberTracker.Data;
 using NextHorizon.Modules.MemberTracker.Models;
@@ -33,6 +34,8 @@ builder.Services.AddScoped<IMessagingRepository, MessagingStoredProcedureReposit
 builder.Services.AddScoped<IOrderConversationResolver, SimulatedOrderConversationResolver>();
 builder.Services.AddScoped<IAuthenticatedUserContextService, AuthenticatedUserContextService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAgentDashboardService, AgentDashboardService>();
+builder.Services.AddScoped<IAgentRankingService, AgentRankingService>();
 builder.Services.AddScoped<IQaAgentTicketsService, QaAgentTicketsService>();
 builder.Services.AddScoped<IQaAgentsService, QaAgentsService>();
 builder.Services.AddScoped<IQaDashboardService, QaDashboardService>();
@@ -114,10 +117,14 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
+await using (var scope = app.Services.CreateAsyncScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    dbContext.Database.Migrate();
+    await dbContext.Database.MigrateAsync();
+
+    var rankingService = scope.ServiceProvider.GetRequiredService<IAgentRankingService>();
+    await rankingService.RecomputeAllQaMonthsAsync(CancellationToken.None);
+    await rankingService.RecomputeMonthAsync(AgentRankingMetricType.AverageHandlingTime, DateTime.UtcNow, CancellationToken.None);
 }
 
 // Configure the HTTP request pipeline.

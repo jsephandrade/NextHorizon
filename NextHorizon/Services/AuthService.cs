@@ -7,6 +7,9 @@ namespace NextHorizon.Services;
 
 public sealed class AuthService : IAuthService
 {
+    private const string QaAnalystRole = "QA Analyst";
+    private const string SupportAgentRole = "Support Agent";
+
     private readonly string _connectionString;
     private readonly PasswordHasher<object> _passwordHasher = new();
 
@@ -103,7 +106,7 @@ public sealed class AuthService : IAuthService
                 Success = true,
                 Message = "Login successful",
                 UserType = user.UserType,
-                RedirectUrl = "/qa/dashboard",
+                RedirectUrl = GetRedirectUrl(user.UserType),
                 User = user
             };
         }
@@ -197,5 +200,17 @@ public sealed class AuthService : IAuthService
     private static int SafeInt(object value)
     {
         return value == DBNull.Value ? 0 : Convert.ToInt32(value);
+    }
+
+    private static string GetRedirectUrl(string? userType)
+    {
+        var normalizedUserType = userType?.Trim() ?? string.Empty;
+
+        return normalizedUserType switch
+        {
+            QaAnalystRole => "/qa/dashboard",
+            SupportAgentRole => "/Agent/AgentDashboard",
+            _ => "/Login/AdminLogin"
+        };
     }
 }

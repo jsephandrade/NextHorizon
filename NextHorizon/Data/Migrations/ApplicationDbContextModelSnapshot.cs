@@ -98,6 +98,18 @@ namespace NextHorizon.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ChatID");
 
+                    b.Property<DateTime?>("ACWEndTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ACWEndTime");
+
+                    b.Property<DateTime?>("ACWStartTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("ACWStartTime");
+
+                    b.Property<int?>("AgentId")
+                        .HasColumnType("int")
+                        .HasColumnName("AgentID");
+
                     b.Property<string>("AgentName")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("AgentName");
@@ -105,6 +117,38 @@ namespace NextHorizon.Migrations
                     b.Property<string>("AgentStatus")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("AgentStatus");
+
+                    b.Property<string>("Category")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("Category");
+
+                    b.Property<int?>("ChatSlot")
+                        .HasColumnType("int")
+                        .HasColumnName("ChatSlot");
+
+                    b.Property<string>("ChatStatus")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ChatStatus");
+
+                    b.Property<string>("ClientName")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ClientName");
+
+                    b.Property<int?>("ConversationId")
+                        .HasColumnType("int")
+                        .HasColumnName("ConversationID");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("Notes");
+
+                    b.Property<DateTime?>("NotesLastUpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("NotesLastUpdatedAt");
+
+                    b.Property<string>("PreviewQuestion")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("PreviewQuestion");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int")
@@ -222,6 +266,102 @@ namespace NextHorizon.Migrations
 
                             t.HasCheckConstraint("CK_MessagingConversations_ContextType_Order", "([ContextType] = 1 AND [OrderId] IS NULL) OR ([ContextType] = 2 AND [OrderId] IS NOT NULL)");
                         });
+                });
+
+            modelBuilder.Entity("NextHorizon.Models.Agent.AgentRanking", b =>
+                {
+                    b.Property<int>("AgentRankingId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AgentRankingId"));
+
+                    b.Property<int>("AgentUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CalculatedAtUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<byte>("MetricType")
+                        .HasColumnType("tinyint");
+
+                    b.Property<decimal>("MetricValue")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<DateTime>("PeriodStartUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RankPosition")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RankedAgentCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ReviewCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.HasKey("AgentRankingId");
+
+                    b.HasIndex("PeriodStartUtc", "MetricType", "AgentUserId")
+                        .IsUnique();
+
+                    b.HasIndex("PeriodStartUtc", "MetricType", "RankPosition");
+
+                    b.ToTable("AgentRankings", "dbo");
+                });
+
+            modelBuilder.Entity("NextHorizon.Models.Agent.AgentReviewFeedback", b =>
+                {
+                    b.Property<int>("AgentReviewFeedbackId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AgentReviewFeedbackId"));
+
+                    b.Property<bool>("Acknowledged")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("AcknowledgedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("AgentUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)")
+                        .HasDefaultValue("");
+
+                    b.Property<int>("SupportFaqId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.HasKey("AgentReviewFeedbackId");
+
+                    b.HasIndex("SupportFaqId", "AgentUserId")
+                        .IsUnique();
+
+                    b.ToTable("AgentReviewFeedback", (string)null);
                 });
 
             modelBuilder.Entity("NextHorizon.Models.Customer", b =>

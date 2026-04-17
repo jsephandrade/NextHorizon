@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - NEXT HORIZON AGENT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    @await RenderSectionAsync("Styles", required: false)
+    <link rel="stylesheet" href="~/css/AgentLayout.css" />
+</head>
+<body>
+    @{
+        var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+        var action = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+    }
+    <div class="agent-shell">
+        <header class="agent-header">
+            <div class="agent-brand">
+                <img src="/images/nh-logo.jpg" alt="NEXT HORIZON" class="agent-logo" />
+            </div>
+            <div class="header-actions">
+                <div class="notif-wrap">
+                    <button class="hdr-icon-btn" aria-label="Notifications" title="Notifications" type="button">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                        <span class="notif-dot"></span>
+                    </button>
+                </div>
+
+                <div class="profile-dropdown-wrap" id="profile-wrap">
+                    <button class="hdr-icon-btn" id="profile-btn" onclick="toggleProfileDropdown()" aria-label="Account" aria-expanded="false" title="Account" type="button">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </button>
+                    <div class="profile-dropdown" id="profile-dropdown">
+                        <a href="/Login/Logout" class="profile-dropdown-item profile-dd-logout">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="agent-workspace">
+            <div class="hamburger-trigger" id="hamburger-trigger" aria-label="Open Sidebar">
+                <i class="bi bi-list"></i>
+            </div>
+
+            <aside class="agent-sidebar" id="agent-sidebar" aria-label="Agent navigation">
+                <p class="agent-side-title">Agent Workspace</p>
+                <nav class="agent-side-nav">
+                    <a href="/Agent/AgentDashboard" class="agent-side-link @(controller == "Agent" && action == "AgentDashboard" ? "active" : "")">
+                        <i class="bi bi-grid-1x2"></i>
+                        <span class="nav-text">Dashboard</span>
+                    </a>
+                    
+                    <a href="/Agent/Tickets" class="agent-side-link @(controller == "Agent" && action == "Tickets" ? "active" : "")">
+                        <i class="bi bi-ticket-detailed"></i>
+                        <span class="nav-text">Tickets</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <main class="agent-main">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Dropdown Logic
+        function toggleProfileDropdown() {
+            var dd = document.getElementById('profile-dropdown');
+            if (!dd) return;
+            dd.classList.toggle('open');
+        }
+
+        document.addEventListener('click', function (e) {
+            var wrap = document.getElementById('profile-wrap');
+            if (!wrap) return;
+            if (!wrap.contains(e.target)) {
+                var dd = document.getElementById('profile-dropdown');
+                if (dd) dd.classList.remove('open');
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                var dd = document.getElementById('profile-dropdown');
+                if (dd) dd.classList.remove('open');
+            }
+        });
+
+        // Sidebar Auto-hide Logic
+        document.addEventListener('DOMContentLoaded', function () {
+            const sidebar = document.getElementById('agent-sidebar');
+            const trigger = document.getElementById('hamburger-trigger');
+            if (!sidebar || !trigger) return;
+
+            let hideTimeout;
+
+            // Function to reveal the sidebar
+            function expandSidebar() {
+                clearTimeout(hideTimeout);
+                sidebar.classList.remove('collapsed');
+                trigger.classList.add('hidden'); // Slide the hamburger away
+            }
+
+            // Function to start the 4-second hide timer
+            function startCollapseTimer() {
+                clearTimeout(hideTimeout);
+                hideTimeout = setTimeout(function () {
+                    sidebar.classList.add('collapsed');
+                    trigger.classList.remove('hidden'); // Bring the hamburger back
+                }, 4000);
+            }
+
+            // Waking up the sidebar by hovering near the hamburger icon
+            trigger.addEventListener('mouseenter', expandSidebar);
+            trigger.addEventListener('mousemove', expandSidebar);
+            
+            // Keep it open if the mouse is inside the actual sidebar
+            sidebar.addEventListener('mouseenter', expandSidebar);
+            sidebar.addEventListener('mousemove', expandSidebar);
+            
+            // Start the timer when the mouse leaves either area
+            sidebar.addEventListener('mouseleave', startCollapseTimer);
+            trigger.addEventListener('mouseleave', startCollapseTimer);
+
+            // Start the initial 4-second countdown as soon as the page loads
+            startCollapseTimer();
+        });
+    </script>
+</body>
+</html>

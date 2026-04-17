@@ -1,0 +1,223 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            min-height: 100vh;
+            color: #111111;
+            background:
+                radial-gradient(circle at 20% 20%, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0) 45%),
+                radial-gradient(circle at 80% 10%, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0) 38%),
+                linear-gradient(180deg, #f6f6f6 0%, #ececec 100%);
+        }
+
+        button, input, select, textarea { font: inherit; }
+
+        .agent-shell {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header Styles */
+        .agent-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 24px;
+            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.8);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+        }
+
+        .agent-brand { display: flex; align-items: center; gap: 0; }
+        .agent-logo { width: 120px; height: 42px; object-fit: contain; display: block; }
+
+        .header-actions { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+        .hdr-icon-btn {
+            background: none; border: none; cursor: pointer; padding: 8px;
+            border-radius: 8px; color: #4a4a4a; display: flex;
+            align-items: center; justify-content: center; transition: all 0.15s ease;
+            line-height: 1;
+        }
+        .hdr-icon-btn:hover { color: #111111; background-color: rgba(0, 0, 0, 0.06); }
+        .notif-wrap, .profile-dropdown-wrap { position: relative; }
+        .notif-dot {
+            position: absolute;
+            top: 4px; right: 4px; width: 7px; height: 7px;
+            background-color: #d62323; border-radius: 50%; border: 1px solid #ffffff;
+        }
+
+        /* Profile Dropdown Styles (Ported from QA Layout) */
+        .profile-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: #ffffff;
+            border: 1px solid #d9d9d9;
+            border-radius: 8px;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+            min-width: 190px;
+            display: none;
+            z-index: 1001;
+        }
+
+        .profile-dropdown.open {
+            display: block;
+        }
+
+        .profile-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            border: none;
+            background: none;
+            text-align: left;
+            padding: 11px 14px;
+            color: #222222;
+            font-size: 0.88rem;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .profile-dropdown-item:hover {
+            background: #f4f4f4;
+        }
+
+        .profile-dropdown-item.profile-dd-logout {
+            border-top: 1px solid #e6e6e6;
+        }
+
+        /* Main Workspace */
+        .agent-workspace {
+            width: auto; 
+            margin: 22px 70px; /* Fixes left-side spacing by removing auto centering */
+            display: flex;
+            flex: 1;
+        }
+
+        .agent-main {
+            width: 100%;
+            min-width: 0;
+            flex: 1;
+            transition: all 0.3s ease;
+        }
+
+        /* ---------------------------------------------------
+           HAMBURGER TRIGGER (Visible when Sidebar is hidden)
+           --------------------------------------------------- */
+        .hamburger-trigger {
+            position: fixed;
+            left: 0;
+            top: 100px;
+            background: #111111;
+            color: #ffffff;
+            width: 36px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            z-index: 80;
+            transition: left 0.3s ease, background-color 0.15s ease;
+            font-size: 1.4rem;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+        }
+
+        .hamburger-trigger:hover {
+            background: #2b2b2b;
+        }
+
+        .hamburger-trigger.hidden {
+            left: -40px;
+            /* Slides it off-screen when sidebar is open */
+        }
+
+        /* ---------------------------------------------------
+           AGENT SIDEBAR (AUTO-HIDE STYLES)
+           --------------------------------------------------- */
+        .agent-sidebar {
+            align-self: start;
+            position: sticky;
+            top: 84px;
+            margin-left: -10px; /* Pulls sidebar exactly identical to QA layout */
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            border-radius: 12px;
+            padding: 10px;
+            backdrop-filter: blur(4px);
+            margin-right: 19px; /* Acts as the gap between sidebar and main content */
+            
+            /* Sizing & Transitions */
+            width: 206px;
+            max-width: 206px;
+            opacity: 1;
+            transition: all 0.3s ease;
+            overflow: hidden; 
+            white-space: nowrap;
+            z-index: 90;
+        }
+
+        /* Fully Hidden State */
+        .agent-sidebar.collapsed {
+            width: 0;
+            max-width: 0;
+            padding-left: 0;
+            padding-right: 0;
+            margin-right: 0; /* Removes the gap so the main content snaps completely to the left */
+            border-width: 0;
+            opacity: 0;
+        }
+
+        .agent-side-title {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #4a4a4a;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin: 0 0 8px;
+        }
+
+        .agent-side-nav {
+            display: grid;
+            gap: 6px;
+        }
+
+        .agent-side-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: #2b2b2b;
+            border-radius: 8px;
+            padding: 9px 10px;
+            border: 1px solid transparent;
+            font-size: 0.86rem;
+            font-weight: 500;
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+        }
+
+        .agent-side-link:hover {
+            background: #f3f3f3;
+            border-color: rgba(0, 0, 0, 0.1);
+            color: #111111;
+        }
+
+        .agent-side-link.active {
+            background: #111111;
+            border-color: #111111;
+            color: #ffffff;
+        }
+
+        @media (max-width: 768px) {
+            .agent-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px 16px; }
+            .header-actions { margin-left: auto; }
+            .agent-workspace { width: 94vw; flex-direction: column; margin: 22px auto; }
+            .agent-sidebar { position: static; margin-left: 0; width: 100% !important; max-width: 100% !important; }
+            .agent-side-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .hamburger-trigger { display: none; } /* Hide hamburger on mobile to keep stacked layout */
+        }

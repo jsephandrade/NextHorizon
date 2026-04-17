@@ -1,0 +1,844 @@
+@{
+    ViewData["Title"] = "Agent Dashboard";
+    Layout = "~/Views/Shared/_AgentLayout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/AgentDashboard.css" />
+
+<section class="qa-page">
+    <div class="hero-container">
+        <button class="hero tab-btn active" data-tab="qa" aria-label="View QA Score Tab" type="button">
+            <div class="hero-top-flex">
+                <h1>QA Score</h1>
+                <div class="hero-metric" id="qa-score-metric">0.0%</div>
+            </div>
+            <p id="qa-score-update">Last Update: No updates yet</p>
+            <p id="qa-score-rank">Rank: Not ranked yet</p>
+            <span class="tab-btn-spinner" aria-hidden="true"></span>
+        </button>
+
+        <button class="hero tab-btn" data-tab="aht" aria-label="View Average Handling Time Tab" type="button">
+            <div class="hero-top-flex">
+                <h1>Average Handling Time (AHT)</h1>
+                <div class="hero-metric" id="aht-metric">0mins 0secs</div>
+            </div>
+            <p id="aht-update">Last Update: No updates yet</p>
+            <p id="aht-rank">Rank: Not ranked yet</p>
+            <span class="tab-btn-spinner" aria-hidden="true"></span>
+        </button>
+
+        <button class="hero tab-btn" data-tab="acw" aria-label="View After Chat Work Tab" type="button">
+            <div class="hero-top-flex">
+                <h1>After Chat Work (ACW)</h1>
+                <div class="hero-metric" id="acw-metric">0mins 0secs</div>
+            </div>
+            <p>Completed after-chat intervals this month</p>
+            <span class="tab-btn-spinner" aria-hidden="true"></span>
+        </button>
+    </div>
+
+    <section class="page-wrap">
+        <div class="head">
+            <h2 id="dynamic-section-title">Quality Evaluations</h2>
+            <div class="head-sub" id="dynamic-section-sub">Review your performance evaluations and detailed quality
+                feedback.</div>
+                <div class="filters">
+                    <div class="filter-help" id="filter-help">
+                        Use the filters below to browse rated tickets from your dashboard history.
+                    </div>
+                    <div class="filter-grid">
+                        <div class="filter-field">
+                            <label class="filter-label" for="quick-range">Date preset</label>
+                            <select id="quick-range" class="filter-select">
+                                <option value="custom">Custom range</option>
+                                <option value="today">Today</option>
+                                <option value="last7">Last 7 days</option>
+                                <option value="last30">Last 30 days</option>
+                            </select>
+                        </div>
+                        <div class="filter-field">
+                            <label class="filter-label" for="from-date">Rated date from</label>
+                            <input id="from-date" class="filter-input" type="date" />
+                        </div>
+                        <div class="filter-field">
+                            <label class="filter-label" for="to-date">Rated date to</label>
+                            <input id="to-date" class="filter-input" type="date" />
+                        </div>
+                        <div class="filter-field">
+                            <label class="filter-label" for="score-filter">Score range</label>
+                            <select id="score-filter" class="filter-select">
+                                <option value="">Score filter</option>
+                                <option value="high">90% to 100%</option>
+                                <option value="good">80% to 89.9%</option>
+                                <option value="mid">70% to 79.9%</option>
+                                <option value="low">Below 70%</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="search-wrap">
+                        <i class="bi bi-search"></i>
+                        <input id="rated-search" class="search" type="text"
+                               placeholder="Search by ticket, customer, reviewer, or date..." />
+                    </div>
+                </div>
+            </div>
+
+            <div class="rows" id="rated-list"></div>
+            <div id="rated-empty" class="empty-state" style="display:none;">No rated tickets found for the selected filters.
+            </div>
+            <div id="dashboard-loading" class="empty-state">Loading dashboard data...</div>
+            <div id="tab-loading-overlay" class="tab-loading-overlay" aria-hidden="true" aria-live="polite">
+                <div class="tab-loading-spinner" aria-hidden="true"></div>
+                <span class="tab-loading-label">Loading records...</span>
+            </div>
+        </section>
+
+        <div id="qa-review-modal" class="qa-modal-overlay" aria-hidden="true">
+            <div class="qa-modal-container" role="dialog" aria-modal="true" aria-labelledby="modal-rating-title">
+                <button class="qa-modal-close" id="close-qa-modal" aria-label="Close modal" type="button">&times;</button>
+
+                <div class="rating-shell">
+                    <article class="panel">
+                        <header class="panel-head">
+                            <div>
+                                <div class="panel-title">Conversation view</div>
+                                <div id="modal-convo-summary" class="sub conversation-summary">Loading review...</div>
+                                <div class="sub">QA comments are read-only.</div>
+                            </div>
+                        </header>
+
+                        <div class="convo-body" id="modal-convo-body">
+                            <div class="modal-state">Loading review details...</div>
+                        </div>
+                    </article>
+
+                    <article class="panel qa-panel">
+                        <header class="panel-head">
+                            <div>
+                                <div class="panel-title" id="modal-rating-title">QA rating panel</div>
+                                <div class="sub">Review your interaction evaluation</div>
+                            </div>
+                            <span class="rated-badge">Rated</span>
+                        </header>
+
+                        <div class="rate-body">
+                            <div id="modal-rating-summary" class="summary-grid" hidden>
+                                <div class="summary-card">
+                                    <div class="summary-label">Accuracy (35%)</div>
+                                    <div id="modal-accuracy" class="summary-value"><strong>0.0 / 35</strong></div>
+                                </div>
+                                <div class="summary-card">
+                                    <div class="summary-label">Empathy (35%)</div>
+                                    <div id="modal-tone" class="summary-value"><strong>0.0 / 35</strong></div>
+                                </div>
+                                <div class="summary-card">
+                                    <div class="summary-label">Resolution (30%)</div>
+                                    <div id="modal-resolution" class="summary-value"><strong>0.0 / 30</strong></div>
+                                </div>
+                            </div>
+
+                            <div id="modal-rating-overall" class="summary-card" hidden>
+                                <div class="summary-label" id="modal-overall-label">Overall weighted score</div>
+                                <div id="modal-overall" class="summary-value"><strong>0.0 / 100</strong></div>
+                            </div>
+
+                            <div id="modal-rating-meta" class="summary-meta" hidden>
+                                <div id="modal-reviewed-by">QA: QA Reviewer</div>
+                            </div>
+
+                            <div id="modal-rating-notes-wrap" hidden>
+                                <div class="summary-label">QA notes</div>
+                                <div id="modal-qa-notes" class="summary-note">No QA notes were recorded for this review.
+                                </div>
+                            </div>
+
+                            <div class="agent-notes-box">
+                                <label class="summary-label" for="modal-agent-notes">Agent Notes</label>
+                                <textarea id="modal-agent-notes" class="agent-notes-input"
+                                          placeholder="Add your notes or reflections on this QA review..."></textarea>
+                            </div>
+
+                            <div class="summary-actions modal-action-row">
+                                <button id="modal-view-rating-btn" class="btn secondary" type="button">View rating</button>
+                                <button id="modal-save-notes-btn" class="btn secondary" type="button">Save notes</button>
+                                <button id="modal-acknowledge-btn" class="btn primary" type="button">Acknowledge</button>
+                            </div>
+                            <div id="modal-feedback-status" class="modal-feedback-status" hidden></div>
+
+                            <div id="modal-rating-breakdown" class="rated-readonly" hidden></div>
+
+                            <div class="summary-actions">
+                                <button id="modal-close-btn" class="btn secondary" type="button">Close</button>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        (function () {
+            const dashboardEndpoint = '/Agent/api/dashboard';
+            const ticketDetailEndpointBase = '/Agent/api/dashboard/';
+            const tabs = document.querySelectorAll('.tab-btn[data-tab]');
+            const ratedList = document.getElementById('rated-list');
+            const emptyState = document.getElementById('rated-empty');
+            const loadingState = document.getElementById('dashboard-loading');
+            const pageWrap = document.querySelector('.page-wrap');
+            const tabLoadingOverlay = document.getElementById('tab-loading-overlay');
+            const searchInput = document.getElementById('rated-search');
+            const quickRange = document.getElementById('quick-range');
+            const fromDate = document.getElementById('from-date');
+            const toDate = document.getElementById('to-date');
+            const scoreFilter = document.getElementById('score-filter');
+            const qaModal = document.getElementById('qa-review-modal');
+            const closeQaModal = document.getElementById('close-qa-modal');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            const modalViewRatingBtn = document.getElementById('modal-view-rating-btn');
+            const modalSaveNotesBtn = document.getElementById('modal-save-notes-btn');
+            const modalAcknowledgeBtn = document.getElementById('modal-acknowledge-btn');
+            const modalAgentNotes = document.getElementById('modal-agent-notes');
+            const modalFeedbackStatus = document.getElementById('modal-feedback-status');
+            const sectionTitle = document.getElementById('dynamic-section-title');
+            const sectionSub = document.getElementById('dynamic-section-sub');
+            const filterHelp = document.getElementById('filter-help');
+            const fromDateLabel = document.querySelector('label[for="from-date"]');
+            const toDateLabel = document.querySelector('label[for="to-date"]');
+            const detailCache = new Map();
+            const minTabTransitionMs = 220;
+
+            const questionTextByKey = {
+                accuracy_q1: 'Did the agent provide correct policy or product details?',
+                accuracy_q2: 'Did the response avoid factual errors or contradictions?',
+                accuracy_q3: 'Were the next steps accurate and actionable?',
+                tone_q1: 'Did the agent acknowledge the customer concern with empathy?',
+                tone_q2: 'Was the tone respectful and professional throughout?',
+                tone_q3: 'Did the language stay clear, calm, and customer-friendly?',
+                resolution_q1: 'Was the core issue fully resolved?',
+                resolution_q2: 'Did the agent provide a complete and practical solution?',
+                resolution_q3: 'Did the agent set clear follow-up expectations when needed?'
+            };
+
+            const scoreGroups = [
+                { key: 'accuracy', title: 'Accuracy', weight: '35%' },
+                { key: 'tone', title: 'Empathy', weight: '35%' },
+                { key: 'resolution', title: 'Resolution', weight: '30%' }
+            ];
+
+            const tabConfig = {
+                qa: {
+                    title: 'Quality Evaluations',
+                    sub: 'Review your performance evaluations and detailed quality feedback.',
+                    help: 'Use the filters below to browse rated tickets from your dashboard history.',
+                    overallLabel: 'Overall weighted score'
+                },
+                aht: {
+                    title: 'Average Handling Time Records',
+                    sub: 'Review your interaction durations and efficiency metrics.',
+                    help: 'Use the filters below to review your rated tickets and recorded handling times.',
+                    overallLabel: 'Handling time'
+                },
+                acw: {
+                    title: 'After Chat Work Records',
+                    sub: 'Review completed after-chat intervals captured from your live chat sessions.',
+                    help: 'Use the filters below to review completed ACW intervals backed by QA-reviewed conversations.',
+                    overallLabel: 'After chat work'
+                }
+            };
+
+            let currentTab = 'qa';
+            let dashboardData = null;
+            let currentDetail = null;
+            let tabTransitionRequestId = 0;
+
+            function setMetricText(id, text) {
+                const node = document.getElementById(id);
+                if (node) node.textContent = text;
+            }
+
+            function wait(milliseconds) {
+                return new Promise(function (resolve) {
+                    window.setTimeout(resolve, milliseconds);
+                });
+            }
+
+            function setActiveTabButton(tabName) {
+                tabs.forEach(function (node) {
+                    node.classList.toggle('active', node.dataset.tab === tabName);
+                });
+            }
+
+            function setTabTransitionLoading(isLoading) {
+                if (pageWrap) {
+                    pageWrap.classList.toggle('is-tab-switching', isLoading);
+                }
+
+                if (tabLoadingOverlay) {
+                    tabLoadingOverlay.setAttribute('aria-hidden', isLoading ? 'false' : 'true');
+                }
+            }
+
+            function setTabButtonLoading(tabName, isLoading) {
+                tabs.forEach(function (node) {
+                    node.classList.toggle('loading', node.dataset.tab === tabName && isLoading);
+                });
+            }
+
+            async function switchDashboardTab(nextTab) {
+                if (!nextTab || nextTab === currentTab) {
+                    return;
+                }
+
+                const requestId = ++tabTransitionRequestId;
+                const transitionStartedAt = Date.now();
+                setActiveTabButton(nextTab);
+                setTabButtonLoading(nextTab, true);
+                setTabTransitionLoading(true);
+
+                try {
+                    currentTab = nextTab;
+                    setSectionState();
+                    renderRows(getCurrentRows());
+                    applyFilters();
+
+                    if (currentDetail) {
+                        const matchedSummary = getCurrentRows().find(item => item.supportFaqId === currentDetail.supportFaqId);
+                        renderModal(currentDetail, matchedSummary || null);
+                    }
+                } finally {
+                    const elapsed = Date.now() - transitionStartedAt;
+                    const remaining = minTabTransitionMs - elapsed;
+                    if (remaining > 0) {
+                        await wait(remaining);
+                    }
+
+                    if (requestId === tabTransitionRequestId) {
+                        setTabTransitionLoading(false);
+                        setTabButtonLoading(nextTab, false);
+                    }
+                }
+            }
+
+            function toIsoDate(date) {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return y + '-' + m + '-' + d;
+            }
+
+            function applyQuickRange() {
+                const selected = quickRange.value;
+                if (!selected || selected === 'custom') return;
+
+                const end = new Date();
+                end.setHours(0, 0, 0, 0);
+
+                const start = new Date(end);
+                if (selected === 'last7') start.setDate(start.getDate() - 6);
+                else if (selected === 'last30') start.setDate(start.getDate() - 29);
+
+                fromDate.value = toIsoDate(start);
+                toDate.value = toIsoDate(end);
+            }
+
+            function setSectionState() {
+                const config = tabConfig[currentTab];
+                sectionTitle.textContent = config.title;
+                sectionSub.textContent = config.sub;
+                filterHelp.textContent = config.help;
+                document.getElementById('modal-overall-label').textContent = config.overallLabel;
+
+                if (fromDateLabel) {
+                    fromDateLabel.textContent = currentTab === 'acw' ? 'ACW end date from' : 'Rated date from';
+                }
+
+                if (toDateLabel) {
+                    toDateLabel.textContent = currentTab === 'acw' ? 'ACW end date to' : 'Rated date to';
+                }
+
+                if (searchInput) {
+                    searchInput.placeholder = currentTab === 'acw'
+                        ? 'Search by ticket, customer, category, chat status, or date...'
+                        : 'Search by ticket, customer, reviewer, or date...';
+                }
+            }
+
+            function escapeHtml(value) {
+                return String(value || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            function escapeWithBreaks(value) {
+                return escapeHtml(value).replace(/\r?\n/g, '<br>');
+            }
+            function renderRows(items) {
+                ratedList.innerHTML = '';
+
+                items.forEach(item => {
+                    const isAcwTab = currentTab === 'acw';
+                    const metricText = currentTab === 'qa'
+                        ? item.overallPercent.toFixed(1) + ' / 100'
+                        : isAcwTab
+                            ? item.acwLabel
+                            : item.handlingLabel;
+                    const rowDate = isAcwTab ? item.acwEndDate : item.ratedAtDate;
+                    const rowSubline = isAcwTab
+                        ? `${item.isRated ? `QA <strong>${escapeHtml(item.reviewerName)}</strong>` : `<strong>${escapeHtml(item.ratingLabel || 'Not rated yet')}</strong>`} &middot; <strong>${escapeHtml(item.category)}</strong> &middot; ${escapeHtml(item.chatStatus)} &middot; ACW ${escapeHtml(item.acwStartLabel)} - ${escapeHtml(item.acwEndLabel)}`
+                        : `QA <strong>${escapeHtml(item.reviewerName)}</strong> on ${escapeHtml(item.ratedAtLabel)} - <strong>Accuracy ${item.accuracyPoints.toFixed(1)}/35</strong>, <strong>Empathy ${item.tonePoints.toFixed(1)}/35</strong>, <strong>Resolution ${item.resolutionPoints.toFixed(1)}/30</strong>`;
+                    const rowName = `Ticket #${escapeHtml(item.supportFaqId)} - Agent: ${escapeHtml(item.agentName)} &middot; Customer: ${escapeHtml(item.customerName)}`;
+                    const canViewDetails = !isAcwTab || !!item.canViewDetails;
+                    const viewButtonAttr = canViewDetails ? '' : 'disabled title="No QA review yet"';
+
+                    const row = document.createElement('div');
+                    row.className = 'row';
+                    row.dataset.date = rowDate || '';
+                    row.dataset.score = item.overallPercent.toFixed(1);
+                    row.dataset.search = item.searchText;
+                    row.dataset.isRated = isAcwTab ? String(!!item.isRated) : 'true';
+                    row.dataset.ticket = JSON.stringify(item);
+                    row.innerHTML = `
+                            <div>
+                                <div class="name">${rowName}</div>
+                                <div class="sub">${rowSubline}</div>
+                            </div>
+                            <div class="score"><strong class="row-metric">${escapeHtml(metricText)}</strong></div>
+                            <button class="btn view-ticket-btn" type="button" ${viewButtonAttr}>View</button>
+                        `;
+
+                    ratedList.appendChild(row);
+                });
+            }
+
+            function applyFilters() {
+                const query = (searchInput.value || '').toLowerCase().trim();
+                const fromVal = fromDate.value || '';
+                const toVal = toDate.value || '';
+                const scoreVal = scoreFilter.value || '';
+                const rows = ratedList.querySelectorAll('.row');
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const searchText = (row.dataset.search || '').toLowerCase();
+                    const rowDate = row.dataset.date || '';
+                    const rowScore = parseFloat(row.dataset.score || '0');
+                    const isRatedRow = (row.dataset.isRated || 'false') === 'true';
+
+                    const matchesSearch = !query || searchText.includes(query);
+                    const matchesFrom = !fromVal || (rowDate && rowDate >= fromVal);
+                    const matchesTo = !toVal || (rowDate && rowDate <= toVal);
+
+                    let matchesScore = true;
+                    if (currentTab === 'acw' && scoreVal && !isRatedRow) {
+                        matchesScore = false;
+                    } else if (scoreVal === 'high') matchesScore = rowScore >= 90 && rowScore <= 100;
+                    else if (scoreVal === 'good') matchesScore = rowScore >= 80 && rowScore < 90;
+                    else if (scoreVal === 'mid') matchesScore = rowScore >= 70 && rowScore < 80;
+                    else if (scoreVal === 'low') matchesScore = rowScore < 70;
+
+                    const visible = matchesSearch && matchesFrom && matchesTo && matchesScore;
+                    row.style.display = visible ? '' : 'none';
+                    if (visible) visibleCount++;
+                });
+
+                emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+            function resetModalState() {
+                currentDetail = null;
+                document.getElementById('modal-convo-summary').textContent = 'Loading review...';
+                document.getElementById('modal-convo-body').innerHTML = '<div class="modal-state">Loading review details...</div>';
+                document.getElementById('modal-accuracy').innerHTML = '<strong>0.0 / 35</strong>';
+                document.getElementById('modal-tone').innerHTML = '<strong>0.0 / 35</strong>';
+                document.getElementById('modal-resolution').innerHTML = '<strong>0.0 / 30</strong>';
+                document.getElementById('modal-overall').innerHTML = '<strong>0.0 / 100</strong>';
+                document.getElementById('modal-reviewed-by').textContent = 'QA: QA Reviewer';
+                document.getElementById('modal-qa-notes').textContent = 'No QA notes were recorded for this review.';
+                modalAgentNotes.value = '';
+                modalAgentNotes.disabled = true;
+                modalSaveNotesBtn.disabled = true;
+                modalAcknowledgeBtn.disabled = true;
+                setRatingVisibility(false);
+                hideFeedbackStatus();
+            }
+
+            function showFeedbackStatus(message, type) {
+                modalFeedbackStatus.textContent = message;
+                modalFeedbackStatus.className = 'modal-feedback-status ' + (type || 'info');
+                modalFeedbackStatus.hidden = false;
+            }
+
+            function hideFeedbackStatus() {
+                modalFeedbackStatus.hidden = true;
+                modalFeedbackStatus.textContent = '';
+                modalFeedbackStatus.className = 'modal-feedback-status';
+            }
+
+            function setRatingVisibility(isVisible) {
+                const sectionIds = [
+                    'modal-rating-summary',
+                    'modal-rating-overall',
+                    'modal-rating-meta',
+                    'modal-rating-notes-wrap',
+                    'modal-rating-breakdown'
+                ];
+
+                sectionIds.forEach(id => {
+                    const node = document.getElementById(id);
+                    if (node) {
+                        node.hidden = !isVisible;
+                    }
+                });
+
+                modalViewRatingBtn.textContent = isVisible ? 'Hide rating' : 'View rating';
+            }
+
+            function setButtonBusy(button, isBusy, busyText) {
+                if (!button) return;
+
+                if (isBusy) {
+                    button.dataset.originalText = button.textContent || '';
+                    button.disabled = true;
+                    button.textContent = busyText;
+                    return;
+                }
+
+                button.disabled = false;
+                if (button.dataset.originalText) {
+                    button.textContent = button.dataset.originalText;
+                }
+            }
+
+            function renderInlineComments(inlineComments) {
+                if (!inlineComments || !inlineComments.length) return '';
+
+                const entries = inlineComments.map(comment => {
+                    const images = comment.images && comment.images.length
+                        ? `<span class="msg-comment-images">Images: ${escapeHtml(comment.images.join(', '))}</span>`
+                        : '';
+
+                    return `
+                            <div class="msg-comment-entry">
+                                <div class="msg-comment-meta">${escapeHtml(comment.by)}${comment.on ? ' - ' + escapeHtml(comment.on) : ''}</div>
+                                <div>${escapeWithBreaks(comment.comment)}</div>
+                                ${images}
+                            </div>
+                        `;
+                }).join('');
+
+                return `<div class="msg-comment-thread">${entries}</div>`;
+            }
+
+            function renderConversation(messages) {
+                if (!messages || !messages.length) {
+                    return '<div class="modal-state">No conversation messages were recorded for this ticket.</div>';
+                }
+
+                return messages.map(message => {
+                    const hasInlineComment = message.inlineComments && message.inlineComments.length > 0;
+                    const inlineThread = renderInlineComments(message.inlineComments || []);
+                    return `
+                            <div class="msg ${escapeHtml(message.senderCssClass)}${hasInlineComment ? ' has-inline-comment' : ''}">
+                                <div>${escapeWithBreaks(message.messageText)}</div>
+                                ${inlineThread}
+                                <span class="msg-meta"><span class="msg-sender">${escapeHtml(message.senderDisplayName)}</span> &middot; <span class="msg-time">${escapeHtml(message.timestampLabel)}</span></span>
+                            </div>
+                        `;
+                }).join('');
+            }
+
+            function renderBreakdown(questionScores) {
+                const grouped = {
+                    accuracy: [],
+                    tone: [],
+                    resolution: []
+                };
+
+                (questionScores || []).forEach(score => {
+                    if (score.questionKey.indexOf('accuracy_') === 0) grouped.accuracy.push(score);
+                    else if (score.questionKey.indexOf('tone_') === 0) grouped.tone.push(score);
+                    else if (score.questionKey.indexOf('resolution_') === 0) grouped.resolution.push(score);
+                });
+
+                const html = scoreGroups.map(group => {
+                    const items = grouped[group.key] || [];
+                    const rows = items.map(score => {
+                        const options = [1, 2, 3, 4, 5].map(value => `
+                                <label class="score-radio-option">
+                                    <input type="radio" disabled ${score.score === value ? 'checked' : ''} />
+                                    <span>${value}</span>
+                                </label>
+                            `).join('');
+
+                        return `
+                                <div class="question-row">
+                                    <div class="question-text">${escapeHtml(questionTextByKey[score.questionKey] || score.questionKey)}</div>
+                                    <div class="score-radio-group">${options}</div>
+                                </div>
+                            `;
+                    }).join('');
+
+                    return `
+                            <section class="category-block">
+                                <div class="category-head">
+                                    <div class="category-title">${escapeHtml(group.title)} (${escapeHtml(group.weight)})</div>
+                                </div>
+                                <div class="question-grid">${rows || '<div class="question-text">No detailed question scores were recorded.</div>'}</div>
+                            </section>
+                        `;
+                }).join('');
+
+                return html;
+            }
+
+            function renderModal(detail, summaryItem) {
+                currentDetail = detail;
+                document.getElementById('modal-convo-summary').textContent = 'Agent: ' + detail.agentName + ' - Ticket #' + detail.supportFaqId;
+                document.getElementById('modal-convo-body').innerHTML = renderConversation(detail.messages || []);
+                document.getElementById('modal-accuracy').innerHTML = '<strong>' + detail.accuracyPoints.toFixed(1) + ' / 35</strong>';
+                document.getElementById('modal-tone').innerHTML = '<strong>' + detail.tonePoints.toFixed(1) + ' / 35</strong>';
+                document.getElementById('modal-resolution').innerHTML = '<strong>' + detail.resolutionPoints.toFixed(1) + ' / 30</strong>';
+                document.getElementById('modal-reviewed-by').textContent = 'QA: ' + detail.reviewerName;
+                document.getElementById('modal-qa-notes').innerHTML = escapeWithBreaks(detail.qaNotes);
+                document.getElementById('modal-rating-breakdown').innerHTML = renderBreakdown(detail.questionScores || []);
+                modalAgentNotes.value = detail.agentNotes || '';
+                modalAgentNotes.disabled = false;
+                modalSaveNotesBtn.disabled = false;
+                modalAcknowledgeBtn.disabled = false;
+                modalAcknowledgeBtn.textContent = detail.isAcknowledged ? 'Acknowledged' : 'Acknowledge';
+                if (detail.isAcknowledged) {
+                    modalAcknowledgeBtn.disabled = true;
+                }
+
+                if (currentTab === 'qa') {
+                    document.getElementById('modal-overall').innerHTML = '<strong>' + detail.overallPercent.toFixed(1) + ' / 100</strong>';
+                } else if (currentTab === 'acw') {
+                    const acwLabel = summaryItem && summaryItem.acwLabel ? summaryItem.acwLabel : '0mins 0secs';
+                    document.getElementById('modal-overall').innerHTML = '<strong>' + escapeHtml(acwLabel) + '</strong>';
+                } else {
+                    const handlingLabel = detail.handlingLabel || (summaryItem ? summaryItem.handlingLabel : '0mins 0secs');
+                    document.getElementById('modal-overall').innerHTML = '<strong>' + escapeHtml(handlingLabel) + '</strong>';
+                }
+            }
+
+            function getCurrentRows() {
+                if (!dashboardData) return [];
+                if (currentTab === 'acw') {
+                    return dashboardData.acwRecords || [];
+                }
+
+                return dashboardData.ratedTickets || [];
+            }
+
+            function renderModalError(message) {
+                document.getElementById('modal-convo-summary').textContent = 'Unable to load review';
+                document.getElementById('modal-convo-body').innerHTML = '<div class="modal-state">' + escapeHtml(message) + '</div>';
+                document.getElementById('modal-qa-notes').textContent = 'Review details are unavailable.';
+            }
+
+            async function fetchTicketDetail(supportFaqId) {
+                if (detailCache.has(supportFaqId)) {
+                    return detailCache.get(supportFaqId);
+                }
+
+                const response = await fetch(ticketDetailEndpointBase + supportFaqId, {
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    throw new Error(response.status === 404
+                        ? 'No review detail was found for this ticket.'
+                        : 'Review detail request failed with status ' + response.status);
+                }
+
+                const payload = await response.json();
+                detailCache.set(supportFaqId, payload);
+                return payload;
+            }
+
+            async function postJson(url, payload) {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: payload ? JSON.stringify(payload) : null
+                });
+
+                const result = await response.json().catch(function () {
+                    return { success: false, message: 'Request failed.' };
+                });
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'Request failed.');
+                }
+
+                return result;
+            }
+
+            async function openModal(item) {
+                resetModalState();
+                qaModal.classList.add('is-open');
+                qaModal.setAttribute('aria-hidden', 'false');
+
+                try {
+                    const detail = await fetchTicketDetail(item.supportFaqId);
+                    renderModal(detail, item);
+                } catch (error) {
+                    renderModalError(error && error.message ? error.message : 'Unable to load review details.');
+                    console.error(error);
+                }
+            }
+
+            function closeModal() {
+                qaModal.classList.remove('is-open');
+                qaModal.setAttribute('aria-hidden', 'true');
+            }
+
+            async function loadDashboard() {
+                try {
+                    const response = await fetch(dashboardEndpoint, {
+                        headers: { 'Accept': 'application/json' }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Dashboard request failed with status ' + response.status);
+                    }
+
+                    dashboardData = await response.json();
+                    setMetricText('qa-score-metric', dashboardData.qaScoreLabel);
+                    setMetricText('aht-metric', dashboardData.averageHandlingLabel);
+                    setMetricText('qa-score-update', 'Last Update: ' + dashboardData.lastUpdatedLabel);
+                    setMetricText('qa-score-rank', dashboardData.qaRankLabel || 'Rank: Not ranked yet');
+                    setMetricText('aht-update', 'Last Update: ' + dashboardData.lastUpdatedLabel);
+                    setMetricText('aht-rank', dashboardData.ahtRankLabel || 'Rank: Not ranked yet');
+                    setMetricText('acw-metric', dashboardData.acwLabel);
+
+                    renderRows(getCurrentRows());
+                    loadingState.style.display = 'none';
+                    applyFilters();
+                } catch (error) {
+                    setMetricText('acw-metric', '0mins 0secs');
+                    setMetricText('qa-score-rank', 'Rank: Not ranked yet');
+                    setMetricText('aht-rank', 'Rank: Not ranked yet');
+                    loadingState.textContent = 'Unable to load dashboard data.';
+                    console.error(error);
+                }
+            }
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function () {
+                    switchDashboardTab(tab.dataset.tab);
+                });
+            });
+
+            quickRange.addEventListener('change', function () {
+                if (quickRange.value === 'custom') {
+                    fromDate.value = '';
+                    toDate.value = '';
+                } else {
+                    applyQuickRange();
+                }
+                applyFilters();
+            });
+
+            fromDate.addEventListener('change', function () {
+                quickRange.value = 'custom';
+                applyFilters();
+            });
+
+            toDate.addEventListener('change', function () {
+                quickRange.value = 'custom';
+                applyFilters();
+            });
+
+            searchInput.addEventListener('input', applyFilters);
+            scoreFilter.addEventListener('change', applyFilters);
+            ratedList.addEventListener('click', function (event) {
+                const button = event.target.closest('.view-ticket-btn');
+                if (!button) return;
+                if (button.disabled) return;
+                const row = button.closest('.row');
+                if (!row || !row.dataset.ticket) return;
+                if (currentTab === 'acw' && row.dataset.isRated !== 'true') return;
+                openModal(JSON.parse(row.dataset.ticket));
+            });
+
+            closeQaModal.addEventListener('click', closeModal);
+            modalCloseBtn.addEventListener('click', closeModal);
+            modalViewRatingBtn.addEventListener('click', function () {
+                const summary = document.getElementById('modal-rating-summary');
+                const isCurrentlyVisible = summary ? !summary.hidden : false;
+                setRatingVisibility(!isCurrentlyVisible);
+            });
+            modalSaveNotesBtn.addEventListener('click', async function () {
+                if (!currentDetail) return;
+
+                hideFeedbackStatus();
+                setButtonBusy(modalSaveNotesBtn, true, 'Saving...');
+                modalAgentNotes.disabled = true;
+
+                try {
+                    const result = await postJson(ticketDetailEndpointBase + currentDetail.supportFaqId + '/notes', {
+                        notes: modalAgentNotes.value || ''
+                    });
+
+                    currentDetail.agentNotes = result.agentNotes || '';
+                    currentDetail.isAcknowledged = result.isAcknowledged;
+                    currentDetail.acknowledgedLabel = result.acknowledgedLabel || 'Not acknowledged';
+                    modalAgentNotes.value = currentDetail.agentNotes;
+                    showFeedbackStatus(result.message || 'Agent notes saved.', 'success');
+
+                    detailCache.set(currentDetail.supportFaqId, currentDetail);
+                } catch (error) {
+                    showFeedbackStatus(error && error.message ? error.message : 'Unable to save agent notes.', 'error');
+                } finally {
+                    modalAgentNotes.disabled = false;
+                    setButtonBusy(modalSaveNotesBtn, false);
+                    if (currentDetail && currentDetail.isAcknowledged) {
+                        modalAcknowledgeBtn.textContent = 'Acknowledged';
+                        modalAcknowledgeBtn.disabled = true;
+                    }
+                }
+            });
+            modalAcknowledgeBtn.addEventListener('click', async function () {
+                if (!currentDetail || currentDetail.isAcknowledged) return;
+
+                hideFeedbackStatus();
+                setButtonBusy(modalAcknowledgeBtn, true, 'Saving...');
+
+                try {
+                    const result = await postJson(ticketDetailEndpointBase + currentDetail.supportFaqId + '/acknowledge');
+                    currentDetail.agentNotes = result.agentNotes || currentDetail.agentNotes || '';
+                    currentDetail.isAcknowledged = result.isAcknowledged;
+                    currentDetail.acknowledgedLabel = result.acknowledgedLabel || 'Acknowledged';
+                    modalAgentNotes.value = currentDetail.agentNotes || '';
+                    showFeedbackStatus(result.message || 'QA review acknowledged.', 'success');
+
+                    detailCache.set(currentDetail.supportFaqId, currentDetail);
+                } catch (error) {
+                    showFeedbackStatus(error && error.message ? error.message : 'Unable to acknowledge this QA review.', 'error');
+                } finally {
+                    setButtonBusy(modalAcknowledgeBtn, false);
+                    if (currentDetail && currentDetail.isAcknowledged) {
+                        modalAcknowledgeBtn.textContent = 'Acknowledged';
+                        modalAcknowledgeBtn.disabled = true;
+                    }
+                }
+            });
+            qaModal.addEventListener('click', function (event) {
+                if (event.target === qaModal) closeModal();
+            });
+            window.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') closeModal();
+            });
+
+            setSectionState();
+            loadDashboard();
+        })();
+    </script>
+

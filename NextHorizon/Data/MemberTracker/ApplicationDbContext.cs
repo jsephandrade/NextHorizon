@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using NextHorizon.Models;
+using NextHorizon.Models.Agent;
 using NextHorizon.Models.HelpCenter;
 using NextHorizon.Models.QA;
 using NextHorizon.Messaging.Models;
@@ -42,6 +43,10 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<QaReviewInlineCommentDraft> QaReviewInlineCommentDrafts => Set<QaReviewInlineCommentDraft>();
 
+    public DbSet<AgentReviewFeedback> AgentReviewFeedbackEntries => Set<AgentReviewFeedback>();
+
+    public DbSet<AgentRanking> AgentRankings => Set<AgentRanking>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -62,13 +67,38 @@ public class ApplicationDbContext : DbContext
         supportAgent.Property(x => x.ChatId)
             .HasColumnName("ChatID")
             .ValueGeneratedNever();
+        supportAgent.Property(x => x.ConversationId)
+            .HasColumnName("ConversationID");
         supportAgent.Property(x => x.AgentName)
             .HasColumnName("AgentName");
+        supportAgent.Property(x => x.ClientName)
+            .HasColumnName("ClientName");
+        supportAgent.Property(x => x.Category)
+            .HasColumnName("Category");
+        supportAgent.Property(x => x.PreviewQuestion)
+            .HasColumnName("PreviewQuestion");
+        supportAgent.Property(x => x.ChatStatus)
+            .HasColumnName("ChatStatus");
         supportAgent.Property(x => x.AgentStatus)
             .HasColumnName("AgentStatus");
+        supportAgent.Property(x => x.AgentId)
+            .HasColumnName("AgentID");
         supportAgent.Property(x => x.UserId)
             .HasColumnName("UserID")
             .IsRequired();
+        supportAgent.Property(x => x.ChatSlot)
+            .HasColumnName("ChatSlot");
+        supportAgent.Property(x => x.Notes)
+            .HasColumnName("Notes");
+        supportAgent.Property(x => x.NotesLastUpdatedAt)
+            .HasColumnName("NotesLastUpdatedAt")
+            .HasColumnType("datetime2");
+        supportAgent.Property(x => x.ACWStartTime)
+            .HasColumnName("ACWStartTime")
+            .HasColumnType("datetime2");
+        supportAgent.Property(x => x.ACWEndTime)
+            .HasColumnName("ACWEndTime")
+            .HasColumnType("datetime2");
 
         var consumer = builder.Entity<ConsumerRef>();
         consumer.ToTable("Consumers", "dbo", table => table.ExcludeFromMigrations());
@@ -357,6 +387,58 @@ public class ApplicationDbContext : DbContext
             .IsRequired();
         qaReviewInlineCommentDraft.HasIndex(x => x.SupportFaqId)
             .IsUnique();
+
+        var agentReviewFeedback = builder.Entity<AgentReviewFeedback>();
+        agentReviewFeedback.ToTable("AgentReviewFeedback");
+        agentReviewFeedback.HasKey(x => x.AgentReviewFeedbackId);
+        agentReviewFeedback.Property(x => x.Notes)
+            .IsRequired()
+            .HasMaxLength(4000)
+            .HasDefaultValue(string.Empty);
+        agentReviewFeedback.Property(x => x.Acknowledged)
+            .IsRequired()
+            .HasDefaultValue(false);
+        agentReviewFeedback.Property(x => x.AcknowledgedAtUtc);
+        agentReviewFeedback.Property(x => x.CreatedAtUtc)
+            .IsRequired()
+            .HasDefaultValueSql("SYSUTCDATETIME()");
+        agentReviewFeedback.Property(x => x.UpdatedAtUtc)
+            .IsRequired()
+            .HasDefaultValueSql("SYSUTCDATETIME()");
+        agentReviewFeedback.HasIndex(x => new { x.SupportFaqId, x.AgentUserId })
+            .IsUnique();
+
+        var agentRanking = builder.Entity<AgentRanking>();
+        agentRanking.ToTable("AgentRankings", "dbo");
+        agentRanking.HasKey(x => x.AgentRankingId);
+        agentRanking.Property(x => x.AgentUserId)
+            .IsRequired();
+        agentRanking.Property(x => x.PeriodStartUtc)
+            .IsRequired()
+            .HasColumnType("datetime2");
+        agentRanking.Property(x => x.MetricType)
+            .IsRequired()
+            .HasConversion<byte>();
+        agentRanking.Property(x => x.MetricValue)
+            .IsRequired()
+            .HasColumnType("decimal(10,2)");
+        agentRanking.Property(x => x.ReviewCount)
+            .IsRequired();
+        agentRanking.Property(x => x.RankPosition)
+            .IsRequired();
+        agentRanking.Property(x => x.RankedAgentCount)
+            .IsRequired();
+        agentRanking.Property(x => x.CalculatedAtUtc)
+            .IsRequired()
+            .HasColumnType("datetime2")
+            .HasDefaultValueSql("SYSUTCDATETIME()");
+        agentRanking.Property(x => x.UpdatedAtUtc)
+            .IsRequired()
+            .HasColumnType("datetime2")
+            .HasDefaultValueSql("SYSUTCDATETIME()");
+        agentRanking.HasIndex(x => new { x.PeriodStartUtc, x.MetricType, x.AgentUserId })
+            .IsUnique();
+        agentRanking.HasIndex(x => new { x.PeriodStartUtc, x.MetricType, x.RankPosition });
 
         var qaReviewQuestionScore = builder.Entity<QaReviewQuestionScore>();
         qaReviewQuestionScore.ToTable("QaReviewQuestionScores");

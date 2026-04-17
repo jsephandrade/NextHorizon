@@ -9,6 +9,9 @@ namespace NextHorizon.Controllers;
 
 public sealed class LoginController : Controller
 {
+    private static readonly string[] AllowedWorkspaceRoles = ["QA Analyst", "Support Agent"];
+    private const string AllowedWorkspaceRolesLabel = "QA Analyst and Support Agent";
+
     private readonly IAuthService _authService;
     private readonly IEmailService _emailService;
     private readonly string _connectionString;
@@ -72,6 +75,16 @@ public sealed class LoginController : Controller
             return Json(response);
         }
 
+        if (!IsAllowedWorkspaceUser(response.User.UserType))
+        {
+            HttpContext.Session.Clear();
+            return Json(new LoginResponseModel
+            {
+                Success = false,
+                Message = $"Workspace access is restricted to {AllowedWorkspaceRolesLabel} users only."
+            });
+        }
+
         HttpContext.Session.SetInt32("StaffId", response.User.StaffId);
         HttpContext.Session.SetInt32("UserId", response.User.UserId);
         HttpContext.Session.SetString("Username", response.User.Username);
@@ -83,9 +96,9 @@ public sealed class LoginController : Controller
             response.User.StaffId,
             response.User.Username,
             "Login",
-            "QA Workspace",
+            response.RedirectUrl,
             "Success",
-            $"Successful QA login as {response.User.UserType}");
+            $"Successful workspace login as {response.User.UserType}");
 
         return Json(response);
     }
@@ -279,6 +292,11 @@ public sealed class LoginController : Controller
     private Task LogAdminAction(int staffId, string action, string target, string status, string? details = null)
     {
         return LogAdminAction(staffId, null, action, target, status, details);
+    }
+
+    private static bool IsAllowedWorkspaceUser(string? userType)
+    {
+        return AllowedWorkspaceRoles.Contains(userType?.Trim() ?? string.Empty, StringComparer.OrdinalIgnoreCase);
     }
 
     private async Task LogAdminAction(int staffId, string? adminName, string action, string target, string status, string? details = null)

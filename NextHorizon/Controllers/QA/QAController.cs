@@ -9,6 +9,9 @@ namespace NextHorizon.Controllers;
 [Route("qa")]
 public sealed class QAController : Controller
 {
+    private const string QaAnalystRole = "QA Analyst";
+    private const string SupportAgentRole = "Support Agent";
+
     private readonly IQaAgentTicketsService _qaAgentTicketsService;
     private readonly IQaAgentsService _qaAgentsService;
     private readonly IQaDashboardService _qaDashboardService;
@@ -37,16 +40,31 @@ public sealed class QAController : Controller
 
     public override void OnActionExecuting(ActionExecutingContext context)
     {
-        if (HttpContext.Session.GetInt32("StaffId").HasValue)
+        if (IsAuthorizedQaSession())
         {
             base.OnActionExecuting(context);
             return;
         }
 
+        var userType = HttpContext.Session.GetString("UserType");
+        var isSupportAgent = IsSupportAgentSession(userType);
+
         if (Request.Path.StartsWithSegments("/qa/api", StringComparison.OrdinalIgnoreCase))
         {
             context.Result = Unauthorized();
             return;
+        }
+
+        if (isSupportAgent)
+        {
+            context.Result = RedirectToAction("AgentDashboard", "Agent");
+            return;
+        }
+
+        if (HttpContext.Session.GetInt32("StaffId").HasValue)
+        {
+            HttpContext.Session.Clear();
+            TempData["LoginError"] = "QA workspace access is restricted to QA Analyst users only.";
         }
 
         context.Result = RedirectToAction("AdminLogin", "Login");
@@ -370,7 +388,22 @@ public sealed class QAController : Controller
     {
         reviewerStaffId = HttpContext.Session.GetInt32("StaffId") ?? 0;
         reviewerName = GetReviewerDisplayName();
-        return reviewerStaffId > 0;
+        return reviewerStaffId > 0 && IsAuthorizedQaSession();
+    }
+
+    private bool IsAuthorizedQaSession()
+    {
+        var staffId = HttpContext.Session.GetInt32("StaffId");
+        var userType = HttpContext.Session.GetString("UserType");
+
+        return staffId.HasValue
+            && staffId.Value > 0
+            && string.Equals(userType?.Trim(), QaAnalystRole, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsSupportAgentSession(string? userType)
+    {
+        return string.Equals(userType?.Trim(), SupportAgentRole, StringComparison.OrdinalIgnoreCase);
     }
 
     private static int ResolveAverage(IReadOnlyDictionary<string, int> scoreMap, params string[] keys)
