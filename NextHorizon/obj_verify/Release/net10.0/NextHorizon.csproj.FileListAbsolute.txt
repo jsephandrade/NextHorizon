@@ -1,9 +1,0 @@
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\8eb3fcdc37d27e8f\obj_verify\Release\net10.0\NextHorizon.csproj.AssemblyReference.cache
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\8eb3fcdc37d27e8f\obj_verify\Release\net10.0\rpswa.dswa.cache.json
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\8eb3fcdc37d27e8f\obj_verify\Release\net10.0\NextHorizon.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\8eb3fcdc37d27e8f\obj_verify\Release\net10.0\NextHorizon.AssemblyInfoInputs.cache
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\8eb3fcdc37d27e8f\obj_verify\Release\net10.0\NextHorizon.AssemblyInfo.cs
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\8eb3fcdc37d27e8f\obj_verify\Release\net10.0\NextHorizon.csproj.CoreCompileInputs.cache
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\8eb3fcdc37d27e8f\obj_verify\Release\net10.0\NextHorizon.MvcApplicationPartsAssemblyInfo.cache
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\8eb3fcdc37d27e8f\obj_verify\Release\net10.0\NextHorizon.RazorAssemblyInfo.cache
-C:\Users\CodexSandboxOffline\.codex\.sandbox\cwd\8eb3fcdc37d27e8f\obj_verify\Release\net10.0\NextHorizon.RazorAssemblyInfo.cs
