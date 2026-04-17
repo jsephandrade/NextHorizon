@@ -132,6 +132,14 @@ public sealed class SellerPerformanceService : ISellerPerformanceService
                     && InFulfillmentStatuses.Contains(order.Status ?? string.Empty),
                     cancellationToken);
 
+            summary.OpenOrderCount = await _context.Orders
+                .AsNoTracking()
+                .CountAsync(order =>
+                    order.seller_id == sellerId
+                    && !CancelledStatuses.Contains(order.Status ?? string.Empty)
+                    && !RevenueStatuses.Contains(order.Status ?? string.Empty),
+                    cancellationToken);
+
             summary.PipelineRevenue = await _context.Orders
                 .AsNoTracking()
                 .Where(order =>

@@ -1852,6 +1852,7 @@ public async Task<IActionResult> DeclineOrder([FromBody] DeclineRequest request)
                 TodayUnitsSold = operationsSummary.TodayUnitsSold,
                 ShippedTodayCount = operationsSummary.ShippedTodayCount,
                 InFulfillmentCount = operationsSummary.InFulfillmentCount,
+                OpenOrderCount = operationsSummary.OpenOrderCount,
                 TotalUnitsSold = operationsSummary.TotalUnitsSold,
                 TotalOrders = operationsSummary.TotalOrderCount,
                 SalesGrowth = performance.SalesGrowth,

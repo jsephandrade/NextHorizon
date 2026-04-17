@@ -9,6 +9,7 @@ public sealed class SellerOperationsSummary
     public int TotalOrderCount { get; set; }
     public int TotalUnitsSold { get; set; }
     public decimal TotalOrderValue { get; set; }
+    public int OpenOrderCount { get; set; }
     public int ShippedTodayCount { get; set; }
     public int InFulfillmentCount { get; set; }
     public decimal PipelineRevenue { get; set; }

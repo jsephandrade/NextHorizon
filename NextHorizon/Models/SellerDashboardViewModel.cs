@@ -23,6 +23,7 @@ namespace NextHorizon.Models
         public int TodayUnitsSold { get; set; }
         public int ShippedTodayCount { get; set; }
         public int InFulfillmentCount { get; set; }
+        public int OpenOrderCount { get; set; }
         public int TotalUnitsSold { get; set; }
         public int TotalOrders { get; set; }
         public decimal SalesGrowth { get; set; }
