@@ -1,0 +1,148 @@
+:root {
+    --pure-black: #000000;
+    --pure-white: #ffffff;
+    --border-gray: #e9ecef;
+    --brand-gray: #adb5bd;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f4f7f6;
+    padding: 15px;
+}
+
+.floating-login-card {
+    width: 100%;
+    max-width: 650px;
+    background: var(--pure-white);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.card-brand-header {
+    background-color: var(--pure-black);
+    color: var(--pure-white);
+    padding: 25px;
+    text-align: center;
+}
+
+.card-brand-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.card-brand-header p {
+    font-size: 0.75rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin: 0;
+    opacity: 0.7;
+}
+
+.card-body-content {
+    padding: 35px 60px;
+}
+
+.welcome-text h3 {
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.welcome-text p {
+    color: #6c757d;
+    font-size: 0.85rem;
+    margin-bottom: 25px;
+}
+
+.form-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    color: #000;
+}
+
+.form-control {
+    border: 1px solid var(--border-gray);
+    padding: 12px 15px;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    background-color: #fcfcfc;
+    transition: 0.2s;
+}
+
+.form-control:focus {
+    border-color: #000 !important;
+    box-shadow: none !important;
+}
+
+.btn-access {
+    background: #000;
+    color: #fff;
+    padding: 14px;
+    border-radius: 10px;
+    font-weight: 600;
+    width: 100%;
+    border: 1px solid #000;
+    margin-top: 15px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: 0.3s ease;
+}
+
+.btn-access:hover,
+.btn-access:focus {
+    background: #fff;
+    color: #000;
+    border: 1px solid #000 !important;
+}
+
+.forgot-link {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-footer {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--brand-gray);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.modal-content {
+    border-radius: 20px;
+    border: 1px solid #000;
+    padding: 15px;
+}
+
+.toast-monochrome {
+    background: #000;
+    color: #fff;
+    border-radius: 10px;
+}
+
+.input-group .btn {
+    border-color: #e9ecef;
+}
+
+@media (max-width: 576px) {
+    .card-body-content {
+        padding: 30px 20px;
+    }
+}

@@ -1,0 +1,2542 @@
+@{
+    ViewData["Title"] = "QA Rating Page";
+    Layout = "~/Views/Shared/_QALayout.cshtml";
+    var conversationId = (int)(ViewData["ConversationId"] ?? 0);
+    var hasActiveTicket = (bool)(ViewData["HasActiveTicket"] ?? false);
+    var currentTicketId = conversationId;
+    var prevTicketId = (int)(ViewData["PrevTicketId"] ?? currentTicketId);
+    var nextTicketId = (int)(ViewData["NextTicketId"] ?? currentTicketId);
+    var queueRange = (string)(ViewData["QueueRange"] ?? "custom");
+    var queueFromDate = (string)(ViewData["QueueFromDate"] ?? string.Empty);
+    var queueToDate = (string)(ViewData["QueueToDate"] ?? string.Empty);
+    var queueSearch = (string)(ViewData["QueueSearch"] ?? string.Empty);
+    var queueCount = (int)(ViewData["QueueCount"] ?? 0);
+    var queuePosition = ViewData["QueuePosition"] is int queuePositionValue ? queuePositionValue : (int?)null;
+    var currentTicketInQueue = (bool)(ViewData["CurrentTicketInQueue"] ?? false);
+    var isRated = (bool)(ViewData["IsRated"] ?? false);
+    var ratedAccuracy = (int)(ViewData["RatedAccuracy"] ?? 5);
+    var ratedTone = (int)(ViewData["RatedTone"] ?? 5);
+    var ratedResolution = (int)(ViewData["RatedResolution"] ?? 5);
+    var ratedAccuracyQ1 = (int)(ViewData["RatedAccuracyQ1"] ?? ratedAccuracy);
+    var ratedAccuracyQ2 = (int)(ViewData["RatedAccuracyQ2"] ?? ratedAccuracy);
+    var ratedAccuracyQ3 = (int)(ViewData["RatedAccuracyQ3"] ?? ratedAccuracy);
+    var ratedToneQ1 = (int)(ViewData["RatedToneQ1"] ?? ratedTone);
+    var ratedToneQ2 = (int)(ViewData["RatedToneQ2"] ?? ratedTone);
+    var ratedToneQ3 = (int)(ViewData["RatedToneQ3"] ?? ratedTone);
+    var ratedResolutionQ1 = (int)(ViewData["RatedResolutionQ1"] ?? ratedResolution);
+    var ratedResolutionQ2 = (int)(ViewData["RatedResolutionQ2"] ?? ratedResolution);
+    var ratedResolutionQ3 = (int)(ViewData["RatedResolutionQ3"] ?? ratedResolution);
+    var ratedAccuracyPoints = (double)(ViewData["RatedAccuracyPoints"] ?? 0.0);
+    var ratedTonePoints = (double)(ViewData["RatedTonePoints"] ?? 0.0);
+    var ratedResolutionPoints = (double)(ViewData["RatedResolutionPoints"] ?? 0.0);
+    var ratedOverallPercent = (double)(ViewData["RatedOverallPercent"] ?? 0.0);
+    var ratedNotes = (string)(ViewData["RatedNotes"] ?? string.Empty);
+    var ratedSubmittedToAgent = (bool)(ViewData["RatedSubmittedToAgent"] ?? false);
+    var ratedSubmittedOn = (string)(ViewData["RatedSubmittedOn"] ?? string.Empty);
+    var conversationAgent = (string)(ViewData["ConversationAgent"] ?? string.Empty);
+    var conversationCustomer = (string)(ViewData["ConversationCustomer"] ?? string.Empty);
+    var conversationDate = (string)(ViewData["ConversationDate"] ?? string.Empty);
+    var conversationMessages = ViewData["ConversationMessages"] as IReadOnlyList<NextHorizon.Models.QA.QaConversationMessageViewModel>
+        ?? Array.Empty<NextHorizon.Models.QA.QaConversationMessageViewModel>();
+    var inlineCommentsJson = (string)(ViewData["InlineCommentsJson"] ?? "{}");
+    var reviewerDisplayName = (string)(ViewData["ReviewerDisplayName"] ?? ViewData["RatedBy"] ?? "QA Analyst - You");
+    var navQueryParts = new List<string>
+    {
+        $"range={Uri.EscapeDataString(queueRange)}"
+    };
+    if (!string.IsNullOrWhiteSpace(queueFromDate))
+    {
+        navQueryParts.Add($"from={Uri.EscapeDataString(queueFromDate)}");
+    }
+
+    if (!string.IsNullOrWhiteSpace(queueToDate))
+    {
+        navQueryParts.Add($"to={Uri.EscapeDataString(queueToDate)}");
+    }
+
+    if (!string.IsNullOrWhiteSpace(queueSearch))
+    {
+        navQueryParts.Add($"search={Uri.EscapeDataString(queueSearch)}");
+    }
+
+    var queueQueryString = navQueryParts.Count == 0 ? string.Empty : "?" + string.Join("&", navQueryParts);
+    var prevTicketUrl = $"/qa/rating/{prevTicketId}{queueQueryString}";
+    var nextTicketUrl = $"/qa/rating/{nextTicketId}{queueQueryString}";
+    var queueHelpText = currentTicketInQueue
+        ? $"Pending queue position {queuePosition ?? 1} of {queueCount}."
+        : (queueCount > 0
+            ? $"Current ticket is outside the pending queue. {queueCount} pending ticket(s) match the current filters."
+            : "No pending QA tickets match the current filters.");
+
+    var accuracyQuestions = new[]
+    {
+        "Did the agent provide correct policy or product details?",
+        "Did the response avoid factual errors or contradictions?",
+        "Were the next steps accurate and actionable?"
+    };
+
+    var toneQuestions = new[]
+    {
+        "Did the agent acknowledge the customer concern with empathy?",
+        "Was the tone respectful and professional throughout?",
+        "Did the language stay clear, calm, and customer-friendly?"
+    };
+
+    var resolutionQuestions = new[]
+    {
+        "Was the core issue fully resolved?",
+        "Did the agent provide a complete and practical solution?",
+        "Did the agent set clear follow-up expectations when needed?"
+    };
+}
+
+@section Styles {
+<style>
+    .jump-bar {
+        background: #ffffff;
+        border: 0.5px solid rgba(0, 0, 0, 0.12);
+        border-radius: 12px;
+        padding: 10px 12px;
+        margin-bottom: 12px;
+        display: grid;
+        gap: 8px;
+    }
+
+    .jump-label {
+        font-size: .8rem;
+        color: #555555;
+        font-weight: 500;
+    }
+
+    .jump-btn {
+        border: none;
+        border-radius: 8px;
+        padding: 7px 12px;
+        font-size: .8rem;
+        font-weight: 500;
+        color: #ffffff;
+        background: #111111;
+        cursor: pointer;
+    }
+
+    .jump-btn:hover {
+        background: #333333;
+    }
+
+    .queue-search-wrap {
+        position: relative;
+    }
+
+    .queue-search-wrap i {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #777777;
+        font-size: .8rem;
+    }
+
+    .queue-search {
+        width: 100%;
+        border: 0.5px solid rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        padding: 7px 10px 7px 28px;
+        font-size: .8rem;
+        background: #ffffff;
+    }
+
+    .queue-search-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .queue-filters {
+        display: grid;
+        gap: 8px;
+    }
+
+    .queue-filter-help {
+        font-size: .76rem;
+        color: #666666;
+    }
+
+    .queue-filter-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 8px;
+    }
+
+    .queue-filter-field {
+        display: grid;
+        gap: 4px;
+    }
+
+    .queue-filter-label {
+        font-size: .72rem;
+        font-weight: 600;
+        color: #5a5a5a;
+    }
+
+    .queue-filter {
+        border: 0.5px solid rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        padding: 7px 10px;
+        font-size: .8rem;
+        background: #ffffff;
+        color: #111111;
+    }
+
+    .queue-feedback {
+        display: none;
+        border: 0.5px dashed rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: .78rem;
+        color: #555555;
+        background: #fafafa;
+    }
+
+    .rating-empty-state {
+        border: 0.5px dashed rgba(0, 0, 0, 0.18);
+        border-radius: 12px;
+        padding: 16px;
+        background: #fafafa;
+        color: #4f4f4f;
+        font-size: .85rem;
+        line-height: 1.5;
+    }
+
+    .rating-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(320px, .8fr);
+        gap: 16px;
+        min-height: calc(100vh - 150px);
+    }
+
+    body.qa-fixed-layout {
+        overflow: hidden;
+    }
+
+    body.qa-fixed-layout .rating-shell {
+        height: var(--qa-shell-height, calc(100vh - 255px));
+        min-height: 0;
+    }
+
+    body.qa-fixed-layout .rating-shell > .panel:first-child {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    body.qa-fixed-layout .rating-shell > .panel:first-child .convo-body {
+        flex: 1;
+        min-height: 0;
+        max-height: none;
+        overflow-y: auto;
+    }
+
+    .panel {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 0.5px solid rgba(0, 0, 0, 0.12);
+        overflow: hidden;
+    }
+
+    .panel.qa-panel {
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 150px);
+    }
+
+    body.qa-fixed-layout .panel.qa-panel {
+        height: 100%;
+        max-height: none;
+        min-height: 0;
+    }
+
+    .panel-head {
+        padding: 14px 16px;
+        border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .panel-title {
+        font-size: .9rem;
+        font-weight: 600;
+        color: #111111;
+    }
+
+    .sub {
+        font-size: .78rem;
+        color: #666666;
+        margin-top: 2px;
+    }
+
+    .conversation-summary {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #2f2f2f;
+    }
+
+    .convo-body {
+        padding: 16px;
+        display: grid;
+        gap: 10px;
+        max-height: calc(100vh - 250px);
+        overflow-y: auto;
+        background: #f7f7f7;
+    }
+
+    .msg {
+        max-width: 82%;
+        padding: 11px 13px;
+        border-radius: 10px;
+        font-size: .875rem;
+        line-height: 1.5;
+        border: 0.5px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .msg.selectable-msg {
+        cursor: pointer;
+        transition: border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .msg.selectable-msg:hover {
+        border-color: rgba(0, 0, 0, 0.3);
+    }
+
+    .msg.selected-for-comment {
+        border-color: #111111;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.22);
+        background: #f0f5ff;
+    }
+
+    .msg.has-inline-comment {
+        border-color: #d8b44c;
+        box-shadow: inset 3px 0 0 #e0b124;
+    }
+
+    .msg-comment-thread {
+        margin-top: 8px;
+        display: grid;
+        gap: 7px;
+    }
+
+    .msg-comment-entry {
+        background: #fff9e8;
+        border: 0.5px solid #e6d3a0;
+        border-radius: 8px;
+        padding: 7px 9px;
+        font-size: .77rem;
+        color: #3f3421;
+        line-height: 1.4;
+    }
+
+    .msg-comment-meta {
+        font-size: .72rem;
+        font-weight: 700;
+        color: #6a5a35;
+        margin-bottom: 4px;
+    }
+
+    .msg-comment-images {
+        display: block;
+        margin-top: 4px;
+        color: #5d4c2a;
+        font-size: .72rem;
+    }
+
+    .msg-comment-composer {
+        margin-top: 8px;
+        display: none;
+        gap: 6px;
+        border: 0.5px dashed rgba(0, 0, 0, 0.18);
+        border-radius: 8px;
+        padding: 8px;
+        background: #ffffff;
+    }
+
+    .msg-comment-composer textarea {
+        width: 100%;
+        min-height: 64px;
+        resize: vertical;
+        border: 0.5px solid rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        padding: 8px;
+        font: inherit;
+        font-size: .78rem;
+    }
+
+    .msg-comment-actions {
+        display: flex;
+        gap: 6px;
+    }
+
+    .msg-comment-inline-actions {
+        margin-top: 5px;
+        display: flex;
+        gap: 6px;
+    }
+
+    .msg-comment-btn {
+        border: 0.5px solid rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        background: #ffffff;
+        color: #111111;
+        font-size: .74rem;
+        font-weight: 600;
+        padding: 5px 9px;
+        cursor: pointer;
+    }
+
+    .msg-comment-btn.small {
+        font-size: .7rem;
+        padding: 4px 8px;
+    }
+
+    .msg.user {
+        background: #ffffff;
+        justify-self: start;
+    }
+
+    .msg.agent {
+        background: #ececec;
+        justify-self: end;
+        border-color: rgba(0, 0, 0, 0.12);
+    }
+
+    .msg-meta {
+        display: block;
+        font-size: .82rem;
+        color: #888888;
+        margin-top: 5px;
+    }
+
+    .msg-sender {
+        font-weight: 700;
+        color: #5f5f5f;
+    }
+
+    .msg-time {
+        font-weight: 700;
+        color: #616161;
+        font-size: .84rem;
+    }
+
+    .convo-footer {
+        padding: 12px 16px;
+        border-top: 0.5px solid rgba(0, 0, 0, 0.1);
+        background: #ffffff;
+    }
+
+    .ticket-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .nav-arrow {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        border: 0.5px solid rgba(0, 0, 0, 0.18);
+        background: #ffffff;
+        color: #111111;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .85rem;
+        font-weight: 500;
+    }
+
+    .ticket-chip {
+        border: 0.5px solid rgba(0, 0, 0, 0.16);
+        background: #f5f5f5;
+        border-radius: 999px;
+        padding: 4px 12px;
+        font-size: .9rem;
+        color: #111111;
+        font-weight: 700;
+    }
+
+    .rate-body {
+        padding: 16px;
+        display: grid;
+        gap: 14px;
+        overflow-y: auto;
+    }
+
+    .panel.qa-panel .rate-body {
+        max-height: calc(100vh - 230px);
+    }
+
+    body.qa-fixed-layout .panel.qa-panel .rate-body {
+        flex: 1;
+        min-height: 0;
+        max-height: none;
+        overflow-y: auto;
+    }
+
+    .score-group {
+        display: grid;
+        gap: 5px;
+    }
+
+    .category-block {
+        border: 0.5px solid rgba(0, 0, 0, 0.14);
+        border-radius: 10px;
+        background: #fafafa;
+        padding: 10px;
+        display: grid;
+        gap: 10px;
+    }
+
+    .category-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .category-title {
+        font-size: .82rem;
+        font-weight: 600;
+        color: #111111;
+    }
+
+    .category-average {
+        font-size: .76rem;
+        color: #444444;
+        background: #eeeeee;
+        border-radius: 999px;
+        padding: 3px 10px;
+    }
+
+    .question-grid {
+        display: grid;
+        gap: 8px;
+    }
+
+    .question-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .question-text {
+        font-size: .8rem;
+        color: #222222;
+        line-height: 1.4;
+    }
+
+    .score-radio-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .score-radio-option {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border: 0.5px solid rgba(0, 0, 0, 0.18);
+        border-radius: 999px;
+        padding: 4px 8px;
+        font-size: .76rem;
+        color: #222222;
+        background: #ffffff;
+        cursor: pointer;
+    }
+
+    .score-radio-option input {
+        margin: 0;
+        accent-color: #111111;
+    }
+
+    .rated-readonly .score-radio-group {
+        pointer-events: none;
+    }
+
+    .rated-readonly {
+        display: grid;
+        gap: 12px;
+        padding-bottom: 10px;
+    }
+
+    .rated-readonly .category-block {
+        margin: 0;
+    }
+
+    .rated-readonly .question-grid {
+        gap: 10px;
+    }
+
+    .rated-readonly .question-row {
+        gap: 11px;
+    }
+
+    .rated-readonly .score-radio-option {
+        cursor: default;
+    }
+
+    .rated-readonly .score-radio-option input {
+        opacity: 1;
+        accent-color: #111111;
+    }
+
+    .form-hint {
+        font-size: .76rem;
+        color: #666666;
+    }
+
+    .message-comment-list {
+        display: grid;
+        gap: 10px;
+    }
+
+    .message-comment-item {
+        border: 0.5px solid rgba(0, 0, 0, 0.16);
+        border-radius: 10px;
+        background: #ffffff;
+        padding: 10px;
+        display: grid;
+        gap: 8px;
+    }
+
+    .message-comment-head {
+        font-size: .78rem;
+        color: #444444;
+        font-weight: 600;
+    }
+
+    .message-image-input {
+        border: 0.5px solid rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        padding: 6px 8px;
+        background: #ffffff;
+        font-size: .78rem;
+    }
+
+    .message-image-files {
+        font-size: .74rem;
+        color: #5a5a5a;
+    }
+
+    .score-error {
+        display: none;
+        border: 0.5px solid #e6b0b0;
+        border-radius: 8px;
+        background: #fff4f4;
+        color: #9a2f2f;
+        font-size: .76rem;
+        padding: 8px 10px;
+    }
+
+    .score-success {
+        display: none;
+        border: 0.5px solid #b7d9c0;
+        border-radius: 8px;
+        background: #f2fbf4;
+        color: #1c6a36;
+        font-size: .76rem;
+        padding: 8px 10px;
+    }
+
+    .submit-choice-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.46);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1100;
+        padding: 16px;
+    }
+
+    .submit-choice-modal.is-open {
+        display: flex;
+    }
+
+    .submit-choice-card {
+        width: min(480px, 100%);
+        background: #ffffff;
+        border-radius: 14px;
+        border: 0.5px solid rgba(0, 0, 0, 0.14);
+        box-shadow: 0 22px 50px rgba(0, 0, 0, 0.28);
+        padding: 16px;
+        display: grid;
+        gap: 10px;
+    }
+
+    .submit-choice-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #111111;
+    }
+
+    .submit-choice-text {
+        font-size: .86rem;
+        color: #4a4a4a;
+        line-height: 1.5;
+    }
+
+    .submit-choice-actions {
+        margin-top: 4px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    body.modal-open {
+        overflow: hidden;
+    }
+
+    .score-group label {
+        font-size: .8rem;
+        font-weight: 500;
+        color: #111111;
+    }
+
+    .score-group select,
+    .score-group textarea {
+        border: 0.5px solid rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        padding: 9px 11px;
+        font: inherit;
+        font-size: .875rem;
+        color: #111111;
+        background: #ffffff;
+    }
+
+    .score-group textarea {
+        min-height: 110px;
+        resize: vertical;
+    }
+
+    .actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .rated-badge {
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: .74rem;
+        font-weight: 600;
+        background: #e9f2e9;
+        color: #165f2e;
+        border: 0.5px solid #bcd7c4;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .summary-card {
+        border: 0.5px solid rgba(0, 0, 0, 0.14);
+        border-radius: 10px;
+        background: #fafafa;
+        padding: 11px;
+    }
+
+    .summary-label {
+        font-size: .74rem;
+        color: #666666;
+        margin-bottom: 3px;
+        white-space: nowrap;
+    }
+
+    .summary-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #111111;
+    }
+
+    .summary-note {
+        border: 0.5px solid rgba(0, 0, 0, 0.14);
+        border-radius: 10px;
+        background: #fafafa;
+        padding: 10px;
+        color: #333333;
+        line-height: 1.5;
+    }
+
+    .summary-meta {
+        display: grid;
+        gap: 2px;
+        font-size: .78rem;
+        color: #666666;
+    }
+
+    .summary-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .submit-agent-box {
+        border: 0.5px solid rgba(0, 0, 0, 0.14);
+        border-radius: 10px;
+        background: #fafafa;
+        padding: 10px;
+        display: grid;
+        gap: 8px;
+    }
+
+    .submit-agent-status {
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: .74rem;
+        font-weight: 700;
+        width: fit-content;
+    }
+
+    .submit-agent-status.sent {
+        background: #e8f6ea;
+        color: #1c6a36;
+        border: 1px solid #b7d9c0;
+    }
+
+    .submit-agent-status.pending {
+        background: #fff4dd;
+        color: #8a5a10;
+        border: 1px solid #f1d198;
+    }
+
+    .submit-agent-note {
+        font-size: .77rem;
+        color: #666666;
+    }
+
+    .summary-actions.tight {
+        margin-top: 8px;
+    }
+
+    .question-summary-list {
+        display: grid;
+        gap: 6px;
+    }
+
+    .question-summary-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        font-size: .79rem;
+        color: #222222;
+        padding: 6px 8px;
+        border-radius: 8px;
+        background: #f4f4f4;
+    }
+
+    .question-summary-item strong {
+        white-space: nowrap;
+        min-width: 52px;
+        text-align: right;
+        flex-shrink: 0;
+    }
+
+    .detail-panel {
+        border: 0.5px solid rgba(0, 0, 0, 0.14);
+        border-radius: 10px;
+        background: #fafafa;
+        padding: 10px;
+        display: grid;
+        gap: 10px;
+    }
+
+    #rated-summary-view,
+    #rated-edit-form {
+        display: grid;
+        gap: 12px;
+    }
+
+    .btn {
+        border: none;
+        border-radius: 8px;
+        padding: 9px 14px;
+        font-weight: 500;
+        font-size: .82rem;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn.primary { background: #111111; color: #ffffff; }
+    .btn.secondary { background: #f2f2f2; color: #111111; border: 0.5px solid rgba(0,0,0,0.12); }
+
+    @@media (max-width: 980px) {
+        .rating-shell {
+            grid-template-columns: 1fr;
+        }
+
+        body.qa-fixed-layout {
+            overflow: auto;
+        }
+
+        body.qa-fixed-layout .rating-shell {
+            height: auto;
+        }
+
+        .panel.qa-panel {
+            max-height: none;
+        }
+
+        .panel.qa-panel .rate-body {
+            max-height: none;
+            overflow-y: visible;
+        }
+
+        .queue-filter-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .convo-body {
+            max-height: 380px;
+        }
+    }
+
+    @@media (max-width: 620px) {
+        .queue-filter-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+}
+
+<section class="jump-bar" aria-label="Go to conversation">
+    <div class="queue-filters">
+        <div class="queue-filter-grid">
+            <div class="queue-filter-field">
+                <label class="queue-filter-label" for="queue-quick-range">Date preset</label>
+                <select id="queue-quick-range" class="queue-filter">
+                    <option value="custom">Custom range</option>
+                    <option value="today">Today</option>
+                    <option value="last7">Last 7 days</option>
+                    <option value="last30">Last 30 days</option>
+                </select>
+            </div>
+            <div class="queue-filter-field">
+                <label class="queue-filter-label" for="queue-from-date">Resolved date from</label>
+                <input id="queue-from-date" class="queue-filter" type="date" value="@queueFromDate" />
+            </div>
+            <div class="queue-filter-field">
+                <label class="queue-filter-label" for="queue-to-date">Resolved date to</label>
+                <input id="queue-to-date" class="queue-filter" type="date" value="@queueToDate" />
+            </div>
+            <div class="queue-filter-field">
+                <label class="queue-filter-label" for="rating-ticket-search">Ticket or agent</label>
+                <div class="queue-search-row">
+                    <div class="queue-search-wrap">
+                        <i class="bi bi-search"></i>
+                        <input id="rating-ticket-search" class="queue-search" type="search" placeholder="Enter ticket ID or agent name" value="@queueSearch" />
+                    </div>
+                    <button id="rating-jump-btn" class="jump-btn" type="button">Go</button>
+                </div>
+            </div>
+        </div>
+        <div id="queue-filter-help" class="queue-filter-help">@queueHelpText</div>
+        <div id="queue-feedback" class="queue-feedback">No tickets match the current queue filters.</div>
+    </div>
+</section>
+
+<section class="rating-shell">
+    <article class="panel">
+        <header class="panel-head">
+            <div>
+                <div class="panel-title">Conversation view</div>
+                @if (hasActiveTicket)
+                {
+                    <div class="sub conversation-summary">Ticket #@currentTicketId - Agent: @conversationAgent - Customer: @conversationCustomer - Date: @conversationDate</div>
+                    <div class="sub">Click specific chat messages to tag them for QA comments.</div>
+                }
+                else
+                {
+                    <div class="sub conversation-summary">No ticket selected</div>
+                    <div class="sub">The current filters do not have any pending QA conversations to open.</div>
+                }
+            </div>
+        </header>
+
+        <div class="convo-body">
+            @if (!hasActiveTicket)
+            {
+                <div class="rating-empty-state">
+                    No pending QA ticket matches the current queue filters. Adjust the date or search filters, or open another QA list to select a conversation.
+                </div>
+            }
+            else if (conversationMessages.Count == 0)
+            {
+                <div class="msg user">
+                    No conversation messages are available for this ticket yet.
+                    @if (!string.IsNullOrWhiteSpace(conversationDate))
+                    {
+                        <span class="msg-meta"><span class="msg-sender">System</span> - <span class="msg-time">@conversationDate</span></span>
+                    }
+                </div>
+            }
+            else
+            {
+                foreach (var message in conversationMessages)
+                {
+                    var messageClasses = message.IsSelectable
+                        ? $"msg {message.SenderCssClass} selectable-msg"
+                        : $"msg {message.SenderCssClass}";
+                    var messageLabel = $"{message.SenderDisplayName} {message.TimestampLabel}";
+                    <div class="@messageClasses" data-message-id="@message.MessageId" data-message-label="@messageLabel">
+                        @message.MessageText
+                        <span class="msg-meta"><span class="msg-sender">@message.SenderDisplayName</span> - <span class="msg-time">@message.TimestampLabel</span></span>
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="convo-footer">
+            <div class="ticket-nav">
+                @if (hasActiveTicket)
+                {
+                    <a id="prev-ticket-nav" href="@prevTicketUrl" class="nav-arrow" title="Previous ticket" aria-label="Previous ticket">&lt;</a>
+                    <span class="ticket-chip">Ticket #@currentTicketId - Agent: @conversationAgent - Customer: @conversationCustomer</span>
+                    <a id="next-ticket-nav" href="@nextTicketUrl" class="nav-arrow" title="Next ticket" aria-label="Next ticket">&gt;</a>
+                }
+                else
+                {
+                    <span class="ticket-chip">No active QA ticket</span>
+                }
+            </div>
+        </div>
+    </article>
+
+    <article class="panel qa-panel">
+        <header class="panel-head">
+            <div>
+                <div class="panel-title">QA rating panel</div>
+                <div class="sub">@(hasActiveTicket ? (isRated ? "This conversation is already rated" : "Rate this conversation from QA side") : "No conversation is available to rate right now")</div>
+            </div>
+            @if (hasActiveTicket && isRated)
+            {
+                <span class="rated-badge">Rated</span>
+            }
+        </header>
+
+        @if (!hasActiveTicket)
+        {
+            <div class="rate-body">
+                <div class="rating-empty-state">
+                    No QA rating form is available because no ticket is currently selected.
+                </div>
+            </div>
+        }
+        else if (!isRated)
+        {
+            <form id="new-rating-form" class="rate-body" onsubmit="return false;">
+                <div class="form-hint">Complete all 9 questions. Each question must be scored from 1 to 5.</div>
+
+                <div class="category-block">
+                    <div class="category-head">
+                        <div class="category-title">Accuracy</div>
+                        <div id="new-avg-accuracy" class="category-average"><strong>0.0 / 35</strong></div>
+                    </div>
+                    <div class="question-grid">
+                        @for (var i = 0; i < accuracyQuestions.Length; i++)
+                        {
+                            <div class="question-row">
+                                <div class="question-text">Q@(i + 1). @accuracyQuestions[i]</div>
+                                <div class="score-radio-group">
+                                    @for (var score = 1; score <= 5; score++)
+                                    {
+                                        <label class="score-radio-option" for="new-accuracy-q@(i + 1)-@score">
+                                            <input id="new-accuracy-q@(i + 1)-@score" class="new-score-input" type="radio" name="new-accuracy-q@(i + 1)" value="@score" data-group="accuracy" />
+                                            <span>@score</span>
+                                        </label>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="category-block">
+                    <div class="category-head">
+                        <div class="category-title">Tone and empathy</div>
+                        <div id="new-avg-tone" class="category-average"><strong>0.0 / 35</strong></div>
+                    </div>
+                    <div class="question-grid">
+                        @for (var i = 0; i < toneQuestions.Length; i++)
+                        {
+                            <div class="question-row">
+                                <div class="question-text">Q@(i + 1). @toneQuestions[i]</div>
+                                <div class="score-radio-group">
+                                    @for (var score = 1; score <= 5; score++)
+                                    {
+                                        <label class="score-radio-option" for="new-tone-q@(i + 1)-@score">
+                                            <input id="new-tone-q@(i + 1)-@score" class="new-score-input" type="radio" name="new-tone-q@(i + 1)" value="@score" data-group="tone" />
+                                            <span>@score</span>
+                                        </label>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="category-block">
+                    <div class="category-head">
+                        <div class="category-title">Resolution quality</div>
+                        <div id="new-avg-resolution" class="category-average"><strong>0.0 / 30</strong></div>
+                    </div>
+                    <div class="question-grid">
+                        @for (var i = 0; i < resolutionQuestions.Length; i++)
+                        {
+                            <div class="question-row">
+                                <div class="question-text">Q@(i + 1). @resolutionQuestions[i]</div>
+                                <div class="score-radio-group">
+                                    @for (var score = 1; score <= 5; score++)
+                                    {
+                                        <label class="score-radio-option" for="new-resolution-q@(i + 1)-@score">
+                                            <input id="new-resolution-q@(i + 1)-@score" class="new-score-input" type="radio" name="new-resolution-q@(i + 1)" value="@score" data-group="resolution" />
+                                            <span>@score</span>
+                                        </label>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="score-group">
+                    <label>QA notes</label>
+                    <textarea id="new-notes" placeholder="Add coaching notes or highlights for this conversation..."></textarea>
+                </div>
+                <div class="form-hint">Message-level comments are added directly inside the conversation bubbles. Click a message to comment.</div>
+
+                <div id="new-rating-error" class="score-error">Please score all 9 questions using the 1-5 scale.</div>
+                <div id="new-rating-success" class="score-success">Scores captured. Accuracy, tone, and resolution ratings are valid for submission.</div>
+                <div class="actions">
+                    <button id="submit-new-rating" class="btn primary" type="button">Submit rating</button>
+                </div>
+
+                <div id="submit-choice-modal" class="submit-choice-modal" aria-hidden="true">
+                    <div class="submit-choice-card" role="dialog" aria-modal="true" aria-labelledby="submit-choice-title">
+                        <div id="submit-choice-title" class="submit-choice-title">Submit this score to the agent?</div>
+                        <div class="submit-choice-text">Choose if QA should send this score to the agent now, or keep it as QA-only.</div>
+                        <div class="submit-choice-actions">
+                            <button id="submit-choice-cancel" class="btn secondary" type="button">Cancel</button>
+                            <button id="submit-choice-no" class="btn secondary" type="button">No, QA only</button>
+                            <button id="submit-choice-yes" class="btn primary" type="button">Yes, submit to agent</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        }
+        else
+        {
+            <div class="rate-body">
+                <div id="rated-summary-view">
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <div class="summary-label">Accuracy (35%)</div>
+                            <div id="summary-accuracy" class="summary-value"><strong>@ratedAccuracyPoints.ToString("0.0") / 35</strong></div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-label">Empathy (35%)</div>
+                            <div id="summary-tone" class="summary-value"><strong>@ratedTonePoints.ToString("0.0") / 35</strong></div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="summary-label">Resolution (30%)</div>
+                            <div id="summary-resolution" class="summary-value"><strong>@ratedResolutionPoints.ToString("0.0") / 30</strong></div>
+                        </div>
+                    </div>
+
+                    <div class="summary-card">
+                        <div class="summary-label">Overall weighted score</div>
+                        <div id="summary-average" class="summary-value"><strong>@ratedOverallPercent.ToString("0.0") / 100</strong></div>
+                    </div>
+
+                    <div>
+                        <div class="summary-label">QA notes</div>
+                        <div id="summary-notes" class="summary-note">@ViewData["RatedNotes"]</div>
+                    </div>
+
+                    <div class="summary-meta">
+                        <div>Rated by: @ViewData["RatedBy"]</div>
+                        <div>Rated on: @ViewData["RatedOn"]</div>
+                    </div>
+
+                    <div class="submit-agent-box">
+                        <div id="rated-submit-status" class="submit-agent-status @(ratedSubmittedToAgent ? "sent" : "pending")">
+                            @(ratedSubmittedToAgent ? "Already submitted to agent" : "Not yet submitted to agent")
+                        </div>
+                        <div id="rated-submit-note" class="submit-agent-note">
+                            @(ratedSubmittedToAgent && !string.IsNullOrWhiteSpace(ratedSubmittedOn)
+                                ? "Submitted on: " + ratedSubmittedOn
+                                : "QA can submit this score to the agent from here.")
+                        </div>
+                        <div class="summary-actions">
+                            <button id="rated-submit-agent-btn" class="btn @(ratedSubmittedToAgent ? "secondary" : "primary")" type="button">
+                                @(ratedSubmittedToAgent ? "Submit again" : "Submit to agent")
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="rated-submit-confirm-modal" class="submit-choice-modal" aria-hidden="true">
+                        <div class="submit-choice-card" role="dialog" aria-modal="true" aria-labelledby="rated-submit-confirm-title">
+                            <div id="rated-submit-confirm-title" class="submit-choice-title">Submit this QA score to the agent now?</div>
+                            <div id="rated-submit-confirm-text" class="submit-choice-text">This sends the current QA score summary to the agent.</div>
+                            <div class="submit-choice-actions">
+                                <button id="rated-submit-confirm-cancel" class="btn secondary" type="button">Cancel</button>
+                                <button id="rated-submit-confirm-ok" class="btn primary" type="button">Submit</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="summary-actions">
+                        <button id="view-rated-btn" class="btn secondary" type="button">View rating</button>
+                        <button id="edit-rated-btn" class="btn secondary" type="button">Edit rating</button>
+                    </div>
+                </div>
+
+                <div id="rated-view-form" class="rated-readonly" style="display:none;" aria-label="View QA answers">
+                    <div class="form-hint">QA answers per question (read-only).</div>
+
+                    <div class="category-block">
+                        <div class="category-head">
+                            <div class="category-title">Accuracy</div>
+                            <div class="category-average"><strong>@ratedAccuracyPoints.ToString("0.0") / 35</strong></div>
+                        </div>
+                        <div class="question-grid">
+                            @for (var i = 0; i < accuracyQuestions.Length; i++)
+                            {
+                                var val = i == 0 ? ratedAccuracyQ1 : i == 1 ? ratedAccuracyQ2 : ratedAccuracyQ3;
+                                <div class="question-row">
+                                    <div class="question-text">Q@(i + 1). @accuracyQuestions[i]</div>
+                                    <div class="score-radio-group">
+                                        @for (var score = 1; score <= 5; score++)
+                                        {
+                                            <label class="score-radio-option" for="view-accuracy-q@(i + 1)-@score">
+                                                <input id="view-accuracy-q@(i + 1)-@score" type="radio" name="view-accuracy-q@(i + 1)" value="@score" checked="@(val == score)" />
+                                                <span>@score</span>
+                                            </label>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="category-block">
+                        <div class="category-head">
+                            <div class="category-title">Tone and empathy</div>
+                            <div class="category-average"><strong>@ratedTonePoints.ToString("0.0") / 35</strong></div>
+                        </div>
+                        <div class="question-grid">
+                            @for (var i = 0; i < toneQuestions.Length; i++)
+                            {
+                                var val = i == 0 ? ratedToneQ1 : i == 1 ? ratedToneQ2 : ratedToneQ3;
+                                <div class="question-row">
+                                    <div class="question-text">Q@(i + 1). @toneQuestions[i]</div>
+                                    <div class="score-radio-group">
+                                        @for (var score = 1; score <= 5; score++)
+                                        {
+                                            <label class="score-radio-option" for="view-tone-q@(i + 1)-@score">
+                                                <input id="view-tone-q@(i + 1)-@score" type="radio" name="view-tone-q@(i + 1)" value="@score" checked="@(val == score)" />
+                                                <span>@score</span>
+                                            </label>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="category-block">
+                        <div class="category-head">
+                            <div class="category-title">Resolution quality</div>
+                            <div class="category-average"><strong>@ratedResolutionPoints.ToString("0.0") / 30</strong></div>
+                        </div>
+                        <div class="question-grid">
+                            @for (var i = 0; i < resolutionQuestions.Length; i++)
+                            {
+                                var val = i == 0 ? ratedResolutionQ1 : i == 1 ? ratedResolutionQ2 : ratedResolutionQ3;
+                                <div class="question-row">
+                                    <div class="question-text">Q@(i + 1). @resolutionQuestions[i]</div>
+                                    <div class="score-radio-group">
+                                        @for (var score = 1; score <= 5; score++)
+                                        {
+                                            <label class="score-radio-option" for="view-resolution-q@(i + 1)-@score">
+                                                <input id="view-resolution-q@(i + 1)-@score" type="radio" name="view-resolution-q@(i + 1)" value="@score" checked="@(val == score)" />
+                                                <span>@score</span>
+                                            </label>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="actions" style="margin-top:12px;padding-bottom:14px;">
+                        <button id="back-rated-view-btn" class="btn secondary" type="button">Back</button>
+                    </div>
+                </div>
+
+                <form id="rated-edit-form" style="display:none;" onsubmit="return false;">
+                    <div class="form-hint">Edit each question score using the 1-5 scale.</div>
+
+                    <div class="category-block">
+                        <div class="category-head">
+                            <div class="category-title">Accuracy</div>
+                            <div id="edit-avg-accuracy" class="category-average"><strong>@ratedAccuracyPoints.ToString("0.0") / 35</strong></div>
+                        </div>
+                        <div class="question-grid">
+                            @for (var i = 0; i < accuracyQuestions.Length; i++)
+                            {
+                                var val = i == 0 ? ratedAccuracyQ1 : i == 1 ? ratedAccuracyQ2 : ratedAccuracyQ3;
+                                <div class="question-row">
+                                    <div class="question-text">Q@(i + 1). @accuracyQuestions[i]</div>
+                                    <div class="score-radio-group">
+                                        @for (var score = 1; score <= 5; score++)
+                                        {
+                                            <label class="score-radio-option" for="edit-accuracy-q@(i + 1)-@score">
+                                                <input id="edit-accuracy-q@(i + 1)-@score" class="edit-score-input" type="radio" name="edit-accuracy-q@(i + 1)" value="@score" data-group="accuracy" checked="@(val == score)" />
+                                                <span>@score</span>
+                                            </label>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="category-block">
+                        <div class="category-head">
+                            <div class="category-title">Tone and empathy</div>
+                            <div id="edit-avg-tone" class="category-average"><strong>@ratedTonePoints.ToString("0.0") / 35</strong></div>
+                        </div>
+                        <div class="question-grid">
+                            @for (var i = 0; i < toneQuestions.Length; i++)
+                            {
+                                var val = i == 0 ? ratedToneQ1 : i == 1 ? ratedToneQ2 : ratedToneQ3;
+                                <div class="question-row">
+                                    <div class="question-text">Q@(i + 1). @toneQuestions[i]</div>
+                                    <div class="score-radio-group">
+                                        @for (var score = 1; score <= 5; score++)
+                                        {
+                                            <label class="score-radio-option" for="edit-tone-q@(i + 1)-@score">
+                                                <input id="edit-tone-q@(i + 1)-@score" class="edit-score-input" type="radio" name="edit-tone-q@(i + 1)" value="@score" data-group="tone" checked="@(val == score)" />
+                                                <span>@score</span>
+                                            </label>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="category-block">
+                        <div class="category-head">
+                            <div class="category-title">Resolution quality</div>
+                            <div id="edit-avg-resolution" class="category-average"><strong>@ratedResolutionPoints.ToString("0.0") / 30</strong></div>
+                        </div>
+                        <div class="question-grid">
+                            @for (var i = 0; i < resolutionQuestions.Length; i++)
+                            {
+                                var val = i == 0 ? ratedResolutionQ1 : i == 1 ? ratedResolutionQ2 : ratedResolutionQ3;
+                                <div class="question-row">
+                                    <div class="question-text">Q@(i + 1). @resolutionQuestions[i]</div>
+                                    <div class="score-radio-group">
+                                        @for (var score = 1; score <= 5; score++)
+                                        {
+                                            <label class="score-radio-option" for="edit-resolution-q@(i + 1)-@score">
+                                                <input id="edit-resolution-q@(i + 1)-@score" class="edit-score-input" type="radio" name="edit-resolution-q@(i + 1)" value="@score" data-group="resolution" checked="@(val == score)" />
+                                                <span>@score</span>
+                                            </label>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="score-group">
+                        <label>QA notes</label>
+                        <textarea id="edit-notes">@ratedNotes</textarea>
+                    </div>
+                    <div id="edit-rating-error" class="score-error">Please score all 9 questions using the 1-5 scale.</div>
+                    <div class="actions">
+                        <button id="save-rated-btn" class="btn primary" type="button">Save changes</button>
+                        <button id="cancel-rated-btn" class="btn secondary" type="button">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        }
+    </article>
+</section>
+
+<div id="ticket-nav-confirm-modal" class="submit-choice-modal" aria-hidden="true">
+    <div class="submit-choice-card" role="dialog" aria-modal="true" aria-labelledby="ticket-nav-confirm-title">
+        <div id="ticket-nav-confirm-title" class="submit-choice-title">Continue to another ticket?</div>
+        <div id="ticket-nav-confirm-text" class="submit-choice-text">QA changes are still in progress on this ticket. Save and continue?</div>
+        <div class="submit-choice-actions">
+            <button id="ticket-nav-stay-btn" class="btn secondary" type="button">Stay</button>
+            <button id="ticket-nav-save-continue-btn" class="btn primary" type="button">Save and continue</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        document.body.classList.add('qa-fixed-layout');
+        window.addEventListener('beforeunload', function () {
+            document.body.classList.remove('qa-fixed-layout');
+        });
+
+        var ratingShell = document.querySelector('.rating-shell');
+        function fitShellToViewport() {
+            if (!ratingShell || window.innerWidth <= 980) return;
+            var top = ratingShell.getBoundingClientRect().top;
+            var available = Math.floor(window.innerHeight - top - 12);
+            if (available > 320) {
+                document.documentElement.style.setProperty('--qa-shell-height', available + 'px');
+            }
+        }
+
+        fitShellToViewport();
+        window.addEventListener('resize', fitShellToViewport);
+
+        var search = document.getElementById('rating-ticket-search');
+        var btn = document.getElementById('rating-jump-btn');
+        var quickRange = document.getElementById('queue-quick-range');
+        var fromDate = document.getElementById('queue-from-date');
+        var toDate = document.getElementById('queue-to-date');
+        var queueHelp = document.getElementById('queue-filter-help');
+        var feedback = document.getElementById('queue-feedback');
+        var prevTicketNav = document.getElementById('prev-ticket-nav');
+        var nextTicketNav = document.getElementById('next-ticket-nav');
+        var navConfirmModal = document.getElementById('ticket-nav-confirm-modal');
+        var navConfirmTitle = document.getElementById('ticket-nav-confirm-title');
+        var navConfirmText = document.getElementById('ticket-nav-confirm-text');
+        var navStayBtn = document.getElementById('ticket-nav-stay-btn');
+        var navSaveContinueBtn = document.getElementById('ticket-nav-save-continue-btn');
+        var currentSupportFaqId = @currentTicketId;
+        var initialQueueRange = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(queueRange));
+        var hasActiveTicket = @hasActiveTicket.ToString().ToLowerInvariant();
+        var saveActivityCount = 0;
+        var isNavigatingBetweenTickets = false;
+        var pendingNavigationTicketId = 0;
+
+        if (!search || !btn || !quickRange || !fromDate || !toDate || !feedback || !queueHelp) return;
+
+        quickRange.value = initialQueueRange || 'custom';
+
+        function beginSaveActivity() {
+            saveActivityCount += 1;
+        }
+
+        function endSaveActivity() {
+            saveActivityCount = Math.max(0, saveActivityCount - 1);
+        }
+
+        function isSaveInProgress() {
+            return saveActivityCount > 0;
+        }
+
+        function toIsoDate(d) {
+            var y = d.getFullYear();
+            var m = String(d.getMonth() + 1).padStart(2, '0');
+            var day = String(d.getDate()).padStart(2, '0');
+            return y + '-' + m + '-' + day;
+        }
+
+        function applyQuickRange() {
+            var selected = quickRange.value;
+            if (selected === 'custom') return;
+
+            var now = new Date();
+            var end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            var start = new Date(end);
+            if (selected === 'today') start = end;
+            else if (selected === 'last7') start.setDate(start.getDate() - 6);
+            else if (selected === 'last30') start.setDate(start.getDate() - 29);
+
+            fromDate.value = toIsoDate(start);
+            toDate.value = toIsoDate(end);
+        }
+
+        function updateQueueFeedback(show, message) {
+            feedback.textContent = message || 'No tickets match the current queue filters.';
+            feedback.style.display = show ? 'block' : 'none';
+        }
+
+        function buildQueueQueryString() {
+            var params = new URLSearchParams();
+            params.set('range', quickRange.value || 'custom');
+
+            if (fromDate.value) params.set('from', fromDate.value);
+            if (toDate.value) params.set('to', toDate.value);
+
+            var rawSearch = (search.value || '').trim();
+            if (rawSearch) params.set('search', rawSearch);
+
+            return params.toString();
+        }
+
+        function updateQueueHelp(state) {
+            if (!state) return;
+
+            if (state.currentTicketInQueue && state.queuePosition) {
+                queueHelp.textContent = 'Pending queue position ' + state.queuePosition + ' of ' + state.queueCount + '.';
+                return;
+            }
+
+            if (state.queueCount > 0) {
+                queueHelp.textContent = 'Current ticket is outside the pending queue. ' + state.queueCount + ' pending ticket(s) match the current filters.';
+                return;
+            }
+
+            queueHelp.textContent = 'No pending QA tickets match the current filters.';
+        }
+
+        function fetchQueueState() {
+            var queryString = buildQueueQueryString();
+            var url = '/qa/api/rating-queue?' + queryString + '&ticketId=' + encodeURIComponent(String(currentSupportFaqId));
+
+            return fetch(url, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            }).then(function (response) {
+                return response.json().catch(function () { return null; }).then(function (result) {
+                    if (!response.ok || !result) {
+                        throw new Error('Unable to load the QA queue.');
+                    }
+
+                    return result;
+                });
+            });
+        }
+
+        function navigateToTicket(ticketId) {
+            var queryString = buildQueueQueryString();
+            var targetUrl = '/qa/rating/' + ticketId;
+            window.location.href = queryString ? targetUrl + '?' + queryString : targetUrl;
+        }
+
+        function resolveNeighborTicketId(state, direction) {
+            if (!state) return null;
+            if (direction === 'prev') {
+                return state.previousFilteredSupportFaqId || null;
+            }
+
+            if (direction === 'next') {
+                return state.nextFilteredSupportFaqId || null;
+            }
+
+            return null;
+        }
+
+        function closeTicketNavConfirm() {
+            if (!navConfirmModal) return;
+            navConfirmModal.classList.remove('is-open');
+            navConfirmModal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('modal-open');
+            pendingNavigationTicketId = 0;
+        }
+
+        function openTicketNavConfirm(direction, targetTicketId) {
+            if (!navConfirmModal) {
+                return false;
+            }
+
+            pendingNavigationTicketId = targetTicketId;
+
+            var directionText = direction === 'prev' ? 'previous' : 'next';
+            if (navConfirmTitle) {
+                navConfirmTitle.textContent = 'Continue to ticket #' + targetTicketId + '?';
+            }
+            if (navConfirmText) {
+                navConfirmText.textContent = 'QA work is still active on this ticket. Save and continue to the ' + directionText + ' ticket?';
+            }
+
+            navConfirmModal.classList.add('is-open');
+            navConfirmModal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('modal-open');
+            return true;
+        }
+
+        function attemptNavigateToDirection(direction) {
+            if (!hasActiveTicket || !currentSupportFaqId || currentSupportFaqId <= 0 || isNavigatingBetweenTickets) {
+                return;
+            }
+
+            fetchQueueState()
+                .then(function (state) {
+                    updateQueueHelp(state);
+                    var targetTicketId = resolveNeighborTicketId(state, direction);
+                    if (!targetTicketId) {
+                        updateQueueFeedback(true, direction === 'prev'
+                            ? 'No previous ticket matches the current queue filters.'
+                            : 'No next ticket matches the current queue filters.');
+                        return;
+                    }
+
+                    updateQueueFeedback(false);
+                    if (hasActiveReviewState()) {
+                        openTicketNavConfirm(direction, targetTicketId);
+                        return;
+                    }
+
+                    isNavigatingBetweenTickets = true;
+                    navigateToTicket(targetTicketId);
+                })
+                .catch(function (error) {
+                    updateQueueFeedback(true, error && error.message ? error.message : 'Unable to load the QA queue.');
+                });
+        }
+
+        function refreshQueueState() {
+            fetchQueueState()
+                .then(function (state) {
+                    updateQueueHelp(state);
+                    updateQueueFeedback(false);
+                })
+                .catch(function (error) {
+                    updateQueueHelp({ queueCount: 0, currentTicketInQueue: false, queuePosition: null });
+                    updateQueueFeedback(true, error && error.message ? error.message : 'Unable to load the QA queue.');
+                });
+        }
+
+        function jumpToConversation() {
+            fetchQueueState()
+                .then(function (state) {
+                    updateQueueHelp(state);
+
+                    if (!state || !state.matchedSupportFaqId) {
+                        updateQueueFeedback(true, 'No filtered ticket matches that ticket ID or agent name.');
+                        return;
+                    }
+
+                    updateQueueFeedback(false);
+                    navigateToTicket(state.matchedSupportFaqId);
+                })
+                .catch(function (error) {
+                    updateQueueFeedback(true, error && error.message ? error.message : 'Unable to load the QA queue.');
+                });
+        }
+
+        function setCustomRangeOnManualDate() {
+            quickRange.value = 'custom';
+            refreshQueueState();
+        }
+
+        search.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            jumpToConversation();
+        });
+
+        btn.addEventListener('click', jumpToConversation);
+
+        if (prevTicketNav) {
+            prevTicketNav.addEventListener('click', function (e) {
+                e.preventDefault();
+                attemptNavigateToDirection('prev');
+            });
+        }
+
+        if (nextTicketNav) {
+            nextTicketNav.addEventListener('click', function (e) {
+                e.preventDefault();
+                attemptNavigateToDirection('next');
+            });
+        }
+
+        if (navStayBtn) {
+            navStayBtn.addEventListener('click', function () {
+                closeTicketNavConfirm();
+            });
+        }
+
+        if (navSaveContinueBtn) {
+            navSaveContinueBtn.addEventListener('click', function () {
+                var targetTicketId = pendingNavigationTicketId;
+                if (!targetTicketId) {
+                    closeTicketNavConfirm();
+                    return;
+                }
+
+                setButtonBusy(navSaveContinueBtn, true, 'Saving...');
+                persistActiveWorkIfNeeded()
+                    .then(function () {
+                        closeTicketNavConfirm();
+                        isNavigatingBetweenTickets = true;
+                        navigateToTicket(targetTicketId);
+                    })
+                    .catch(function (error) {
+                        updateQueueFeedback(true, error && error.message ? error.message : 'Unable to save active QA work.');
+                    })
+                    .finally(function () {
+                        setButtonBusy(navSaveContinueBtn, false);
+                    });
+            });
+        }
+
+        if (navConfirmModal) {
+            navConfirmModal.addEventListener('click', function (e) {
+                if (e.target === navConfirmModal) {
+                    closeTicketNavConfirm();
+                }
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && navConfirmModal.classList.contains('is-open')) {
+                    closeTicketNavConfirm();
+                }
+            });
+        }
+
+        fromDate.addEventListener('focus', setCustomRangeOnManualDate);
+        toDate.addEventListener('focus', setCustomRangeOnManualDate);
+        fromDate.addEventListener('click', setCustomRangeOnManualDate);
+        toDate.addEventListener('click', setCustomRangeOnManualDate);
+        fromDate.addEventListener('change', setCustomRangeOnManualDate);
+        toDate.addEventListener('change', setCustomRangeOnManualDate);
+        search.addEventListener('change', refreshQueueState);
+
+        quickRange.addEventListener('change', function () {
+            if (quickRange.value === 'custom') {
+                fromDate.value = '';
+                toDate.value = '';
+            }
+            applyQuickRange();
+            updateQueueFeedback(false);
+            refreshQueueState();
+        });
+
+        refreshQueueState();
+
+        var selectableMessages = document.querySelectorAll('.convo-body .selectable-msg');
+        var inlineCommentThreads = {};
+        var defaultQaName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(reviewerDisplayName));
+        var inlineCommentsJsonRaw = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(inlineCommentsJson));
+
+        function normalizeInlineCommentMap(value) {
+            if (!value || typeof value !== 'object' || Array.isArray(value)) {
+                return {};
+            }
+
+            return value;
+        }
+
+        function cloneInlineCommentMap(value) {
+            try {
+                return JSON.parse(JSON.stringify(normalizeInlineCommentMap(value)));
+            } catch (error) {
+                return {};
+            }
+        }
+
+        function parseInlineCommentMap(value) {
+            if (typeof value !== 'string') {
+                return normalizeInlineCommentMap(value);
+            }
+
+            var trimmedValue = value.trim();
+            if (!trimmedValue) {
+                return {};
+            }
+
+            try {
+                return normalizeInlineCommentMap(JSON.parse(trimmedValue));
+            } catch (error) {
+                return {};
+            }
+        }
+
+        inlineCommentThreads = parseInlineCommentMap(inlineCommentsJsonRaw);
+        var persistedInlineCommentSignature = serializeInlineCommentMap(inlineCommentThreads);
+        var persistedNewRatingSignature = captureRatingSignature('new');
+        var persistedEditRatingSignature = captureRatingSignature('edit');
+
+        function escHtml(value) {
+            return (value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function buildCurrentTimestamp() {
+            var d = new Date();
+            var month = d.toLocaleString('en-US', { month: 'short' });
+            var day = d.getDate();
+            var year = d.getFullYear();
+            var hrs = d.getHours();
+            var mins = String(d.getMinutes()).padStart(2, '0');
+            var ampm = hrs >= 12 ? 'PM' : 'AM';
+            var h12 = hrs % 12;
+            if (h12 === 0) h12 = 12;
+            return month + ' ' + day + ', ' + year + ' ' + h12 + ':' + mins + ' ' + ampm;
+        }
+
+        function renderInlineThread(msgEl, messageId) {
+            var threadWrap = msgEl.querySelector('.msg-comment-thread');
+            if (!threadWrap) {
+                threadWrap = document.createElement('div');
+                threadWrap.className = 'msg-comment-thread';
+                msgEl.appendChild(threadWrap);
+            }
+
+            var entries = inlineCommentThreads[messageId] || [];
+            if (!entries.length) {
+                threadWrap.innerHTML = '';
+                msgEl.classList.remove('has-inline-comment');
+                return;
+            }
+
+            var html = '';
+            for (var i = 0; i < entries.length; i++) {
+                var entry = entries[i];
+                var by = entry.by || defaultQaName;
+                var on = entry.on || '';
+                html += '<div class="msg-comment-entry">';
+                html += '<div class="msg-comment-meta">' + escHtml(by) + (on ? ' - ' + escHtml(on) : '') + '</div>';
+                html += escHtml(entry.comment);
+                if (entry.images && entry.images.length) {
+                    html += '<span class="msg-comment-images">Images: ' + escHtml(entry.images.join(', ')) + '</span>';
+                }
+                html += '<div class="msg-comment-inline-actions"><button type="button" class="msg-comment-btn small edit-inline-comment" data-entry-index="' + i + '">Edit</button></div>';
+                html += '</div>';
+            }
+            threadWrap.innerHTML = html;
+            msgEl.classList.add('has-inline-comment');
+
+            var editButtons = threadWrap.querySelectorAll('.edit-inline-comment');
+            editButtons.forEach(function (btn) {
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var idx = parseInt(btn.getAttribute('data-entry-index') || '-1', 10);
+                    if (Number.isNaN(idx) || idx < 0 || idx >= entries.length) return;
+
+                    var composer = ensureComposer(msgEl);
+                    var textArea = composer.querySelector('textarea');
+                    var saveBtn = composer.querySelector('.save-msg-comment');
+                    if (!textArea || !saveBtn) return;
+
+                    hideOtherComposers(msgEl);
+                    msgEl.classList.add('selected-for-comment');
+                    composer.style.display = 'grid';
+                    composer.setAttribute('data-edit-index', String(idx));
+                    textArea.value = entries[idx].comment || '';
+                    saveBtn.textContent = 'Update comment';
+                    textArea.focus();
+                });
+            });
+        }
+
+        function hideOtherComposers(activeMsgEl) {
+            selectableMessages.forEach(function (msgEl) {
+                if (msgEl !== activeMsgEl) msgEl.classList.remove('selected-for-comment');
+                var composer = msgEl.querySelector('.msg-comment-composer');
+                if (composer && msgEl !== activeMsgEl) composer.style.display = 'none';
+            });
+        }
+
+        function ensureComposer(msgEl) {
+            var composer = msgEl.querySelector('.msg-comment-composer');
+            if (composer) return composer;
+
+            composer = document.createElement('div');
+            composer.className = 'msg-comment-composer';
+            composer.innerHTML = ''
+                + '<textarea placeholder="Add QA comment for this message..."></textarea>'
+                + '<div class="msg-comment-actions">'
+                + '  <button type="button" class="msg-comment-btn save-msg-comment">Save comment</button>'
+                + '  <button type="button" class="msg-comment-btn cancel-msg-comment">Cancel</button>'
+                + '</div>';
+
+            msgEl.appendChild(composer);
+
+            var textArea = composer.querySelector('textarea');
+            var saveBtn = composer.querySelector('.save-msg-comment');
+            var cancelBtn = composer.querySelector('.cancel-msg-comment');
+
+            if (saveBtn && textArea) {
+                saveBtn.addEventListener('click', function () {
+                    var messageId = msgEl.getAttribute('data-message-id') || '';
+                    var commentText = (textArea.value || '').trim();
+                    if (!messageId || !commentText) return;
+                    if (!currentSupportFaqId || currentSupportFaqId <= 0) return;
+
+                    var editIndex = parseInt(composer.getAttribute('data-edit-index') || '-1', 10);
+                    var previousThreads = cloneInlineCommentMap(inlineCommentThreads);
+                    var saveBtnOriginalText = saveBtn.textContent || 'Save comment';
+
+                    if (!inlineCommentThreads[messageId]) inlineCommentThreads[messageId] = [];
+                    if (!Number.isNaN(editIndex) && editIndex >= 0 && inlineCommentThreads[messageId][editIndex]) {
+                        inlineCommentThreads[messageId][editIndex].comment = commentText;
+                        inlineCommentThreads[messageId][editIndex].on = buildCurrentTimestamp();
+                    } else {
+                        inlineCommentThreads[messageId].push({
+                            by: defaultQaName,
+                            on: buildCurrentTimestamp(),
+                            comment: commentText,
+                            images: []
+                        });
+                    }
+
+                    renderInlineThread(msgEl, messageId);
+                    saveBtn.disabled = true;
+                    saveBtn.textContent = 'Saving...';
+
+                    saveInlineComments()
+                        .then(function () {
+                            persistedInlineCommentSignature = serializeInlineCommentMap(inlineCommentThreads);
+                            textArea.value = '';
+                            composer.style.display = 'none';
+                            composer.setAttribute('data-edit-index', '-1');
+                            msgEl.classList.remove('selected-for-comment');
+                        })
+                        .catch(function (error) {
+                            inlineCommentThreads = previousThreads;
+                            renderInlineThread(msgEl, messageId);
+                            if (window.console && window.console.error) {
+                                window.console.error(error);
+                            }
+                            window.alert(error && error.message ? error.message : 'Unable to save QA conversation comments.');
+                        })
+                        .finally(function () {
+                            saveBtn.disabled = false;
+                            saveBtn.textContent = saveBtnOriginalText;
+                        });
+                });
+            }
+
+            if (cancelBtn && textArea) {
+                cancelBtn.addEventListener('click', function () {
+                    textArea.value = '';
+                    composer.style.display = 'none';
+                    composer.setAttribute('data-edit-index', '-1');
+                    if (saveBtn) saveBtn.textContent = 'Save comment';
+                    msgEl.classList.remove('selected-for-comment');
+                });
+            }
+
+            return composer;
+        }
+
+        var allMessages = document.querySelectorAll('.convo-body .msg[data-message-id]');
+        allMessages.forEach(function (msgEl) {
+            var messageId = msgEl.getAttribute('data-message-id') || '';
+            if (!messageId || !inlineCommentThreads[messageId]) return;
+            renderInlineThread(msgEl, messageId);
+        });
+
+        if (selectableMessages.length) {
+            selectableMessages.forEach(function (msgEl) {
+                msgEl.addEventListener('click', function (e) {
+                    if (e.target.closest('.msg-comment-composer') || e.target.closest('.msg-comment-thread')) return;
+
+                    var messageId = msgEl.getAttribute('data-message-id') || '';
+                    if (!messageId) return;
+
+                    hideOtherComposers(msgEl);
+                    var composer = ensureComposer(msgEl);
+                    msgEl.classList.add('selected-for-comment');
+                    composer.style.display = 'grid';
+                });
+            });
+        }
+
+        function readGroupScores(groupName, rootPrefix) {
+            var values = [];
+            for (var q = 1; q <= 3; q++) {
+                var selector = 'input[name="' + rootPrefix + '-' + groupName + '-q' + q + '"]:checked';
+                var selected = document.querySelector(selector);
+                if (!selected) return null;
+                var val = parseInt(selected.value || '', 10);
+                if (Number.isNaN(val) || val < 1 || val > 5) return null;
+                values.push(val);
+            }
+            return values;
+        }
+
+        function serializeInlineCommentMap(value) {
+            try {
+                return JSON.stringify(cloneInlineCommentMap(value));
+            } catch (error) {
+                return '{}';
+            }
+        }
+
+        function captureRatingSignature(rootPrefix) {
+            var scoreParts = [];
+            var groups = ['accuracy', 'tone', 'resolution'];
+            for (var g = 0; g < groups.length; g++) {
+                var groupName = groups[g];
+                for (var q = 1; q <= 3; q++) {
+                    var selector = 'input[name="' + rootPrefix + '-' + groupName + '-q' + q + '"]:checked';
+                    var selected = document.querySelector(selector);
+                    scoreParts.push(selected ? String(selected.value || '') : '');
+                }
+            }
+
+            var notesField = document.getElementById(rootPrefix + '-notes');
+            var notesValue = notesField ? (notesField.value || '').trim() : '';
+            return scoreParts.join('|') + '||' + notesValue;
+        }
+
+        function hasUnsavedInlineCommentText() {
+            var composers = document.querySelectorAll('.msg-comment-composer');
+            for (var i = 0; i < composers.length; i++) {
+                var textArea = composers[i].querySelector('textarea');
+                if (!textArea) continue;
+                if ((textArea.value || '').trim()) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function hasVisibleCommentComposer() {
+            var composers = document.querySelectorAll('.msg-comment-composer');
+            for (var i = 0; i < composers.length; i++) {
+                if (composers[i].style.display === 'grid') {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        function collectPendingComposerComments() {
+            var changed = false;
+            var composers = document.querySelectorAll('.msg-comment-composer');
+
+            for (var i = 0; i < composers.length; i++) {
+                var composer = composers[i];
+                var msgEl = composer.closest('.msg[data-message-id]');
+                if (!msgEl) continue;
+
+                var textArea = composer.querySelector('textarea');
+                if (!textArea) continue;
+
+                var commentText = (textArea.value || '').trim();
+                if (!commentText) continue;
+
+                var messageId = msgEl.getAttribute('data-message-id') || '';
+                if (!messageId) continue;
+
+                var editIndex = parseInt(composer.getAttribute('data-edit-index') || '-1', 10);
+
+                if (!inlineCommentThreads[messageId]) inlineCommentThreads[messageId] = [];
+                if (!Number.isNaN(editIndex) && editIndex >= 0 && inlineCommentThreads[messageId][editIndex]) {
+                    inlineCommentThreads[messageId][editIndex].comment = commentText;
+                    inlineCommentThreads[messageId][editIndex].on = buildCurrentTimestamp();
+                } else {
+                    inlineCommentThreads[messageId].push({
+                        by: defaultQaName,
+                        on: buildCurrentTimestamp(),
+                        comment: commentText,
+                        images: []
+                    });
+                }
+
+                renderInlineThread(msgEl, messageId);
+                textArea.value = '';
+                composer.style.display = 'none';
+                composer.setAttribute('data-edit-index', '-1');
+                msgEl.classList.remove('selected-for-comment');
+                var saveBtn = composer.querySelector('.save-msg-comment');
+                if (saveBtn) saveBtn.textContent = 'Save comment';
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        function isInlineCommentsDirty() {
+            return serializeInlineCommentMap(inlineCommentThreads) !== persistedInlineCommentSignature;
+        }
+
+        function isNewRatingDirty() {
+            var newForm = document.getElementById('new-rating-form');
+            if (!newForm) return false;
+            return captureRatingSignature('new') !== persistedNewRatingSignature;
+        }
+
+        function isEditRatingDirty() {
+            var ratedEditForm = document.getElementById('rated-edit-form');
+            if (!ratedEditForm || ratedEditForm.style.display === 'none') return false;
+            return captureRatingSignature('edit') !== persistedEditRatingSignature;
+        }
+
+        function hasActiveReviewState() {
+            if (isSaveInProgress()) {
+                return true;
+            }
+
+            if (hasVisibleCommentComposer() || hasUnsavedInlineCommentText()) {
+                return true;
+            }
+
+            if (isInlineCommentsDirty()) {
+                return true;
+            }
+
+            if (isNewRatingDirty() || isEditRatingDirty()) {
+                return true;
+            }
+
+            return false;
+        }
+
+        function persistActiveWorkIfNeeded() {
+            var hadPendingCommentText = collectPendingComposerComments();
+            var shouldPersistInlineComments = hadPendingCommentText || isInlineCommentsDirty();
+            var shouldPersistRating = isNewRatingDirty() || isEditRatingDirty();
+            var ratingRootPrefix = isEditRatingDirty() ? 'edit' : 'new';
+
+            var task = Promise.resolve();
+
+            if (shouldPersistInlineComments) {
+                task = task.then(function () {
+                    return saveInlineComments().then(function () {
+                        persistedInlineCommentSignature = serializeInlineCommentMap(inlineCommentThreads);
+                    });
+                });
+            }
+
+            if (shouldPersistRating) {
+                task = task.then(function () {
+                    return saveReview(ratingRootPrefix, false).then(function () {
+                        persistedNewRatingSignature = captureRatingSignature('new');
+                        persistedEditRatingSignature = captureRatingSignature('edit');
+                        persistedInlineCommentSignature = serializeInlineCommentMap(inlineCommentThreads);
+                    });
+                });
+            }
+
+            return task;
+        }
+
+        function average(values) {
+            if (!values || values.length === 0) return 0;
+            var sum = 0;
+            for (var i = 0; i < values.length; i++) sum += values[i];
+            return sum / values.length;
+        }
+
+        function round1(value) {
+            return Math.round(value * 10) / 10;
+        }
+
+        function updateAverages(rootPrefix, targetPrefix) {
+            var accuracy = average(readGroupScores('accuracy', rootPrefix) || []);
+            var tone = average(readGroupScores('tone', rootPrefix) || []);
+            var resolution = average(readGroupScores('resolution', rootPrefix) || []);
+
+            var accuracyPoints = round1((accuracy / 5) * 35);
+            var tonePoints = round1((tone / 5) * 35);
+            var resolutionPoints = round1((resolution / 5) * 30);
+            var overallPercent = round1(accuracyPoints + tonePoints + resolutionPoints);
+
+            var accEl = document.getElementById(targetPrefix + '-avg-accuracy');
+            var toneEl = document.getElementById(targetPrefix + '-avg-tone');
+            var resEl = document.getElementById(targetPrefix + '-avg-resolution');
+            if (accEl) accEl.innerHTML = '<strong>' + accuracyPoints.toFixed(1) + ' / 35</strong>';
+            if (toneEl) toneEl.innerHTML = '<strong>' + tonePoints.toFixed(1) + ' / 35</strong>';
+            if (resEl) resEl.innerHTML = '<strong>' + resolutionPoints.toFixed(1) + ' / 30</strong>';
+
+            return {
+                accuracy: accuracy,
+                tone: tone,
+                resolution: resolution,
+                accuracyPoints: accuracyPoints,
+                tonePoints: tonePoints,
+                resolutionPoints: resolutionPoints,
+                overallPercent: overallPercent
+            };
+        }
+
+        function bindRealtimeAverage(selector, rootPrefix, targetPrefix) {
+            var inputs = document.querySelectorAll(selector);
+            if (!inputs.length) return;
+
+            for (var i = 0; i < inputs.length; i++) {
+                inputs[i].addEventListener('change', function () {
+                    updateAverages(rootPrefix, targetPrefix);
+                });
+            }
+
+            updateAverages(rootPrefix, targetPrefix);
+        }
+
+        bindRealtimeAverage('.new-score-input', 'new', 'new');
+        bindRealtimeAverage('.edit-score-input', 'edit', 'edit');
+
+        function setButtonBusy(button, isBusy, busyText) {
+            if (!button) return;
+            if (isBusy) {
+                button.setAttribute('data-original-text', button.textContent || '');
+                button.disabled = true;
+                button.textContent = busyText;
+                return;
+            }
+
+            var originalText = button.getAttribute('data-original-text');
+            button.disabled = false;
+            if (originalText) button.textContent = originalText;
+        }
+
+        function buildReviewPayload(rootPrefix, submitToAgentNow) {
+            var accuracyScores = readGroupScores('accuracy', rootPrefix);
+            var toneScores = readGroupScores('tone', rootPrefix);
+            var resolutionScores = readGroupScores('resolution', rootPrefix);
+
+            if (!accuracyScores || !toneScores || !resolutionScores) {
+                return null;
+            }
+
+            var notesField = document.getElementById(rootPrefix + '-notes');
+            var normalizedInlineCommentThreads = normalizeInlineCommentMap(inlineCommentThreads);
+
+            return {
+                accuracyScores: accuracyScores,
+                toneScores: toneScores,
+                resolutionScores: resolutionScores,
+                notes: notesField ? (notesField.value || '').trim() : '',
+                submitToAgentNow: !!submitToAgentNow,
+                inlineCommentThreads: normalizedInlineCommentThreads
+            };
+        }
+
+        function saveInlineComments() {
+            var payload = {
+                inlineCommentThreads: normalizeInlineCommentMap(inlineCommentThreads)
+            };
+
+            beginSaveActivity();
+            return fetch('/qa/api/reviews/' + currentSupportFaqId + '/inline-comments', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+                .then(function (response) {
+                    return response.json().catch(function () { return { success: false, message: 'Unable to save QA conversation comments.' }; })
+                        .then(function (result) {
+                            if (!response.ok || !result.success) {
+                                throw new Error(result.message || 'Unable to save QA conversation comments.');
+                            }
+
+                            return result;
+                        });
+                })
+                .finally(function () {
+                    endSaveActivity();
+                });
+        }
+
+        function saveReview(rootPrefix, submitToAgentNow) {
+            var payload = buildReviewPayload(rootPrefix, submitToAgentNow);
+            if (!payload) {
+                return Promise.reject(new Error('All 9 questions must be scored from 1 to 5.'));
+            }
+
+            beginSaveActivity();
+            return fetch('/qa/api/reviews/' + currentSupportFaqId, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+                .then(function (response) {
+                    return response.json().catch(function () { return { success: false, message: 'Unable to save QA review.' }; })
+                        .then(function (result) {
+                            if (!response.ok || !result.success) {
+                                throw new Error(result.message || 'Unable to save QA review.');
+                            }
+
+                            return result;
+                        });
+                })
+                .finally(function () {
+                    endSaveActivity();
+                });
+        }
+
+        function submitReviewToAgent() {
+            beginSaveActivity();
+            return fetch('/qa/api/reviews/' + currentSupportFaqId + '/submit-agent', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+                .then(function (response) {
+                    return response.json().catch(function () { return { success: false, message: 'Unable to submit QA review to the agent.' }; })
+                        .then(function (result) {
+                            if (!response.ok || !result.success) {
+                                throw new Error(result.message || 'Unable to submit QA review to the agent.');
+                            }
+
+                            return result;
+                        });
+                })
+                .finally(function () {
+                    endSaveActivity();
+                });
+        }
+
+        var submitNewBtn = document.getElementById('submit-new-rating');
+        var newError = document.getElementById('new-rating-error');
+        var newSuccess = document.getElementById('new-rating-success');
+        var submitChoiceModal = document.getElementById('submit-choice-modal');
+        var submitChoiceYesBtn = document.getElementById('submit-choice-yes');
+        var submitChoiceNoBtn = document.getElementById('submit-choice-no');
+        var submitChoiceCancelBtn = document.getElementById('submit-choice-cancel');
+        var submitChoiceCallback = null;
+
+        function closeSubmitChoice(decision) {
+            if (!submitChoiceModal) return;
+            submitChoiceModal.classList.remove('is-open');
+            submitChoiceModal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('modal-open');
+
+            var cb = submitChoiceCallback;
+            submitChoiceCallback = null;
+            if (typeof cb === 'function') cb(decision);
+        }
+
+        function openSubmitChoice(onDecision) {
+            if (!submitChoiceModal) {
+                onDecision(true);
+                return;
+            }
+            submitChoiceCallback = onDecision;
+            submitChoiceModal.classList.add('is-open');
+            submitChoiceModal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('modal-open');
+        }
+
+        if (submitChoiceYesBtn) submitChoiceYesBtn.addEventListener('click', function () { closeSubmitChoice(true); });
+        if (submitChoiceNoBtn) submitChoiceNoBtn.addEventListener('click', function () { closeSubmitChoice(false); });
+        if (submitChoiceCancelBtn) submitChoiceCancelBtn.addEventListener('click', function () { closeSubmitChoice(null); });
+        if (submitChoiceModal) {
+            submitChoiceModal.addEventListener('click', function (e) {
+                if (e.target === submitChoiceModal) closeSubmitChoice(null);
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && submitChoiceModal.classList.contains('is-open')) closeSubmitChoice(null);
+            });
+        }
+
+        if (submitNewBtn) {
+            submitNewBtn.addEventListener('click', function () {
+                var previewPayload = buildReviewPayload('new', false);
+                if (!previewPayload) {
+                    if (newSuccess) newSuccess.style.display = 'none';
+                    if (newError) newError.style.display = 'block';
+                    if (newError) newError.textContent = 'Please score all 9 questions using the 1-5 scale.';
+                    return;
+                }
+
+                openSubmitChoice(function (sendToAgent) {
+                    if (sendToAgent === null) return;
+
+                    if (newError) newError.style.display = 'none';
+                    setButtonBusy(submitNewBtn, true, 'Saving...');
+
+                    saveReview('new', sendToAgent)
+                        .then(function () {
+                            persistedNewRatingSignature = captureRatingSignature('new');
+                            persistedInlineCommentSignature = serializeInlineCommentMap(inlineCommentThreads);
+                            if (newSuccess) {
+                                var metrics = updateAverages('new', 'new');
+                                var submitStateText = sendToAgent
+                                    ? 'Submitted to agent.'
+                                    : 'Saved by QA only (not sent to agent).';
+                                newSuccess.innerHTML = '<strong>Scores captured.</strong> Accuracy <strong>' + metrics.accuracyPoints.toFixed(1) + '/35</strong>, Empathy <strong>' + metrics.tonePoints.toFixed(1) + '/35</strong>, Resolution <strong>' + metrics.resolutionPoints.toFixed(1) + '/30</strong>, Total <strong>' + metrics.overallPercent.toFixed(1) + ' / 100</strong>. <strong>' + submitStateText + '</strong>';
+                                newSuccess.style.display = 'block';
+                            }
+
+                            window.location.reload();
+                        })
+                        .catch(function (error) {
+                            if (newSuccess) newSuccess.style.display = 'none';
+                            if (newError) {
+                                newError.textContent = error && error.message ? error.message : 'Unable to save the QA review.';
+                                newError.style.display = 'block';
+                            }
+                        })
+                        .finally(function () {
+                            setButtonBusy(submitNewBtn, false);
+                        });
+                });
+            });
+        }
+
+        var editBtn = document.getElementById('edit-rated-btn');
+        var viewBtn = document.getElementById('view-rated-btn');
+        var cancelBtn = document.getElementById('cancel-rated-btn');
+        var saveBtn = document.getElementById('save-rated-btn');
+        var summaryView = document.getElementById('rated-summary-view');
+        var viewForm = document.getElementById('rated-view-form');
+        var backViewBtn = document.getElementById('back-rated-view-btn');
+        var editForm = document.getElementById('rated-edit-form');
+        var editError = document.getElementById('edit-rating-error');
+        var ratedSubmitBtn = document.getElementById('rated-submit-agent-btn');
+        var ratedSubmitStatus = document.getElementById('rated-submit-status');
+        var ratedSubmitNote = document.getElementById('rated-submit-note');
+        var ratedSubmitConfirmModal = document.getElementById('rated-submit-confirm-modal');
+        var ratedSubmitConfirmTitle = document.getElementById('rated-submit-confirm-title');
+        var ratedSubmitConfirmText = document.getElementById('rated-submit-confirm-text');
+        var ratedSubmitConfirmOk = document.getElementById('rated-submit-confirm-ok');
+        var ratedSubmitConfirmCancel = document.getElementById('rated-submit-confirm-cancel');
+        var ratedSubmitConfirmCallback = null;
+
+        function closeRatedSubmitConfirm(decision) {
+            if (!ratedSubmitConfirmModal) return;
+            ratedSubmitConfirmModal.classList.remove('is-open');
+            ratedSubmitConfirmModal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('modal-open');
+
+            var cb = ratedSubmitConfirmCallback;
+            ratedSubmitConfirmCallback = null;
+            if (typeof cb === 'function') cb(decision);
+        }
+
+        function openRatedSubmitConfirm(alreadySubmitted, onDecision) {
+            if (!ratedSubmitConfirmModal) {
+                onDecision(true);
+                return;
+            }
+
+            if (ratedSubmitConfirmTitle) {
+                ratedSubmitConfirmTitle.textContent = alreadySubmitted
+                    ? 'This score was already submitted. Submit again to the agent?'
+                    : 'Submit this QA score to the agent now?';
+            }
+
+            if (ratedSubmitConfirmText) {
+                ratedSubmitConfirmText.textContent = alreadySubmitted
+                    ? 'This will send the score again and refresh the submission timestamp.'
+                    : 'This sends the current QA score summary to the agent.';
+            }
+
+            ratedSubmitConfirmCallback = onDecision;
+            ratedSubmitConfirmModal.classList.add('is-open');
+            ratedSubmitConfirmModal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('modal-open');
+        }
+
+        if (ratedSubmitConfirmOk) ratedSubmitConfirmOk.addEventListener('click', function () { closeRatedSubmitConfirm(true); });
+        if (ratedSubmitConfirmCancel) ratedSubmitConfirmCancel.addEventListener('click', function () { closeRatedSubmitConfirm(false); });
+        if (ratedSubmitConfirmModal) {
+            ratedSubmitConfirmModal.addEventListener('click', function (e) {
+                if (e.target === ratedSubmitConfirmModal) closeRatedSubmitConfirm(false);
+            });
+        }
+
+        if (ratedSubmitBtn && ratedSubmitStatus && ratedSubmitNote) {
+            ratedSubmitBtn.addEventListener('click', function () {
+                var alreadySubmitted = ratedSubmitStatus.classList.contains('sent');
+                openRatedSubmitConfirm(alreadySubmitted, function (confirmed) {
+                    if (!confirmed) return;
+
+                    setButtonBusy(ratedSubmitBtn, true, 'Submitting...');
+
+                    submitReviewToAgent()
+                        .then(function () {
+                            window.location.reload();
+                        })
+                        .catch(function (error) {
+                            if (ratedSubmitNote) {
+                                ratedSubmitNote.textContent = error && error.message
+                                    ? error.message
+                                    : 'Unable to submit the QA review to the agent.';
+                            }
+                        })
+                        .finally(function () {
+                            setButtonBusy(ratedSubmitBtn, false);
+                        });
+                });
+            });
+        }
+
+        if (viewBtn && backViewBtn && summaryView && viewForm) {
+            viewBtn.addEventListener('click', function () {
+                summaryView.style.display = 'none';
+                viewForm.style.display = 'grid';
+            });
+
+            backViewBtn.addEventListener('click', function () {
+                viewForm.style.display = 'none';
+                summaryView.style.display = '';
+            });
+        }
+
+        if (editBtn && cancelBtn && saveBtn && summaryView && editForm) {
+            editBtn.addEventListener('click', function () {
+                summaryView.style.display = 'none';
+                if (viewForm) viewForm.style.display = 'none';
+                editForm.style.display = 'grid';
+                if (editError) editError.style.display = 'none';
+            });
+
+            cancelBtn.addEventListener('click', function () {
+                editForm.style.display = 'none';
+                summaryView.style.display = '';
+                if (editError) editError.style.display = 'none';
+            });
+
+            saveBtn.addEventListener('click', function () {
+                var previewPayload = buildReviewPayload('edit', false);
+                if (!previewPayload) {
+                    if (editError) editError.style.display = 'block';
+                    if (editError) editError.textContent = 'Please score all 9 questions using the 1-5 scale.';
+                    return;
+                }
+
+                if (editError) editError.style.display = 'none';
+                setButtonBusy(saveBtn, true, 'Saving...');
+
+                saveReview('edit', false)
+                    .then(function () {
+                        persistedEditRatingSignature = captureRatingSignature('edit');
+                        persistedInlineCommentSignature = serializeInlineCommentMap(inlineCommentThreads);
+                        window.location.reload();
+                    })
+                    .catch(function (error) {
+                        if (editError) {
+                            editError.textContent = error && error.message ? error.message : 'Unable to save the QA review.';
+                            editError.style.display = 'block';
+                        }
+                    })
+                    .finally(function () {
+                        setButtonBusy(saveBtn, false);
+                    });
+            });
+        }
+
+    })();
+</script>

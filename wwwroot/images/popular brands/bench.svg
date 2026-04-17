@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 96" role="img" aria-labelledby="title">
+  <title id="title">Bench placeholder</title>
+  <rect width="240" height="96" rx="18" fill="#111" />
+  <text x="120" y="60" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial, sans-serif" font-size="32" letter-spacing="5">BENCH</text>
+</svg>

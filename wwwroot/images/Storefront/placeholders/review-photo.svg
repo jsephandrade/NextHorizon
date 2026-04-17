@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" role="img" aria-labelledby="title desc">
+  <title id="title">Review photo placeholder</title>
+  <desc id="desc">Placeholder image for storefront review photos.</desc>
+  <rect width="480" height="480" rx="28" fill="#f4ede4" />
+  <rect x="68" y="82" width="344" height="252" rx="24" fill="#dfcdb8" />
+  <circle cx="164" cy="176" r="34" fill="#fff7ee" />
+  <path d="M104 300l78-86 54 54 54-44 86 76H104z" fill="#8f6444" />
+  <text x="240" y="406" text-anchor="middle" fill="#5e402a" font-family="Segoe UI, Arial, sans-serif" font-size="28" letter-spacing="4">REVIEW</text>
+</svg>

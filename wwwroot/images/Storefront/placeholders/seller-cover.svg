@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 520" role="img" aria-labelledby="title desc">
+  <title id="title">Seller cover placeholder</title>
+  <desc id="desc">Placeholder image for storefront seller cover banners.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#23150f" />
+      <stop offset="50%" stop-color="#6b442b" />
+      <stop offset="100%" stop-color="#d1a676" />
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="520" rx="28" fill="url(#bg)" />
+  <circle cx="1220" cy="180" r="120" fill="#f7eee2" opacity="0.18" />
+  <circle cx="1360" cy="300" r="170" fill="#f7eee2" opacity="0.12" />
+  <text x="120" y="242" fill="#fff8ef" font-family="Segoe UI, Arial, sans-serif" font-size="68" letter-spacing="8">STOREFRONT</text>
+  <text x="120" y="320" fill="#f1dbc4" font-family="Segoe UI, Arial, sans-serif" font-size="32" letter-spacing="3">Seller banner placeholder</text>
+</svg>

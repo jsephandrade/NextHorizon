@@ -1,0 +1,69 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <GenerateRazorAssemblyInfo>false</GenerateRazorAssemblyInfo>
+    <RazorCompileOnBuild>true</RazorCompileOnBuild>
+    <RazorCompileOnPublish>true</RazorCompileOnPublish>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Controllers\CartController.cs" />
+    <Compile Remove="Controllers\CsrfController.cs" />
+    <Compile Remove="Controllers\ProductsController.cs" />
+    <Compile Remove="Controllers\PurchasesController.cs" />
+    <Compile Remove="Controllers\ReviewsController.cs" />
+    <Compile Remove="Controllers\SellerController.cs" />
+    <Compile Remove="Controllers\WishlistController.cs" />
+    <Compile Remove="Controllers\HelpCenter\**\*.cs" />
+    <Compile Remove="Controllers\MemberTracker\**\*.cs" />
+    <Compile Remove="Controllers\Messaging\**\*.cs" />
+    <Compile Remove="Controllers\QA\**\*.cs" />
+
+    <Compile Remove="obj_verify\**\*.cs" />
+    <Content Remove="obj_verify\**\*" />
+    <EmbeddedResource Remove="obj_verify\**\*" />
+    <None Remove="obj_verify\**\*" />
+    <None Remove="Views\Shared\_Layout.cshtml.css" />
+
+    <Content Update="Views\**\*.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+
+    <Content Remove="Views\Dashboard\**\*.cshtml" />
+    <Content Remove="Views\HelpCenter\**\*.cshtml" />
+    <Content Remove="Views\Home\MyPurchases.cshtml" />
+    <Content Remove="Views\Home\PaymentMethods.cshtml" />
+    <Content Remove="Views\Home\ViewPurchaseHistory.cshtml" />
+    <Content Remove="Views\MemberTracker\**\*.cshtml" />
+    <Content Remove="Views\Messaging\**\*.cshtml" />
+    <Content Remove="Views\QA\**\*.cshtml" />
+    <Content Remove="Views\Seller\SellerDashboard.cshtml" />
+    <Content Remove="Views\Seller\SellerMessenger.cshtml" />
+    <RazorGenerate Remove="Views\Dashboard\**\*.cshtml" />
+    <RazorGenerate Remove="Views\HelpCenter\**\*.cshtml" />
+    <RazorGenerate Remove="Views\Home\MyPurchases.cshtml" />
+    <RazorGenerate Remove="Views\Home\PaymentMethods.cshtml" />
+    <RazorGenerate Remove="Views\Home\ViewPurchaseHistory.cshtml" />
+    <RazorGenerate Remove="Views\MemberTracker\**\*.cshtml" />
+    <RazorGenerate Remove="Views\Messaging\**\*.cshtml" />
+    <RazorGenerate Remove="Views\QA\**\*.cshtml" />
+    <RazorGenerate Remove="Views\Seller\SellerDashboard.cshtml" />
+    <RazorGenerate Remove="Views\Seller\SellerMessenger.cshtml" />
+  </ItemGroup>
+
+</Project>

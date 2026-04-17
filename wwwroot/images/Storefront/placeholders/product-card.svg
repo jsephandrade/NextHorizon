@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-labelledby="title desc">
+  <title id="title">Product placeholder</title>
+  <desc id="desc">Placeholder image for storefront product cards.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f7f4ee" />
+      <stop offset="100%" stop-color="#e8ddd0" />
+    </linearGradient>
+  </defs>
+  <rect width="640" height="640" rx="40" fill="url(#bg)" />
+  <circle cx="320" cy="260" r="128" fill="#d2b79c" opacity="0.55" />
+  <path d="M202 386c28-54 79-88 142-88 55 0 107 29 136 88l18 38H184l18-38z" fill="#7f5539" opacity="0.92" />
+  <text x="320" y="504" text-anchor="middle" fill="#442c1d" font-family="Segoe UI, Arial, sans-serif" font-size="34" letter-spacing="4">NEXT HORIZON</text>
+</svg>

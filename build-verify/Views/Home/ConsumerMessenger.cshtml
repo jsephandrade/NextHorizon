@@ -1,0 +1,83 @@
+@using System.Security.Claims
+@using System.Text.Json
+@{
+    var conversationId = ViewData["ConversationId"] as int?;
+    var sellerId = ViewData["SellerId"] as int?;
+    var orderId = ViewData["OrderId"] as int?;
+    var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+
+    var bootConfig = new
+    {
+        apiMode = "main",
+        currentUserId,
+        initialConversationId = conversationId,
+        sellerId,
+        orderId,
+        messagingRole = "consumer",
+        expectedCounterpartyRole = "seller"
+    };
+}
+
+@{
+    ViewData["Title"] = "Messages";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+<link rel="stylesheet" href="~/css/messenger.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/consumer-messenger.css" asp-append-version="true" />
+}
+
+<section class="consumer-messenger-shell">
+    <section class="seller-messenger-page consumer-messenger-page" data-messenger-root>
+        <aside class="conversations-panel">
+            <div class="search-conversations">
+                <input type="text" placeholder="Search conversations..." class="search-input" data-conversation-search>
+            </div>
+
+            <div class="message-status" data-messenger-status hidden></div>
+            <div class="conversations-list" data-conversations-list></div>
+            <div class="no-results" data-no-results hidden>No conversations found.</div>
+        </aside>
+
+        <section class="chat-panel">
+            <div class="chat-header">
+                <div class="chat-user-info">
+                    <div class="chat-avatar">
+                        <div class="avatar-placeholder" data-chat-avatar>--</div>
+                    </div>
+
+                    <div class="chat-heading">
+                        <h3 class="chat-user-name" data-chat-title>Conversation</h3>
+                        <p class="status-online" data-chat-subtitle></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="messages-container" data-messages-container>
+                <div class="empty-state"></div>
+            </div>
+
+            <div class="message-input-area">
+                <input type="file" class="message-attachment-input" data-message-attachment-input accept=".jpg,.jpeg,.png,.webp,.mp4,.webm,.mov,image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime" hidden>
+                <button class="attachment-btn" type="button" title="Attach file" aria-label="Attach file" data-attach-message disabled>
+                    <i class="fas fa-paperclip"></i>
+                </button>
+                <input type="text" class="message-input" placeholder="Type a message..." data-message-input disabled>
+                <button class="send-btn" type="button" title="Send" aria-label="Send message" data-send-message disabled>
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <div class="composer-attachment-preview" data-composer-attachment-preview hidden></div>
+        </section>
+
+        <button type="button" class="messenger-hidden-refresh" data-refresh-conversations tabindex="-1" aria-hidden="true">Refresh</button>
+    </section>
+</section>
+
+@section Scripts {
+<script>
+    window.messengerPageConfig = @Html.Raw(JsonSerializer.Serialize(bootConfig));
+</script>
+<script src="~/js/messenger.js" asp-append-version="true"></script>
+}

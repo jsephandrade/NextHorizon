@@ -1,0 +1,43 @@
+body.consumer-messenger-layout {
+    background: #ffffff;
+    margin: 0;
+    height: 100vh;
+    min-height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+body.consumer-messenger-layout #main-header {
+    flex-shrink: 0;
+}
+
+body.consumer-messenger-layout .site-footer,
+body.consumer-messenger-layout footer {
+    display: none;
+}
+
+.consumer-messenger-shell {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    height: 100%;
+    min-height: 0;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.consumer-messenger-page {
+    flex: 1;
+    height: 100%;
+    min-height: 0;
+}
+
+@media (max-width: 768px) {
+    body.consumer-messenger-layout {
+        height: 100dvh;
+        min-height: 100dvh;
+        max-height: 100dvh;
+    }
+}

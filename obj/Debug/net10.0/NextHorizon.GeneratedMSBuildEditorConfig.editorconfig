@@ -1,0 +1,283 @@
+is_global = true
+build_property.TargetFramework = net10.0
+build_property.TargetFramework = net10.0
+build_property.TargetPlatformMinVersion = 
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = true
+build_property.UsingMicrosoftNETSdkWeb = true
+build_property.ProjectTypeGuids = 
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = 
+build_property.InvariantGlobalization = 
+build_property.PlatformNeutralAssembly = 
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.TargetFrameworkIdentifier = .NETCoreApp
+build_property.TargetFrameworkVersion = v10.0
+build_property.RootNamespace = NextHorizon
+build_property.RootNamespace = NextHorizon
+build_property.ProjectDir = C:\Users\User\OneDrive\Desktop\NextHorizon-AndradeBranch\NextHorizon-AndradeBranch\NextHorizon\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.RazorLangVersion = 9.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = C:\Users\User\OneDrive\Desktop\NextHorizon-AndradeBranch\NextHorizon-AndradeBranch\NextHorizon
+build_property._RazorSourceGeneratorDebug = 
+build_property.EffectiveAnalysisLevelStyle = 10.0
+build_property.EnableCodeStyleSeverity = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Agent/AgentDashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXEFnZW50XEFnZW50RGFzaGJvYXJkLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Home/About.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXEhvbWVcQWJvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Home/Cart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXEhvbWVcQ2FydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Home/Checkout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXEhvbWVcQ2hlY2tvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Home/ConsumerMessenger.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXEhvbWVcQ29uc3VtZXJNZXNzZW5nZXIuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Home/Contact.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXEhvbWVcQ29udGFjdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Home/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXEhvbWVcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Home/MyOrders.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXEhvbWVcTXlPcmRlcnMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Home/OrderConfirmation.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXEhvbWVcT3JkZXJDb25maXJtYXRpb24uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Home/OrderDetail.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXEhvbWVcT3JkZXJEZXRhaWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Home/Privacy.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXEhvbWVcUHJpdmFjeS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Home/Product.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXEhvbWVcUHJvZHVjdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Home/Reviews.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXEhvbWVcUmV2aWV3cy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Home/SellerShop.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXEhvbWVcU2VsbGVyU2hvcC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Home/Shop.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXEhvbWVcU2hvcC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Home/Wishlist.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXEhvbWVcV2lzaGxpc3QuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Home/WriteReview.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXEhvbWVcV3JpdGVSZXZpZXcuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Login/AdminLogin.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXExvZ2luXEFkbWluTG9naW4uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Shared/Error.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXFNoYXJlZFxFcnJvci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Shared/_AgentLayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXFNoYXJlZFxfQWdlbnRMYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Shared/_DashboardLayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXFNoYXJlZFxfRGFzaGJvYXJkTGF5b3V0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Shared/_Footer.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXFNoYXJlZFxfRm9vdGVyLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Shared/_Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXFNoYXJlZFxfTGF5b3V0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Shared/_LoginPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXFNoYXJlZFxfTG9naW5QYXJ0aWFsLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Shared/_QALayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXFNoYXJlZFxfUUFMYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/Shared/_ValidationScriptsPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXFNoYXJlZFxfVmFsaWRhdGlvblNjcmlwdHNQYXJ0aWFsLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/_ViewImports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXF9WaWV3SW1wb3J0cy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/build-verify/Views/_ViewStart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = YnVpbGQtdmVyaWZ5XFZpZXdzXF9WaWV3U3RhcnQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/NextHorizon/Views/Home/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = TmV4dEhvcml6b25cVmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/NextHorizon/Views/Home/Privacy.cshtml]
+build_metadata.AdditionalFiles.TargetPath = TmV4dEhvcml6b25cVmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/NextHorizon/Views/Shared/Error.cshtml]
+build_metadata.AdditionalFiles.TargetPath = TmV4dEhvcml6b25cVmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/NextHorizon/Views/Shared/_ValidationScriptsPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = TmV4dEhvcml6b25cVmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/NextHorizon/Views/_ViewImports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = TmV4dEhvcml6b25cVmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/NextHorizon/Views/_ViewStart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = TmV4dEhvcml6b25cVmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Agent/AgentDashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWdlbnRcQWdlbnREYXNoYm9hcmQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Home/About.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxBYm91dC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Home/Cart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxDYXJ0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Home/Checkout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxDaGVja291dC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Home/ConsumerMessenger.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxDb25zdW1lck1lc3Nlbmdlci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Home/Contact.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxDb250YWN0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Home/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Home/MyOrders.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxNeU9yZGVycy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Home/OrderConfirmation.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxPcmRlckNvbmZpcm1hdGlvbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Home/OrderDetail.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxPcmRlckRldGFpbC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Home/Privacy.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Home/Product.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcm9kdWN0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Home/Reviews.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxSZXZpZXdzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Home/SellerShop.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxTZWxsZXJTaG9wLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Home/Shop.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxTaG9wLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Home/Wishlist.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxXaXNobGlzdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Home/WriteReview.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxXcml0ZVJldmlldy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Login/AdminLogin.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTG9naW5cQWRtaW5Mb2dpbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Shared/Error.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Shared/_AgentLayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9BZ2VudExheW91dC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Shared/_DashboardLayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9EYXNoYm9hcmRMYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Shared/_Footer.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9Gb290ZXIuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Shared/_Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Shared/_LoginPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9Mb2dpblBhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Shared/_QALayout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9RQUxheW91dC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/Shared/_ValidationScriptsPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/_ViewImports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/Views/_ViewStart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/User/OneDrive/Desktop/NextHorizon-AndradeBranch/NextHorizon-AndradeBranch/NextHorizon/NextHorizon/Views/Shared/_Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = TmV4dEhvcml6b25cVmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = b-n8g79c6vhr

@@ -1,0 +1,321 @@
+Using launch settings from C:\Users\User\OneDrive\Desktop\NextHorizon-AndradeBranch\NextHorizon-AndradeBranch\NextHorizon\Properties\launchSettings.json...
+Building...
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (124ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT 1
+info: Microsoft.EntityFrameworkCore.Migrations[20411]
+      Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (102ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      DECLARE @result int;
+      EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+      SELECT @result
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (12ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+      BEGIN
+          CREATE TABLE [__EFMigrationsHistory] (
+              [MigrationId] nvarchar(150) NOT NULL,
+              [ProductVersion] nvarchar(32) NOT NULL,
+              CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+          );
+      END;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (5ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT OBJECT_ID(N'[__EFMigrationsHistory]');
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (11ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT [MigrationId], [ProductVersion]
+      FROM [__EFMigrationsHistory]
+      ORDER BY [MigrationId];
+info: Microsoft.EntityFrameworkCore.Migrations[20405]
+      No migrations were applied. The database is already up to date.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (18ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      DECLARE @result int;
+      EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+      SELECT @result
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (26ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT [q].[CreatedAtUtc]
+      FROM [QaReviews] AS [q]
+      INNER JOIN [dbo].[SupportFAQs] AS [s] ON [q].[SupportFaqId] = [s].[Id]
+      WHERE [s].[AgentId] IS NOT NULL
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (63ms) [Parameters=[@earliestMonthStartUtc='?' (DbType = DateTime2), @upperBoundUtc='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+      SELECT [q].[CreatedAtUtc], [s].[AgentId] AS [AgentUserId], [q].[OverallPercent]
+      FROM [QaReviews] AS [q]
+      INNER JOIN [dbo].[SupportFAQs] AS [s] ON [q].[SupportFaqId] = [s].[Id]
+      WHERE [s].[AgentId] IS NOT NULL AND [q].[CreatedAtUtc] >= @earliestMonthStartUtc AND [q].[CreatedAtUtc] < @upperBoundUtc
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (14ms) [Parameters=[@monthSet1='?' (DbType = DateTime2), @metricType='?' (Size = 1) (DbType = Byte)], CommandType='Text', CommandTimeout='30']
+      SELECT [a].[AgentRankingId], [a].[AgentUserId], [a].[CalculatedAtUtc], [a].[MetricType], [a].[MetricValue], [a].[PeriodStartUtc], [a].[RankPosition], [a].[RankedAgentCount], [a].[ReviewCount], [a].[UpdatedAtUtc]
+      FROM [dbo].[AgentRankings] AS [a]
+      WHERE [a].[PeriodStartUtc] = @monthSet1 AND [a].[MetricType] = @metricType
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (84ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (DbType = Int32), @p2='?' (DbType = Int32), @p3='?' (DbType = DateTime2), @p4='?' (Size = 1) (DbType = Byte), @p5='?' (Precision = 10) (Scale = 2) (DbType = Decimal), @p6='?' (DbType = DateTime2), @p7='?' (DbType = Int32), @p8='?' (DbType = Int32), @p9='?' (DbType = Int32), @p10='?' (DbType = DateTime2), @p11='?' (DbType = Int32), @p12='?' (DbType = DateTime2), @p13='?' (Size = 1) (DbType = Byte), @p14='?' (Precision = 10) (Scale = 2) (DbType = Decimal), @p15='?' (DbType = DateTime2), @p16='?' (DbType = Int32), @p17='?' (DbType = Int32), @p18='?' (DbType = Int32), @p19='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+      SET NOCOUNT ON;
+      DELETE FROM [dbo].[AgentRankings]
+      OUTPUT 1
+      WHERE [AgentRankingId] = @p0;
+      DELETE FROM [dbo].[AgentRankings]
+      OUTPUT 1
+      WHERE [AgentRankingId] = @p1;
+      MERGE [dbo].[AgentRankings] USING (
+      VALUES (@p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, 0),
+      (@p11, @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, 1)) AS i ([AgentUserId], [CalculatedAtUtc], [MetricType], [MetricValue], [PeriodStartUtc], [RankPosition], [RankedAgentCount], [ReviewCount], [UpdatedAtUtc], _Position) ON 1=0
+      WHEN NOT MATCHED THEN
+      INSERT ([AgentUserId], [CalculatedAtUtc], [MetricType], [MetricValue], [PeriodStartUtc], [RankPosition], [RankedAgentCount], [ReviewCount], [UpdatedAtUtc])
+      VALUES (i.[AgentUserId], i.[CalculatedAtUtc], i.[MetricType], i.[MetricValue], i.[PeriodStartUtc], i.[RankPosition], i.[RankedAgentCount], i.[ReviewCount], i.[UpdatedAtUtc])
+      OUTPUT INSERTED.[AgentRankingId], i._Position;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (19ms) [Parameters=[@monthStartUtc='?' (DbType = DateTime2), @nextMonthStartUtc='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+      SELECT [q].[SupportFaqId], [s].[AgentId] AS [AgentUserId], [s].[StartTime], [s].[EndTime], [s].[DurationMinutes]
+      FROM [QaReviews] AS [q]
+      INNER JOIN [dbo].[SupportFAQs] AS [s] ON [q].[SupportFaqId] = [s].[Id]
+      WHERE [s].[AgentId] IS NOT NULL AND [q].[CreatedAtUtc] >= @monthStartUtc AND [q].[CreatedAtUtc] < @nextMonthStartUtc
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (21ms) [Parameters=[@supportFaqIds1='?' (DbType = Int32), @supportFaqIds2='?' (DbType = Int32), @supportFaqIds3='?' (DbType = Int32), @supportFaqIds4='?' (DbType = Int32), @supportFaqIds5='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [s].[ConversationId], [s].[MessageText], [s].[CreatedAt]
+      FROM [dbo].[SupportMessages] AS [s]
+      WHERE [s].[ConversationId] IN (@supportFaqIds1, @supportFaqIds2, @supportFaqIds3, @supportFaqIds4, @supportFaqIds5)
+      ORDER BY [s].[CreatedAt], [s].[Id]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (24ms) [Parameters=[@monthSet1='?' (DbType = DateTime2), @metricType='?' (Size = 1) (DbType = Byte)], CommandType='Text', CommandTimeout='30']
+      SELECT [a].[AgentRankingId], [a].[AgentUserId], [a].[CalculatedAtUtc], [a].[MetricType], [a].[MetricValue], [a].[PeriodStartUtc], [a].[RankPosition], [a].[RankedAgentCount], [a].[ReviewCount], [a].[UpdatedAtUtc]
+      FROM [dbo].[AgentRankings] AS [a]
+      WHERE [a].[PeriodStartUtc] = @monthSet1 AND [a].[MetricType] = @metricType
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (113ms) [Parameters=[@p0='?' (DbType = Int32), @p1='?' (DbType = Int32), @p2='?' (DbType = Int32), @p3='?' (DbType = DateTime2), @p4='?' (Size = 1) (DbType = Byte), @p5='?' (Precision = 10) (Scale = 2) (DbType = Decimal), @p6='?' (DbType = DateTime2), @p7='?' (DbType = Int32), @p8='?' (DbType = Int32), @p9='?' (DbType = Int32), @p10='?' (DbType = DateTime2), @p11='?' (DbType = Int32), @p12='?' (DbType = DateTime2), @p13='?' (Size = 1) (DbType = Byte), @p14='?' (Precision = 10) (Scale = 2) (DbType = Decimal), @p15='?' (DbType = DateTime2), @p16='?' (DbType = Int32), @p17='?' (DbType = Int32), @p18='?' (DbType = Int32), @p19='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+      SET NOCOUNT ON;
+      DELETE FROM [dbo].[AgentRankings]
+      OUTPUT 1
+      WHERE [AgentRankingId] = @p0;
+      DELETE FROM [dbo].[AgentRankings]
+      OUTPUT 1
+      WHERE [AgentRankingId] = @p1;
+      MERGE [dbo].[AgentRankings] USING (
+      VALUES (@p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, 0),
+      (@p11, @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, 1)) AS i ([AgentUserId], [CalculatedAtUtc], [MetricType], [MetricValue], [PeriodStartUtc], [RankPosition], [RankedAgentCount], [ReviewCount], [UpdatedAtUtc], _Position) ON 1=0
+      WHEN NOT MATCHED THEN
+      INSERT ([AgentUserId], [CalculatedAtUtc], [MetricType], [MetricValue], [PeriodStartUtc], [RankPosition], [RankedAgentCount], [ReviewCount], [UpdatedAtUtc])
+      VALUES (i.[AgentUserId], i.[CalculatedAtUtc], i.[MetricType], i.[MetricValue], i.[PeriodStartUtc], i.[RankPosition], i.[RankedAgentCount], i.[ReviewCount], i.[UpdatedAtUtc])
+      OUTPUT INSERTED.[AgentRankingId], i._Position;
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5169
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\User\OneDrive\Desktop\NextHorizon-AndradeBranch\NextHorizon-AndradeBranch\NextHorizon
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (19ms) [Parameters=[@agentUserId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [a].[ACWStartTime], [a].[ACWEndTime]
+      FROM [dbo].[Agents] AS [a]
+      WHERE [a].[UserID] = @agentUserId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (28ms) [Parameters=[@agentUserId='?' (DbType = Int32), @monthStartUtc='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [a].[AgentRankingId], [a].[AgentUserId], [a].[CalculatedAtUtc], [a].[MetricType], [a].[MetricValue], [a].[PeriodStartUtc], [a].[RankPosition], [a].[RankedAgentCount], [a].[ReviewCount], [a].[UpdatedAtUtc]
+      FROM [dbo].[AgentRankings] AS [a]
+      WHERE [a].[AgentUserId] = @agentUserId AND [a].[PeriodStartUtc] = @monthStartUtc AND [a].[MetricType] = CAST(1 AS tinyint)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (22ms) [Parameters=[@agentUserId='?' (DbType = Int32), @monthStartUtc='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [a].[AgentRankingId], [a].[AgentUserId], [a].[CalculatedAtUtc], [a].[MetricType], [a].[MetricValue], [a].[PeriodStartUtc], [a].[RankPosition], [a].[RankedAgentCount], [a].[ReviewCount], [a].[UpdatedAtUtc]
+      FROM [dbo].[AgentRankings] AS [a]
+      WHERE [a].[AgentUserId] = @agentUserId AND [a].[PeriodStartUtc] = @monthStartUtc AND [a].[MetricType] = CAST(2 AS tinyint)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (13ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT [q].[QaReviewId], [q].[AccuracyAverage], [q].[CreatedAtUtc], [q].[InlineCommentsJson], [q].[Notes], [q].[OverallPercent], [q].[ResolutionAverage], [q].[ReviewerName], [q].[ReviewerStaffId], [q].[SubmittedToAgent], [q].[SubmittedToAgentAtUtc], [q].[SupportFaqId], [q].[ToneAverage], [q].[UpdatedAtUtc]
+      FROM [QaReviews] AS [q]
+      ORDER BY [q].[UpdatedAtUtc] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (48ms) [Parameters=[@reviewFaqIds1='?' (DbType = Int32), @reviewFaqIds2='?' (DbType = Int32), @reviewFaqIds3='?' (DbType = Int32), @reviewFaqIds4='?' (DbType = Int32), @reviewFaqIds5='?' (DbType = Int32), @agentUserId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [s].[Id], [s].[AgentId], [s].[Category], [s].[CreatedAt], [s].[DurationMinutes], [s].[EndTime], [s].[Question], [s].[StartTime], [s].[Status], [s].[UserType]
+      FROM [dbo].[SupportFAQs] AS [s]
+      WHERE [s].[Id] IN (@reviewFaqIds1, @reviewFaqIds2, @reviewFaqIds3, @reviewFaqIds4, @reviewFaqIds5) AND [s].[AgentId] = @agentUserId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (19ms) [Parameters=[@supportFaqIds1='?' (DbType = Int32), @supportFaqIds2='?' (DbType = Int32), @supportFaqIds3='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [l].[LiveAgentSessionId], [l].[CategorySlug], [l].[CategoryTitle], [l].[ConsumerId], [l].[CreatedAt], [l].[EndedReason], [l].[FirstQuestion], [l].[Status], [l].[SupportFaqId], [l].[UpdatedAt], [l].[UserId]
+      FROM [LiveAgentSessions] AS [l]
+      WHERE [l].[SupportFaqId] IN (@supportFaqIds1, @supportFaqIds2, @supportFaqIds3)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (16ms) [Parameters=[@consumerIds1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [c].[consumer_id], [c].[first_name], [c].[last_name], [c].[middle_name], [c].[user_id], [c].[username]
+      FROM [dbo].[Consumers] AS [c]
+      WHERE [c].[consumer_id] = @consumerIds1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (11ms) [Parameters=[@supportFaqIds1='?' (DbType = Int32), @supportFaqIds2='?' (DbType = Int32), @supportFaqIds3='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [s].[Id], [s].[ConversationId], [s].[CreatedAt], [s].[MessageText], [s].[SenderId], [s].[SenderRole]
+      FROM [dbo].[SupportMessages] AS [s]
+      WHERE [s].[ConversationId] IN (@supportFaqIds1, @supportFaqIds2, @supportFaqIds3)
+      ORDER BY [s].[CreatedAt], [s].[Id]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (22ms) [Parameters=[@agentUserId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [a].[ChatID], [a].[ACWEndTime], [a].[ACWStartTime], [a].[AgentID], [a].[AgentName], [a].[AgentStatus], [a].[Category], [a].[ChatSlot], [a].[ChatStatus], [a].[ClientName], [a].[ConversationID], [a].[Notes], [a].[NotesLastUpdatedAt], [a].[PreviewQuestion], [a].[UserID]
+      FROM [dbo].[Agents] AS [a]
+      WHERE [a].[UserID] = @agentUserId AND [a].[ConversationID] IS NOT NULL AND [a].[ACWStartTime] IS NOT NULL AND [a].[ACWEndTime] IS NOT NULL
+      ORDER BY [a].[ACWEndTime] DESC, [a].[ChatID] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (9ms) [Parameters=[@agentUserId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [a].[ACWStartTime], [a].[ACWEndTime]
+      FROM [dbo].[Agents] AS [a]
+      WHERE [a].[UserID] = @agentUserId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (18ms) [Parameters=[@agentUserId='?' (DbType = Int32), @monthStartUtc='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [a].[AgentRankingId], [a].[AgentUserId], [a].[CalculatedAtUtc], [a].[MetricType], [a].[MetricValue], [a].[PeriodStartUtc], [a].[RankPosition], [a].[RankedAgentCount], [a].[ReviewCount], [a].[UpdatedAtUtc]
+      FROM [dbo].[AgentRankings] AS [a]
+      WHERE [a].[AgentUserId] = @agentUserId AND [a].[PeriodStartUtc] = @monthStartUtc AND [a].[MetricType] = CAST(1 AS tinyint)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (17ms) [Parameters=[@agentUserId='?' (DbType = Int32), @monthStartUtc='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [a].[AgentRankingId], [a].[AgentUserId], [a].[CalculatedAtUtc], [a].[MetricType], [a].[MetricValue], [a].[PeriodStartUtc], [a].[RankPosition], [a].[RankedAgentCount], [a].[ReviewCount], [a].[UpdatedAtUtc]
+      FROM [dbo].[AgentRankings] AS [a]
+      WHERE [a].[AgentUserId] = @agentUserId AND [a].[PeriodStartUtc] = @monthStartUtc AND [a].[MetricType] = CAST(2 AS tinyint)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (14ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT [q].[QaReviewId], [q].[AccuracyAverage], [q].[CreatedAtUtc], [q].[InlineCommentsJson], [q].[Notes], [q].[OverallPercent], [q].[ResolutionAverage], [q].[ReviewerName], [q].[ReviewerStaffId], [q].[SubmittedToAgent], [q].[SubmittedToAgentAtUtc], [q].[SupportFaqId], [q].[ToneAverage], [q].[UpdatedAtUtc]
+      FROM [QaReviews] AS [q]
+      ORDER BY [q].[UpdatedAtUtc] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (25ms) [Parameters=[@reviewFaqIds1='?' (DbType = Int32), @reviewFaqIds2='?' (DbType = Int32), @reviewFaqIds3='?' (DbType = Int32), @reviewFaqIds4='?' (DbType = Int32), @reviewFaqIds5='?' (DbType = Int32), @agentUserId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [s].[Id], [s].[AgentId], [s].[Category], [s].[CreatedAt], [s].[DurationMinutes], [s].[EndTime], [s].[Question], [s].[StartTime], [s].[Status], [s].[UserType]
+      FROM [dbo].[SupportFAQs] AS [s]
+      WHERE [s].[Id] IN (@reviewFaqIds1, @reviewFaqIds2, @reviewFaqIds3, @reviewFaqIds4, @reviewFaqIds5) AND [s].[AgentId] = @agentUserId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (13ms) [Parameters=[@supportFaqIds1='?' (DbType = Int32), @supportFaqIds2='?' (DbType = Int32), @supportFaqIds3='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [l].[LiveAgentSessionId], [l].[CategorySlug], [l].[CategoryTitle], [l].[ConsumerId], [l].[CreatedAt], [l].[EndedReason], [l].[FirstQuestion], [l].[Status], [l].[SupportFaqId], [l].[UpdatedAt], [l].[UserId]
+      FROM [LiveAgentSessions] AS [l]
+      WHERE [l].[SupportFaqId] IN (@supportFaqIds1, @supportFaqIds2, @supportFaqIds3)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (6ms) [Parameters=[@consumerIds1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [c].[consumer_id], [c].[first_name], [c].[last_name], [c].[middle_name], [c].[user_id], [c].[username]
+      FROM [dbo].[Consumers] AS [c]
+      WHERE [c].[consumer_id] = @consumerIds1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (56ms) [Parameters=[@supportFaqIds1='?' (DbType = Int32), @supportFaqIds2='?' (DbType = Int32), @supportFaqIds3='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [s].[Id], [s].[ConversationId], [s].[CreatedAt], [s].[MessageText], [s].[SenderId], [s].[SenderRole]
+      FROM [dbo].[SupportMessages] AS [s]
+      WHERE [s].[ConversationId] IN (@supportFaqIds1, @supportFaqIds2, @supportFaqIds3)
+      ORDER BY [s].[CreatedAt], [s].[Id]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (17ms) [Parameters=[@agentUserId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [a].[ChatID], [a].[ACWEndTime], [a].[ACWStartTime], [a].[AgentID], [a].[AgentName], [a].[AgentStatus], [a].[Category], [a].[ChatSlot], [a].[ChatStatus], [a].[ClientName], [a].[ConversationID], [a].[Notes], [a].[NotesLastUpdatedAt], [a].[PreviewQuestion], [a].[UserID]
+      FROM [dbo].[Agents] AS [a]
+      WHERE [a].[UserID] = @agentUserId AND [a].[ConversationID] IS NOT NULL AND [a].[ACWStartTime] IS NOT NULL AND [a].[ACWEndTime] IS NOT NULL
+      ORDER BY [a].[ACWEndTime] DESC, [a].[ChatID] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (34ms) [Parameters=[@supportFaqId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [q1].[QaReviewId], [q1].[AccuracyAverage], [q1].[CreatedAtUtc], [q1].[InlineCommentsJson], [q1].[Notes], [q1].[OverallPercent], [q1].[ResolutionAverage], [q1].[ReviewerName], [q1].[ReviewerStaffId], [q1].[SubmittedToAgent], [q1].[SubmittedToAgentAtUtc], [q1].[SupportFaqId], [q1].[ToneAverage], [q1].[UpdatedAtUtc], [q0].[QaReviewQuestionScoreId], [q0].[QaReviewId], [q0].[QuestionKey], [q0].[Score]
+      FROM (
+          SELECT TOP(1) [q].[QaReviewId], [q].[AccuracyAverage], [q].[CreatedAtUtc], [q].[InlineCommentsJson], [q].[Notes], [q].[OverallPercent], [q].[ResolutionAverage], [q].[ReviewerName], [q].[ReviewerStaffId], [q].[SubmittedToAgent], [q].[SubmittedToAgentAtUtc], [q].[SupportFaqId], [q].[ToneAverage], [q].[UpdatedAtUtc]
+          FROM [QaReviews] AS [q]
+          WHERE [q].[SupportFaqId] = @supportFaqId
+      ) AS [q1]
+      LEFT JOIN [QaReviewQuestionScores] AS [q0] ON [q1].[QaReviewId] = [q0].[QaReviewId]
+      ORDER BY [q1].[QaReviewId]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (17ms) [Parameters=[@supportFaqId='?' (DbType = Int32), @agentUserId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [s].[Id], [s].[AgentId], [s].[Category], [s].[CreatedAt], [s].[DurationMinutes], [s].[EndTime], [s].[Question], [s].[StartTime], [s].[Status], [s].[UserType]
+      FROM [dbo].[SupportFAQs] AS [s]
+      WHERE [s].[Id] = @supportFaqId AND [s].[AgentId] = @agentUserId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (13ms) [Parameters=[@supportFaqId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [l].[LiveAgentSessionId], [l].[CategorySlug], [l].[CategoryTitle], [l].[ConsumerId], [l].[CreatedAt], [l].[EndedReason], [l].[FirstQuestion], [l].[Status], [l].[SupportFaqId], [l].[UpdatedAt], [l].[UserId]
+      FROM [LiveAgentSessions] AS [l]
+      WHERE [l].[SupportFaqId] = @supportFaqId
+      ORDER BY [l].[UpdatedAt] DESC, [l].[LiveAgentSessionId] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (14ms) [Parameters=[@supportFaqId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [s].[Id], [s].[ConversationId], [s].[CreatedAt], [s].[MessageText], [s].[SenderId], [s].[SenderRole]
+      FROM [dbo].[SupportMessages] AS [s]
+      WHERE [s].[ConversationId] = @supportFaqId
+      ORDER BY [s].[CreatedAt], [s].[Id]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (33ms) [Parameters=[@supportFaqId='?' (DbType = Int32), @agentUserId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [a].[AgentReviewFeedbackId], [a].[Acknowledged], [a].[AcknowledgedAtUtc], [a].[AgentUserId], [a].[CreatedAtUtc], [a].[Notes], [a].[SupportFaqId], [a].[UpdatedAtUtc]
+      FROM [AgentReviewFeedback] AS [a]
+      WHERE [a].[SupportFaqId] = @supportFaqId AND [a].[AgentUserId] = @agentUserId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (11ms) [Parameters=[@agentUserId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [a].[ACWStartTime], [a].[ACWEndTime]
+      FROM [dbo].[Agents] AS [a]
+      WHERE [a].[UserID] = @agentUserId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (28ms) [Parameters=[@agentUserId='?' (DbType = Int32), @monthStartUtc='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [a].[AgentRankingId], [a].[AgentUserId], [a].[CalculatedAtUtc], [a].[MetricType], [a].[MetricValue], [a].[PeriodStartUtc], [a].[RankPosition], [a].[RankedAgentCount], [a].[ReviewCount], [a].[UpdatedAtUtc]
+      FROM [dbo].[AgentRankings] AS [a]
+      WHERE [a].[AgentUserId] = @agentUserId AND [a].[PeriodStartUtc] = @monthStartUtc AND [a].[MetricType] = CAST(1 AS tinyint)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (17ms) [Parameters=[@agentUserId='?' (DbType = Int32), @monthStartUtc='?' (DbType = DateTime2)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [a].[AgentRankingId], [a].[AgentUserId], [a].[CalculatedAtUtc], [a].[MetricType], [a].[MetricValue], [a].[PeriodStartUtc], [a].[RankPosition], [a].[RankedAgentCount], [a].[ReviewCount], [a].[UpdatedAtUtc]
+      FROM [dbo].[AgentRankings] AS [a]
+      WHERE [a].[AgentUserId] = @agentUserId AND [a].[PeriodStartUtc] = @monthStartUtc AND [a].[MetricType] = CAST(2 AS tinyint)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (38ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT [q].[QaReviewId], [q].[AccuracyAverage], [q].[CreatedAtUtc], [q].[InlineCommentsJson], [q].[Notes], [q].[OverallPercent], [q].[ResolutionAverage], [q].[ReviewerName], [q].[ReviewerStaffId], [q].[SubmittedToAgent], [q].[SubmittedToAgentAtUtc], [q].[SupportFaqId], [q].[ToneAverage], [q].[UpdatedAtUtc]
+      FROM [QaReviews] AS [q]
+      ORDER BY [q].[UpdatedAtUtc] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (28ms) [Parameters=[@reviewFaqIds1='?' (DbType = Int32), @reviewFaqIds2='?' (DbType = Int32), @reviewFaqIds3='?' (DbType = Int32), @reviewFaqIds4='?' (DbType = Int32), @reviewFaqIds5='?' (DbType = Int32), @reviewFaqIds6='?' (DbType = Int32), @reviewFaqIds7='?' (DbType = Int32), @reviewFaqIds8='?' (DbType = Int32), @reviewFaqIds9='?' (DbType = Int32), @reviewFaqIds10='?' (DbType = Int32), @agentUserId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [s].[Id], [s].[AgentId], [s].[Category], [s].[CreatedAt], [s].[DurationMinutes], [s].[EndTime], [s].[Question], [s].[StartTime], [s].[Status], [s].[UserType]
+      FROM [dbo].[SupportFAQs] AS [s]
+      WHERE [s].[Id] IN (@reviewFaqIds1, @reviewFaqIds2, @reviewFaqIds3, @reviewFaqIds4, @reviewFaqIds5, @reviewFaqIds6, @reviewFaqIds7, @reviewFaqIds8, @reviewFaqIds9, @reviewFaqIds10) AND [s].[AgentId] = @agentUserId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (58ms) [Parameters=[@supportFaqIds1='?' (DbType = Int32), @supportFaqIds2='?' (DbType = Int32), @supportFaqIds3='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [l].[LiveAgentSessionId], [l].[CategorySlug], [l].[CategoryTitle], [l].[ConsumerId], [l].[CreatedAt], [l].[EndedReason], [l].[FirstQuestion], [l].[Status], [l].[SupportFaqId], [l].[UpdatedAt], [l].[UserId]
+      FROM [LiveAgentSessions] AS [l]
+      WHERE [l].[SupportFaqId] IN (@supportFaqIds1, @supportFaqIds2, @supportFaqIds3)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (17ms) [Parameters=[@consumerIds1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [c].[consumer_id], [c].[first_name], [c].[last_name], [c].[middle_name], [c].[user_id], [c].[username]
+      FROM [dbo].[Consumers] AS [c]
+      WHERE [c].[consumer_id] = @consumerIds1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (31ms) [Parameters=[@supportFaqIds1='?' (DbType = Int32), @supportFaqIds2='?' (DbType = Int32), @supportFaqIds3='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [s].[Id], [s].[ConversationId], [s].[CreatedAt], [s].[MessageText], [s].[SenderId], [s].[SenderRole]
+      FROM [dbo].[SupportMessages] AS [s]
+      WHERE [s].[ConversationId] IN (@supportFaqIds1, @supportFaqIds2, @supportFaqIds3)
+      ORDER BY [s].[CreatedAt], [s].[Id]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (45ms) [Parameters=[@agentUserId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [a].[ChatID], [a].[ACWEndTime], [a].[ACWStartTime], [a].[AgentID], [a].[AgentName], [a].[AgentStatus], [a].[Category], [a].[ChatSlot], [a].[ChatStatus], [a].[ClientName], [a].[ConversationID], [a].[Notes], [a].[NotesLastUpdatedAt], [a].[PreviewQuestion], [a].[UserID]
+      FROM [dbo].[Agents] AS [a]
+      WHERE [a].[UserID] = @agentUserId AND [a].[ConversationID] IS NOT NULL AND [a].[ACWStartTime] IS NOT NULL AND [a].[ACWEndTime] IS NOT NULL
+      ORDER BY [a].[ACWEndTime] DESC, [a].[ChatID] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (28ms) [Parameters=[@supportFaqId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [q1].[QaReviewId], [q1].[AccuracyAverage], [q1].[CreatedAtUtc], [q1].[InlineCommentsJson], [q1].[Notes], [q1].[OverallPercent], [q1].[ResolutionAverage], [q1].[ReviewerName], [q1].[ReviewerStaffId], [q1].[SubmittedToAgent], [q1].[SubmittedToAgentAtUtc], [q1].[SupportFaqId], [q1].[ToneAverage], [q1].[UpdatedAtUtc], [q0].[QaReviewQuestionScoreId], [q0].[QaReviewId], [q0].[QuestionKey], [q0].[Score]
+      FROM (
+          SELECT TOP(1) [q].[QaReviewId], [q].[AccuracyAverage], [q].[CreatedAtUtc], [q].[InlineCommentsJson], [q].[Notes], [q].[OverallPercent], [q].[ResolutionAverage], [q].[ReviewerName], [q].[ReviewerStaffId], [q].[SubmittedToAgent], [q].[SubmittedToAgentAtUtc], [q].[SupportFaqId], [q].[ToneAverage], [q].[UpdatedAtUtc]
+          FROM [QaReviews] AS [q]
+          WHERE [q].[SupportFaqId] = @supportFaqId
+      ) AS [q1]
+      LEFT JOIN [QaReviewQuestionScores] AS [q0] ON [q1].[QaReviewId] = [q0].[QaReviewId]
+      ORDER BY [q1].[QaReviewId]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (10ms) [Parameters=[@supportFaqId='?' (DbType = Int32), @agentUserId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [s].[Id], [s].[AgentId], [s].[Category], [s].[CreatedAt], [s].[DurationMinutes], [s].[EndTime], [s].[Question], [s].[StartTime], [s].[Status], [s].[UserType]
+      FROM [dbo].[SupportFAQs] AS [s]
+      WHERE [s].[Id] = @supportFaqId AND [s].[AgentId] = @agentUserId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (9ms) [Parameters=[@supportFaqId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [l].[LiveAgentSessionId], [l].[CategorySlug], [l].[CategoryTitle], [l].[ConsumerId], [l].[CreatedAt], [l].[EndedReason], [l].[FirstQuestion], [l].[Status], [l].[SupportFaqId], [l].[UpdatedAt], [l].[UserId]
+      FROM [LiveAgentSessions] AS [l]
+      WHERE [l].[SupportFaqId] = @supportFaqId
+      ORDER BY [l].[UpdatedAt] DESC, [l].[LiveAgentSessionId] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (6ms) [Parameters=[@supportFaqId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [s].[Id], [s].[ConversationId], [s].[CreatedAt], [s].[MessageText], [s].[SenderId], [s].[SenderRole]
+      FROM [dbo].[SupportMessages] AS [s]
+      WHERE [s].[ConversationId] = @supportFaqId
+      ORDER BY [s].[CreatedAt], [s].[Id]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (13ms) [Parameters=[@supportFaqId='?' (DbType = Int32), @agentUserId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT TOP(1) [a].[AgentReviewFeedbackId], [a].[Acknowledged], [a].[AcknowledgedAtUtc], [a].[AgentUserId], [a].[CreatedAtUtc], [a].[Notes], [a].[SupportFaqId], [a].[UpdatedAtUtc]
+      FROM [AgentReviewFeedback] AS [a]
+      WHERE [a].[SupportFaqId] = @supportFaqId AND [a].[AgentUserId] = @agentUserId

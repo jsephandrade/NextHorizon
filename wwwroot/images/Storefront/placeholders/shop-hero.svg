@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 780" role="img" aria-labelledby="title desc">
+  <title id="title">Shop hero placeholder</title>
+  <desc id="desc">Placeholder image for the storefront shop hero banner.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#140d09" />
+      <stop offset="45%" stop-color="#6d4327" />
+      <stop offset="100%" stop-color="#dca975" />
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="780" rx="36" fill="url(#bg)" />
+  <circle cx="1240" cy="220" r="170" fill="#fdf4e6" opacity="0.12" />
+  <circle cx="1385" cy="365" r="240" fill="#fdf4e6" opacity="0.08" />
+  <text x="120" y="312" fill="#fff5e8" font-family="Segoe UI, Arial, sans-serif" font-size="86" letter-spacing="10">NEXT HORIZON</text>
+  <text x="120" y="392" fill="#f5dcc0" font-family="Segoe UI, Arial, sans-serif" font-size="34" letter-spacing="4">Shop collection placeholder</text>
+</svg>
