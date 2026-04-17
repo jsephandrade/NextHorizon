@@ -1790,25 +1790,47 @@ public async Task<IActionResult> DeclineOrder([FromBody] DeclineRequest request)
                 HttpContext.Session.SetString("SellerName", string.IsNullOrWhiteSpace(sellerContext.SellerName) ? "Seller" : sellerContext.SellerName);
             }
 
+            var now = DateTime.Now;
             var performance = await _sellerPerformanceService.GetSellerPerformanceAsync(
                 sellerContext.SellerId,
-                DateTime.UtcNow,
+                now,
+                cancellationToken);
+            var operationsSummary = await _sellerPerformanceService.GetOperationsSummaryAsync(
+                sellerContext.SellerId,
+                now,
+                cancellationToken);
+            var analyticsSummary = await _sellerPerformanceService.GetAnalyticsSummaryAsync(
+                sellerContext.SellerId,
+                now,
+                cancellationToken);
+            var revenueYears = await _sellerPerformanceService.GetAvailableRevenueYearsAsync(
+                sellerContext.SellerId,
                 cancellationToken);
             var monthlyRevenue = await _sellerPerformanceService.GetMonthlyRevenueByYearAsync(
                 sellerContext.SellerId,
-                new[] { 2024, 2025, 2026 },
+                revenueYears.Length > 0 ? revenueYears : new[] { now.Year },
+                cancellationToken);
+            var monthlyOrders = await _sellerPerformanceService.GetMonthlyOrdersByYearAsync(
+                sellerContext.SellerId,
+                revenueYears.Length > 0 ? revenueYears : new[] { now.Year },
+                cancellationToken);
+            var monthlyUnits = await _sellerPerformanceService.GetMonthlyUnitsByYearAsync(
+                sellerContext.SellerId,
+                revenueYears.Length > 0 ? revenueYears : new[] { now.Year },
                 cancellationToken);
             var topProducts = await _sellerPerformanceService.GetTopPerformingProductsAsync(
+                sellerContext.SellerId,
+                topCount: 10,
+                cancellationToken: cancellationToken);
+            var topCategories = await _sellerPerformanceService.GetTopCategoriesAsync(
                 sellerContext.SellerId,
                 topCount: 5,
                 cancellationToken: cancellationToken);
 
-            var now = DateTime.UtcNow;
-            var t1H = _sellerPerformanceService.GetTopPerformingProductsAsync(sellerContext.SellerId, topCount: 10, from: now.AddHours(-1), cancellationToken: cancellationToken);
-            var t1D = _sellerPerformanceService.GetTopPerformingProductsAsync(sellerContext.SellerId, topCount: 10, from: now.AddDays(-1), cancellationToken: cancellationToken);
-            var t7D = _sellerPerformanceService.GetTopPerformingProductsAsync(sellerContext.SellerId, topCount: 10, from: now.AddDays(-7), cancellationToken: cancellationToken);
-            var t1M = _sellerPerformanceService.GetTopPerformingProductsAsync(sellerContext.SellerId, topCount: 10, from: now.AddDays(-30), cancellationToken: cancellationToken);
-            await Task.WhenAll(t1H, t1D, t7D, t1M);
+            var todayRange = _sellerPerformanceService.GetTopPerformingProductsAsync(sellerContext.SellerId, topCount: 10, from: now.Date, cancellationToken: cancellationToken);
+            var range7D = _sellerPerformanceService.GetTopPerformingProductsAsync(sellerContext.SellerId, topCount: 10, from: now.AddDays(-7), cancellationToken: cancellationToken);
+            var range30D = _sellerPerformanceService.GetTopPerformingProductsAsync(sellerContext.SellerId, topCount: 10, from: now.AddDays(-30), cancellationToken: cancellationToken);
+            await Task.WhenAll(todayRange, range7D, range30D);
             var recentOrders = sellerContext.SellerId > 0
                 ? await GetRecentOrdersAsync(sellerContext.SellerId, 5, cancellationToken)
                 : new List<Order>();
@@ -1823,20 +1845,41 @@ public async Task<IActionResult> DeclineOrder([FromBody] DeclineRequest request)
                 WithdrawAmount = 15400.00m,
                 WithdrawStatus = "Processing",
 
-                TodaySales = performance.TodaySales,
-                TodayUnitsSold = performance.TodayUnitsSold,
+                TodayOrderValue = operationsSummary.TodayOrderValue,
+                YesterdayOrderValue = operationsSummary.YesterdayOrderValue,
+                TodaySales = performance.RecognizedRevenueToday,
+                TodayOrderCount = operationsSummary.TodayOrderCount,
+                TodayUnitsSold = operationsSummary.TodayUnitsSold,
+                ShippedTodayCount = operationsSummary.ShippedTodayCount,
+                InFulfillmentCount = operationsSummary.InFulfillmentCount,
+                TotalUnitsSold = operationsSummary.TotalUnitsSold,
+                TotalOrders = operationsSummary.TotalOrderCount,
                 SalesGrowth = performance.SalesGrowth,
                 TotalRevenue = performance.TotalRevenue,
+                RecognizedRevenueToday = performance.RecognizedRevenueToday,
+                YesterdayRecognizedRevenue = performance.YesterdayRecognizedRevenue,
+                AverageOrderValue = operationsSummary.TotalOrderCount > 0
+                    ? decimal.Round(operationsSummary.TotalOrderValue / operationsSummary.TotalOrderCount, 2)
+                    : 0m,
+                RefundedRevenue = analyticsSummary.RefundedRevenue,
+                NetRevenue = performance.TotalRevenue - analyticsSummary.RefundedRevenue,
+                PipelineRevenue = operationsSummary.PipelineRevenue,
+                CancelledOrders = analyticsSummary.CancelledOrders,
+                RefundedOrders = analyticsSummary.RefundedOrders,
+                ActiveReturnRequests = analyticsSummary.ActiveReturnRequests,
                 TotalVisits = 423,
                 MonthlyRevenueByYear = monthlyRevenue,
+                MonthlyOrdersByYear = monthlyOrders,
+                MonthlyUnitsByYear = monthlyUnits,
                 RecentOrders = recentOrders,
                 TopProducts = topProducts,
+                TopCategories = topCategories,
                 TopProductsByRange = new Dictionary<string, List<TopSellingProduct>>
                 {
-                    ["1H"] = t1H.Result,
-                    ["1D"] = t1D.Result,
-                    ["7D"] = t7D.Result,
-                    ["1M"] = t1M.Result,
+                    ["TODAY"] = todayRange.Result,
+                    ["7D"] = range7D.Result,
+                    ["30D"] = range30D.Result,
+                    ["ALL"] = topProducts,
                 }
             };
         }

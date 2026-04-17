@@ -57,7 +57,9 @@ BEGIN
     BEGIN
         SELECT
             CAST(0 AS DECIMAL(18,2)) AS TodaySales,
-            CAST(0 AS INT) AS TodayUnitsSold,
+            CAST(0 AS DECIMAL(18,2)) AS YesterdaySales,
+            CAST(0 AS INT) AS TotalUnitsSold,
+            CAST(0 AS INT) AS RecognizedOrders,
             CAST(0 AS DECIMAL(18,2)) AS TotalRevenue,
             CAST(0 AS DECIMAL(18,2)) AS SalesGrowth;
         RETURN;
@@ -83,14 +85,16 @@ BEGIN
 
     IF @StatusColumn IS NOT NULL
     BEGIN
-        SET @Sql += N' AND o.' + QUOTENAME(@StatusColumn) + N' IN (''Placed'', ''Paid'', ''Completed'', ''Delivered'')';
+        SET @Sql += N' AND o.' + QUOTENAME(@StatusColumn) + N' IN (''Completed'', ''Delivered'')';
     END;
 
     SET @Sql += N'
 )
 SELECT
     CAST(ISNULL(SUM(CASE WHEN so.OrderDate >= @TodayStart AND so.OrderDate < @TomorrowStart THEN so.TotalAmount ELSE 0 END), 0) AS DECIMAL(18,2)) AS TodaySales,
-    CAST(ISNULL(SUM(CASE WHEN so.OrderDate >= @TodayStart AND so.OrderDate < @TomorrowStart THEN so.Quantity ELSE 0 END), 0) AS INT) AS TodayUnitsSold,
+    CAST(ISNULL(SUM(CASE WHEN so.OrderDate >= @YesterdayStart AND so.OrderDate < @TodayStart THEN so.TotalAmount ELSE 0 END), 0) AS DECIMAL(18,2)) AS YesterdaySales,
+    CAST(ISNULL(SUM(so.Quantity), 0) AS INT) AS TotalUnitsSold,
+    CAST(COUNT(*) AS INT) AS RecognizedOrders,
     CAST(ISNULL(SUM(so.TotalAmount), 0) AS DECIMAL(18,2)) AS TotalRevenue,
     CAST(CASE
         WHEN ISNULL(SUM(CASE WHEN so.OrderDate >= @YesterdayStart AND so.OrderDate < @TodayStart THEN so.TotalAmount ELSE 0 END), 0) = 0
