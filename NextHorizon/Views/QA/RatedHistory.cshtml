@@ -237,7 +237,7 @@
             </div>
             <div class="search-wrap">
                 <i class="bi bi-search"></i>
-                <input id="rated-search" class="search" type="text" placeholder="Search by ticket, customer, or date..." />
+                <input id="rated-search" class="search" type="text" placeholder="Search by ticket, concern source, or date..." />
             </div>
         </div>
     </div>
@@ -325,8 +325,8 @@
         function renderRow(item) {
             var html = '<div class="row">';
             html += '<div>';
-            html += '<div class="name">Ticket #' + item.supportFaqId + ' - Agent: ' + escHtml(item.agentName) + ' | Customer: ' + escHtml(item.customerName) + '</div>';
-            html += '<div class="sub">Rated by QA on ' + escHtml(item.ratedAtLabel) + ' - <strong>Accuracy ' + Number(item.accuracyPoints).toFixed(1) + '/35</strong>, <strong>Empathy ' + Number(item.tonePoints).toFixed(1) + '/35</strong>, <strong>Resolution ' + Number(item.resolutionPoints).toFixed(1) + '/30</strong></div>';
+            html += '<div class="name">Ticket #' + item.supportFaqId + ' - Agent: ' + escHtml(item.agentName) + ' - Concern from: ' + escHtml(item.concernFrom) + '</div>';
+            html += '<div class="sub">QA ' + escHtml(item.reviewerName) + ' on ' + escHtml(item.ratedAtLabel) + ' - <strong>Accuracy ' + Number(item.accuracyPoints).toFixed(1) + '/35</strong>, <strong>Empathy ' + Number(item.tonePoints).toFixed(1) + '/35</strong>, <strong>Resolution ' + Number(item.resolutionPoints).toFixed(1) + '/30</strong></div>';
             html += '</div>';
             html += '<div class="score"><strong>' + Number(item.overallPercent).toFixed(1) + ' / 100</strong></div>';
             html += '<a class="btn" href="/qa/rating/' + item.supportFaqId + '">View</a>';

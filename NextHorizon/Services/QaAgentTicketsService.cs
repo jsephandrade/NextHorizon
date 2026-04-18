@@ -48,6 +48,7 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
             .Select(item => new ResolvedConversationSeed(
                 item.Id,
                 item.AgentId,
+                item.UserType,
                 item.EndTime!.Value))
             .ToListAsync(cancellationToken);
 
@@ -80,33 +81,6 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
             .Distinct()
             .ToArray();
 
-        var latestSessions = await _dbContext.LiveAgentSessions
-            .AsNoTracking()
-            .Where(item => supportFaqIds.Contains(item.SupportFaqId))
-            .ToListAsync(cancellationToken);
-
-        var latestSessionsBySupportFaqId = latestSessions
-            .GroupBy(item => item.SupportFaqId)
-            .ToDictionary(
-                group => group.Key,
-                group => group
-                    .OrderByDescending(item => item.UpdatedAt)
-                    .ThenByDescending(item => item.LiveAgentSessionId)
-                    .First());
-
-        var consumerIds = latestSessionsBySupportFaqId.Values
-            .Where(item => item.ConsumerId.HasValue)
-            .Select(item => item.ConsumerId!.Value)
-            .Distinct()
-            .ToArray();
-
-        var consumers = consumerIds.Length == 0
-            ? new Dictionary<int, ConsumerRef>()
-            : await _dbContext.Set<ConsumerRef>()
-                .AsNoTracking()
-                .Where(item => consumerIds.Contains(item.ConsumerId))
-                .ToDictionaryAsync(item => item.ConsumerId, cancellationToken);
-
         var reviews = await _dbContext.QaReviews
             .AsNoTracking()
             .Where(item => supportFaqIds.Contains(item.SupportFaqId) && item.AgentUserId == agentUserId)
@@ -121,15 +95,14 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
         var snapshots = resolvedFaqs
             .Select(item =>
             {
-                latestSessionsBySupportFaqId.TryGetValue(item.SupportFaqId, out var session);
-                var customerName = ResolveCustomerName(session, consumers);
                 reviewBySupportFaqId.TryGetValue(item.SupportFaqId, out var review);
+                var concernFrom = QaConcernFormatting.NormalizeConcernFrom(item.UserType);
                 var resolvedAtLabel = item.ResolvedAtUtc.ToString("MMM dd, yyyy hh:mm tt");
 
                 return new QaAgentTicketSnapshot(
                     item.SupportFaqId,
                     agentName ?? $"Agent {agentUserId}",
-                    customerName,
+                    concernFrom,
                     item.ResolvedAtUtc,
                     resolvedAtLabel,
                     item.AgentUserId == agentUserId,
@@ -137,7 +110,7 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
             })
             .Where(item => item.IsCurrentAgentAssignment || item.Review is not null)
             .Where(item => string.IsNullOrWhiteSpace(normalizedSearch)
-                || BuildSearchText(item.SupportFaqId, item.AgentName, item.CustomerName, item.ResolvedAtLabel)
+                || BuildSearchText(item.SupportFaqId, item.AgentName, item.ConcernFrom, item.ResolvedAtLabel)
                     .Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase))
             .OrderByDescending(item => item.ResolvedAtUtc)
             .ThenByDescending(item => item.SupportFaqId)
@@ -148,10 +121,15 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
             .Select(item => new QaAgentTicketItem(
                 item.SupportFaqId,
                 item.AgentName,
-                item.CustomerName,
+                item.ConcernFrom,
                 item.ResolvedAtLabel,
                 item.ResolvedAtUtc.ToString("yyyy-MM-dd"),
                 false,
+                null,
+                string.Empty,
+                string.Empty,
+                null,
+                null,
                 null))
             .ToList();
 
@@ -161,11 +139,16 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
             .Select(item => new QaAgentTicketItem(
                 item.SupportFaqId,
                 item.AgentName,
-                item.CustomerName,
+                item.ConcernFrom,
                 item.ResolvedAtLabel,
                 item.ResolvedAtUtc.ToString("yyyy-MM-dd"),
                 true,
-                Math.Round((double)item.Review!.OverallPercent, 1)))
+                Math.Round((double)item.Review!.OverallPercent, 1),
+                QaConcernFormatting.NormalizeReviewerName(item.Review!.ReviewerName),
+                item.Review!.CreatedAtUtc.ToString("MMM dd, yyyy"),
+                Math.Round((double)((item.Review!.AccuracyAverage / 5m) * 35m), 1),
+                Math.Round((double)((item.Review!.ToneAverage / 5m) * 35m), 1),
+                Math.Round((double)((item.Review!.ResolutionAverage / 5m) * 30m), 1)))
             .ToList();
 
         var awaitingTotalPages = awaitingItems.Count == 0
@@ -267,31 +250,9 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
         }
     }
 
-    private static string ResolveCustomerName(
-        LiveAgentSession? session,
-        IReadOnlyDictionary<int, ConsumerRef> consumers)
+    private static string BuildSearchText(int supportFaqId, string agentName, string concernFrom, string resolvedAtLabel)
     {
-        if (session?.ConsumerId is not int consumerId || !consumers.TryGetValue(consumerId, out var consumer))
-        {
-            return "Unknown Customer";
-        }
-
-        var parts = new[] { consumer.FirstName, consumer.MiddleName, consumer.LastName }
-            .Where(part => !string.IsNullOrWhiteSpace(part))
-            .Select(part => part!.Trim())
-            .ToArray();
-
-        if (parts.Length > 0)
-        {
-            return string.Join(' ', parts);
-        }
-
-        return string.IsNullOrWhiteSpace(consumer.Username) ? "Unknown Customer" : consumer.Username.Trim();
-    }
-
-    private static string BuildSearchText(int supportFaqId, string agentName, string customerName, string resolvedAtLabel)
-    {
-        return string.Join(' ', supportFaqId, agentName, customerName, resolvedAtLabel).ToLowerInvariant();
+        return string.Join(' ', supportFaqId, agentName, concernFrom, resolvedAtLabel).ToLowerInvariant();
     }
 
     private static bool MatchesScoreBand(double overallPercent, string? score)
@@ -348,12 +309,13 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
     private sealed record ResolvedConversationSeed(
         int SupportFaqId,
         int? AgentUserId,
+        string UserType,
         DateTime ResolvedAtUtc);
 
     private sealed record QaAgentTicketSnapshot(
         int SupportFaqId,
         string AgentName,
-        string CustomerName,
+        string ConcernFrom,
         DateTime ResolvedAtUtc,
         string ResolvedAtLabel,
         bool IsCurrentAgentAssignment,

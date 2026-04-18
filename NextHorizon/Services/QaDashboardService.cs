@@ -31,6 +31,7 @@ public sealed class QaDashboardService : IQaDashboardService
             .Select(item => new ResolvedConversationSeed(
                 item.Id,
                 item.AgentId,
+                item.UserType,
                 item.Question,
                 item.EndTime!.Value))
             .ToListAsync(cancellationToken);
@@ -98,35 +99,6 @@ public sealed class QaDashboardService : IQaDashboardService
                 && item.UpdatedAtUtc > item.CreatedAtUtc)
             .ToListAsync(cancellationToken);
 
-        var sessions = fullMonthResolvedSupportFaqIds.Length == 0
-            ? new List<LiveAgentSession>()
-            : await _dbContext.LiveAgentSessions
-                .AsNoTracking()
-                .Where(item => fullMonthResolvedSupportFaqIds.Contains(item.SupportFaqId))
-                .ToListAsync(cancellationToken);
-
-        var latestSessionsBySupportFaqId = sessions
-            .GroupBy(item => item.SupportFaqId)
-            .ToDictionary(
-                group => group.Key,
-                group => group
-                    .OrderByDescending(item => item.UpdatedAt)
-                    .ThenByDescending(item => item.LiveAgentSessionId)
-                    .First());
-
-        var consumerIds = latestSessionsBySupportFaqId.Values
-            .Where(item => item.ConsumerId.HasValue)
-            .Select(item => item.ConsumerId!.Value)
-            .Distinct()
-            .ToArray();
-
-        var consumers = consumerIds.Length == 0
-            ? new Dictionary<int, ConsumerRef>()
-            : await _dbContext.Set<ConsumerRef>()
-                .AsNoTracking()
-                .Where(item => consumerIds.Contains(item.ConsumerId))
-                .ToDictionaryAsync(item => item.ConsumerId, cancellationToken);
-
         var agentUserIds = fullMonthResolvedFaqs
             .Where(item => item.AgentUserId.HasValue)
             .Select(item => item.AgentUserId!.Value)
@@ -152,18 +124,17 @@ public sealed class QaDashboardService : IQaDashboardService
         var dayConversationSnapshots = dayResolvedFaqs
             .Select(item =>
             {
-                latestSessionsBySupportFaqId.TryGetValue(item.SupportFaqId, out var session);
-                var customerName = ResolveCustomerName(session, consumers);
                 var agentName = item.AgentUserId.HasValue && agentNames.TryGetValue(item.AgentUserId.Value, out var resolvedAgentName)
                     ? resolvedAgentName
                     : "Unassigned";
+                var concernFrom = QaConcernFormatting.NormalizeConcernFrom(item.UserType);
 
                 return new QaConversationSnapshot(
                     item.SupportFaqId,
                     item.ResolvedAtUtc,
                     item.AgentUserId,
                     agentName,
-                    customerName,
+                    concernFrom,
                     item.Question);
             })
             .ToList();
@@ -171,18 +142,17 @@ public sealed class QaDashboardService : IQaDashboardService
         var fullMonthConversationSnapshots = fullMonthResolvedFaqs
             .Select(item =>
             {
-                latestSessionsBySupportFaqId.TryGetValue(item.SupportFaqId, out var session);
-                var customerName = ResolveCustomerName(session, consumers);
                 var agentName = item.AgentUserId.HasValue && agentNames.TryGetValue(item.AgentUserId.Value, out var resolvedAgentName)
                     ? resolvedAgentName
                     : "Unassigned";
+                var concernFrom = QaConcernFormatting.NormalizeConcernFrom(item.UserType);
 
                 return new QaConversationSnapshot(
                     item.SupportFaqId,
                     item.ResolvedAtUtc,
                     item.AgentUserId,
                     agentName,
-                    customerName,
+                    concernFrom,
                     item.Question);
             })
             .ToList();
@@ -243,7 +213,7 @@ public sealed class QaDashboardService : IQaDashboardService
             .Select(item => new QaDashboardAwaitingTicketItem(
                 item.SupportFaqId,
                 item.AgentName,
-                item.CustomerName,
+                item.ConcernFrom,
                 item.ResolvedAtUtc.ToString("MMM dd, yyyy hh:mm tt")))
             .ToList();
 
@@ -278,26 +248,6 @@ public sealed class QaDashboardService : IQaDashboardService
             ratedTrend,
             topAgents,
             awaitingTickets);
-    }
-
-    private static string ResolveCustomerName(LiveAgentSession? session, IReadOnlyDictionary<int, ConsumerRef> consumers)
-    {
-        if (session?.ConsumerId is not int consumerId || !consumers.TryGetValue(consumerId, out var consumer))
-        {
-            return "Unknown Customer";
-        }
-
-        var parts = new[] { consumer.FirstName, consumer.MiddleName, consumer.LastName }
-            .Where(part => !string.IsNullOrWhiteSpace(part))
-            .Select(part => part!.Trim())
-            .ToArray();
-
-        if (parts.Length > 0)
-        {
-            return string.Join(' ', parts);
-        }
-
-        return string.IsNullOrWhiteSpace(consumer.Username) ? "Unknown Customer" : consumer.Username.Trim();
     }
 
     private static string BuildTicketsRatedSub(int reviewCount, DateOnly selectedDate)
@@ -353,6 +303,7 @@ public sealed class QaDashboardService : IQaDashboardService
     private sealed record ResolvedConversationSeed(
         int SupportFaqId,
         int? AgentUserId,
+        string UserType,
         string Question,
         DateTime ResolvedAtUtc);
 
@@ -361,6 +312,6 @@ public sealed class QaDashboardService : IQaDashboardService
         DateTime ResolvedAtUtc,
         int? AgentUserId,
         string AgentName,
-        string CustomerName,
+        string ConcernFrom,
         string Question);
 }

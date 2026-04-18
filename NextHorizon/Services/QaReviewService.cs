@@ -68,14 +68,13 @@ public sealed class QaReviewService : IQaReviewService
                 .AsNoTracking()
                 .FirstOrDefaultAsync(item => item.ConsumerId == consumerId, cancellationToken);
         }
-        var customerName = ResolveCustomerName(consumer);
-
         var messages = await _dbContext.SupportMessages
             .AsNoTracking()
             .Where(item => item.ConversationId == supportFaqId)
             .OrderBy(item => item.CreatedAt)
             .ThenBy(item => item.Id)
             .ToListAsync(cancellationToken);
+        var customerName = ResolveCustomerName(consumer);
 
         var review = await _dbContext.QaReviews
             .AsNoTracking()

@@ -203,7 +203,7 @@
             </div>
             <div class="search-wrap">
                 <i class="bi bi-search"></i>
-                <input id="ticket-search" class="search" type="text" placeholder="Search by ticket number, customer, or date..." />
+                <input id="ticket-search" class="search" type="text" placeholder="Search by ticket number, concern source, or date..." />
             </div>
         </div>
     </div>
@@ -321,7 +321,7 @@
             for (var i = 0; i < items.length; i++) {
                 var item = items[i];
                 html += '<div class="ticket">';
-                html += '<div><div class="name">Ticket #' + item.supportFaqId + ' - Agent: ' + escHtml(item.agentName) + ' | Customer: ' + escHtml(item.customerName) + '</div>';
+                html += '<div><div class="name">Ticket #' + item.supportFaqId + ' - Agent: ' + escHtml(item.agentName) + ' - Concern from: ' + escHtml(item.concernFrom) + '</div>';
                 html += '<div class="sub">Resolved ' + escHtml(item.resolvedAtLabel) + ', waiting QA rating</div></div>';
                 html += '<a class="btn" href="/qa/rating/' + item.supportFaqId + '">Rate</a>';
                 html += '</div>';

@@ -291,7 +291,7 @@
             </div>
             <div class="search-wrap">
                 <i class="bi bi-search"></i>
-                <input id="agent-ticket-search" class="search" type="text" placeholder="Search by ticket number, customer, or date..." />
+                <input id="agent-ticket-search" class="search" type="text" placeholder="Search by ticket number, concern source, or date..." />
             </div>
         </div>
     </div>
@@ -434,8 +434,12 @@
         function renderTicketRow(item) {
             var html = '<div class="ticket' + (item.isRated ? ' is-rated' : '') + '">';
             html += '<div>';
-            html += '<div class="name">Ticket #' + item.supportFaqId + ' - Agent: ' + escHtml(item.agentName) + ' | Customer: ' + escHtml(item.customerName) + '</div>';
-            html += '<div class="sub">Resolved ' + escHtml(item.resolvedAtLabel) + (item.isRated ? ', already rated' : ', waiting QA rating') + '</div>';
+            html += '<div class="name">Ticket #' + item.supportFaqId + ' - Agent: ' + escHtml(item.agentName) + ' - Concern from: ' + escHtml(item.concernFrom) + '</div>';
+            if (item.isRated) {
+                html += '<div class="sub">QA ' + escHtml(item.reviewerName) + ' on ' + escHtml(item.ratedAtLabel) + ' - <strong>Accuracy ' + Number(item.accuracyPoints).toFixed(1) + '/35</strong>, <strong>Empathy ' + Number(item.tonePoints).toFixed(1) + '/35</strong>, <strong>Resolution ' + Number(item.resolutionPoints).toFixed(1) + '/30</strong></div>';
+            } else {
+                html += '<div class="sub">Resolved ' + escHtml(item.resolvedAtLabel) + ', waiting QA rating</div>';
+            }
             if (item.isRated && item.overallPercent !== null && item.overallPercent !== undefined) {
                 html += '<div class="score-pill">' + Number(item.overallPercent).toFixed(1) + ' / 100</div>';
             }

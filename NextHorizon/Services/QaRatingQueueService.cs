@@ -43,6 +43,7 @@ public sealed class QaRatingQueueService : IQaRatingQueueService
             .Select(item => new ResolvedConversationSeed(
                 item.Id,
                 item.AgentId,
+                item.UserType,
                 item.EndTime!.Value))
             .ToListAsync(cancellationToken);
 
@@ -55,33 +56,6 @@ public sealed class QaRatingQueueService : IQaRatingQueueService
             .Select(item => item.SupportFaqId)
             .Distinct()
             .ToArray();
-
-        var latestSessions = await _dbContext.LiveAgentSessions
-            .AsNoTracking()
-            .Where(item => supportFaqIds.Contains(item.SupportFaqId))
-            .ToListAsync(cancellationToken);
-
-        var latestSessionsBySupportFaqId = latestSessions
-            .GroupBy(item => item.SupportFaqId)
-            .ToDictionary(
-                group => group.Key,
-                group => group
-                    .OrderByDescending(item => item.UpdatedAt)
-                    .ThenByDescending(item => item.LiveAgentSessionId)
-                    .First());
-
-        var consumerIds = latestSessionsBySupportFaqId.Values
-            .Where(item => item.ConsumerId.HasValue)
-            .Select(item => item.ConsumerId!.Value)
-            .Distinct()
-            .ToArray();
-
-        var consumers = consumerIds.Length == 0
-            ? new Dictionary<int, ConsumerRef>()
-            : await _dbContext.Set<ConsumerRef>()
-                .AsNoTracking()
-                .Where(item => consumerIds.Contains(item.ConsumerId))
-                .ToDictionaryAsync(item => item.ConsumerId, cancellationToken);
 
         var agentUserIds = resolvedFaqs
             .Where(item => item.AgentUserId.HasValue)
@@ -102,21 +76,20 @@ public sealed class QaRatingQueueService : IQaRatingQueueService
         var resolvedSnapshots = resolvedFaqs
             .Select(item =>
             {
-                latestSessionsBySupportFaqId.TryGetValue(item.SupportFaqId, out var session);
-                var customerName = ResolveCustomerName(session, consumers);
                 var agentName = item.AgentUserId.HasValue && agentNames.TryGetValue(item.AgentUserId.Value, out var resolvedAgentName)
                     ? resolvedAgentName
                     : "Unassigned";
+                var concernFrom = QaConcernFormatting.NormalizeConcernFrom(item.UserType);
                 var resolvedAtLabel = item.ResolvedAtUtc.ToString("MMM dd, yyyy hh:mm tt");
 
                 return new QaRatingQueueSnapshot(
                     item.SupportFaqId,
                     item.AgentUserId,
                     agentName,
-                    customerName,
+                    concernFrom,
                     item.ResolvedAtUtc,
                     resolvedAtLabel,
-                    BuildSearchText(item.SupportFaqId, agentName, customerName, resolvedAtLabel),
+                    BuildSearchText(item.SupportFaqId, agentName, concernFrom, resolvedAtLabel),
                     reviewedSupportFaqIds.Contains(item.SupportFaqId));
             })
             .OrderByDescending(item => item.ResolvedAtUtc)
@@ -167,7 +140,7 @@ public sealed class QaRatingQueueService : IQaRatingQueueService
             pendingQueue.Select(item => new QaRatingQueueItem(
                     item.SupportFaqId,
                     item.AgentName,
-                    item.CustomerName,
+                    item.ConcernFrom,
                     item.ResolvedAtLabel,
                     item.IsRated))
                 .ToList(),
@@ -274,31 +247,9 @@ public sealed class QaRatingQueueService : IQaRatingQueueService
                 });
     }
 
-    private static string ResolveCustomerName(
-        LiveAgentSession? session,
-        IReadOnlyDictionary<int, ConsumerRef> consumers)
+    private static string BuildSearchText(int supportFaqId, string agentName, string concernFrom, string resolvedAtLabel)
     {
-        if (session?.ConsumerId is not int consumerId || !consumers.TryGetValue(consumerId, out var consumer))
-        {
-            return "Unknown Customer";
-        }
-
-        var parts = new[] { consumer.FirstName, consumer.MiddleName, consumer.LastName }
-            .Where(part => !string.IsNullOrWhiteSpace(part))
-            .Select(part => part!.Trim())
-            .ToArray();
-
-        if (parts.Length > 0)
-        {
-            return string.Join(' ', parts);
-        }
-
-        return string.IsNullOrWhiteSpace(consumer.Username) ? "Unknown Customer" : consumer.Username.Trim();
-    }
-
-    private static string BuildSearchText(int supportFaqId, string agentName, string customerName, string resolvedAtLabel)
-    {
-        return string.Join(' ', supportFaqId, agentName, customerName, resolvedAtLabel).ToLowerInvariant();
+        return string.Join(' ', supportFaqId, agentName, concernFrom, resolvedAtLabel).ToLowerInvariant();
     }
 
     private static (DateTime? StartUtc, DateTime? EndExclusiveUtc) ResolveDateRange(
@@ -342,13 +293,14 @@ public sealed class QaRatingQueueService : IQaRatingQueueService
     private sealed record ResolvedConversationSeed(
         int SupportFaqId,
         int? AgentUserId,
+        string UserType,
         DateTime ResolvedAtUtc);
 
     private sealed record QaRatingQueueSnapshot(
         int SupportFaqId,
         int? AgentUserId,
         string AgentName,
-        string CustomerName,
+        string ConcernFrom,
         DateTime ResolvedAtUtc,
         string ResolvedAtLabel,
         string SearchText,

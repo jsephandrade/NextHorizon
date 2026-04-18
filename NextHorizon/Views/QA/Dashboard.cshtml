@@ -605,6 +605,15 @@
 
         if (!dateInput || !svg) return;
 
+        function escHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         function renderAgents(items) {
             if (!agentList) return;
 
@@ -618,10 +627,10 @@
                 html += '<div class="agent-item">';
                 html += '<div class="agent-left">';
                 html += '<span class="rank-pill">' + (i + 1) + '</span>';
-                html += '<div><div class="agent-name">' + items[i].name + '</div>';
-                html += '<div class="agent-sub">' + items[i].resolvedText + '</div></div>';
+                html += '<div><div class="agent-name">' + escHtml(items[i].name) + '</div>';
+                html += '<div class="agent-sub">' + escHtml(items[i].resolvedText) + '</div></div>';
                 html += '</div>';
-                html += '<span class="score-pill">' + items[i].score + '</span>';
+                html += '<span class="score-pill">' + escHtml(items[i].score) + '</span>';
                 html += '</div>';
             }
 
@@ -641,8 +650,8 @@
                 var t = items[i];
                 html += '<div class="ticket-item">';
                 html += '<div>';
-                html += '<div class="ticket-id">Ticket #' + t.id + ' | Agent: ' + t.agent + ' | Customer: ' + t.customer + '</div>';
-                html += '<div class="ticket-sub">Resolved ' + t.resolvedAt + ' | awaiting QA rating</div>';
+                html += '<div class="ticket-id">Ticket #' + t.id + ' - Agent: ' + escHtml(t.agent) + ' - Concern from: ' + escHtml(t.concernFrom) + '</div>';
+                html += '<div class="ticket-sub">Resolved ' + escHtml(t.resolvedAt) + ' | awaiting QA rating</div>';
                 html += '</div>';
                 html += '<a class="ticket-btn" href="/qa/rating/' + t.id + '">Rate</a>';
                 html += '</div>';

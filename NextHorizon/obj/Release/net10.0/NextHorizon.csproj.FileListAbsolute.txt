@@ -405,17 +405,6 @@ C:\dev\NextHorizon\bin_verify_agent_feedback\NextHorizon.deps.json
 C:\dev\NextHorizon\bin_verify_agent_feedback\NextHorizon.runtimeconfig.json
 C:\dev\NextHorizon\bin_verify_agent_feedback\NextHorizon.dll
 C:\dev\NextHorizon\bin_verify_agent_feedback\NextHorizon.pdb
-C:\dev\NextHorizon\NextHorizon\bin\Release\net10.0\bin_verify_agentdash\appsettings.Development.json
-C:\dev\NextHorizon\NextHorizon\bin\Release\net10.0\bin_verify_agentdash\appsettings.json
-C:\dev\NextHorizon\NextHorizon\bin\Release\net10.0\bin_verify_agentdash\libman.json
-C:\dev\NextHorizon\NextHorizon\bin\Release\net10.0\bin_verify_agentdash\NextHorizon.deps.json
-C:\dev\NextHorizon\NextHorizon\bin\Release\net10.0\bin_verify_agentdash\NextHorizon.runtimeconfig.json
-C:\dev\NextHorizon\NextHorizon\bin\Release\net10.0\bin_verify_agentdash\NextHorizon.staticwebassets.endpoints.json
-C:\dev\NextHorizon\NextHorizon\bin\Release\net10.0\bin_verify_agentdash\NextHorizon.staticwebassets.runtime.json
-C:\dev\NextHorizon\NextHorizon\bin\Release\net10.0\obj_verify_agent_dashboard_db\Debug\net10.0\NextHorizon.sourcelink.json
-C:\dev\NextHorizon\NextHorizon\bin\Release\net10.0\obj_verify_agent_dashboard_db\Debug\net10.0\rpswa.dswa.cache.json
-C:\dev\NextHorizon\NextHorizon\bin\Release\net10.0\obj_verify_agent_dashboard_db\NextHorizon.csproj.nuget.dgspec.json
-C:\dev\NextHorizon\NextHorizon\bin\Release\net10.0\obj_verify_agent_dashboard_db\project.assets.json
 C:\dev\NextHorizon\bin_verify_agent_feedback_final\appsettings.Development.json
 C:\dev\NextHorizon\bin_verify_agent_feedback_final\appsettings.json
 C:\dev\NextHorizon\bin_verify_agent_feedback_final\bin_verify_agentdash\appsettings.Development.json
@@ -542,4 +531,6 @@ C:\dev\NextHorizon\bin_verify_rating_toggle\NextHorizon.deps.json
 C:\dev\NextHorizon\bin_verify_rating_toggle\NextHorizon.runtimeconfig.json
 C:\dev\NextHorizon\bin_verify_rating_toggle\NextHorizon.dll
 C:\dev\NextHorizon\bin_verify_rating_toggle\NextHorizon.pdb
-C:\dev\NextHorizon\NextHorizon\obj\Release\net10.0\compressed\8fdnlznz33-{0}-7dbx5i6he8-7dbx5i6he8.gz
+C:\dev\NextHorizon\NextHorizon\obj\Release\net10.0\NextHorizon.RazorAssemblyInfo.cache
+C:\dev\NextHorizon\NextHorizon\obj\Release\net10.0\NextHorizon.RazorAssemblyInfo.cs
+C:\dev\NextHorizon\NextHorizon\obj\Release\net10.0\compressed\8fdnlznz33-{0}-k0rc2zpxec-k0rc2zpxec.gz

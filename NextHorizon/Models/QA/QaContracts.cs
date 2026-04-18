@@ -27,7 +27,7 @@ public sealed record QaDashboardAgentItem(
 public sealed record QaDashboardAwaitingTicketItem(
     int Id,
     string Agent,
-    string Customer,
+    string ConcernFrom,
     string ResolvedAt);
 
 public sealed record QaResolvedTicketsResponse(
@@ -45,7 +45,7 @@ public sealed record QaResolvedTicketsResponse(
 public sealed record QaResolvedTicketItem(
     int SupportFaqId,
     string AgentName,
-    string CustomerName,
+    string ConcernFrom,
     string ResolvedAtLabel);
 
 public sealed record QaRatingQueueResponse(
@@ -62,7 +62,7 @@ public sealed record QaRatingQueueResponse(
 public sealed record QaRatingQueueItem(
     int SupportFaqId,
     string AgentName,
-    string CustomerName,
+    string ConcernFrom,
     string ResolvedAtLabel,
     bool IsRated);
 
@@ -86,11 +86,16 @@ public sealed record QaAgentTicketsResponse(
 public sealed record QaAgentTicketItem(
     int SupportFaqId,
     string AgentName,
-    string CustomerName,
+    string ConcernFrom,
     string ResolvedAtLabel,
     string ResolvedAtDate,
     bool IsRated,
-    double? OverallPercent);
+    double? OverallPercent,
+    string ReviewerName,
+    string RatedAtLabel,
+    double? AccuracyPoints,
+    double? TonePoints,
+    double? ResolutionPoints);
 
 public sealed record QaRatedHistoryResponse(
     int Count,
@@ -104,7 +109,8 @@ public sealed record QaRatedHistoryResponse(
 public sealed record QaRatedHistoryItem(
     int SupportFaqId,
     string AgentName,
-    string CustomerName,
+    string ConcernFrom,
+    string ReviewerName,
     string RatedAtLabel,
     string RatedAtDate,
     double AccuracyPoints,
