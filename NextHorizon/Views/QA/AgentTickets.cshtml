@@ -190,27 +190,24 @@
     .pager {
         display: none;
         align-items: center;
-        justify-content: space-between;
+        justify-content: center;
         gap: 10px;
         margin-top: 12px;
         flex-wrap: wrap;
     }
 
-    .pager-status {
-        font-size: .82rem;
-        color: #555555;
-    }
-
-    .pager-actions {
+    .pager-pages {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 8px;
+        flex-wrap: wrap;
     }
 
     .pager-btn {
         border: 1px solid rgba(0, 0, 0, 0.14);
-        background: #111111;
-        color: #ffffff;
+        background: #ffffff;
+        color: #111111;
         border-radius: 10px;
         padding: 8px 12px;
         font-size: .82rem;
@@ -218,10 +215,21 @@
         cursor: pointer;
     }
 
+    .pager-btn.active {
+        background: #111111;
+        color: #ffffff;
+    }
+
     .pager-btn:disabled {
         background: #e5e5e5;
         color: #8a8a8a;
         cursor: not-allowed;
+    }
+
+    .pager-ellipsis {
+        color: #666666;
+        font-size: .9rem;
+        padding: 0 2px;
     }
 
     @@media (max-width: 700px) {
@@ -294,11 +302,8 @@
     </div>
     <div id="agent-ticket-empty" class="empty-state">No tickets found for the selected filters.</div>
     <div id="agent-ticket-pager" class="pager">
-        <div id="agent-ticket-pager-status" class="pager-status">Page 1 of 1</div>
-        <div class="pager-actions">
-            <button id="agent-ticket-pager-prev" class="pager-btn" type="button">Previous</button>
-            <button id="agent-ticket-pager-next" class="pager-btn" type="button">Next</button>
-        </div>
+        <div id="agent-ticket-pager-pages" class="pager-pages"></div>
+        <button id="agent-ticket-pager-next" class="pager-btn" type="button">Next page</button>
     </div>
 </section>
 
@@ -320,10 +325,9 @@
         var tabRated = document.getElementById('tab-rated');
         var emptyState = document.getElementById('agent-ticket-empty');
         var pager = document.getElementById('agent-ticket-pager');
-        var pagerStatus = document.getElementById('agent-ticket-pager-status');
-        var pagerPrev = document.getElementById('agent-ticket-pager-prev');
+        var pagerPages = document.getElementById('agent-ticket-pager-pages');
         var pagerNext = document.getElementById('agent-ticket-pager-next');
-        if (!input || !quickRange || !fromDate || !toDate || !scoreFilter || !title || !sub || !awaitingGroup || !ratedGroup || !awaitingCount || !ratedCount || !tabAwaiting || !tabRated || !emptyState || !pager || !pagerStatus || !pagerPrev || !pagerNext) return;
+        if (!input || !quickRange || !fromDate || !toDate || !scoreFilter || !title || !sub || !awaitingGroup || !ratedGroup || !awaitingCount || !ratedCount || !tabAwaiting || !tabRated || !emptyState || !pager || !pagerPages || !pagerNext) return;
 
         var activeTab = 'awaiting';
         var searchDebounceHandle = 0;
@@ -359,6 +363,16 @@
 
             fromDate.value = toIsoDate(start);
             toDate.value = toIsoDate(end);
+        }
+
+        function getVisiblePages(currentPage, totalPages) {
+            var pages = [];
+            var start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+            var end = Math.min(totalPages, start + 4);
+            for (var page = start; page <= end; page++) {
+                pages.push(page);
+            }
+            return pages;
         }
 
         function buildQueryString() {
@@ -401,14 +415,20 @@
             var isRatedTab = activeTab === 'rated';
             var page = isRatedTab ? (payload.ratedPage || 1) : (payload.awaitingPage || 1);
             var totalPages = isRatedTab ? (payload.ratedTotalPages || 1) : (payload.awaitingTotalPages || 1);
-            var hasPrevious = isRatedTab ? !!payload.hasRatedPrevious : !!payload.hasAwaitingPrevious;
             var hasNext = isRatedTab ? !!payload.hasRatedNext : !!payload.hasAwaitingNext;
             var itemCount = isRatedTab ? (payload.ratedCount || 0) : (payload.awaitingCount || 0);
-
-            pagerStatus.textContent = 'Page ' + page + ' of ' + totalPages;
-            pagerPrev.disabled = !hasPrevious;
+            var visiblePages = getVisiblePages(page, totalPages);
+            var html = '';
+            for (var i = 0; i < visiblePages.length; i++) {
+                var visiblePage = visiblePages[i];
+                html += '<button class="pager-btn' + (visiblePage === page ? ' active' : '') + '" type="button" data-page="' + visiblePage + '">' + visiblePage + '</button>';
+            }
+            if (visiblePages.length && visiblePages[visiblePages.length - 1] < totalPages) {
+                html += '<span class="pager-ellipsis">...</span>';
+            }
+            pagerPages.innerHTML = html;
             pagerNext.disabled = !hasNext;
-            pager.style.display = itemCount > 0 ? 'flex' : 'none';
+            pager.style.display = itemCount > 0 && totalPages > 1 ? 'flex' : 'none';
         }
 
         function renderTicketRow(item) {
@@ -450,6 +470,7 @@
             awaitingCount.textContent = '0';
             ratedCount.textContent = '0';
             pager.style.display = 'none';
+            pagerPages.innerHTML = '';
             emptyState.textContent = message;
             emptyState.style.display = 'block';
         }
@@ -492,14 +513,12 @@
         tabAwaiting.addEventListener('click', function () {
             setActiveTab('awaiting');
             emptyState.style.display = awaitingGroup.children.length === 0 ? 'block' : 'none';
-            pagerStatus.textContent = 'Loading pagination...';
             loadTickets();
         });
 
         tabRated.addEventListener('click', function () {
             setActiveTab('rated');
             emptyState.style.display = ratedGroup.children.length === 0 ? 'block' : 'none';
-            pagerStatus.textContent = 'Loading pagination...';
             loadTickets();
         });
 
@@ -536,23 +555,28 @@
             loadTickets();
         });
 
-        pagerPrev.addEventListener('click', function () {
-            if (activeTab === 'rated') {
-                if (currentRatedPage <= 1) return;
-                currentRatedPage--;
-            } else {
-                if (currentAwaitingPage <= 1) return;
-                currentAwaitingPage--;
-            }
-
-            loadTickets();
-        });
-
         pagerNext.addEventListener('click', function () {
             if (activeTab === 'rated') {
                 currentRatedPage++;
             } else {
                 currentAwaitingPage++;
+            }
+
+            loadTickets();
+        });
+
+        pagerPages.addEventListener('click', function (event) {
+            var target = event.target;
+            if (!target || !target.matches('[data-page]')) return;
+            var nextPage = parseInt(target.getAttribute('data-page') || '0', 10);
+            if (!nextPage) return;
+
+            if (activeTab === 'rated') {
+                if (nextPage === currentRatedPage) return;
+                currentRatedPage = nextPage;
+            } else {
+                if (nextPage === currentAwaitingPage) return;
+                currentAwaitingPage = nextPage;
             }
 
             loadTickets();

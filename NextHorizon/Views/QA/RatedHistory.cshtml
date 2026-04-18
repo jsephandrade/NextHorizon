@@ -140,27 +140,24 @@
     .pager {
         display: none;
         align-items: center;
-        justify-content: space-between;
+        justify-content: center;
         gap: 10px;
         margin-top: 12px;
         flex-wrap: wrap;
     }
 
-    .pager-status {
-        font-size: .82rem;
-        color: #555555;
-    }
-
-    .pager-actions {
+    .pager-pages {
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 8px;
+        flex-wrap: wrap;
     }
 
     .pager-btn {
         border: 1px solid rgba(0, 0, 0, 0.14);
-        background: #111111;
-        color: #ffffff;
+        background: #ffffff;
+        color: #111111;
         border-radius: 10px;
         padding: 8px 12px;
         font-size: .82rem;
@@ -168,10 +165,21 @@
         cursor: pointer;
     }
 
+    .pager-btn.active {
+        background: #111111;
+        color: #ffffff;
+    }
+
     .pager-btn:disabled {
         background: #e5e5e5;
         color: #8a8a8a;
         cursor: not-allowed;
+    }
+
+    .pager-ellipsis {
+        color: #666666;
+        font-size: .9rem;
+        padding: 0 2px;
     }
 
     @@media (max-width: 700px) {
@@ -237,11 +245,8 @@
     <div class="rows" id="rated-list"></div>
     <div id="rated-empty" class="empty-state">No rated tickets found for the selected filters.</div>
     <div id="rated-pager" class="pager">
-        <div id="rated-pager-status" class="pager-status">Page 1 of 1</div>
-        <div class="pager-actions">
-            <button id="rated-pager-prev" class="pager-btn" type="button">Previous</button>
-            <button id="rated-pager-next" class="pager-btn" type="button">Next</button>
-        </div>
+        <div id="rated-pager-pages" class="pager-pages"></div>
+        <button id="rated-pager-next" class="pager-btn" type="button">Next page</button>
     </div>
 </section>
 
@@ -255,10 +260,9 @@
         var list = document.getElementById('rated-list');
         var emptyState = document.getElementById('rated-empty');
         var pager = document.getElementById('rated-pager');
-        var pagerStatus = document.getElementById('rated-pager-status');
-        var pagerPrev = document.getElementById('rated-pager-prev');
+        var pagerPages = document.getElementById('rated-pager-pages');
         var pagerNext = document.getElementById('rated-pager-next');
-        if (!input || !quickRange || !fromDate || !toDate || !scoreFilter || !list || !emptyState || !pager || !pagerStatus || !pagerPrev || !pagerNext) return;
+        if (!input || !quickRange || !fromDate || !toDate || !scoreFilter || !list || !emptyState || !pager || !pagerPages || !pagerNext) return;
 
         var searchDebounceHandle = 0;
         var currentPage = 1;
@@ -308,6 +312,16 @@
             return query.toString();
         }
 
+        function getVisiblePages(currentPage, totalPages) {
+            var pages = [];
+            var start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+            var end = Math.min(totalPages, start + 4);
+            for (var page = start; page <= end; page++) {
+                pages.push(page);
+            }
+            return pages;
+        }
+
         function renderRow(item) {
             var html = '<div class="row">';
             html += '<div>';
@@ -323,10 +337,18 @@
         function renderPagination(payload) {
             var totalPages = payload && payload.totalPages ? payload.totalPages : 1;
             var page = payload && payload.page ? payload.page : 1;
-            pagerStatus.textContent = 'Page ' + page + ' of ' + totalPages;
-            pagerPrev.disabled = !(payload && payload.hasPrevious);
+            var visiblePages = getVisiblePages(page, totalPages);
+            var html = '';
+            for (var i = 0; i < visiblePages.length; i++) {
+                var visiblePage = visiblePages[i];
+                html += '<button class="pager-btn' + (visiblePage === page ? ' active' : '') + '" type="button" data-page="' + visiblePage + '">' + visiblePage + '</button>';
+            }
+            if (visiblePages.length && visiblePages[visiblePages.length - 1] < totalPages) {
+                html += '<span class="pager-ellipsis">...</span>';
+            }
+            pagerPages.innerHTML = html;
             pagerNext.disabled = !(payload && payload.hasNext);
-            pager.style.display = payload && payload.count > 0 ? 'flex' : 'none';
+            pager.style.display = payload && payload.count > 0 && totalPages > 1 ? 'flex' : 'none';
         }
 
         function loadRatedHistory() {
@@ -357,6 +379,7 @@
                 .catch(function (error) {
                     list.innerHTML = '';
                     pager.style.display = 'none';
+                    pagerPages.innerHTML = '';
                     emptyState.textContent = error && error.message ? error.message : 'Unable to load rated history.';
                     emptyState.style.display = 'block';
                 });
@@ -403,14 +426,17 @@
             loadRatedHistory();
         });
 
-        pagerPrev.addEventListener('click', function () {
-            if (currentPage <= 1) return;
-            currentPage--;
+        pagerNext.addEventListener('click', function () {
+            currentPage++;
             loadRatedHistory();
         });
 
-        pagerNext.addEventListener('click', function () {
-            currentPage++;
+        pagerPages.addEventListener('click', function (event) {
+            var target = event.target;
+            if (!target || !target.matches('[data-page]')) return;
+            var nextPage = parseInt(target.getAttribute('data-page') || '0', 10);
+            if (!nextPage || nextPage === currentPage) return;
+            currentPage = nextPage;
             loadRatedHistory();
         });
 
