@@ -27,28 +27,61 @@
         .Distinct(StringComparer.OrdinalIgnoreCase)
         .OrderBy(status => status)
         .ToList();
+    var totalOrdersCount = Model.Count;
+    var pendingOrdersCount = Model.Count(order => string.Equals(order.Status, "Pending", StringComparison.OrdinalIgnoreCase));
+    var inTransitOrdersCount = Model.Count(order => string.Equals(order.Status, "Shipped", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(order.Status, "To Ship", StringComparison.OrdinalIgnoreCase));
+    var liveReturnCount = returnRequests.Count(request =>
+        string.Equals(request.Status?.Trim(), "Return Requested", StringComparison.OrdinalIgnoreCase));
 }
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="~/css/ordermanagement.css" />
+<link rel="stylesheet" href="~/css/ordermanagement.css" asp-append-version="true" />
 
 @if (TempData["ErrorMessage"] != null)
 {
     <div class="order-page-alert">@TempData["ErrorMessage"]</div>
 }
 
-<div class="order-filters">
-    <button type="button" class="order-filter-btn active" data-filter="all">All Orders</button>
-    <button type="button" class="order-filter-btn" data-filter="Pending">Pending</button>
-    <button type="button" class="order-filter-btn" data-filter="To Ship">To Ship</button>
-    <button type="button" class="order-filter-btn" data-filter="Shipped">Shipped</button>
-    <button type="button" class="order-filter-btn" data-filter="Delivered">Delivered</button>
-    <button type="button" class="order-filter-btn" data-filter="Cancelled">Cancelled</button>
-    <button type="button" class="order-filter-btn" data-filter="Failed Delivery">Failed Delivery</button>
-    <button type="button" class="order-filter-btn" data-filter="Return">Return</button>
-</div>
+<div class="order-page-shell">
+    <section class="order-page-hero">
+        <div class="order-page-hero-copy">
+            <span class="order-page-kicker">Seller Operations</span>
+            <h2>Order Management</h2>
+            <p>Manage fulfillment, failed deliveries, and returns in one operations workspace.</p>
+        </div>
+        <div class="order-page-stats">
+            <div class="order-page-stat-card">
+                <span class="order-page-stat-label">All Orders</span>
+                <strong>@totalOrdersCount</strong>
+            </div>
+            <div class="order-page-stat-card">
+                <span class="order-page-stat-label">Pending</span>
+                <strong>@pendingOrdersCount</strong>
+            </div>
+            <div class="order-page-stat-card">
+                <span class="order-page-stat-label">In Transit</span>
+                <strong>@inTransitOrdersCount</strong>
+            </div>
+            <div class="order-page-stat-card">
+                <span class="order-page-stat-label">Return Requests</span>
+                <strong>@liveReturnCount</strong>
+            </div>
+        </div>
+    </section>
 
-<div id="ordersPanel">
+    <div class="order-filters">
+        <button type="button" class="order-filter-btn active" data-filter="all">All Orders</button>
+        <button type="button" class="order-filter-btn" data-filter="Pending">Pending</button>
+        <button type="button" class="order-filter-btn" data-filter="To Ship">To Ship</button>
+        <button type="button" class="order-filter-btn" data-filter="Shipped">Shipped</button>
+        <button type="button" class="order-filter-btn" data-filter="Delivered">Delivered</button>
+        <button type="button" class="order-filter-btn" data-filter="Cancelled">Cancelled</button>
+        <button type="button" class="order-filter-btn" data-filter="Failed Delivery">Failed Delivery</button>
+        <button type="button" class="order-filter-btn" data-filter="Return">Return</button>
+    </div>
+
+<div id="ordersPanel" class="order-panel-card">
 <div class="order-toolbar">
 
     <!-- SEARCH -->
@@ -78,7 +111,7 @@
 </div>
 
 
-<table class="order-table">
+<table class="order-table premium-order-table orders-premium-table">
     <thead>
         <tr>
             <th>Order ID</th>
@@ -103,6 +136,23 @@
                 .Where(category => !string.IsNullOrWhiteSpace(category))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList() ?? new List<string>();
+            var resolvedCourierName = !string.IsNullOrWhiteSpace(order.Courier)
+                ? order.Courier
+                : !string.IsNullOrWhiteSpace(order.DeliveryOption)
+                    ? order.DeliveryOption
+                    : "NextHorizon Partner";
+
+            if (ViewBag.Couriers != null && order.logistics_id != null)
+            {
+                foreach (dynamic courier in ViewBag.Couriers)
+                {
+                    if (Convert.ToInt32(courier.logistics_id) == Convert.ToInt32(order.logistics_id))
+                    {
+                        resolvedCourierName = courier.courier_name;
+                        break;
+                    }
+                }
+            }
 
             <tr class="order-row"
                 data-order-id="@order.OrderID"
@@ -110,7 +160,7 @@
                 data-display-status="@orderDisplayStatus"
                 data-return-status="@(matchingReturnRequest?.Status ?? order.EffectiveStatus ?? string.Empty)"
                 data-categories="@string.Join("|", orderCategories)"
-                data-courier="@order.Courier"
+                data-courier="@resolvedCourierName"
                 data-tracking="@order.TrackingNumber"
                 data-return-proof="@order.ReturnProofImage"
                 data-return-note="@order.ReturnNote"
@@ -173,7 +223,7 @@
 
                             @* CONTACT CUSTOMER - always visible *@
                             <button class="action-menu-item"
-                                    onclick="window.location.href='@Url.Action("Messenger","Seller")'">
+                                    onclick="window.location.href='@Url.Action("SellerMessenger","Seller", new { orderId = order.OrderID, consumerId = order.ConsumerID })'">
                                 Contact Customer
                             </button>
 
@@ -185,25 +235,6 @@
                                 View Order
                                  </button>
                             }
-
-                           @if(order.Status == "To Ship")
-{
-    string actualCourierName = "NextHorizon Partner";
-
-    if (ViewBag.Couriers != null && order.logistics_id != null)
-    {
-        foreach (dynamic courier in ViewBag.Couriers) 
-        {
-            if (Convert.ToInt32(courier.logistics_id) == Convert.ToInt32(order.logistics_id))
-            {
-                actualCourierName = courier.courier_name;
-                break;
-            }
-        }
-    }
-
-}
-
                             @if(order.Status == "Shipped")
                             {
                                 <button class="action-menu-item mark-returned-btn"
@@ -255,7 +286,7 @@
 </table>
 </div>
 
-<div id="returnsPanel" class="returns-panel" style="display:none;">
+<div id="returnsPanel" class="returns-panel order-panel-card" style="display:none;">
     <div class="order-toolbar">
         <div class="search-box">
             <input type="search" id="returnSearch" placeholder="Search returns..." onkeyup="applyOrderFilters()" />
@@ -278,7 +309,7 @@
         </div>
     </div>
 
-    <table class="order-table">
+    <table class="order-table premium-order-table returns-premium-table">
         <thead>
             <tr>
                 <th>Order ID</th>
@@ -302,6 +333,20 @@
             {
                 @foreach (var returnRequest in returnRequests)
                 {
+                    var matchingOrder = Model.FirstOrDefault(order => order.OrderID == returnRequest.OrderId);
+                    var returnProductName = matchingOrder?.ProductName ?? "Product unavailable";
+                    var returnQuantity = matchingOrder?.Quantity ?? 0;
+                    var returnTotal = matchingOrder?.CalculatedTotal ?? 0m;
+                    var returnCourier = !string.IsNullOrWhiteSpace(matchingOrder?.Courier)
+                        ? matchingOrder.Courier
+                        : !string.IsNullOrWhiteSpace(matchingOrder?.DeliveryOption)
+                            ? matchingOrder.DeliveryOption
+                            : "NextHorizon Partner";
+                    var returnTracking = matchingOrder?.TrackingNumber ?? string.Empty;
+                    var returnProductImage = string.IsNullOrWhiteSpace(matchingOrder?.ProductImage)
+                        ? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='84'%3E%3Crect width='84' height='84' rx='18' fill='%23e2e8f0'/%3E%3C/svg%3E"
+                        : matchingOrder.ProductImage;
+
                     <tr class="return-row"
                         data-return-id="@returnRequest.ReturnId"
                         data-order-id="@returnRequest.OrderId"
@@ -313,6 +358,12 @@
                         data-seller-decision-reason="@(returnRequest.SellerDecisionReason ?? string.Empty)"
                         data-seller-decision-note="@(returnRequest.SellerDecisionNote ?? string.Empty)"
                         data-reviewed-at="@(returnRequest.ReviewedAt?.ToLocalTime().ToString("MMM dd, yyyy h:mm tt") ?? string.Empty)"
+                        data-product="@returnProductName"
+                        data-quantity="@returnQuantity"
+                        data-total="@returnTotal.ToString("N2")"
+                        data-courier="@returnCourier"
+                        data-tracking="@returnTracking"
+                        data-product-image="@returnProductImage"
                         data-date="@returnRequest.CreatedAt.ToString("yyyy-MM-dd")">
                         <td>@returnRequest.OrderId</td>
                         <td>@returnRequest.BuyerName</td>
@@ -343,39 +394,92 @@
         </tbody>
     </table>
 </div>
+</div>
 <div id="returnDetailsModal" class="return-modal-overlay">
-    <div class="return-modal-card shadow-sm rounded-xl">
+    <div class="return-modal-card return-premium-modal shadow-sm rounded-xl">
+        <button type="button" class="return-modal-close return-premium-close" onclick="closeReturnDetailsModal()">&times;</button>
         <div class="return-modal-header">
-            <div>
+            <div class="return-modal-hero-copy">
                 <p class="return-eyebrow">Return Request</p>
                 <h3>Order #<span id="returnDetailsOrderId">00000</span></h3>
                 <p class="return-buyer-line">Buyer: <span id="returnDetailsBuyer">Buyer</span></p>
+                <p class="return-premium-subtitle">Review the buyer request, shipment details, and supporting evidence before deciding the next return action.</p>
             </div>
-            <div class="return-modal-header-right">
+            <div class="return-modal-header-right return-premium-header-right">
                 <span id="returnDetailsStatus" class="status-badge return-requested">Return Requested</span>
-                <button type="button" class="return-modal-close" onclick="closeReturnDetailsModal()">&times;</button>
+                <span class="return-request-chip">Operations Review</span>
             </div>
         </div>
 
         <div class="return-modal-body">
-            <div class="return-detail-card">
-                <p class="return-card-title">Buyer Request</p>
-                <div class="return-copy-grid">
-                    <div>
-                        <p class="return-label">Reason</p>
-                        <p id="returnDetailsReason" class="return-value strong">Reason</p>
+            <div class="return-detail-card return-request-summary">
+                <div class="return-request-topline">
+                    <span class="return-request-pill">Customer Return Intake</span>
+                    <span class="return-request-date">Requested on <span id="returnDetailsDate">---</span></span>
+                </div>
+                <div class="return-request-main">
+                    <div class="return-request-product">
+                        <div class="return-request-product-art">
+                            <img id="returnDetailsProductImage" src="" alt="Returned product" />
+                        </div>
+                        <div class="return-request-product-copy">
+                            <span class="return-label">Product</span>
+                            <strong id="returnDetailsProduct">---</strong>
+                            <p class="return-request-product-meta">Item requested for return</p>
+                        </div>
                     </div>
-                    <div>
-                        <p class="return-label">Message</p>
-                        <p id="returnDetailsMessage" class="return-value muted">Message</p>
+                    <div class="return-request-total-pill">
+                        <span class="return-label">Order Total</span>
+                        <strong id="returnDetailsTotal">₱0.00</strong>
+                    </div>
+                </div>
+                <div class="return-request-metrics">
+                    <div class="return-request-metric-card">
+                        <span class="return-request-metric-icon"><i class="fa-solid fa-layer-group"></i></span>
+                        <span class="return-label">Quantity</span>
+                        <strong id="returnDetailsQuantity">0</strong>
+                    </div>
+                    <div class="return-request-metric-card">
+                        <span class="return-request-metric-icon"><i class="fa-solid fa-truck-fast"></i></span>
+                        <span class="return-label">Courier</span>
+                        <strong id="returnDetailsCourier">---</strong>
+                    </div>
+                    <div class="return-request-metric-card">
+                        <span class="return-request-metric-icon"><i class="fa-solid fa-fingerprint"></i></span>
+                        <span class="return-label">Tracking #</span>
+                        <strong id="returnDetailsTracking">---</strong>
                     </div>
                 </div>
             </div>
 
-            <div class="return-detail-card">
-                <p class="return-card-title">Evidence Preview</p>
-                <div class="return-evidence-frame">
-                    <img id="returnDetailsImage" src="" alt="Return evidence" />
+            <div class="return-request-content-grid">
+                <div class="return-detail-card">
+                    <div class="return-section-heading">
+                        <span class="return-section-kicker">Buyer Input</span>
+                        <h4>Request details</h4>
+                        <p>Review the buyer’s stated reason and message before taking action.</p>
+                    </div>
+                    <div class="return-copy-grid">
+                        <div>
+                            <p class="return-label">Reason</p>
+                            <p id="returnDetailsReason" class="return-value strong">Reason</p>
+                        </div>
+                        <div>
+                            <p class="return-label">Message</p>
+                            <p id="returnDetailsMessage" class="return-value muted">Message</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="return-detail-card">
+                    <div class="return-section-heading">
+                        <span class="return-section-kicker">Proof</span>
+                        <h4>Evidence preview</h4>
+                        <p>Open the uploaded image to inspect condition, packaging, or courier proof.</p>
+                    </div>
+                    <div class="return-evidence-frame">
+                        <img id="returnDetailsImage" src="" alt="Return evidence" />
+                    </div>
                 </div>
             </div>
 
@@ -387,7 +491,11 @@
             </div>
 
             <div id="sellerReviewCard" class="return-detail-card" style="display:none;">
-                <p class="return-card-title">Seller Review</p>
+                <div class="return-section-heading">
+                    <span class="return-section-kicker">Seller Review</span>
+                    <h4>Recorded decision</h4>
+                    <p>Prior review details appear here when the request has already been rejected.</p>
+                </div>
                 <div class="return-copy-grid">
                     <div>
                         <p class="return-label">Decision Reason</p>
@@ -696,7 +804,7 @@
 
 <!-- ===== DOWNLOAD RECEIPT MODAL ===== -->
 <div id="downloadReceiptModal" class="notes-modal-overlay">
-    <div class="notes-modal-container">
+    <div class="notes-modal-container receipt-premium-modal">
 
         <!-- HEADER -->
         <div class="notes-header">
@@ -704,16 +812,31 @@
             <span class="notes-close" onclick="closeDownloadReceiptModal()">✕</span>
         </div>
 
-        <!-- ORDER INFO -->
-        <div class="receipt-info">
-            <p><strong>Order #:</strong> <span id="receiptOrderId">12345</span></p>
-            <p><strong>Customer:</strong> <span id="receiptCustomer">Harvy</span></p>
-            <p><strong>Date:</strong> <span id="receiptDate">Mar 02, 2026</span></p>
-            <p><strong>Total:</strong> &#8369;<span id="receiptTotal">2,600.00</span></p>
+        <div class="receipt-hero-card">
+            <div class="receipt-hero-main">
+                <div>
+                    <span class="premium-data-label">Order #</span>
+                    <strong id="receiptOrderId">12345</strong>
+                </div>
+                <div class="receipt-total-pill">
+                    <span class="premium-data-label">Total</span>
+                    <strong>&#8369;<span id="receiptTotal">2,600.00</span></strong>
+                </div>
+            </div>
+            <div class="receipt-meta-grid">
+                <div class="receipt-meta-card">
+                    <span class="premium-data-label">Customer</span>
+                    <strong id="receiptCustomer">Harvy</strong>
+                </div>
+                <div class="receipt-meta-card">
+                    <span class="premium-data-label">Date</span>
+                    <strong id="receiptDate">Mar 02, 2026</strong>
+                </div>
+            </div>
         </div>
 
         <!-- ITEMS TABLE -->
-        <div class="summary-items">
+        <div class="summary-items receipt-items-table">
             <table>
                 <thead>
                     <tr>
@@ -724,22 +847,14 @@
                     </tr>
                 </thead>
                 <tbody id="receiptItemsBody">
-                    <!-- Items will be dynamically inserted via JS -->
                 </tbody>
             </table>
         </div>
 
         <!-- ACTIONS -->
-        <div class="notes-actions" style="justify-content:center;">
-            <button onclick="closeDownloadReceiptModal()" 
-                    style="background:#e5e7eb; color:#111; padding:12px 24px; border-radius:8px; border:none; font-size:14px; cursor:pointer;">
-                Close
-            </button>
-
-            <button onclick="downloadReceipt()" 
-                    style="background:black; color:white; padding:12px 24px; border-radius:8px; border:none; font-size:14px; cursor:pointer;">
-                Download PDF
-            </button>
+        <div class="notes-actions premium-modal-actions">
+            <button type="button" class="premium-btn premium-btn-secondary" onclick="closeDownloadReceiptModal()">Close</button>
+            <button type="button" class="premium-btn premium-btn-primary" onclick="downloadReceipt()">Download PDF</button>
         </div>
 
     </div>
@@ -778,50 +893,107 @@
 
 <!-- ===== MARK AS RETURNED MODAL ===== -->
 <div id="markReturnedModal" class="bw-modal-overlay">
-    <div class="bw-modal-container">
-        <div class="bw-modal-header">
-            <h3>Mark Order #<span id="returnOrderId">00000</span> as Failed Delivery</h3>
-            <span class="bw-close" onclick="closeReturnModal()">&times;</span>
-        </div>
-
-        <div class="bw-info-box bw-fulfillment-box">
-            <p><strong>Customer:</strong> <span id="returnCustomer">---</span></p>
-            <p><strong>Product:</strong> <span id="returnProduct">---</span></p>
-            <p><strong>Quantity:</strong> <span id="returnItems">0</span></p>
-            <p><strong>Total:</strong> <span id="returnTotal">&#8369;0.00</span></p>
-            <p><strong>Courier:</strong> <span id="returnCourier">---</span></p>
-            <p><strong>Tracking #:</strong> <span id="returnTracking">---</span></p>
-        </div>
-
-        <div class="bw-field">
-            <label for="returnReason">Reason <span class="required">*</span></label>
-            <select id="returnReason">
-                <option value="">-- Select Reason --</option>
-                <option value="Buyer Unreachable">Buyer Unreachable</option>
-                <option value="Invalid Address">Invalid Address</option>
-                <option value="Refused to Accept">Refused to Accept</option>
-                <option value="Other Courier Failure">Other Courier Failure</option>
-            </select>
-        </div>
-
-        <div class="bw-field">
-            <label for="returnNote">Notes</label>
-            <textarea id="returnNote" rows="4" placeholder="Add optional notes about the failed delivery and returned package."></textarea>
-        </div>
-
-        <div class="bw-field">
-            <label>Proof Image</label>
-            <div class="bw-upload-box" id="returnUploadBox">
-                <input type="file" id="returnProof" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" hidden />
-                <p>Drag or click to upload proof (JPG, PNG, WEBP up to 5MB)</p>
-            </div>
-            <div id="returnPreviewContainer" style="display:none;">
-                <img id="returnPreviewImage" alt="Return proof preview" />
-                <button type="button" class="remove-preview-btn" onclick="removeReturnPreview()">Remove</button>
+    <div class="bw-modal-container bw-return-modal">
+        <span class="bw-close bw-return-close" onclick="closeReturnModal()">&times;</span>
+        <div class="bw-modal-header bw-return-header">
+            <div class="bw-return-header-copy">
+                <span class="bw-return-eyebrow">Returns Processing</span>
+                <h3>Mark Order #<span id="returnOrderId">00000</span> as Failed Delivery</h3>
+                <p class="bw-return-subtitle">Review shipment details, capture the return reason, and attach proof before updating the order.</p>
             </div>
         </div>
 
-        <div class="bw-actions">
+        <div class="bw-info-box bw-fulfillment-box bw-return-summary">
+            <div class="bw-return-summary-topline">
+                <span class="bw-return-status-pill">Failed Delivery Review</span>
+                <span class="bw-return-supporting-copy">Confirm the shipment trail before this order moves into returns handling.</span>
+            </div>
+            <div class="bw-return-summary-main">
+                <div class="bw-return-customer-block">
+                    <span class="bw-return-label">Customer</span>
+                    <strong id="returnCustomer">---</strong>
+                    <p class="bw-return-customer-meta">Recipient on the shipment</p>
+                </div>
+                <div class="bw-return-total-pill">
+                    <span class="bw-return-label">Order Total</span>
+                    <strong id="returnTotal">&#8369;0.00</strong>
+                </div>
+            </div>
+            <div class="bw-return-detail-grid">
+                <div class="bw-return-detail-card bw-return-detail-feature">
+                    <span class="bw-return-detail-icon"><i class="fa-solid fa-box-open"></i></span>
+                    <span class="bw-return-label">Product</span>
+                    <strong id="returnProduct">---</strong>
+                </div>
+                <div class="bw-return-detail-card">
+                    <span class="bw-return-detail-icon"><i class="fa-solid fa-layer-group"></i></span>
+                    <span class="bw-return-label">Quantity</span>
+                    <strong id="returnItems">0</strong>
+                </div>
+                <div class="bw-return-detail-card">
+                    <span class="bw-return-detail-icon"><i class="fa-solid fa-truck-fast"></i></span>
+                    <span class="bw-return-label">Courier</span>
+                    <strong id="returnCourier">---</strong>
+                </div>
+                <div class="bw-return-detail-card">
+                    <span class="bw-return-detail-icon"><i class="fa-solid fa-fingerprint"></i></span>
+                    <span class="bw-return-label">Tracking #</span>
+                    <strong id="returnTracking">---</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="bw-return-form-shell">
+            <div class="bw-return-form-section">
+                <div class="bw-return-section-heading">
+                    <span class="bw-return-section-kicker">Step 1</span>
+                    <h4>Document the delivery failure</h4>
+                    <p>Select the strongest reason and leave an operational note if the courier gave additional context.</p>
+                </div>
+                <div class="bw-field">
+                    <label for="returnReason">Reason <span class="required">*</span></label>
+                    <select id="returnReason">
+                        <option value="">-- Select Reason --</option>
+                        <option value="Buyer Unreachable">Buyer Unreachable</option>
+                        <option value="Invalid Address">Invalid Address</option>
+                        <option value="Refused to Accept">Refused to Accept</option>
+                        <option value="Other Courier Failure">Other Courier Failure</option>
+                    </select>
+                </div>
+
+                <div class="bw-field">
+                    <label for="returnNote">Notes</label>
+                    <textarea id="returnNote" rows="4" placeholder="Add optional notes about the failed delivery and returned package."></textarea>
+                </div>
+            </div>
+
+            <div class="bw-return-form-section bw-return-proof-section">
+                <div class="bw-return-section-heading">
+                    <span class="bw-return-section-kicker">Step 2</span>
+                    <h4>Attach proof</h4>
+                    <p>Upload a courier photo, receipt, or handoff evidence for audit and support follow-up.</p>
+                </div>
+                <div class="bw-field">
+                    <label>Proof Image</label>
+                    <div class="bw-upload-box" id="returnUploadBox">
+                        <input type="file" id="returnProof" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" hidden />
+                        <div class="bw-return-upload-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                        <p>Drag or click to upload proof</p>
+                        <span class="bw-return-upload-hint">JPG, PNG, WEBP up to 5MB</span>
+                    </div>
+                    <div id="returnPreviewContainer" style="display:none;">
+                        <img id="returnPreviewImage" alt="Return proof preview" />
+                        <button type="button" class="remove-preview-btn" onclick="removeReturnPreview()">Remove</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bw-actions bw-return-actions">
+            <div class="bw-return-actions-copy">
+                <strong>Final action</strong>
+                <span>This updates the order status and stores your return evidence.</span>
+            </div>
             <button class="bw-btn cancel" type="button" onclick="closeReturnModal()">Cancel</button>
             <button class="bw-btn confirm" type="button" id="confirmReturnBtn" onclick="submitReturnedOrder()">Confirm</button>
         </div>
@@ -829,38 +1001,75 @@
 </div>
 
 <div id="returnedInfoModal" class="bw-modal-overlay">
-    <div class="bw-modal-container bw-confirm-container">
-        <div class="bw-modal-header bw-centered-header">
-            <h3>Failed Delivery Order #<span id="returnInfoOrderId">00000</span></h3>
-            <span class="bw-close" onclick="closeReturnedInfoModal()">&times;</span>
+    <div class="bw-modal-container bw-confirm-container fd-premium-modal">
+        <button type="button" class="bw-close fd-close" onclick="closeReturnedInfoModal()">&times;</button>
+        <div class="bw-modal-header fd-premium-header">
+            <div>
+                <span class="premium-modal-kicker">Failed Delivery</span>
+                <h3>Order #<span id="returnInfoOrderId">00000</span></h3>
+                <p class="premium-modal-subtitle">Review shipment details, evidence, and notes recorded for this failed delivery.</p>
+            </div>
         </div>
-        <div class="bw-info-box bw-fulfillment-box">
-            <p><strong>Customer:</strong> <span id="returnInfoCustomer">---</span></p>
-            <p><strong>Product:</strong> <span id="returnInfoProduct">---</span></p>
-            <p><strong>Quantity:</strong> <span id="returnInfoQuantity">0</span></p>
-            <p><strong>Total:</strong> <span id="returnInfoTotal">&#8369;0.00</span></p>
-            <p><strong>Courier:</strong> <span id="returnInfoCourier">---</span></p>
-            <p><strong>Tracking #:</strong> <span id="returnInfoTracking">---</span></p>
-            <p><strong>Reason:</strong> <span id="returnInfoReason">---</span></p>
-            <div class="bw-proof-block" id="returnInfoProofBlock" style="display:none;">
-                <p class="bw-section-title">Proof</p>
+        <div class="bw-info-box bw-fulfillment-box fd-summary-card">
+            <div class="fd-summary-main">
+                <div>
+                    <span class="premium-data-label">Customer</span>
+                    <strong id="returnInfoCustomer">---</strong>
+                </div>
+                <div class="fd-total-pill">
+                    <span class="premium-data-label">Total</span>
+                    <strong id="returnInfoTotal">&#8369;0.00</strong>
+                </div>
+            </div>
+            <div class="fd-detail-grid">
+                <div class="fd-detail-card">
+                    <span class="premium-data-label">Product</span>
+                    <strong id="returnInfoProduct">---</strong>
+                </div>
+                <div class="fd-detail-card">
+                    <span class="premium-data-label">Quantity</span>
+                    <strong id="returnInfoQuantity">0</strong>
+                </div>
+                <div class="fd-detail-card">
+                    <span class="premium-data-label">Courier</span>
+                    <strong id="returnInfoCourier">---</strong>
+                </div>
+                <div class="fd-detail-card">
+                    <span class="premium-data-label">Tracking #</span>
+                    <strong id="returnInfoTracking">---</strong>
+                </div>
+                <div class="fd-detail-card fd-detail-wide">
+                    <span class="premium-data-label">Reason</span>
+                    <strong id="returnInfoReason">---</strong>
+                </div>
+            </div>
+        </div>
+        <div class="fd-content-grid">
+            <div class="bw-proof-block fd-evidence-card" id="returnInfoProofBlock" style="display:none;">
+                <div class="fd-section-heading">
+                    <span class="premium-modal-kicker">Proof</span>
+                    <h4>Evidence preview</h4>
+                </div>
                 <img id="returnInfoProofImage" class="bw-proof-image" src="" alt="Return proof" />
             </div>
-            <div class="bw-note-block">
-                <p class="bw-section-title">Note</p>
+            <div class="bw-note-block fd-note-card">
+                <div class="fd-section-heading">
+                    <span class="premium-modal-kicker">Internal Note</span>
+                    <h4>Recorded seller note</h4>
+                </div>
                 <p id="returnInfoNote">---</p>
             </div>
         </div>
-        <div class="bw-actions">
-            <button class="bw-btn confirm" type="button" onclick="closeReturnedInfoModal()">Close</button>
+        <div class="bw-actions fd-actions">
+            <button class="premium-btn premium-btn-primary" type="button" onclick="closeReturnedInfoModal()">Close</button>
         </div>
     </div>
 </div>
 </div>
 
 <!-- add note -->
-<div id="addNotesModal" class="notes-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background: rgba(0,0,0,0.5); justify-content: center; align-items: center;">
-    <div class="notes-modal-container" style="background: white; padding: 20px; border-radius: 8px; width: 400px;">
+<div id="addNotesModal" class="notes-modal-overlay">
+    <div class="notes-modal-container add-note-premium-modal">
         
         <input type="hidden" id="addNotesOrderId" value="" />
 
@@ -869,27 +1078,36 @@
             <span class="notes-close" onclick="closeAddNotesModal()" style="cursor: pointer;">✕</span>
         </div>
 
-        <div class="customer-card">
+        <div class="notes-header add-note-header">
+            <div>
+                <span class="premium-modal-kicker">Internal Notes</span>
+                <h3 id="customerHeaderText">Customer: </h3>
+                <p class="premium-modal-subtitle">Save a private seller note for follow-up, fulfillment handling, or customer context.</p>
+            </div>
+        </div>
+
+        <div class="customer-card add-note-customer-card">
             <div class="customer-avatar">
                 <img src="~/images/profile-icon.png" alt="Profile" /> 
             </div>
             <div class="customer-info">
+                <span class="premium-data-label">Customer</span>
                 <p id="addNotesCustomerText"></p>
             </div>
         </div>
 
 
-        <div class="notes-body">
+        <div class="notes-body add-note-body">
             <label>Add Note</label>
-            <textarea id="addNotesTextarea" maxlength="500" placeholder="Type your message..." style="width: 100%; height: 100px;"></textarea>
+            <textarea id="addNotesTextarea" maxlength="500" placeholder="Type your message..."></textarea>
             <div class="notes-footer">
                 <span id="charCount">0/500</span>
             </div>
         </div>
 
-        <div class="notes-actions" style="margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px;">
-            <button id="addNotesCancelBtn" onclick="closeAddNotesModal()">Cancel</button>
-            <button id="addNotesSaveBtn" onclick="saveOrderNote()" class="btn-primary">Save Note</button>
+        <div class="notes-actions premium-modal-actions">
+            <button id="addNotesCancelBtn" type="button" class="premium-btn premium-btn-secondary" onclick="closeAddNotesModal()">Cancel</button>
+            <button id="addNotesSaveBtn" type="button" onclick="saveOrderNote()" class="premium-btn premium-btn-primary">Save Note</button>
         </div>
     </div>
 </div>

@@ -18,6 +18,8 @@ namespace NextHorizon.Models
         public decimal TotalAmount { get; set; }
 
         public int seller_id { get; set; }
+        [Column("ConsumerID")]
+        public int? ConsumerID { get; set; }
         public int? logistics_id { get; set; }
 
         [NotMapped]

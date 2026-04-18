@@ -6,6 +6,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using NextHorizon.Data;
+using NextHorizon.Data.Messaging;
 using NextHorizon.Models;
 using NextHorizon.Security;
 
@@ -17,6 +18,8 @@ public sealed class SellerController : Controller
     private readonly IWebHostEnvironment _webHostEnvironment;
     private readonly IConfiguration _configuration;
     private readonly IAuthenticatedUserContextService _authenticatedUserContextService;
+    private readonly IOrderConversationResolver _orderConversationResolver;
+    private readonly IMessagingRepository _messagingRepository;
     private readonly AppDbContext _db;
     private readonly IMemoryCache _cache;
     private readonly ILogger<SellerController> _logger;
@@ -25,6 +28,8 @@ public sealed class SellerController : Controller
         IWebHostEnvironment webHostEnvironment,
         IConfiguration configuration,
         IAuthenticatedUserContextService authenticatedUserContextService,
+        IOrderConversationResolver orderConversationResolver,
+        IMessagingRepository messagingRepository,
         AppDbContext db,
         IMemoryCache cache,
         ILogger<SellerController> logger)
@@ -32,6 +37,8 @@ public sealed class SellerController : Controller
         _webHostEnvironment = webHostEnvironment;
         _configuration = configuration;
         _authenticatedUserContextService = authenticatedUserContextService;
+        _orderConversationResolver = orderConversationResolver;
+        _messagingRepository = messagingRepository;
         _db = db;
         _cache = cache;
         _logger = logger;
@@ -59,11 +66,40 @@ public sealed class SellerController : Controller
         var sellerName = currentUser?.SellerId is int sellerId
             ? ProductData.Sellers.FirstOrDefault(item => item.Id == sellerId)?.ShopName ?? "Seller"
             : "Seller";
+        var resolvedConversationId = conversationId;
+        var resolvedConsumerId = consumerId ?? customerId;
+
+        if (!resolvedConversationId.HasValue
+            && orderId.HasValue
+            && orderId.Value > 0
+            && currentUser?.SellerId is int currentSellerId
+            && currentSellerId > 0)
+        {
+            var actor = new MessageActorContext(
+                currentUser.SellerAccountUserId ?? currentUser.UserId,
+                currentUser.ConsumerId,
+                currentUser.SellerId);
+            var orderContext = await _orderConversationResolver.ResolveAsync(orderId.Value, actor, cancellationToken);
+
+            if (orderContext is not null
+                && orderContext.CanRequestUserAccess
+                && orderContext.SellerId == currentSellerId)
+            {
+                var summary = await _messagingRepository.CreateOrGetOrderAsync(
+                    orderContext.OrderId,
+                    orderContext.BuyerConsumerId,
+                    orderContext.SellerId,
+                    cancellationToken);
+
+                resolvedConversationId = summary.ConversationId;
+                resolvedConsumerId ??= orderContext.BuyerConsumerId;
+            }
+        }
 
         ViewData["ApiMode"] = requestedMode == "dev" && devMessagingEnabled ? "dev" : "main";
         ViewData["ActorUserId"] = actorUserId ?? currentUserId;
-        ViewData["ConversationId"] = conversationId;
-        ViewData["ConsumerId"] = consumerId ?? customerId;
+        ViewData["ConversationId"] = resolvedConversationId;
+        ViewData["ConsumerId"] = resolvedConsumerId;
         ViewData["OrderId"] = orderId;
         ViewData["DebugUserId"] = actorUserId;
         ViewData["DevMessagingEnabled"] = devMessagingEnabled;
@@ -71,6 +107,70 @@ public sealed class SellerController : Controller
         ViewData["SellerName"] = sellerName;
 
         return View("~/Views/Seller/SellerMessenger.cshtml");
+    }
+
+    [HttpGet("seller/products/{productId:int}/shared-card")]
+    public async Task<IActionResult> GetSharedProductCard(int productId, CancellationToken cancellationToken)
+    {
+        var currentUser = await _authenticatedUserContextService.GetCurrentAsync(User, cancellationToken);
+        if (currentUser?.SellerId is not int sellerId || sellerId <= 0)
+        {
+            return Forbid();
+        }
+
+        var product = await _db.Products
+            .AsNoTracking()
+            .Where(p => p.ProductId == productId && p.SellerId == sellerId)
+            .Select(p => new
+            {
+                p.ProductId,
+                p.ProductName,
+                p.Price
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (product == null)
+        {
+            return NotFound();
+        }
+
+        var variants = await _db.ProductVariants
+            .AsNoTracking()
+            .Where(v => v.ProductId == productId)
+            .OrderBy(v => v.Id)
+            .Select(v => new
+            {
+                v.Id,
+                v.Quantity,
+                v.Price,
+                HasImageData = v.ImageData != null && v.ImageData.Length > 0,
+                v.ImagePath
+            })
+            .ToListAsync(cancellationToken);
+
+        var livePrice = variants
+            .Where(v => v.Price.HasValue && v.Price.Value > 0)
+            .Select(v => v.Price!.Value)
+            .DefaultIfEmpty(product.Price)
+            .Min();
+
+        var totalStock = variants.Sum(v => v.Quantity);
+        var imageVariant = variants.FirstOrDefault(v =>
+            v.HasImageData || !string.IsNullOrWhiteSpace(v.ImagePath));
+        var imageUrl = imageVariant != null
+            ? Url.Action("Variant", "ProductImage", new { variantId = imageVariant.Id }) ?? $"/ProductImage/Variant/{imageVariant.Id}"
+            : string.Empty;
+        var productUrl = Url.Action("ViewProduct", "Seller", new { id = product.ProductId, state = "active" }) ?? $"/Seller/ViewProduct?id={product.ProductId}&state=active";
+
+        return Ok(new
+        {
+            productId = product.ProductId,
+            productName = product.ProductName,
+            imageUrl,
+            price = livePrice,
+            stock = totalStock,
+            productUrl
+        });
     }
 
     // ─── NEW: Seller Dashboard ────────────────────────────────────────────────

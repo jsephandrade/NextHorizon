@@ -34,6 +34,8 @@
         search: "",
         selectedAttachment: null,
         selectedAttachmentPreviewUrl: null,
+        sharedProductDetailsByProductId: {},
+        sharedProductDetailsRequestsByProductId: {},
         isRefreshingConversations: false,
         pollHandle: null
     };
@@ -223,6 +225,336 @@
         return (value / (1024 * 1024)).toFixed(1) + " MB";
     }
 
+    function stockLabel(stock) {
+        const quantity = Number(stock || 0);
+        if (quantity <= 0) {
+            return "Out of stock";
+        }
+
+        if (quantity === 1) {
+            return "1 stock left";
+        }
+
+        return quantity + " stocks";
+    }
+
+    function absoluteUrlOrEmpty(value) {
+        const raw = String(value || "").trim();
+        if (!raw) {
+            return "";
+        }
+
+        try {
+            return new URL(raw, window.location.origin).toString();
+        } catch (_) {
+            return "";
+        }
+    }
+
+    function fallbackProductImageUrl() {
+        return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' rx='18' fill='%23f3f4f6'/%3E%3Cpath d='M30 62l12-15 10 11 8-9 14 13' fill='none' stroke='%2394a3b8' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='38' cy='36' r='6' fill='%23cbd5e1'/%3E%3C/svg%3E";
+    }
+
+    function normalizeSharedProductImageUrl(value) {
+        const raw = String(value || "").trim();
+        if (!raw) {
+            return "";
+        }
+
+        const legacyVariantMatch = raw.match(/\/api\/Products\/variant-image\/(\d+)(?:[/?#]|$)/i);
+        if (legacyVariantMatch) {
+            return new URL("/ProductImage/Variant/" + legacyVariantMatch[1], window.location.origin).toString();
+        }
+
+        const currentVariantMatch = raw.match(/\/ProductImage\/Variant\/(\d+)(?:[/?#]|$)/i);
+        if (currentVariantMatch) {
+            return new URL("/ProductImage/Variant/" + currentVariantMatch[1], window.location.origin).toString();
+        }
+
+        return absoluteUrlOrEmpty(raw);
+    }
+
+    function buildSellerProductUrl(productId) {
+        const resolvedId = Number(productId || 0);
+        if (resolvedId <= 0) {
+            return "";
+        }
+
+        return new URL("/Seller/ViewProduct?id=" + resolvedId + "&state=active", window.location.origin).toString();
+    }
+
+    function normalizeSharedProductUrl(value, productId) {
+        const raw = String(value || "").trim();
+        if (!raw) {
+            return buildSellerProductUrl(productId);
+        }
+
+        let parsed;
+        try {
+            parsed = new URL(raw, window.location.origin);
+        } catch (_) {
+            return buildSellerProductUrl(productId);
+        }
+
+        const isLegacyConsumerRoute = /^\/Home\/Product$/i.test(parsed.pathname);
+        if (isLegacyConsumerRoute && Number(productId || 0) > 0) {
+            return buildSellerProductUrl(productId);
+        }
+
+        return parsed.toString();
+    }
+
+    function sharedProductCacheKey(productId) {
+        const resolvedId = Number(productId || 0);
+        return resolvedId > 0 ? String(resolvedId) : "";
+    }
+
+    function fetchSharedProductDetails(productId) {
+        const cacheKey = sharedProductCacheKey(productId);
+        if (!cacheKey) {
+            return Promise.resolve(null);
+        }
+
+        const cached = state.sharedProductDetailsByProductId[cacheKey];
+        if (cached) {
+            return Promise.resolve(cached);
+        }
+
+        const inFlight = state.sharedProductDetailsRequestsByProductId[cacheKey];
+        if (inFlight) {
+            return inFlight;
+        }
+
+        const requestPromise = fetch("/seller/products/" + cacheKey + "/shared-card", {
+            credentials: "same-origin"
+        }).then(function (response) {
+            if (!response.ok) {
+                throw new Error("Unable to load live product details.");
+            }
+
+            return response.json();
+        }).then(function (payload) {
+            const resolved = payload ? {
+                productId: Number(payload.productId || cacheKey),
+                productName: String(payload.productName || "").trim() || "Product",
+                imageUrl: normalizeSharedProductImageUrl(payload.imageUrl),
+                price: Number.isFinite(Number(payload.price)) ? Number(payload.price) : null,
+                stock: Number.isFinite(Number(payload.stock)) ? Number(payload.stock) : 0,
+                productUrl: normalizeSharedProductUrl(payload.productUrl, payload.productId || cacheKey)
+            } : null;
+            state.sharedProductDetailsByProductId[cacheKey] = resolved;
+            return resolved;
+        }).catch(function () {
+            return null;
+        }).finally(function () {
+            delete state.sharedProductDetailsRequestsByProductId[cacheKey];
+        });
+
+        state.sharedProductDetailsRequestsByProductId[cacheKey] = requestPromise;
+        return requestPromise;
+    }
+
+    function createProductImageElement(product, className) {
+        const image = document.createElement("img");
+        image.className = className;
+        image.alt = String(product && product.productName ? product.productName : "Product");
+        image.loading = "lazy";
+        const normalizedImageUrl = normalizeSharedProductImageUrl(product && product.imageUrl);
+        image.src = normalizedImageUrl || fallbackProductImageUrl();
+        image.addEventListener("error", function () {
+            image.src = fallbackProductImageUrl();
+        }, { once: true });
+
+        return image;
+    }
+
+    function formatProductPrice(value) {
+        const amount = Number(value);
+        if (!Number.isFinite(amount)) {
+            return "Price unavailable";
+        }
+
+        return new Intl.NumberFormat(undefined, {
+            style: "currency",
+            currency: "PHP",
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(amount);
+    }
+
+    function parseSharedProductMessage(body) {
+        const text = String(body || "").trim();
+        if (!text) {
+            return null;
+        }
+
+        if (text.startsWith("[[product-share]]")) {
+            const lines = text.split(/\r?\n/).slice(1);
+            const fields = {};
+
+            lines.forEach(function (line) {
+                const separator = line.indexOf("=");
+                if (separator <= 0) {
+                    return;
+                }
+
+                const key = line.slice(0, separator).trim().toLowerCase();
+                const value = line.slice(separator + 1).trim();
+                if (!key) {
+                    return;
+                }
+
+                try {
+                    fields[key] = decodeURIComponent(value);
+                } catch (_) {
+                    fields[key] = value;
+                }
+            });
+
+            const productId = Number(fields.id || 0);
+            const productName = String(fields.name || "").trim();
+            if (productId <= 0 && !productName) {
+                return null;
+            }
+
+            const parsedPrice = fields.price !== undefined && fields.price !== "" ? Number(fields.price) : null;
+            const parsedStock = fields.stock !== undefined && fields.stock !== "" ? Number(fields.stock) : 0;
+
+            return {
+                productId: productId,
+                productName: productName || "Product",
+                imageUrl: normalizeSharedProductImageUrl(fields.image),
+                price: Number.isFinite(parsedPrice) ? parsedPrice : null,
+                stock: Number.isFinite(parsedStock) ? parsedStock : 0,
+                productUrl: normalizeSharedProductUrl(fields.url, productId),
+                isSharedProduct: true
+            };
+        }
+
+        const legacyMatch = text.match(/^Product:\s*(.+?)(?:\r?\n(https?:\/\/\S+|\/\S+))?$/i);
+        if (!legacyMatch) {
+            return null;
+        }
+
+        return {
+            productId: 0,
+            productName: String(legacyMatch[1] || "").trim() || "Product",
+            imageUrl: "",
+            price: null,
+            stock: 0,
+            productUrl: normalizeSharedProductUrl(legacyMatch[2] || "", 0),
+            isSharedProduct: true
+        };
+    }
+
+    function sharedProductPreviewText(body) {
+        const product = parseSharedProductMessage(body);
+        return product ? ("Shared product: " + product.productName) : String(body || "");
+    }
+
+    function applySharedProductDetails(card, product) {
+        if (!card || !product) {
+            return;
+        }
+
+        const image = card.querySelector(".shared-product-card-image");
+        if (image && product.imageUrl) {
+            image.src = product.imageUrl;
+        }
+
+        const price = card.querySelector(".shared-product-card-price");
+        if (price) {
+            price.textContent = formatProductPrice(product.price);
+        }
+
+        const stock = card.querySelector(".shared-product-card-stock");
+        if (stock) {
+            stock.textContent = stockLabel(product.stock);
+        }
+
+        const name = card.querySelector(".shared-product-card-name");
+        if (name && product.productName) {
+            name.textContent = product.productName;
+        }
+
+        const href = normalizeSharedProductUrl(product.productUrl, product.productId);
+        if (card.tagName === "A") {
+            card.href = href || "#";
+        }
+
+        const cta = card.querySelector(".shared-product-card-cta");
+        if (cta) {
+            cta.textContent = href ? "View product" : "Product shared";
+        }
+    }
+
+    function renderSharedProductCard(product) {
+        const href = normalizeSharedProductUrl(product && product.productUrl, product && product.productId) || "#";
+        const card = document.createElement(href === "#" ? "div" : "a");
+        card.className = "shared-product-card";
+
+        if (href !== "#") {
+            card.href = href;
+            card.target = "_blank";
+            card.rel = "noopener noreferrer";
+        }
+
+        const media = document.createElement("span");
+        media.className = "shared-product-card-media";
+        media.appendChild(createProductImageElement(product, "shared-product-card-image"));
+
+        const content = document.createElement("span");
+        content.className = "shared-product-card-content";
+
+        const badge = document.createElement("span");
+        badge.className = "shared-product-card-badge";
+        badge.textContent = "Shared product";
+
+        const name = document.createElement("span");
+        name.className = "shared-product-card-name";
+        name.textContent = String(product && product.productName ? product.productName : "Product");
+
+        const meta = document.createElement("span");
+        meta.className = "shared-product-card-meta";
+
+        const price = document.createElement("span");
+        price.className = "shared-product-card-price";
+        price.textContent = formatProductPrice(product && product.price);
+
+        const stock = document.createElement("span");
+        stock.className = "shared-product-card-stock";
+        stock.textContent = Number(product && product.productId || 0) > 0
+            ? "Loading stock..."
+            : stockLabel(product && product.stock);
+
+        const cta = document.createElement("span");
+        cta.className = "shared-product-card-cta";
+        cta.textContent = href === "#" ? "Product shared" : "View product";
+
+        meta.appendChild(price);
+        meta.appendChild(stock);
+        content.appendChild(badge);
+        content.appendChild(name);
+        content.appendChild(meta);
+        content.appendChild(cta);
+
+        card.appendChild(media);
+        card.appendChild(content);
+
+        if (Number(product && product.productId || 0) > 0) {
+            fetchSharedProductDetails(product.productId).then(function (liveProduct) {
+                if (!liveProduct) {
+                    stock.textContent = stockLabel(product && product.stock);
+                    return;
+                }
+
+                applySharedProductDetails(card, liveProduct);
+            });
+        }
+
+        return card;
+    }
+
     function activeConversation() {
         return state.conversations.find(function (item) {
             return item.conversationId === state.activeConversationId;
@@ -305,7 +637,7 @@
 
             const preview = document.createElement("span");
             preview.className = "last-message";
-            preview.textContent = conversation.lastMessagePreview || "No messages yet.";
+            preview.textContent = sharedProductPreviewText(conversation.lastMessagePreview) || "No messages yet.";
             meta.appendChild(preview);
 
             if (conversation.unreadCount > 0) {
@@ -457,16 +789,24 @@
 
         messages.forEach(function (message) {
             const isSent = message.senderUserId === state.currentUserId;
+            const sharedProduct = message.isDeleted ? null : parseSharedProductMessage(message.body);
             const wrapper = document.createElement("div");
             wrapper.className = "message " + (isSent ? "sent" : "received");
 
             const content = document.createElement("div");
             content.className = "message-content";
+            if (sharedProduct) {
+                content.classList.add("message-content--product-share");
+            }
 
-            if (message.isDeleted || message.body) {
+            if (message.isDeleted || (message.body && !sharedProduct)) {
                 const text = document.createElement("p");
                 text.textContent = message.isDeleted ? "[message deleted]" : message.body;
                 content.appendChild(text);
+            }
+
+            if (sharedProduct) {
+                content.appendChild(renderSharedProductCard(sharedProduct));
             }
 
             if (message.attachmentUrl) {

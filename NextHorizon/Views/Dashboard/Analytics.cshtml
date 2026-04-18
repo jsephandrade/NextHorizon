@@ -151,25 +151,7 @@
             <div class="card analytics-stat-card">
                 <span class="card-label">All-Time Gross Revenue</span>
                 <div class="card-value">&#8369;@Model.TotalRevenue.ToString("N2")</div>
-                @if (Model.YesterdayRecognizedRevenue > 0)
-                {
-                    <div class="metric-growth @(Model.SalesGrowth >= 0 ? "positive" : "negative")">
-                        <i class="fas @(Model.SalesGrowth >= 0 ? "fa-arrow-up" : "fa-arrow-down")"></i>
-                        <span>@Model.SalesGrowth.ToString("N2")% recognized revenue vs yesterday</span>
-                    </div>
-                }
-                else if (Model.RecognizedRevenueToday > 0)
-                {
-                    <div class="metric-growth positive">
-                        <i class="fas fa-sparkles"></i>
-                        <span>New sales today</span>
-                    </div>
-                }
-                else
-                {
-                    <div class="metric-note">No sales yet</div>
-                }
-                <div class="metric-note">Completed and delivered revenue only</div>
+                <div class="metric-note">Lifetime recognized revenue from completed/delivered orders</div>
             </div>
             <div class="card analytics-stat-card">
                 <span class="card-label">All-Time Net Revenue</span>
@@ -213,19 +195,19 @@
 
         <div class="analytics-year-snapshot" data-year-snapshot='@yearlySnapshotJson'>
             <div class="analytics-year-card">
-                <span class="analytics-year-label">Selected Year Revenue</span>
+                <span class="analytics-year-label">Revenue</span>
                 <strong id="yearRevenueValue">&#8369;@(initialYear != 0 && Model.MonthlyRevenueByYear.TryGetValue(initialYear, out var initialRevenue) ? initialRevenue.Sum().ToString("N2") : "0.00")</strong>
             </div>
             <div class="analytics-year-card">
-                <span class="analytics-year-label">Selected Year Orders</span>
+                <span class="analytics-year-label">Orders</span>
                 <strong id="yearOrdersValue">@(initialYear != 0 && Model.MonthlyOrdersByYear.TryGetValue(initialYear, out var initialOrders) ? initialOrders.Sum() : 0)</strong>
             </div>
             <div class="analytics-year-card">
-                <span class="analytics-year-label">Selected Year Units</span>
+                <span class="analytics-year-label">Units</span>
                 <strong id="yearUnitsValue">@(initialYear != 0 && Model.MonthlyUnitsByYear.TryGetValue(initialYear, out var initialUnits) ? initialUnits.Sum() : 0)</strong>
             </div>
             <div class="analytics-year-card">
-                <span class="analytics-year-label">Selected Year AOV</span>
+                <span class="analytics-year-label">AOV</span>
                 <strong id="yearAovValue">
                     &#8369;@(
                         initialYear != 0

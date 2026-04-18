@@ -329,6 +329,118 @@
     word-break: break-word;
 }
 
+.message-content--product-share {
+    max-width: min(360px, calc(100vw - 96px));
+    padding: 0;
+    background: transparent;
+    border-radius: 22px;
+    overflow: visible;
+    box-shadow: none;
+}
+
+.message.sent .message-content--product-share,
+.message.received .message-content--product-share {
+    background: transparent;
+    border-color: transparent;
+}
+
+.shared-product-card {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 12px;
+    align-items: stretch;
+    width: min(360px, calc(100vw - 96px));
+    padding: 10px;
+    border-radius: 22px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid rgba(203, 213, 225, 0.95);
+    box-shadow: 0 18px 36px rgba(15, 23, 42, 0.1);
+    color: #0f172a;
+    text-decoration: none;
+}
+
+.message.sent .shared-product-card {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.shared-product-card-media {
+    display: block;
+    width: 112px;
+    height: 112px;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #e5e7eb;
+}
+
+.shared-product-card-image {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.shared-product-card-content {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 2px 2px 2px 0;
+}
+
+.shared-product-card-badge {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #111827;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.shared-product-card-name {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+    color: #111827;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.shared-product-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.shared-product-card-price {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.shared-product-card-stock {
+    font-size: 11px;
+    font-weight: 600;
+    color: #475569;
+    background: #e2e8f0;
+    border-radius: 999px;
+    padding: 4px 8px;
+}
+
+.shared-product-card-cta {
+    margin-top: auto;
+    font-size: 12px;
+    font-weight: 700;
+    color: #ef4444;
+}
+
 .message-time {
     padding: 0 4px;
     font-size: 0.76rem;

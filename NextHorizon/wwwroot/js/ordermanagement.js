@@ -149,15 +149,32 @@ function declineOrder() {
     document.getElementById("declineOrderModal").style.display = "flex";
 }
 
-// Listen for clicks on the Status filter buttons
-document.querySelectorAll('.order-filter-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-        activeStatusFilter = this.getAttribute('data-filter');
-        document.querySelectorAll('.order-filter-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        applyOrderFilters();
+function bindOrderFilterButtons() {
+    document.querySelectorAll('.order-filter-btn').forEach(function (btn) {
+        const cleanButton = btn.cloneNode(true);
+        btn.parentNode.replaceChild(cleanButton, btn);
+
+        cleanButton.addEventListener('click', function (event) {
+            event.preventDefault();
+            const filtersBar = document.querySelector('.order-filters');
+            const anchorTop = filtersBar ? filtersBar.getBoundingClientRect().top : 0;
+
+            activeStatusFilter = cleanButton.getAttribute('data-filter') || cleanButton.dataset.filter || 'all';
+            document.querySelectorAll('.order-filter-btn').forEach(function (button) {
+                button.classList.remove('active');
+            });
+            cleanButton.classList.add('active');
+            applyOrderFilters();
+
+            requestAnimationFrame(function () {
+                if (filtersBar) {
+                    const nextTop = filtersBar.getBoundingClientRect().top;
+                    window.scrollBy(0, nextTop - anchorTop);
+                }
+            });
+        });
     });
-});
+}
 
 function toggleOrderMenu(button) {
     const wrap = button.closest('.action-menu-wrap');
@@ -167,8 +184,15 @@ function toggleOrderMenu(button) {
     const isOpen = menu.classList.contains('open');
 
     document.querySelectorAll('.action-menu.open').forEach(m => m.classList.remove('open'));
+    document.querySelectorAll('.action-menu.open-up').forEach(m => m.classList.remove('open-up'));
     
     if (!isOpen) {
+        const rect = wrap.getBoundingClientRect();
+        const estimatedMenuHeight = Math.min(280, Math.max(180, menu.scrollHeight || 220));
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+
+        menu.classList.toggle('open-up', spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow);
         menu.classList.add('open');
     }
 }
@@ -426,16 +450,7 @@ document.getElementById('addNotesCancelBtn')?.addEventListener('click', closeAdd
 document.getElementById('reviewRequestCancelBtn')?.addEventListener('click', closeReviewRequestModal);
 document.getElementById('reviewRequestSubmitBtn')?.addEventListener('click', closeReviewRequestModal);
 
-// Filter buttons
-document.querySelectorAll('.order-filter-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-        // Fallback added here to prevent undefined errors in older browsers
-        activeStatusFilter = this.getAttribute('data-filter') || this.dataset.filter;
-        document.querySelectorAll('.order-filter-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        applyOrderFilters();
-    });
-});
+bindOrderFilterButtons();
 
 // Search/inputs
 document.getElementById('orderSearch')?.addEventListener('input', applyOrderFilters);
@@ -475,14 +490,7 @@ document.addEventListener('keydown', function (event) {
 document.addEventListener('DOMContentLoaded', function () {
     
     // 1. Bind the Filter Tabs
-    document.querySelectorAll('.order-filter-btn').forEach(btn => {
-        btn.addEventListener('click', function () {
-            activeStatusFilter = this.getAttribute('data-filter') || this.dataset.filter;
-            document.querySelectorAll('.order-filter-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            applyOrderFilters();
-        });
-    });
+    bindOrderFilterButtons();
 
 
     // 2. Bind the Search Bar and Category Dropdown
@@ -551,6 +559,68 @@ function closeToShipModal() {
 
 document.getElementById('toShipOkBtn')?.addEventListener('click', closeToShipModal);
 
+let currentReceiptOrder = null;
+
+function formatPeso(value) {
+    return `PHP ${Number(value || 0).toFixed(2)}`;
+}
+
+function escapePdfText(value) {
+    return String(value || '')
+        .replace(/\\/g, '\\\\')
+        .replace(/\(/g, '\\(')
+        .replace(/\)/g, '\\)');
+}
+
+function normalizeReceiptOrder(order) {
+    const orderDateValue = order?.OrderDate ?? order?.orderDate ?? order?.DateTime ?? order?.dateTime ?? '';
+    const orderDate = orderDateValue ? new Date(orderDateValue) : null;
+    const fallbackQuantity = Number(order?.Quantity ?? order?.quantity ?? 0);
+    const fallbackTotal = Number(order?.CalculatedTotal ?? order?.calculatedTotal ?? order?.TotalAmount ?? order?.totalAmount ?? 0);
+    const fallbackUnitPrice = fallbackQuantity > 0 ? fallbackTotal / fallbackQuantity : fallbackTotal;
+
+    const rawItems = order?.OrderItems ?? order?.orderItems ?? order?.Items ?? order?.items ?? [];
+
+    const items = Array.isArray(rawItems) && rawItems.length
+        ? rawItems.map(function (item) {
+            const quantity = Number(item?.Quantity ?? item?.quantity ?? 0);
+            const unitPrice = Number(item?.UnitPrice ?? item?.unitPrice ?? item?.Price ?? item?.price ?? 0);
+            return {
+                productName:
+                    item?.Product?.ProductName
+                    || item?.product?.productName
+                    || item?.ProductName
+                    || item?.productName
+                    || order?.ProductName
+                    || order?.productName
+                    || 'Item',
+                quantity: quantity,
+                price: unitPrice,
+                total: quantity * unitPrice
+            };
+        })
+        : [{
+            productName: order?.ProductName || order?.productName || 'Item',
+            quantity: fallbackQuantity,
+            price: fallbackUnitPrice,
+            total: fallbackTotal
+        }];
+
+    const total = items.reduce(function (sum, item) {
+        return sum + Number(item.total || 0);
+    }, 0);
+
+    return {
+        orderId: order?.OrderID || order?.orderID || order?.OrderId || order?.orderId || '',
+        customer: order?.FullName || order?.fullName || order?.Customer || order?.customer || '',
+        date: orderDate && !Number.isNaN(orderDate.getTime())
+            ? orderDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            : '',
+        total: total || fallbackTotal,
+        items: items
+    };
+}
+
 // ===== DOWNLOAD RECEIPT MODAL =====
 function openDownloadReceiptModal(order) {
     const orderDate = order?.DateTime ? new Date(order.DateTime) : null;
@@ -598,6 +668,98 @@ function downloadReceipt() {
 document.getElementById('downloadReceiptModal')?.addEventListener('click', function(e) {
     if(e.target.id === 'downloadReceiptModal') closeDownloadReceiptModal();
 });
+
+function openDownloadReceiptModal(order) {
+    currentReceiptOrder = normalizeReceiptOrder(order || {});
+
+    document.getElementById('receiptOrderId').textContent = currentReceiptOrder.orderId;
+    document.getElementById('receiptCustomer').textContent = currentReceiptOrder.customer;
+    document.getElementById('receiptDate').textContent = currentReceiptOrder.date;
+    document.getElementById('receiptTotal').textContent = Number(currentReceiptOrder.total || 0).toFixed(2);
+
+    const tbody = document.getElementById('receiptItemsBody');
+    tbody.innerHTML = '';
+
+    currentReceiptOrder.items.forEach(function (item) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${item.productName}</td>
+            <td>x${item.quantity}</td>
+            <td>${formatPeso(item.price)}</td>
+            <td>${formatPeso(item.total)}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    document.getElementById('downloadReceiptModal').classList.add('active');
+}
+
+function downloadReceipt() {
+    if (!currentReceiptOrder) {
+        showToast('Receipt details are not ready yet.', 'error');
+        return;
+    }
+
+    const lines = [
+        'NextHorizon Receipt',
+        '',
+        `Order #: ${currentReceiptOrder.orderId}`,
+        `Customer: ${currentReceiptOrder.customer}`,
+        `Date: ${currentReceiptOrder.date}`,
+        '',
+        'Items'
+    ];
+
+    currentReceiptOrder.items.forEach(function (item, index) {
+        lines.push(`${index + 1}. ${item.productName}`);
+        lines.push(`   Qty: ${item.quantity} | Price: ${formatPeso(item.price)} | Total: ${formatPeso(item.total)}`);
+    });
+
+    lines.push('');
+    lines.push(`Grand Total: ${formatPeso(currentReceiptOrder.total)}`);
+
+    const contentLines = [];
+    let currentY = 780;
+    lines.forEach(function (line) {
+        contentLines.push(`BT /F1 12 Tf 50 ${currentY} Td (${escapePdfText(line)}) Tj ET`);
+        currentY -= line === '' ? 12 : 18;
+    });
+
+    const contentStream = contentLines.join('\n');
+    const pdfObjects = [];
+    pdfObjects.push('1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj');
+    pdfObjects.push('2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj');
+    pdfObjects.push('3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj');
+    pdfObjects.push('4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj');
+    pdfObjects.push(`5 0 obj << /Length ${contentStream.length} >> stream\n${contentStream}\nendstream endobj`);
+
+    let pdf = '%PDF-1.4\n';
+    const offsets = [0];
+
+    pdfObjects.forEach(function (object) {
+        offsets.push(pdf.length);
+        pdf += `${object}\n`;
+    });
+
+    const xrefStart = pdf.length;
+    pdf += `xref\n0 ${pdfObjects.length + 1}\n`;
+    pdf += '0000000000 65535 f \n';
+    for (let i = 1; i < offsets.length; i += 1) {
+        pdf += `${String(offsets[i]).padStart(10, '0')} 00000 n \n`;
+    }
+    pdf += `trailer << /Size ${pdfObjects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+
+    const blob = new Blob([pdf], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `receipt-order-${currentReceiptOrder.orderId || 'download'}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    closeDownloadReceiptModal();
+}
 
 let currentReviewOrder = null;
 
@@ -985,10 +1147,12 @@ function openAddNoteModal(orderId, customerName) {
 
     const idInput = document.getElementById('addNotesOrderId');
     const headerText = document.getElementById('customerHeaderText');
+    const customerText = document.getElementById('addNotesCustomerText');
     const textarea = document.getElementById('addNotesTextarea');
 
     if (idInput) idInput.value = orderId;
     if (headerText) headerText.innerText = `Add Note for Order #${orderId}`; 
+    if (customerText) customerText.innerText = customerName || 'Customer';
     if (textarea) textarea.value = ""; 
 
     modal.style.display = 'flex';
@@ -1103,6 +1267,15 @@ document.getElementById('returnProof')?.addEventListener('change', function () {
     previewReturnProof(this);
 });
 
+function getDisplayValue(value, fallback = '---') {
+    const normalized = (value || '').trim();
+    if (!normalized || normalized === '---' || normalized.toLowerCase() === 'not selected') {
+        return fallback;
+    }
+
+    return normalized;
+}
+
 function openMarkReturnedModal(orderRow) {
     if (!orderRow) return;
 
@@ -1113,8 +1286,8 @@ function openMarkReturnedModal(orderRow) {
     document.getElementById('returnProduct').textContent = orderRow.children[3]?.innerText.trim() || '---';
     document.getElementById('returnItems').textContent = orderRow.children[4]?.innerText.trim() || '0';
     document.getElementById('returnTotal').textContent = orderRow.children[5]?.innerText.trim() || '\u20B10.00';
-    document.getElementById('returnCourier').textContent = orderRow.dataset.courier || '---';
-    document.getElementById('returnTracking').textContent = orderRow.dataset.tracking || '---';
+    document.getElementById('returnCourier').textContent = getDisplayValue(orderRow.dataset.courier, 'NextHorizon Partner');
+    document.getElementById('returnTracking').textContent = getDisplayValue(orderRow.dataset.tracking);
     document.getElementById('returnReason').value = '';
     document.getElementById('returnNote').value = '';
     removeReturnPreview();
@@ -1136,8 +1309,8 @@ function openReturnedInfoModal(orderRow) {
     document.getElementById('returnInfoProduct').textContent = orderRow.children[3]?.innerText.trim() || '---';
     document.getElementById('returnInfoQuantity').textContent = orderRow.children[4]?.innerText.trim() || '0';
     document.getElementById('returnInfoTotal').textContent = orderRow.children[5]?.innerText.trim() || '\u20B10.00';
-    document.getElementById('returnInfoCourier').textContent = orderRow.dataset.courier || '---';
-    document.getElementById('returnInfoTracking').textContent = orderRow.dataset.tracking || '---';
+    document.getElementById('returnInfoCourier').textContent = getDisplayValue(orderRow.dataset.courier, 'NextHorizon Partner');
+    document.getElementById('returnInfoTracking').textContent = getDisplayValue(orderRow.dataset.tracking);
     document.getElementById('returnInfoReason').textContent = orderRow.dataset.returnReason || '---';
     document.getElementById('returnInfoNote').textContent = orderRow.dataset.returnNote || 'No notes provided.';
 
@@ -1428,6 +1601,41 @@ if (document.readyState === 'loading') {
 
 let selectedReturnRequestRow = null;
 
+function findOrderRowByOrderId(orderId) {
+    if (!orderId) {
+        return null;
+    }
+
+    return document.querySelector(`.order-row[data-order-id="${orderId}"]`);
+}
+
+function getMergedReturnDetail(row) {
+    const orderId = row?.dataset.orderId || '';
+    const orderRow = findOrderRowByOrderId(orderId);
+
+    return {
+        orderId,
+        buyer: getDisplayValue(row?.dataset.buyer || orderRow?.dataset.buyer || orderRow?.children[1]?.innerText, 'Buyer'),
+        reason: getDisplayValue(row?.dataset.reason, 'Not provided'),
+        message: getDisplayValue(row?.dataset.message, 'No additional message provided.'),
+        imageUrl: row?.dataset.imageUrl || '',
+        status: getDisplayValue(row?.dataset.returnStatus || row?.dataset.displayStatus || row?.dataset.status, 'Return Requested'),
+        sellerDecisionReason: row?.dataset.sellerDecisionReason || '',
+        sellerDecisionNote: row?.dataset.sellerDecisionNote || '',
+        reviewedAt: row?.dataset.reviewedAt || '',
+        product: getDisplayValue(row?.dataset.product || orderRow?.children[3]?.innerText, 'Product unavailable'),
+        quantity: getDisplayValue(row?.dataset.quantity || orderRow?.children[4]?.innerText, '0'),
+        total: getDisplayValue(
+            row?.dataset.total ? `\u20B1${row.dataset.total}` : orderRow?.children[5]?.innerText,
+            '\u20B10.00'
+        ),
+        courier: getDisplayValue(row?.dataset.courier || orderRow?.dataset.courier, 'NextHorizon Partner'),
+        tracking: getDisplayValue(row?.dataset.tracking || orderRow?.dataset.tracking),
+        productImage: row?.dataset.productImage || orderRow?.querySelector('.product-img')?.getAttribute('src') || '',
+        requestDate: row?.dataset.date || ''
+    };
+}
+
 function openReturnDetailsModalFromRow(row) {
     if (!row) {
         return;
@@ -1435,36 +1643,47 @@ function openReturnDetailsModalFromRow(row) {
 
     selectedReturnRequestRow = row;
     const returnId = row.dataset.returnId || '';
-    const orderId = row.dataset.orderId || '';
-    const buyer = row.dataset.buyer || 'Buyer';
-    const reason = row.dataset.reason || 'Not provided';
-    const message = row.dataset.message || 'No additional message provided.';
-    const imageUrl = row.dataset.imageUrl || '';
-    const status = row.dataset.returnStatus || row.dataset.displayStatus || row.dataset.status || 'Return Requested';
-    const sellerDecisionReason = row.dataset.sellerDecisionReason || '';
-    const sellerDecisionNote = row.dataset.sellerDecisionNote || '';
-    const reviewedAt = row.dataset.reviewedAt || ''; 
+    const details = getMergedReturnDetail(row);
+    const requestDate = details.requestDate
+        ? new Date(`${details.requestDate}T00:00:00`).toLocaleDateString('en-US', {
+            month: 'short',
+            day: '2-digit',
+            year: 'numeric'
+        })
+        : '---';
 
-    document.getElementById('returnDetailsOrderId').textContent = orderId;
-    document.getElementById('returnDetailsBuyer').textContent = buyer;
-    document.getElementById('returnDetailsReason').textContent = reason;
-    document.getElementById('returnDetailsMessage').textContent = message;
+    document.getElementById('returnDetailsOrderId').textContent = details.orderId;
+    document.getElementById('returnDetailsBuyer').textContent = details.buyer;
+    document.getElementById('returnDetailsDate').textContent = requestDate;
+    document.getElementById('returnDetailsProduct').textContent = details.product;
+    document.getElementById('returnDetailsQuantity').textContent = details.quantity;
+    document.getElementById('returnDetailsTotal').textContent = details.total;
+    document.getElementById('returnDetailsCourier').textContent = details.courier;
+    document.getElementById('returnDetailsTracking').textContent = details.tracking;
+    document.getElementById('returnDetailsReason').textContent = details.reason;
+    document.getElementById('returnDetailsMessage').textContent = details.message;
 
     const statusBadge = document.getElementById('returnDetailsStatus');
-    statusBadge.textContent = status;
-    statusBadge.className = 'status-badge ' + status.toLowerCase().replace(/\s+/g, '-');
+    statusBadge.textContent = details.status;
+    statusBadge.className = 'status-badge ' + details.status.toLowerCase().replace(/\s+/g, '-');
 
     const imageElement = document.getElementById('returnDetailsImage');
-    imageElement.src = imageUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="720" height="250"%3E%3Crect width="100%25" height="100%25" rx="18" fill="%23f8fafc"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2364758b" font-family="Arial" font-size="20"%3ENo image uploaded%3C/text%3E%3C/svg%3E';
-    imageElement.alt = 'Return evidence for order #' + orderId;
+    imageElement.src = details.imageUrl || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="720" height="250"%3E%3Crect width="100%25" height="100%25" rx="18" fill="%23f8fafc"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2364758b" font-family="Arial" font-size="20"%3ENo image uploaded%3C/text%3E%3C/svg%3E';
+    imageElement.alt = 'Return evidence for order #' + details.orderId;
+
+    const productImageElement = document.getElementById('returnDetailsProductImage');
+    if (productImageElement) {
+        productImageElement.src = details.productImage || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="84" height="84"%3E%3Crect width="84" height="84" rx="18" fill="%23e2e8f0"/%3E%3C/svg%3E';
+        productImageElement.alt = details.product;
+    }
 
     const refundWrap = document.getElementById('refundStockWrap');
     const restoreStockCheckbox = document.getElementById('restoreStockCheckbox');
     restoreStockCheckbox.checked = false;
-    refundWrap.style.display = status === 'Item Returned' ? '' : 'none';
+    refundWrap.style.display = details.status === 'Item Returned' ? '' : 'none';
 
-    renderReturnSellerReview(status, sellerDecisionReason, sellerDecisionNote, reviewedAt);
-    renderReturnDetailsActions(status, returnId, orderId);
+    renderReturnSellerReview(details.status, details.sellerDecisionReason, details.sellerDecisionNote, details.reviewedAt);
+    renderReturnDetailsActions(details.status, returnId, details.orderId);
     document.getElementById('returnDetailsModal').style.display = 'flex';
 }
 

@@ -570,8 +570,24 @@ public sealed class MessagesController : ControllerBase
             .Where(consumer => buyerIds.Contains(consumer.ConsumerId))
             .ToDictionaryAsync(consumer => consumer.ConsumerId, BuildConsumerDisplayName, cancellationToken);
 
+        var orderIds = summaryList
+            .Where(summary => summary.ContextType == ConversationContextType.Order && summary.OrderId.HasValue)
+            .Select(summary => summary.OrderId!.Value)
+            .Distinct()
+            .ToList();
+
+        var orderBuyerNames = orderIds.Count == 0
+            ? new Dictionary<int, string>()
+            : await _dbContext.Orders
+                .AsNoTracking()
+                .Where(order => orderIds.Contains(order.OrderID))
+                .ToDictionaryAsync(
+                    order => order.OrderID,
+                    order => string.IsNullOrWhiteSpace(order.FullName) ? string.Empty : order.FullName.Trim(),
+                    cancellationToken);
+
         return summaryList
-            .Select(summary => ToConversationDto(summary, currentUser, scope, consumerDisplayNames))
+            .Select(summary => ToConversationDto(summary, currentUser, scope, consumerDisplayNames, orderBuyerNames))
             .ToList();
     }
 
@@ -586,14 +602,25 @@ public sealed class MessagesController : ControllerBase
             .Where(consumer => consumer.ConsumerId == summary.BuyerUserId)
             .ToDictionaryAsync(consumer => consumer.ConsumerId, BuildConsumerDisplayName, cancellationToken);
 
-        return ToConversationDto(summary, currentUser, scope, consumerDisplayNames);
+        var orderBuyerNames = summary.ContextType == ConversationContextType.Order && summary.OrderId.HasValue
+            ? await _dbContext.Orders
+                .AsNoTracking()
+                .Where(order => order.OrderID == summary.OrderId.Value)
+                .ToDictionaryAsync(
+                    order => order.OrderID,
+                    order => string.IsNullOrWhiteSpace(order.FullName) ? string.Empty : order.FullName.Trim(),
+                    cancellationToken)
+            : new Dictionary<int, string>();
+
+        return ToConversationDto(summary, currentUser, scope, consumerDisplayNames, orderBuyerNames);
     }
 
     private static ConversationDto ToConversationDto(
         MessageConversationSummary summary,
         AuthenticatedUserContext currentUser,
         ConversationActorScope scope,
-        IReadOnlyDictionary<int, string> consumerDisplayNames)
+        IReadOnlyDictionary<int, string> consumerDisplayNames,
+        IReadOnlyDictionary<int, string> orderBuyerNames)
     {
         var viewerIsSeller = scope == ConversationActorScope.Seller
             || (scope == ConversationActorScope.Any
@@ -612,10 +639,15 @@ public sealed class MessagesController : ControllerBase
 
         if (viewerIsSeller)
         {
-            displayName = consumerDisplayNames.TryGetValue(summary.BuyerUserId, out var consumerName) &&
-                !string.IsNullOrWhiteSpace(consumerName)
-                ? consumerName
-                : "Consumer";
+            displayName = summary.ContextType == ConversationContextType.Order
+                && summary.OrderId.HasValue
+                && orderBuyerNames.TryGetValue(summary.OrderId.Value, out var orderBuyerName)
+                && !string.IsNullOrWhiteSpace(orderBuyerName)
+                    ? orderBuyerName
+                    : consumerDisplayNames.TryGetValue(summary.BuyerUserId, out var consumerName) &&
+                        !string.IsNullOrWhiteSpace(consumerName)
+                        ? consumerName
+                        : "Consumer";
             displaySubtitle = contextLabel;
             avatarUrl = string.Empty;
             counterpartyRole = "consumer";
