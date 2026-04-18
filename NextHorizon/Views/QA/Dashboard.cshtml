@@ -2,6 +2,10 @@
     ViewData["Title"] = "QA Dashboard";
     Layout = "~/Views/Shared/_QALayout.cshtml";
     var defaultDashboardDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
+    var qaUserName = Context.Session.GetString("FullName");
+    qaUserName = string.IsNullOrWhiteSpace(qaUserName)
+        ? Context.Session.GetString("Username") ?? "QA User"
+        : qaUserName.Trim();
 }
 
 @section Styles {
@@ -25,25 +29,25 @@
     }
 
     .hero-top {
-        display: flex;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
         align-items: flex-start;
-        justify-content: space-between;
         gap: 14px;
-        flex-wrap: wrap;
     }
 
     .hero-copy {
-        max-width: 760px;
+        max-width: none;
     }
 
     .date-filter {
-        min-width: 230px;
+        width: 100%;
         background: rgba(255, 255, 255, 0.07);
         border: 0.5px solid rgba(255, 255, 255, 0.25);
         border-radius: 10px;
         padding: 10px 12px;
         display: grid;
         gap: 6px;
+        justify-self: end;
     }
 
     .date-filter label {
@@ -443,6 +447,10 @@
     }
 
     @@media (max-width: 900px) {
+        .hero-top {
+            grid-template-columns: 1fr;
+        }
+
         .insights-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
@@ -457,6 +465,7 @@
 
         .date-filter {
             min-width: 100%;
+            justify-self: stretch;
         }
     }
 
@@ -472,7 +481,7 @@
     <section class="hero">
         <div class="hero-top">
             <div class="hero-copy">
-                <h1>QA Dashboard</h1>
+                <h1>Welcome, @qaUserName</h1>
                 <p>Track agent quality, review resolved conversations, and send feedback ratings to improve response quality.</p>
             </div>
             <div class="date-filter">
@@ -492,7 +501,7 @@
             <div id="metric-agent-quality" class="metric-value">--</div>
         </article>
         <article class="metric-card">
-            <div class="metric-label">Unclosed resolved tickets</div>
+            <div class="metric-label">Resolved tickets awaiting QA</div>
             <div id="metric-unclosed" class="metric-value">--</div>
         </article>
     </section>
@@ -501,22 +510,22 @@
         <article class="insight-card">
             <div class="insight-label">Tickets rated</div>
             <div id="insight-rated" class="insight-value">--</div>
-            <div id="insight-rated-sub" class="insight-sub">Loading coverage...</div>
+            <div id="insight-rated-sub" class="insight-sub">Loading QA review activity...</div>
         </article>
         <article class="insight-card">
             <div class="insight-label">Pending QA ratings</div>
             <div id="insight-pending" class="insight-value">--</div>
-            <div id="insight-pending-sub" class="insight-sub">Backlog from resolved queue</div>
+            <div id="insight-pending-sub" class="insight-sub">Resolved on selected date and still unrated</div>
         </article>
         <article class="insight-card">
             <div class="insight-label">Average QA score</div>
             <div id="insight-average" class="insight-value">--</div>
-            <div class="insight-sub">Across rated conversations</div>
+            <div class="insight-sub">Across QA reviews created on the selected date</div>
         </article>
         <article class="insight-card">
             <div class="insight-label">Ratings updated</div>
             <div id="insight-updated" class="insight-value">--</div>
-            <div class="insight-sub">Edited after initial review</div>
+            <div class="insight-sub">Edited on the selected date</div>
         </article>
     </section>
 
@@ -538,11 +547,11 @@
         <div class="trend-head">
             <div>
                 <h3 class="trend-title">Tickets per day (month trend)</h3>
-                <div class="trend-sub">Daily ticket volume for this month with resolved vs QA-rated lines.</div>
+                <div class="trend-sub">Resolved tickets versus QA reviews created for the selected month through the chosen date.</div>
             </div>
             <div class="trend-legend">
                 <span class="legend-item"><span class="legend-dot resolved"></span>Total resolved</span>
-                <span class="legend-item"><span class="legend-dot rated"></span>QA-rated</span>
+                <span class="legend-item"><span class="legend-dot rated"></span>QA reviews created</span>
             </div>
         </div>
         <div class="trend-wrap">
@@ -557,14 +566,14 @@
     <section class="boards">
         <article class="card">
             <div class="card-head">
-                <h3>Top performing agents</h3>
+                <h3>Top performing agents on selected date</h3>
             </div>
             <div id="top-agent-list" class="agent-list"></div>
         </article>
 
         <article class="card">
             <div class="card-head">
-                <h3>Resolved tickets awaiting QA</h3>
+                <h3>Selected-date tickets awaiting QA</h3>
             </div>
             <div id="awaiting-ticket-list" class="ticket-list"></div>
         </article>
@@ -600,7 +609,7 @@
             if (!agentList) return;
 
             if (!items || !items.length) {
-                agentList.innerHTML = '<div class="agent-item"><div><div class="agent-name">No agents yet</div><div class="agent-sub">No resolved conversations were found for the current window.</div></div></div>';
+                agentList.innerHTML = '<div class="agent-item"><div><div class="agent-name">No agents yet</div><div class="agent-sub">No QA reviews were created on the selected date.</div></div></div>';
                 return;
             }
 
@@ -623,7 +632,7 @@
             if (!ticketList) return;
 
             if (!items || !items.length) {
-                ticketList.innerHTML = '<div class="ticket-item"><div><div class="ticket-id">No tickets awaiting QA</div><div class="ticket-sub">All resolved conversations in scope already have a QA review.</div></div></div>';
+                ticketList.innerHTML = '<div class="ticket-item"><div><div class="ticket-id">No tickets awaiting QA</div><div class="ticket-sub">All conversations resolved on the selected date already have a QA review.</div></div></div>';
                 return;
             }
 
@@ -762,9 +771,9 @@
             if (metricAgentQuality) metricAgentQuality.textContent = '--';
             if (metricUnclosed) metricUnclosed.textContent = '--';
             if (insightRated) insightRated.textContent = '--';
-            if (insightRatedSub) insightRatedSub.textContent = 'Loading coverage...';
+            if (insightRatedSub) insightRatedSub.textContent = 'Loading QA review activity...';
             if (insightPending) insightPending.textContent = '--';
-            if (insightPendingSub) insightPendingSub.textContent = 'Loading queue status...';
+            if (insightPendingSub) insightPendingSub.textContent = 'Loading selected-date queue status...';
             if (insightAverage) insightAverage.textContent = '--';
             if (insightUpdated) insightUpdated.textContent = '--';
             if (throughputNote) throughputNote.textContent = 'Loading throughput insight...';
@@ -777,15 +786,15 @@
             if (metricAgentQuality) metricAgentQuality.textContent = payload.agentMetric || '--';
             if (metricUnclosed) metricUnclosed.textContent = String(payload.unclosedResolved || 0);
             if (insightRated) insightRated.textContent = payload.ticketsRated || '--';
-            if (insightRatedSub) insightRatedSub.textContent = payload.ticketsRatedSub || 'No QA coverage yet';
+            if (insightRatedSub) insightRatedSub.textContent = payload.ticketsRatedSub || 'No QA reviews created on the selected date';
             if (insightPending) insightPending.textContent = String(payload.pendingRatings || 0);
-            if (insightPendingSub) insightPendingSub.textContent = 'Backlog from resolved queue';
+            if (insightPendingSub) insightPendingSub.textContent = 'Resolved on selected date and still unrated';
             if (insightAverage) insightAverage.textContent = payload.averageQaScore || '--';
             if (insightUpdated) insightUpdated.textContent = String(payload.ratingsUpdated || 0);
             if (throughputNote) throughputNote.textContent = payload.throughputNote || 'No throughput insight available.';
             if (throughputProgress) throughputProgress.style.width = Math.max(0, Math.min(100, payload.throughputPercent || 0)) + '%';
             if (qualityNote) qualityNote.textContent = payload.qualityNote || 'No quality insight available.';
-            if (dateContext) dateContext.textContent = 'Showing data for ' + (payload.label || dateInput.value) + '.';
+            if (dateContext) dateContext.textContent = 'Showing QA activity and backlog for ' + (payload.label || dateInput.value) + '. Trend chart covers the selected month through this date.';
 
             renderAgents(payload.topAgents || []);
             renderTickets(payload.awaitingTickets || []);

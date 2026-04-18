@@ -52,14 +52,6 @@ public sealed class QaRatedHistoryService : IQaRatedHistoryService
             .Distinct()
             .ToArray();
 
-        var faqs = await _dbContext.SupportFaqRecords
-            .AsNoTracking()
-            .Where(item => supportFaqIds.Contains(item.Id))
-            .Select(item => new SupportFaqSeed(item.Id, item.AgentId))
-            .ToListAsync(cancellationToken);
-
-        var faqById = faqs.ToDictionary(item => item.SupportFaqId);
-
         var latestSessions = await _dbContext.LiveAgentSessions
             .AsNoTracking()
             .Where(item => supportFaqIds.Contains(item.SupportFaqId))
@@ -87,9 +79,8 @@ public sealed class QaRatedHistoryService : IQaRatedHistoryService
                 .Where(item => consumerIds.Contains(item.ConsumerId))
                 .ToDictionaryAsync(item => item.ConsumerId, cancellationToken);
 
-        var agentUserIds = faqs
-            .Where(item => item.AgentUserId.HasValue)
-            .Select(item => item.AgentUserId!.Value)
+        var agentUserIds = reviews
+            .Select(item => item.AgentUserId)
             .Distinct()
             .ToArray();
 
@@ -100,10 +91,9 @@ public sealed class QaRatedHistoryService : IQaRatedHistoryService
             .Where(item => MatchesScoreBand((double)item.OverallPercent, score))
             .Select(item =>
             {
-                faqById.TryGetValue(item.SupportFaqId, out var faq);
                 latestSessionsBySupportFaqId.TryGetValue(item.SupportFaqId, out var session);
 
-                var agentName = faq?.AgentUserId is int userId && agentNames.TryGetValue(userId, out var resolvedAgentName)
+                var agentName = agentNames.TryGetValue(item.AgentUserId, out var resolvedAgentName)
                     ? resolvedAgentName
                     : "Unassigned";
                 var customerName = ResolveCustomerName(session, consumers);
@@ -281,10 +271,6 @@ public sealed class QaRatedHistoryService : IQaRatedHistoryService
             from?.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
             to?.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc).AddDays(1));
     }
-
-    private sealed record SupportFaqSeed(
-        int SupportFaqId,
-        int? AgentUserId);
 
     private sealed record QaAgentRecord(
         int UserId,

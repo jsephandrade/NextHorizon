@@ -276,6 +276,29 @@
         margin-top: 2px;
     }
 
+    .autosave-status {
+        margin-top: 6px;
+        font-size: .74rem;
+        font-weight: 600;
+        color: #666666;
+    }
+
+    .autosave-status.pending {
+        color: #8a5a10;
+    }
+
+    .autosave-status.saving {
+        color: #1c4d91;
+    }
+
+    .autosave-status.saved {
+        color: #1c6a36;
+    }
+
+    .autosave-status.error {
+        color: #9a2f2f;
+    }
+
     .conversation-summary {
         font-size: 1rem;
         font-weight: 700;
@@ -1026,6 +1049,10 @@
             <div>
                 <div class="panel-title">QA rating panel</div>
                 <div class="sub">@(hasActiveTicket ? (isRated ? "This conversation is already rated" : "Rate this conversation from QA side") : "No conversation is available to rate right now")</div>
+                @if (hasActiveTicket)
+                {
+                    <div id="qa-autosave-status" class="autosave-status">Changes save automatically.</div>
+                }
             </div>
             @if (hasActiveTicket && isRated)
             {
@@ -1124,23 +1151,6 @@
                 </div>
                 <div class="form-hint">Message-level comments are added directly inside the conversation bubbles. Click a message to comment.</div>
 
-                <div id="new-rating-error" class="score-error">Please score all 9 questions using the 1-5 scale.</div>
-                <div id="new-rating-success" class="score-success">Scores captured. Accuracy, tone, and resolution ratings are valid for submission.</div>
-                <div class="actions">
-                    <button id="submit-new-rating" class="btn primary" type="button">Submit rating</button>
-                </div>
-
-                <div id="submit-choice-modal" class="submit-choice-modal" aria-hidden="true">
-                    <div class="submit-choice-card" role="dialog" aria-modal="true" aria-labelledby="submit-choice-title">
-                        <div id="submit-choice-title" class="submit-choice-title">Submit this score to the agent?</div>
-                        <div class="submit-choice-text">Choose if QA should send this score to the agent now, or keep it as QA-only.</div>
-                        <div class="submit-choice-actions">
-                            <button id="submit-choice-cancel" class="btn secondary" type="button">Cancel</button>
-                            <button id="submit-choice-no" class="btn secondary" type="button">No, QA only</button>
-                            <button id="submit-choice-yes" class="btn primary" type="button">Yes, submit to agent</button>
-                        </div>
-                    </div>
-                </div>
             </form>
         }
         else
@@ -1175,33 +1185,6 @@
                     <div class="summary-meta">
                         <div>Rated by: @ViewData["RatedBy"]</div>
                         <div>Rated on: @ViewData["RatedOn"]</div>
-                    </div>
-
-                    <div class="submit-agent-box">
-                        <div id="rated-submit-status" class="submit-agent-status @(ratedSubmittedToAgent ? "sent" : "pending")">
-                            @(ratedSubmittedToAgent ? "Already submitted to agent" : "Not yet submitted to agent")
-                        </div>
-                        <div id="rated-submit-note" class="submit-agent-note">
-                            @(ratedSubmittedToAgent && !string.IsNullOrWhiteSpace(ratedSubmittedOn)
-                                ? "Submitted on: " + ratedSubmittedOn
-                                : "QA can submit this score to the agent from here.")
-                        </div>
-                        <div class="summary-actions">
-                            <button id="rated-submit-agent-btn" class="btn @(ratedSubmittedToAgent ? "secondary" : "primary")" type="button">
-                                @(ratedSubmittedToAgent ? "Submit again" : "Submit to agent")
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="rated-submit-confirm-modal" class="submit-choice-modal" aria-hidden="true">
-                        <div class="submit-choice-card" role="dialog" aria-modal="true" aria-labelledby="rated-submit-confirm-title">
-                            <div id="rated-submit-confirm-title" class="submit-choice-title">Submit this QA score to the agent now?</div>
-                            <div id="rated-submit-confirm-text" class="submit-choice-text">This sends the current QA score summary to the agent.</div>
-                            <div class="submit-choice-actions">
-                                <button id="rated-submit-confirm-cancel" class="btn secondary" type="button">Cancel</button>
-                                <button id="rated-submit-confirm-ok" class="btn primary" type="button">Submit</button>
-                            </div>
-                        </div>
                     </div>
 
                     <div class="summary-actions">
@@ -1375,10 +1358,8 @@
                         <label>QA notes</label>
                         <textarea id="edit-notes">@ratedNotes</textarea>
                     </div>
-                    <div id="edit-rating-error" class="score-error">Please score all 9 questions using the 1-5 scale.</div>
                     <div class="actions">
-                        <button id="save-rated-btn" class="btn primary" type="button">Save changes</button>
-                        <button id="cancel-rated-btn" class="btn secondary" type="button">Cancel</button>
+                        <button id="cancel-rated-btn" class="btn secondary" type="button">Back</button>
                     </div>
                 </form>
             </div>
@@ -1564,11 +1545,19 @@
             pendingNavigationTicketId = targetTicketId;
 
             var directionText = direction === 'prev' ? 'previous' : 'next';
+            var hasIncompleteNewRating = hasIncompleteNewRatingState();
             if (navConfirmTitle) {
                 navConfirmTitle.textContent = 'Continue to ticket #' + targetTicketId + '?';
             }
             if (navConfirmText) {
-                navConfirmText.textContent = 'QA work is still active on this ticket. Save and continue to the ' + directionText + ' ticket?';
+                navConfirmText.textContent = hasIncompleteNewRating
+                    ? 'This QA review is incomplete and cannot be autosaved yet. Continue to the ' + directionText + ' ticket? Unfinished score changes will be discarded.'
+                    : 'QA work is still active on this ticket. Save and continue to the ' + directionText + ' ticket?';
+            }
+            if (navSaveContinueBtn) {
+                navSaveContinueBtn.textContent = hasIncompleteNewRating
+                    ? 'Continue'
+                    : 'Save and continue';
             }
 
             navConfirmModal.classList.add('is-open');
@@ -1678,7 +1667,8 @@
                     return;
                 }
 
-                setButtonBusy(navSaveContinueBtn, true, 'Saving...');
+                var hasIncompleteNewRating = hasIncompleteNewRatingState();
+                setButtonBusy(navSaveContinueBtn, true, hasIncompleteNewRating ? 'Continuing...' : 'Saving...');
                 persistActiveWorkIfNeeded()
                     .then(function () {
                         closeTicketNavConfirm();
@@ -2108,8 +2098,10 @@
         function persistActiveWorkIfNeeded() {
             var hadPendingCommentText = collectPendingComposerComments();
             var shouldPersistInlineComments = hadPendingCommentText || isInlineCommentsDirty();
-            var shouldPersistRating = isNewRatingDirty() || isEditRatingDirty();
-            var ratingRootPrefix = isEditRatingDirty() ? 'edit' : 'new';
+            var shouldPersistEditRating = hasPersistableEditRatingState();
+            var shouldPersistNewRating = hasPersistableNewRatingState();
+            var shouldPersistRating = shouldPersistEditRating || shouldPersistNewRating;
+            var ratingRootPrefix = shouldPersistEditRating ? 'edit' : 'new';
 
             var task = Promise.resolve();
 
@@ -2123,10 +2115,8 @@
 
             if (shouldPersistRating) {
                 task = task.then(function () {
-                    return saveReview(ratingRootPrefix, false).then(function () {
-                        persistedNewRatingSignature = captureRatingSignature('new');
-                        persistedEditRatingSignature = captureRatingSignature('edit');
-                        persistedInlineCommentSignature = serializeInlineCommentMap(inlineCommentThreads);
+                    return saveReview(ratingRootPrefix).then(function () {
+                        markReviewPersisted();
                     });
                 });
             }
@@ -2203,7 +2193,29 @@
             if (originalText) button.textContent = originalText;
         }
 
-        function buildReviewPayload(rootPrefix, submitToAgentNow) {
+        var autosaveStatus = document.getElementById('qa-autosave-status');
+        var autosaveTimerId = 0;
+        var autosaveDelayMs = 900;
+        var autosaveAgentName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(string.IsNullOrWhiteSpace(conversationAgent) ? "the assigned agent" : conversationAgent));
+        var autosaveSuccessMessage = 'QA Evalution for this ticket has been recorded and submitted to ' + autosaveAgentName + '.';
+
+        function setAutosaveStatus(state, message) {
+            if (!autosaveStatus) return;
+
+            autosaveStatus.classList.remove('pending', 'saving', 'saved', 'error');
+            if (state) {
+                autosaveStatus.classList.add(state);
+            }
+            autosaveStatus.textContent = message || 'Changes save automatically.';
+        }
+
+        function clearAutosaveTimer() {
+            if (!autosaveTimerId) return;
+            window.clearTimeout(autosaveTimerId);
+            autosaveTimerId = 0;
+        }
+
+        function buildReviewPayload(rootPrefix) {
             var accuracyScores = readGroupScores('accuracy', rootPrefix);
             var toneScores = readGroupScores('tone', rootPrefix);
             var resolutionScores = readGroupScores('resolution', rootPrefix);
@@ -2220,9 +2232,131 @@
                 toneScores: toneScores,
                 resolutionScores: resolutionScores,
                 notes: notesField ? (notesField.value || '').trim() : '',
-                submitToAgentNow: !!submitToAgentNow,
+                submitToAgentNow: false,
                 inlineCommentThreads: normalizedInlineCommentThreads
             };
+        }
+
+        function isReviewPayloadValid(rootPrefix) {
+            return !!buildReviewPayload(rootPrefix);
+        }
+
+        function hasIncompleteNewRatingState() {
+            return isNewRatingDirty() && !isReviewPayloadValid('new');
+        }
+
+        function hasPersistableNewRatingState() {
+            return isNewRatingDirty() && isReviewPayloadValid('new');
+        }
+
+        function hasPersistableEditRatingState() {
+            return isEditRatingDirty() && isReviewPayloadValid('edit');
+        }
+
+        function markReviewPersisted() {
+            persistedNewRatingSignature = captureRatingSignature('new');
+            persistedEditRatingSignature = captureRatingSignature('edit');
+            persistedInlineCommentSignature = serializeInlineCommentMap(inlineCommentThreads);
+        }
+
+        function syncRatedSummaryFromEdit() {
+            var metrics = updateAverages('edit', 'edit');
+            var summaryAccuracy = document.getElementById('summary-accuracy');
+            var summaryTone = document.getElementById('summary-tone');
+            var summaryResolution = document.getElementById('summary-resolution');
+            var summaryAverage = document.getElementById('summary-average');
+            var summaryNotes = document.getElementById('summary-notes');
+            var editNotes = document.getElementById('edit-notes');
+
+            if (summaryAccuracy) summaryAccuracy.innerHTML = '<strong>' + metrics.accuracyPoints.toFixed(1) + ' / 35</strong>';
+            if (summaryTone) summaryTone.innerHTML = '<strong>' + metrics.tonePoints.toFixed(1) + ' / 35</strong>';
+            if (summaryResolution) summaryResolution.innerHTML = '<strong>' + metrics.resolutionPoints.toFixed(1) + ' / 30</strong>';
+            if (summaryAverage) summaryAverage.innerHTML = '<strong>' + metrics.overallPercent.toFixed(1) + ' / 100</strong>';
+            if (summaryNotes) summaryNotes.textContent = editNotes ? (editNotes.value || '').trim() : '';
+        }
+
+        function syncReadonlyViewFromEdit() {
+            var groups = ['accuracy', 'tone', 'resolution'];
+            for (var g = 0; g < groups.length; g++) {
+                var groupName = groups[g];
+                for (var q = 1; q <= 3; q++) {
+                    var selected = document.querySelector('input[name="edit-' + groupName + '-q' + q + '"]:checked');
+                    if (!selected) continue;
+
+                    var viewSelector = 'input[name="view-' + groupName + '-q' + q + '"][value="' + selected.value + '"]';
+                    var viewInput = document.querySelector(viewSelector);
+                    if (viewInput) {
+                        viewInput.checked = true;
+                    }
+                }
+            }
+        }
+
+        function updateAutosavePrompt(rootPrefix) {
+            if (rootPrefix === 'new' && hasIncompleteNewRatingState()) {
+                setAutosaveStatus('pending', 'Complete all 9 scores to save automatically.');
+                return false;
+            }
+
+            var isDirty = rootPrefix === 'edit' ? hasPersistableEditRatingState() : hasPersistableNewRatingState();
+            if (!isDirty) {
+                setAutosaveStatus('saved', rootPrefix === 'edit'
+                    ? autosaveSuccessMessage
+                    : 'Changes save automatically once all 9 scores are complete.');
+                return false;
+            }
+
+            setAutosaveStatus('pending', 'Changes pending. Saving automatically...');
+            return true;
+        }
+
+        function performAutosave(rootPrefix) {
+            clearAutosaveTimer();
+
+            if (!hasActiveTicket || currentSupportFaqId <= 0 || isNavigatingBetweenTickets) {
+                return;
+            }
+
+            if (rootPrefix === 'new' && !hasPersistableNewRatingState()) {
+                updateAutosavePrompt('new');
+                return;
+            }
+
+            if (rootPrefix === 'edit' && !hasPersistableEditRatingState()) {
+                updateAutosavePrompt('edit');
+                return;
+            }
+
+            setAutosaveStatus('saving', 'Saving QA review...');
+
+            saveReview(rootPrefix)
+                .then(function () {
+                    markReviewPersisted();
+
+                    if (rootPrefix === 'edit') {
+                        syncRatedSummaryFromEdit();
+                        syncReadonlyViewFromEdit();
+                        setAutosaveStatus('saved', autosaveSuccessMessage);
+                        return;
+                    }
+
+                    setAutosaveStatus('saved', 'QA review saved. Refreshing...');
+                    window.location.reload();
+                })
+                .catch(function (error) {
+                    setAutosaveStatus('error', error && error.message ? error.message : 'Unable to save the QA review.');
+                });
+        }
+
+        function scheduleReviewAutosave(rootPrefix) {
+            clearAutosaveTimer();
+            if (!updateAutosavePrompt(rootPrefix)) {
+                return;
+            }
+
+            autosaveTimerId = window.setTimeout(function () {
+                performAutosave(rootPrefix);
+            }, autosaveDelayMs);
         }
 
         function saveInlineComments() {
@@ -2231,6 +2365,7 @@
             };
 
             beginSaveActivity();
+            setAutosaveStatus('saving', 'Saving QA comments...');
             return fetch('/qa/api/reviews/' + currentSupportFaqId + '/inline-comments', {
                 method: 'POST',
                 headers: {
@@ -2249,13 +2384,21 @@
                             return result;
                         });
                 })
+                .then(function (result) {
+                    setAutosaveStatus('saved', 'QA comments saved automatically.');
+                    return result;
+                })
+                .catch(function (error) {
+                    setAutosaveStatus('error', error && error.message ? error.message : 'Unable to save QA conversation comments.');
+                    throw error;
+                })
                 .finally(function () {
                     endSaveActivity();
                 });
         }
 
-        function saveReview(rootPrefix, submitToAgentNow) {
-            var payload = buildReviewPayload(rootPrefix, submitToAgentNow);
+        function saveReview(rootPrefix) {
+            var payload = buildReviewPayload(rootPrefix);
             if (!payload) {
                 return Promise.reject(new Error('All 9 questions must be scored from 1 to 5.'));
             }
@@ -2284,204 +2427,13 @@
                 });
         }
 
-        function submitReviewToAgent() {
-            beginSaveActivity();
-            return fetch('/qa/api/reviews/' + currentSupportFaqId + '/submit-agent', {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            })
-                .then(function (response) {
-                    return response.json().catch(function () { return { success: false, message: 'Unable to submit QA review to the agent.' }; })
-                        .then(function (result) {
-                            if (!response.ok || !result.success) {
-                                throw new Error(result.message || 'Unable to submit QA review to the agent.');
-                            }
-
-                            return result;
-                        });
-                })
-                .finally(function () {
-                    endSaveActivity();
-                });
-        }
-
-        var submitNewBtn = document.getElementById('submit-new-rating');
-        var newError = document.getElementById('new-rating-error');
-        var newSuccess = document.getElementById('new-rating-success');
-        var submitChoiceModal = document.getElementById('submit-choice-modal');
-        var submitChoiceYesBtn = document.getElementById('submit-choice-yes');
-        var submitChoiceNoBtn = document.getElementById('submit-choice-no');
-        var submitChoiceCancelBtn = document.getElementById('submit-choice-cancel');
-        var submitChoiceCallback = null;
-
-        function closeSubmitChoice(decision) {
-            if (!submitChoiceModal) return;
-            submitChoiceModal.classList.remove('is-open');
-            submitChoiceModal.setAttribute('aria-hidden', 'true');
-            document.body.classList.remove('modal-open');
-
-            var cb = submitChoiceCallback;
-            submitChoiceCallback = null;
-            if (typeof cb === 'function') cb(decision);
-        }
-
-        function openSubmitChoice(onDecision) {
-            if (!submitChoiceModal) {
-                onDecision(true);
-                return;
-            }
-            submitChoiceCallback = onDecision;
-            submitChoiceModal.classList.add('is-open');
-            submitChoiceModal.setAttribute('aria-hidden', 'false');
-            document.body.classList.add('modal-open');
-        }
-
-        if (submitChoiceYesBtn) submitChoiceYesBtn.addEventListener('click', function () { closeSubmitChoice(true); });
-        if (submitChoiceNoBtn) submitChoiceNoBtn.addEventListener('click', function () { closeSubmitChoice(false); });
-        if (submitChoiceCancelBtn) submitChoiceCancelBtn.addEventListener('click', function () { closeSubmitChoice(null); });
-        if (submitChoiceModal) {
-            submitChoiceModal.addEventListener('click', function (e) {
-                if (e.target === submitChoiceModal) closeSubmitChoice(null);
-            });
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape' && submitChoiceModal.classList.contains('is-open')) closeSubmitChoice(null);
-            });
-        }
-
-        if (submitNewBtn) {
-            submitNewBtn.addEventListener('click', function () {
-                var previewPayload = buildReviewPayload('new', false);
-                if (!previewPayload) {
-                    if (newSuccess) newSuccess.style.display = 'none';
-                    if (newError) newError.style.display = 'block';
-                    if (newError) newError.textContent = 'Please score all 9 questions using the 1-5 scale.';
-                    return;
-                }
-
-                openSubmitChoice(function (sendToAgent) {
-                    if (sendToAgent === null) return;
-
-                    if (newError) newError.style.display = 'none';
-                    setButtonBusy(submitNewBtn, true, 'Saving...');
-
-                    saveReview('new', sendToAgent)
-                        .then(function () {
-                            persistedNewRatingSignature = captureRatingSignature('new');
-                            persistedInlineCommentSignature = serializeInlineCommentMap(inlineCommentThreads);
-                            if (newSuccess) {
-                                var metrics = updateAverages('new', 'new');
-                                var submitStateText = sendToAgent
-                                    ? 'Submitted to agent.'
-                                    : 'Saved by QA only (not sent to agent).';
-                                newSuccess.innerHTML = '<strong>Scores captured.</strong> Accuracy <strong>' + metrics.accuracyPoints.toFixed(1) + '/35</strong>, Empathy <strong>' + metrics.tonePoints.toFixed(1) + '/35</strong>, Resolution <strong>' + metrics.resolutionPoints.toFixed(1) + '/30</strong>, Total <strong>' + metrics.overallPercent.toFixed(1) + ' / 100</strong>. <strong>' + submitStateText + '</strong>';
-                                newSuccess.style.display = 'block';
-                            }
-
-                            window.location.reload();
-                        })
-                        .catch(function (error) {
-                            if (newSuccess) newSuccess.style.display = 'none';
-                            if (newError) {
-                                newError.textContent = error && error.message ? error.message : 'Unable to save the QA review.';
-                                newError.style.display = 'block';
-                            }
-                        })
-                        .finally(function () {
-                            setButtonBusy(submitNewBtn, false);
-                        });
-                });
-            });
-        }
-
         var editBtn = document.getElementById('edit-rated-btn');
         var viewBtn = document.getElementById('view-rated-btn');
         var cancelBtn = document.getElementById('cancel-rated-btn');
-        var saveBtn = document.getElementById('save-rated-btn');
         var summaryView = document.getElementById('rated-summary-view');
         var viewForm = document.getElementById('rated-view-form');
         var backViewBtn = document.getElementById('back-rated-view-btn');
         var editForm = document.getElementById('rated-edit-form');
-        var editError = document.getElementById('edit-rating-error');
-        var ratedSubmitBtn = document.getElementById('rated-submit-agent-btn');
-        var ratedSubmitStatus = document.getElementById('rated-submit-status');
-        var ratedSubmitNote = document.getElementById('rated-submit-note');
-        var ratedSubmitConfirmModal = document.getElementById('rated-submit-confirm-modal');
-        var ratedSubmitConfirmTitle = document.getElementById('rated-submit-confirm-title');
-        var ratedSubmitConfirmText = document.getElementById('rated-submit-confirm-text');
-        var ratedSubmitConfirmOk = document.getElementById('rated-submit-confirm-ok');
-        var ratedSubmitConfirmCancel = document.getElementById('rated-submit-confirm-cancel');
-        var ratedSubmitConfirmCallback = null;
-
-        function closeRatedSubmitConfirm(decision) {
-            if (!ratedSubmitConfirmModal) return;
-            ratedSubmitConfirmModal.classList.remove('is-open');
-            ratedSubmitConfirmModal.setAttribute('aria-hidden', 'true');
-            document.body.classList.remove('modal-open');
-
-            var cb = ratedSubmitConfirmCallback;
-            ratedSubmitConfirmCallback = null;
-            if (typeof cb === 'function') cb(decision);
-        }
-
-        function openRatedSubmitConfirm(alreadySubmitted, onDecision) {
-            if (!ratedSubmitConfirmModal) {
-                onDecision(true);
-                return;
-            }
-
-            if (ratedSubmitConfirmTitle) {
-                ratedSubmitConfirmTitle.textContent = alreadySubmitted
-                    ? 'This score was already submitted. Submit again to the agent?'
-                    : 'Submit this QA score to the agent now?';
-            }
-
-            if (ratedSubmitConfirmText) {
-                ratedSubmitConfirmText.textContent = alreadySubmitted
-                    ? 'This will send the score again and refresh the submission timestamp.'
-                    : 'This sends the current QA score summary to the agent.';
-            }
-
-            ratedSubmitConfirmCallback = onDecision;
-            ratedSubmitConfirmModal.classList.add('is-open');
-            ratedSubmitConfirmModal.setAttribute('aria-hidden', 'false');
-            document.body.classList.add('modal-open');
-        }
-
-        if (ratedSubmitConfirmOk) ratedSubmitConfirmOk.addEventListener('click', function () { closeRatedSubmitConfirm(true); });
-        if (ratedSubmitConfirmCancel) ratedSubmitConfirmCancel.addEventListener('click', function () { closeRatedSubmitConfirm(false); });
-        if (ratedSubmitConfirmModal) {
-            ratedSubmitConfirmModal.addEventListener('click', function (e) {
-                if (e.target === ratedSubmitConfirmModal) closeRatedSubmitConfirm(false);
-            });
-        }
-
-        if (ratedSubmitBtn && ratedSubmitStatus && ratedSubmitNote) {
-            ratedSubmitBtn.addEventListener('click', function () {
-                var alreadySubmitted = ratedSubmitStatus.classList.contains('sent');
-                openRatedSubmitConfirm(alreadySubmitted, function (confirmed) {
-                    if (!confirmed) return;
-
-                    setButtonBusy(ratedSubmitBtn, true, 'Submitting...');
-
-                    submitReviewToAgent()
-                        .then(function () {
-                            window.location.reload();
-                        })
-                        .catch(function (error) {
-                            if (ratedSubmitNote) {
-                                ratedSubmitNote.textContent = error && error.message
-                                    ? error.message
-                                    : 'Unable to submit the QA review to the agent.';
-                            }
-                        })
-                        .finally(function () {
-                            setButtonBusy(ratedSubmitBtn, false);
-                        });
-                });
-            });
-        }
 
         if (viewBtn && backViewBtn && summaryView && viewForm) {
             viewBtn.addEventListener('click', function () {
@@ -2495,48 +2447,46 @@
             });
         }
 
-        if (editBtn && cancelBtn && saveBtn && summaryView && editForm) {
+        function attachAutosaveListeners(rootPrefix) {
+            var scoreInputs = document.querySelectorAll('.' + rootPrefix + '-score-input');
+            var notesField = document.getElementById(rootPrefix + '-notes');
+
+            for (var i = 0; i < scoreInputs.length; i++) {
+                scoreInputs[i].addEventListener('change', function () {
+                    scheduleReviewAutosave(rootPrefix);
+                });
+            }
+
+            if (notesField) {
+                notesField.addEventListener('input', function () {
+                    scheduleReviewAutosave(rootPrefix);
+                });
+            }
+        }
+
+        attachAutosaveListeners('new');
+        attachAutosaveListeners('edit');
+
+        if (editBtn && cancelBtn && summaryView && editForm) {
             editBtn.addEventListener('click', function () {
                 summaryView.style.display = 'none';
                 if (viewForm) viewForm.style.display = 'none';
                 editForm.style.display = 'grid';
-                if (editError) editError.style.display = 'none';
+                updateAutosavePrompt('edit');
             });
 
             cancelBtn.addEventListener('click', function () {
+                clearAutosaveTimer();
                 editForm.style.display = 'none';
                 summaryView.style.display = '';
-                if (editError) editError.style.display = 'none';
-            });
-
-            saveBtn.addEventListener('click', function () {
-                var previewPayload = buildReviewPayload('edit', false);
-                if (!previewPayload) {
-                    if (editError) editError.style.display = 'block';
-                    if (editError) editError.textContent = 'Please score all 9 questions using the 1-5 scale.';
-                    return;
-                }
-
-                if (editError) editError.style.display = 'none';
-                setButtonBusy(saveBtn, true, 'Saving...');
-
-                saveReview('edit', false)
-                    .then(function () {
-                        persistedEditRatingSignature = captureRatingSignature('edit');
-                        persistedInlineCommentSignature = serializeInlineCommentMap(inlineCommentThreads);
-                        window.location.reload();
-                    })
-                    .catch(function (error) {
-                        if (editError) {
-                            editError.textContent = error && error.message ? error.message : 'Unable to save the QA review.';
-                            editError.style.display = 'block';
-                        }
-                    })
-                    .finally(function () {
-                        setButtonBusy(saveBtn, false);
-                    });
+                setAutosaveStatus('saved', autosaveSuccessMessage);
             });
         }
+
+        setAutosaveStatus('', @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            hasActiveTicket
+                ? (isRated ? "QA Evalution for this ticket has been recorded and submitted to " + (string.IsNullOrWhiteSpace(conversationAgent) ? "the assigned agent" : conversationAgent) + "." : "Complete all 9 scores to save automatically.")
+                : string.Empty)));
 
     })();
 </script>

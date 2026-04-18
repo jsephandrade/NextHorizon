@@ -14,7 +14,11 @@ using NextHorizon.Security;
 using NextHorizon.Services;
 using System.Threading.RateLimiting;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = ResolveContentRoot(),
+});
 var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is missing.");
 
@@ -154,4 +158,31 @@ app.MapControllerRoute(
 
 
 app.Run();
+
+static string ResolveContentRoot()
+{
+    var currentDirectory = Directory.GetCurrentDirectory();
+    if (LooksLikeProjectRoot(currentDirectory))
+    {
+        return currentDirectory;
+    }
+
+    var applicationName = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name;
+    if (!string.IsNullOrWhiteSpace(applicationName))
+    {
+        var nestedProjectDirectory = Path.Combine(currentDirectory, applicationName);
+        if (LooksLikeProjectRoot(nestedProjectDirectory))
+        {
+            return nestedProjectDirectory;
+        }
+    }
+
+    return currentDirectory;
+}
+
+static bool LooksLikeProjectRoot(string path)
+{
+    return Directory.Exists(Path.Combine(path, "Views"))
+        && File.Exists(Path.Combine(path, "appsettings.json"));
+}
 

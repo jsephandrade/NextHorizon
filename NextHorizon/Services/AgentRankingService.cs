@@ -37,12 +37,9 @@ public sealed class AgentRankingService : IAgentRankingService
 
     public async Task RecomputeAllQaMonthsAsync(CancellationToken cancellationToken)
     {
-        var reviewCreatedAtUtcValues = await (
-                from review in _dbContext.QaReviews.AsNoTracking()
-                join supportFaq in _dbContext.SupportFaqRecords.AsNoTracking()
-                    on review.SupportFaqId equals supportFaq.Id
-                where supportFaq.AgentId.HasValue
-                select review.CreatedAtUtc)
+        var reviewCreatedAtUtcValues = await _dbContext.QaReviews
+            .AsNoTracking()
+            .Select(review => review.CreatedAtUtc)
             .ToListAsync(cancellationToken);
 
         var monthStarts = reviewCreatedAtUtcValues
@@ -75,15 +72,12 @@ public sealed class AgentRankingService : IAgentRankingService
 
         var scoreSeeds = await (
                 from review in _dbContext.QaReviews.AsNoTracking()
-                join supportFaq in _dbContext.SupportFaqRecords.AsNoTracking()
-                    on review.SupportFaqId equals supportFaq.Id
-                where supportFaq.AgentId.HasValue
-                    && review.CreatedAtUtc >= earliestMonthStartUtc
+                where review.CreatedAtUtc >= earliestMonthStartUtc
                     && review.CreatedAtUtc < upperBoundUtc
                 select new
                 {
                     review.CreatedAtUtc,
-                    AgentUserId = supportFaq.AgentId!.Value,
+                    review.AgentUserId,
                     review.OverallPercent
                 })
             .ToListAsync(cancellationToken);
@@ -122,13 +116,12 @@ public sealed class AgentRankingService : IAgentRankingService
                 from review in _dbContext.QaReviews.AsNoTracking()
                 join supportFaq in _dbContext.SupportFaqRecords.AsNoTracking()
                     on review.SupportFaqId equals supportFaq.Id
-                where supportFaq.AgentId.HasValue
-                    && review.CreatedAtUtc >= monthStartUtc
+                where review.CreatedAtUtc >= monthStartUtc
                     && review.CreatedAtUtc < nextMonthStartUtc
                 select new
                 {
                     SupportFaqId = review.SupportFaqId,
-                    AgentUserId = supportFaq.AgentId!.Value,
+                    review.AgentUserId,
                     supportFaq.StartTime,
                     supportFaq.EndTime,
                     supportFaq.DurationMinutes

@@ -1,3 +1,5 @@
+using NextHorizon.Models.HelpCenter;
+
 namespace NextHorizon.Models.QA;
 
 public sealed class QaReview
@@ -5,6 +7,8 @@ public sealed class QaReview
     public int QaReviewId { get; set; }
 
     public int SupportFaqId { get; set; }
+
+    public int AgentUserId { get; set; }
 
     public int ReviewerStaffId { get; set; }
 
@@ -30,6 +34,8 @@ public sealed class QaReview
 
     public DateTime UpdatedAtUtc { get; set; }
 
+    public SupportFaqRecord? SupportFaq { get; set; }
+
     public ICollection<QaReviewQuestionScore> QuestionScores { get; set; } = new List<QaReviewQuestionScore>();
 }
 
@@ -52,6 +58,8 @@ public sealed class QaReviewInlineCommentDraft
 
     public int SupportFaqId { get; set; }
 
+    public int AgentUserId { get; set; }
+
     public int UpdatedByStaffId { get; set; }
 
     public string UpdatedByName { get; set; } = string.Empty;
@@ -61,4 +69,6 @@ public sealed class QaReviewInlineCommentDraft
     public DateTime CreatedAtUtc { get; set; }
 
     public DateTime UpdatedAtUtc { get; set; }
+
+    public SupportFaqRecord? SupportFaq { get; set; }
 }

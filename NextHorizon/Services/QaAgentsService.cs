@@ -40,8 +40,8 @@ public sealed class QaAgentsService : IQaAgentsService
             from review in _dbContext.QaReviews.AsNoTracking()
             join faq in _dbContext.SupportFaqRecords.AsNoTracking()
                 on review.SupportFaqId equals faq.Id
-            where faq.Status == "Resolved" && faq.AgentId.HasValue
-            group review by faq.AgentId!.Value
+            where faq.Status == "Resolved"
+            group review by review.AgentUserId
             into grouped
             select new
             {

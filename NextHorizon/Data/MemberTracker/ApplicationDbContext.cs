@@ -350,6 +350,8 @@ public class ApplicationDbContext : DbContext
         var qaReview = builder.Entity<QaReview>();
         qaReview.ToTable("QaReviews");
         qaReview.HasKey(x => x.QaReviewId);
+        qaReview.Property(x => x.AgentUserId)
+            .IsRequired();
         qaReview.Property(x => x.ReviewerName)
             .IsRequired()
             .HasMaxLength(200);
@@ -369,12 +371,20 @@ public class ApplicationDbContext : DbContext
             .IsRequired();
         qaReview.Property(x => x.UpdatedAtUtc)
             .IsRequired();
+        qaReview.HasOne(x => x.SupportFaq)
+            .WithOne(x => x.QaReview)
+            .HasForeignKey<QaReview>(x => x.SupportFaqId)
+            .HasPrincipalKey<SupportFaqRecord>(x => x.Id)
+            .OnDelete(DeleteBehavior.Restrict);
         qaReview.HasIndex(x => x.SupportFaqId)
             .IsUnique();
+        qaReview.HasIndex(x => x.AgentUserId);
 
         var qaReviewInlineCommentDraft = builder.Entity<QaReviewInlineCommentDraft>();
         qaReviewInlineCommentDraft.ToTable("QaReviewInlineCommentDrafts");
         qaReviewInlineCommentDraft.HasKey(x => x.QaReviewInlineCommentDraftId);
+        qaReviewInlineCommentDraft.Property(x => x.AgentUserId)
+            .IsRequired();
         qaReviewInlineCommentDraft.Property(x => x.UpdatedByName)
             .IsRequired()
             .HasMaxLength(200);
@@ -385,8 +395,14 @@ public class ApplicationDbContext : DbContext
             .IsRequired();
         qaReviewInlineCommentDraft.Property(x => x.UpdatedAtUtc)
             .IsRequired();
+        qaReviewInlineCommentDraft.HasOne(x => x.SupportFaq)
+            .WithOne(x => x.QaReviewInlineCommentDraft)
+            .HasForeignKey<QaReviewInlineCommentDraft>(x => x.SupportFaqId)
+            .HasPrincipalKey<SupportFaqRecord>(x => x.Id)
+            .OnDelete(DeleteBehavior.Restrict);
         qaReviewInlineCommentDraft.HasIndex(x => x.SupportFaqId)
             .IsUnique();
+        qaReviewInlineCommentDraft.HasIndex(x => x.AgentUserId);
 
         var agentReviewFeedback = builder.Entity<AgentReviewFeedback>();
         agentReviewFeedback.ToTable("AgentReviewFeedback");

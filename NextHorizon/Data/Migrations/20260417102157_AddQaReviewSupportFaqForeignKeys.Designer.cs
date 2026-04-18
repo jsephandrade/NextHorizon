@@ -3,17 +3,20 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NextHorizon.Data;
 
 #nullable disable
 
-namespace NextHorizon.Migrations
+namespace NextHorizon.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260417102157_AddQaReviewSupportFaqForeignKeys")]
+    partial class AddQaReviewSupportFaqForeignKeys
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -796,9 +799,6 @@ namespace NextHorizon.Migrations
                     b.Property<decimal>("AccuracyAverage")
                         .HasColumnType("decimal(5,2)");
 
-                    b.Property<int>("AgentUserId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -844,8 +844,6 @@ namespace NextHorizon.Migrations
 
                     b.HasKey("QaReviewId");
 
-                    b.HasIndex("AgentUserId");
-
                     b.HasIndex("SupportFaqId")
                         .IsUnique();
 
@@ -859,9 +857,6 @@ namespace NextHorizon.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("QaReviewInlineCommentDraftId"));
-
-                    b.Property<int>("AgentUserId")
-                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
@@ -887,8 +882,6 @@ namespace NextHorizon.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("QaReviewInlineCommentDraftId");
-
-                    b.HasIndex("AgentUserId");
 
                     b.HasIndex("SupportFaqId")
                         .IsUnique();

@@ -64,8 +64,6 @@ public sealed class QaReviewService : IQaReviewService
                 .AsNoTracking()
                 .FirstOrDefaultAsync(item => item.ConsumerId == consumerId, cancellationToken);
         }
-
-        var agentName = await ResolveAgentNameAsync(supportFaq.AgentId, cancellationToken);
         var customerName = ResolveCustomerName(consumer);
 
         var messages = await _dbContext.SupportMessages
@@ -75,6 +73,17 @@ public sealed class QaReviewService : IQaReviewService
             .ThenBy(item => item.Id)
             .ToListAsync(cancellationToken);
 
+        var review = await _dbContext.QaReviews
+            .AsNoTracking()
+            .Include(item => item.QuestionScores)
+            .FirstOrDefaultAsync(item => item.SupportFaqId == supportFaqId, cancellationToken);
+        var inlineCommentDraft = await _dbContext.QaReviewInlineCommentDrafts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.SupportFaqId == supportFaqId, cancellationToken);
+        var agentUserId = review?.AgentUserId
+            ?? inlineCommentDraft?.AgentUserId
+            ?? supportFaq.AgentId;
+        var agentName = await ResolveAgentNameAsync(agentUserId, cancellationToken);
         var messageViewModels = messages
             .Select(item => new QaConversationMessageViewModel(
                 item.Id.ToString(),
@@ -95,14 +104,6 @@ public sealed class QaReviewService : IQaReviewService
                 supportFaq.Question,
                 true));
         }
-
-        var review = await _dbContext.QaReviews
-            .AsNoTracking()
-            .Include(item => item.QuestionScores)
-            .FirstOrDefaultAsync(item => item.SupportFaqId == supportFaqId, cancellationToken);
-        var inlineCommentDraft = await _dbContext.QaReviewInlineCommentDrafts
-            .AsNoTracking()
-            .FirstOrDefaultAsync(item => item.SupportFaqId == supportFaqId, cancellationToken);
 
         var queueState = await _qaRatingQueueService.GetQueueAsync(
             range,
@@ -148,14 +149,21 @@ public sealed class QaReviewService : IQaReviewService
             return new QaReviewMutationResponse(false, validationMessage);
         }
 
-        var supportFaqExists = await _dbContext.SupportFaqRecords
+        var supportFaq = await _dbContext.SupportFaqRecords
             .AsNoTracking()
-            .AnyAsync(item => item.Id == supportFaqId, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == supportFaqId, cancellationToken);
 
-        if (!supportFaqExists)
+        if (supportFaq is null)
         {
             return new QaReviewMutationResponse(false, "Support conversation not found.");
         }
+
+        if (!supportFaq.AgentId.HasValue)
+        {
+            return new QaReviewMutationResponse(false, "Support conversation is not assigned to an agent.");
+        }
+
+        var agentUserId = supportFaq.AgentId.Value;
 
         var review = await _dbContext.QaReviews
             .Include(item => item.QuestionScores)
@@ -179,6 +187,7 @@ public sealed class QaReviewService : IQaReviewService
             review = new QaReview
             {
                 SupportFaqId = supportFaqId,
+                AgentUserId = agentUserId,
                 ReviewerStaffId = reviewerStaffId,
                 ReviewerName = reviewerName,
                 CreatedAtUtc = nowUtc
@@ -189,6 +198,7 @@ public sealed class QaReviewService : IQaReviewService
 
         review.ReviewerStaffId = reviewerStaffId;
         review.ReviewerName = reviewerName;
+        review.AgentUserId = agentUserId;
         review.Notes = notes;
         review.AccuracyAverage = accuracyAverage;
         review.ToneAverage = toneAverage;
@@ -220,6 +230,7 @@ public sealed class QaReviewService : IQaReviewService
 
         await UpsertInlineCommentDraftAsync(
             supportFaqId,
+            agentUserId,
             reviewerStaffId,
             reviewerName,
             inlineCommentsJson,
@@ -245,13 +256,18 @@ public sealed class QaReviewService : IQaReviewService
             return new QaReviewMutationResponse(false, validationMessage);
         }
 
-        var supportFaqExists = await _dbContext.SupportFaqRecords
+        var supportFaq = await _dbContext.SupportFaqRecords
             .AsNoTracking()
-            .AnyAsync(item => item.Id == supportFaqId, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == supportFaqId, cancellationToken);
 
-        if (!supportFaqExists)
+        if (supportFaq is null)
         {
             return new QaReviewMutationResponse(false, "Support conversation not found.");
+        }
+
+        if (!supportFaq.AgentId.HasValue)
+        {
+            return new QaReviewMutationResponse(false, "Support conversation is not assigned to an agent.");
         }
 
         var inlineCommentsJson = SerializeInlineComments(request.InlineCommentThreads);
@@ -259,6 +275,7 @@ public sealed class QaReviewService : IQaReviewService
 
         await UpsertInlineCommentDraftAsync(
             supportFaqId,
+            supportFaq.AgentId.Value,
             reviewerStaffId,
             reviewerName,
             inlineCommentsJson,
@@ -394,6 +411,7 @@ public sealed class QaReviewService : IQaReviewService
 
     private async Task UpsertInlineCommentDraftAsync(
         int supportFaqId,
+        int agentUserId,
         int reviewerStaffId,
         string reviewerName,
         string inlineCommentsJson,
@@ -414,6 +432,7 @@ public sealed class QaReviewService : IQaReviewService
             _dbContext.QaReviewInlineCommentDrafts.Add(draft);
         }
 
+        draft.AgentUserId = agentUserId;
         draft.UpdatedByStaffId = reviewerStaffId;
         draft.UpdatedByName = reviewerName;
         draft.InlineCommentsJson = inlineCommentsJson;

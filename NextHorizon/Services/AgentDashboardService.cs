@@ -98,11 +98,11 @@ public sealed class AgentDashboardService : IAgentDashboardService
 
         var faqById = await _dbContext.SupportFaqRecords
             .AsNoTracking()
-            .Where(item => reviewFaqIds.Contains(item.Id) && item.AgentId == agentUserId)
+            .Where(item => reviewFaqIds.Contains(item.Id))
             .ToDictionaryAsync(item => item.Id, cancellationToken);
 
         var agentReviews = reviews
-            .Where(item => faqById.ContainsKey(item.SupportFaqId))
+            .Where(item => item.AgentUserId == agentUserId && faqById.ContainsKey(item.SupportFaqId))
             .ToList();
 
         if (agentReviews.Count == 0)
@@ -245,7 +245,7 @@ public sealed class AgentDashboardService : IAgentDashboardService
         var review = await _dbContext.QaReviews
             .AsNoTracking()
             .Include(item => item.QuestionScores)
-            .FirstOrDefaultAsync(item => item.SupportFaqId == supportFaqId, cancellationToken);
+            .FirstOrDefaultAsync(item => item.SupportFaqId == supportFaqId && item.AgentUserId == agentUserId, cancellationToken);
 
         if (review is null)
         {
@@ -254,7 +254,7 @@ public sealed class AgentDashboardService : IAgentDashboardService
 
         var faq = await _dbContext.SupportFaqRecords
             .AsNoTracking()
-            .FirstOrDefaultAsync(item => item.Id == supportFaqId && item.AgentId == agentUserId, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == supportFaqId, cancellationToken);
 
         if (faq is null)
         {
@@ -801,7 +801,7 @@ public sealed class AgentDashboardService : IAgentDashboardService
     {
         var reviewExists = await _dbContext.QaReviews
             .AsNoTracking()
-            .AnyAsync(item => item.SupportFaqId == supportFaqId, cancellationToken);
+            .AnyAsync(item => item.SupportFaqId == supportFaqId && item.AgentUserId == agentUserId, cancellationToken);
         if (!reviewExists)
         {
             return null;
@@ -809,7 +809,7 @@ public sealed class AgentDashboardService : IAgentDashboardService
 
         var faq = await _dbContext.SupportFaqRecords
             .AsNoTracking()
-            .FirstOrDefaultAsync(item => item.Id == supportFaqId && item.AgentId == agentUserId, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == supportFaqId, cancellationToken);
         if (faq is null)
         {
             return null;

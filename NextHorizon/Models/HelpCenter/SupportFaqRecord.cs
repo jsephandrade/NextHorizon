@@ -1,3 +1,5 @@
+using NextHorizon.Models.QA;
+
 namespace NextHorizon.Models.HelpCenter;
 
 public sealed class SupportFaqRecord
@@ -21,4 +23,8 @@ public sealed class SupportFaqRecord
     public DateTime? EndTime { get; set; }
 
     public DateTime? StartTime { get; set; }
+
+    public QaReview? QaReview { get; set; }
+
+    public QaReviewInlineCommentDraft? QaReviewInlineCommentDraft { get; set; }
 }

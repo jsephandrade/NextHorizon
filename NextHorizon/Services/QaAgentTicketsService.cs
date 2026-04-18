@@ -29,8 +29,7 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
         var resolvedFaqQuery = _dbContext.SupportFaqRecords
             .AsNoTracking()
             .Where(item => item.Status == "Resolved"
-                && item.EndTime != null
-                && item.AgentId == agentUserId);
+                && item.EndTime != null);
 
         if (startUtc.HasValue)
         {
@@ -45,6 +44,7 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
         var resolvedFaqs = await resolvedFaqQuery
             .Select(item => new ResolvedConversationSeed(
                 item.Id,
+                item.AgentId,
                 item.EndTime!.Value))
             .ToListAsync(cancellationToken);
 
@@ -97,7 +97,7 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
 
         var reviews = await _dbContext.QaReviews
             .AsNoTracking()
-            .Where(item => supportFaqIds.Contains(item.SupportFaqId))
+            .Where(item => supportFaqIds.Contains(item.SupportFaqId) && item.AgentUserId == agentUserId)
             .ToListAsync(cancellationToken);
 
         var reviewBySupportFaqId = reviews
@@ -120,8 +120,10 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
                     customerName,
                     item.ResolvedAtUtc,
                     resolvedAtLabel,
+                    item.AgentUserId == agentUserId,
                     review);
             })
+            .Where(item => item.IsCurrentAgentAssignment || item.Review is not null)
             .Where(item => string.IsNullOrWhiteSpace(normalizedSearch)
                 || BuildSearchText(item.SupportFaqId, item.AgentName, item.CustomerName, item.ResolvedAtLabel)
                     .Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase))
@@ -307,6 +309,7 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
 
     private sealed record ResolvedConversationSeed(
         int SupportFaqId,
+        int? AgentUserId,
         DateTime ResolvedAtUtc);
 
     private sealed record QaAgentTicketSnapshot(
@@ -315,6 +318,7 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
         string CustomerName,
         DateTime ResolvedAtUtc,
         string ResolvedAtLabel,
+        bool IsCurrentAgentAssignment,
         QaReview? Review);
 
     private sealed record QaAgentRecord(
