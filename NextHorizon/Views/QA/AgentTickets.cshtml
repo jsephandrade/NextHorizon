@@ -187,6 +187,43 @@
         font-size: .86rem;
     }
 
+    .pager {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+    }
+
+    .pager-status {
+        font-size: .82rem;
+        color: #555555;
+    }
+
+    .pager-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .pager-btn {
+        border: 1px solid rgba(0, 0, 0, 0.14);
+        background: #111111;
+        color: #ffffff;
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-size: .82rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .pager-btn:disabled {
+        background: #e5e5e5;
+        color: #8a8a8a;
+        cursor: not-allowed;
+    }
+
     @@media (max-width: 700px) {
         .filter-grid {
             grid-template-columns: 1fr;
@@ -256,6 +293,13 @@
         <section id="rated-group" class="ticket-panel" style="display:none;"></section>
     </div>
     <div id="agent-ticket-empty" class="empty-state">No tickets found for the selected filters.</div>
+    <div id="agent-ticket-pager" class="pager">
+        <div id="agent-ticket-pager-status" class="pager-status">Page 1 of 1</div>
+        <div class="pager-actions">
+            <button id="agent-ticket-pager-prev" class="pager-btn" type="button">Previous</button>
+            <button id="agent-ticket-pager-next" class="pager-btn" type="button">Next</button>
+        </div>
+    </div>
 </section>
 
 <script>
@@ -275,10 +319,16 @@
         var tabAwaiting = document.getElementById('tab-awaiting');
         var tabRated = document.getElementById('tab-rated');
         var emptyState = document.getElementById('agent-ticket-empty');
-        if (!input || !quickRange || !fromDate || !toDate || !scoreFilter || !title || !sub || !awaitingGroup || !ratedGroup || !awaitingCount || !ratedCount || !tabAwaiting || !tabRated || !emptyState) return;
+        var pager = document.getElementById('agent-ticket-pager');
+        var pagerStatus = document.getElementById('agent-ticket-pager-status');
+        var pagerPrev = document.getElementById('agent-ticket-pager-prev');
+        var pagerNext = document.getElementById('agent-ticket-pager-next');
+        if (!input || !quickRange || !fromDate || !toDate || !scoreFilter || !title || !sub || !awaitingGroup || !ratedGroup || !awaitingCount || !ratedCount || !tabAwaiting || !tabRated || !emptyState || !pager || !pagerStatus || !pagerPrev || !pagerNext) return;
 
         var activeTab = 'awaiting';
         var searchDebounceHandle = 0;
+        var currentAwaitingPage = 1;
+        var currentRatedPage = 1;
 
         function escHtml(value) {
             return String(value || '')
@@ -314,6 +364,8 @@
         function buildQueryString() {
             var query = new URLSearchParams();
             query.set('id', String(agentUserId));
+            query.set('awaitingPage', String(currentAwaitingPage));
+            query.set('ratedPage', String(currentRatedPage));
             query.set('range', quickRange.value || 'custom');
             if (fromDate.value) query.set('from', fromDate.value);
             if (toDate.value) query.set('to', toDate.value);
@@ -345,6 +397,20 @@
             tabRated.setAttribute('aria-selected', 'false');
         }
 
+        function renderPagination(payload) {
+            var isRatedTab = activeTab === 'rated';
+            var page = isRatedTab ? (payload.ratedPage || 1) : (payload.awaitingPage || 1);
+            var totalPages = isRatedTab ? (payload.ratedTotalPages || 1) : (payload.awaitingTotalPages || 1);
+            var hasPrevious = isRatedTab ? !!payload.hasRatedPrevious : !!payload.hasAwaitingPrevious;
+            var hasNext = isRatedTab ? !!payload.hasRatedNext : !!payload.hasAwaitingNext;
+            var itemCount = isRatedTab ? (payload.ratedCount || 0) : (payload.awaitingCount || 0);
+
+            pagerStatus.textContent = 'Page ' + page + ' of ' + totalPages;
+            pagerPrev.disabled = !hasPrevious;
+            pagerNext.disabled = !hasNext;
+            pager.style.display = itemCount > 0 ? 'flex' : 'none';
+        }
+
         function renderTicketRow(item) {
             var html = '<div class="ticket' + (item.isRated ? ' is-rated' : '') + '">';
             html += '<div>';
@@ -364,6 +430,8 @@
             sub.textContent = 'Agent ID: ' + payload.agentUserId + '. Open any ticket to view the conversation and QA result.';
             awaitingCount.textContent = String(payload.awaitingCount || 0);
             ratedCount.textContent = String(payload.ratedCount || 0);
+            currentAwaitingPage = payload.awaitingPage || 1;
+            currentRatedPage = payload.ratedPage || 1;
 
             awaitingGroup.innerHTML = (payload.awaitingItems || []).map(renderTicketRow).join('');
             ratedGroup.innerHTML = (payload.ratedItems || []).map(renderTicketRow).join('');
@@ -372,6 +440,7 @@
                 ? (payload.ratedItems || []).length
                 : (payload.awaitingItems || []).length;
             emptyState.style.display = activeCount === 0 ? 'block' : 'none';
+            renderPagination(payload);
         }
 
         function applyErrorState(message) {
@@ -380,6 +449,7 @@
             ratedGroup.innerHTML = '';
             awaitingCount.textContent = '0';
             ratedCount.textContent = '0';
+            pager.style.display = 'none';
             emptyState.textContent = message;
             emptyState.style.display = 'block';
         }
@@ -414,27 +484,42 @@
             quickRange.value = 'custom';
         }
 
+        function resetToFirstPage() {
+            currentAwaitingPage = 1;
+            currentRatedPage = 1;
+        }
+
         tabAwaiting.addEventListener('click', function () {
             setActiveTab('awaiting');
             emptyState.style.display = awaitingGroup.children.length === 0 ? 'block' : 'none';
+            pagerStatus.textContent = 'Loading pagination...';
+            loadTickets();
         });
 
         tabRated.addEventListener('click', function () {
             setActiveTab('rated');
             emptyState.style.display = ratedGroup.children.length === 0 ? 'block' : 'none';
+            pagerStatus.textContent = 'Loading pagination...';
+            loadTickets();
         });
 
         input.addEventListener('input', function () {
             window.clearTimeout(searchDebounceHandle);
+            resetToFirstPage();
             searchDebounceHandle = window.setTimeout(loadTickets, 200);
         });
-        scoreFilter.addEventListener('change', loadTickets);
+        scoreFilter.addEventListener('change', function () {
+            resetToFirstPage();
+            loadTickets();
+        });
         fromDate.addEventListener('change', function () {
             setCustomRangeOnManualDate();
+            resetToFirstPage();
             loadTickets();
         });
         toDate.addEventListener('change', function () {
             setCustomRangeOnManualDate();
+            resetToFirstPage();
             loadTickets();
         });
         fromDate.addEventListener('focus', setCustomRangeOnManualDate);
@@ -447,6 +532,29 @@
                 toDate.value = '';
             }
             applyQuickRange();
+            resetToFirstPage();
+            loadTickets();
+        });
+
+        pagerPrev.addEventListener('click', function () {
+            if (activeTab === 'rated') {
+                if (currentRatedPage <= 1) return;
+                currentRatedPage--;
+            } else {
+                if (currentAwaitingPage <= 1) return;
+                currentAwaitingPage--;
+            }
+
+            loadTickets();
+        });
+
+        pagerNext.addEventListener('click', function () {
+            if (activeTab === 'rated') {
+                currentRatedPage++;
+            } else {
+                currentAwaitingPage++;
+            }
+
             loadTickets();
         });
 

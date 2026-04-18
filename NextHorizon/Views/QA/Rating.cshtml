@@ -1185,6 +1185,20 @@
                     <div class="summary-meta">
                         <div>Rated by: @ViewData["RatedBy"]</div>
                         <div>Rated on: @ViewData["RatedOn"]</div>
+                        <div id="summary-submitted-on" style="display:@(ratedSubmittedToAgent ? "block" : "none");">
+                            Submitted to agent: <span id="summary-submitted-on-value">@(string.IsNullOrWhiteSpace(ratedSubmittedOn) ? "Just now" : ratedSubmittedOn)</span>
+                        </div>
+                    </div>
+
+                    <div id="submit-agent-box" class="submit-agent-box">
+                        <span id="submit-agent-status" class="submit-agent-status @(ratedSubmittedToAgent ? "sent" : "pending")">
+                            @(ratedSubmittedToAgent ? "Submitted to agent" : "Pending automatic submit")
+                        </span>
+                        <div id="submit-agent-note" class="submit-agent-note">
+                            @(ratedSubmittedToAgent
+                                ? $"QA evaluation for this ticket has been submitted to {(string.IsNullOrWhiteSpace(conversationAgent) ? "the assigned agent" : conversationAgent)}{(string.IsNullOrWhiteSpace(ratedSubmittedOn) ? "." : $" on {ratedSubmittedOn}.")}"
+                                : $"QA evaluation for this ticket has been recorded and will be submitted automatically to {(string.IsNullOrWhiteSpace(conversationAgent) ? "the assigned agent" : conversationAgent)}.")
+                        </div>
                     </div>
 
                     <div class="summary-actions">
@@ -2197,7 +2211,56 @@
         var autosaveTimerId = 0;
         var autosaveDelayMs = 900;
         var autosaveAgentName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(string.IsNullOrWhiteSpace(conversationAgent) ? "the assigned agent" : conversationAgent));
-        var autosaveSuccessMessage = 'QA Evalution for this ticket has been recorded and submitted to ' + autosaveAgentName + '.';
+        var isReviewSubmittedToAgent = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ratedSubmittedToAgent));
+        var reviewSubmittedOnLabel = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ratedSubmittedOn));
+        var submitAgentStatus = document.getElementById('submit-agent-status');
+        var submitAgentNote = document.getElementById('submit-agent-note');
+        var summarySubmittedOn = document.getElementById('summary-submitted-on');
+        var summarySubmittedOnValue = document.getElementById('summary-submitted-on-value');
+
+        function buildPendingSubmitMessage() {
+            return 'QA evaluation for this ticket has been recorded and will be submitted automatically to ' + autosaveAgentName + '.';
+        }
+
+        function buildSubmittedMessage() {
+            return 'QA evaluation for this ticket has been recorded and submitted to ' + autosaveAgentName + '.';
+        }
+
+        function getPersistedReviewMessage() {
+            return isReviewSubmittedToAgent ? buildSubmittedMessage() : buildPendingSubmitMessage();
+        }
+
+        function applyReviewMutationResult(result) {
+            if (!result || typeof result !== 'object') {
+                return;
+            }
+
+            isReviewSubmittedToAgent = !!result.submittedToAgent;
+            reviewSubmittedOnLabel = result.submittedToAgentAtUtc || '';
+            renderSubmitAgentState();
+        }
+
+        function renderSubmitAgentState() {
+            if (submitAgentStatus) {
+                submitAgentStatus.classList.remove('sent', 'pending');
+                submitAgentStatus.classList.add(isReviewSubmittedToAgent ? 'sent' : 'pending');
+                submitAgentStatus.textContent = isReviewSubmittedToAgent ? 'Submitted to agent' : 'Pending automatic submit';
+            }
+
+            if (submitAgentNote) {
+                submitAgentNote.textContent = isReviewSubmittedToAgent
+                    ? ('QA evaluation for this ticket has been submitted to ' + autosaveAgentName + (reviewSubmittedOnLabel ? ' on ' + reviewSubmittedOnLabel + '.' : '.'))
+                    : ('QA evaluation for this ticket has been recorded and will be submitted automatically to ' + autosaveAgentName + '.');
+            }
+
+            if (summarySubmittedOn) {
+                summarySubmittedOn.style.display = isReviewSubmittedToAgent ? 'block' : 'none';
+            }
+
+            if (summarySubmittedOnValue) {
+                summarySubmittedOnValue.textContent = reviewSubmittedOnLabel || 'Just now';
+            }
+        }
 
         function setAutosaveStatus(state, message) {
             if (!autosaveStatus) return;
@@ -2232,7 +2295,7 @@
                 toneScores: toneScores,
                 resolutionScores: resolutionScores,
                 notes: notesField ? (notesField.value || '').trim() : '',
-                submitToAgentNow: false,
+                submitToAgentNow: true,
                 inlineCommentThreads: normalizedInlineCommentThreads
             };
         }
@@ -2301,7 +2364,7 @@
             var isDirty = rootPrefix === 'edit' ? hasPersistableEditRatingState() : hasPersistableNewRatingState();
             if (!isDirty) {
                 setAutosaveStatus('saved', rootPrefix === 'edit'
-                    ? autosaveSuccessMessage
+                    ? getPersistedReviewMessage()
                     : 'Changes save automatically once all 9 scores are complete.');
                 return false;
             }
@@ -2329,18 +2392,24 @@
 
             setAutosaveStatus('saving', 'Saving QA review...');
 
+            var wasSubmittedBeforeSave = isReviewSubmittedToAgent;
+
             saveReview(rootPrefix)
-                .then(function () {
+                .then(function (result) {
+                    applyReviewMutationResult(result);
                     markReviewPersisted();
 
                     if (rootPrefix === 'edit') {
                         syncRatedSummaryFromEdit();
                         syncReadonlyViewFromEdit();
-                        setAutosaveStatus('saved', autosaveSuccessMessage);
+                        setAutosaveStatus('saved', result && result.message ? result.message : getPersistedReviewMessage());
                         return;
                     }
 
-                    setAutosaveStatus('saved', 'QA review saved. Refreshing...');
+                    var saveMessage = result && result.message
+                        ? result.message
+                        : (wasSubmittedBeforeSave ? 'QA review saved. Refreshing...' : 'QA review saved and submitted to agent. Refreshing...');
+                    setAutosaveStatus('saved', saveMessage);
                     window.location.reload();
                 })
                 .catch(function (error) {
@@ -2435,6 +2504,8 @@
         var backViewBtn = document.getElementById('back-rated-view-btn');
         var editForm = document.getElementById('rated-edit-form');
 
+        renderSubmitAgentState();
+
         if (viewBtn && backViewBtn && summaryView && viewForm) {
             viewBtn.addEventListener('click', function () {
                 summaryView.style.display = 'none';
@@ -2479,13 +2550,17 @@
                 clearAutosaveTimer();
                 editForm.style.display = 'none';
                 summaryView.style.display = '';
-                setAutosaveStatus('saved', autosaveSuccessMessage);
+                setAutosaveStatus('saved', getPersistedReviewMessage());
             });
         }
 
         setAutosaveStatus('', @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
             hasActiveTicket
-                ? (isRated ? "QA Evalution for this ticket has been recorded and submitted to " + (string.IsNullOrWhiteSpace(conversationAgent) ? "the assigned agent" : conversationAgent) + "." : "Complete all 9 scores to save automatically.")
+                ? (isRated
+                    ? (ratedSubmittedToAgent
+                        ? "QA evaluation for this ticket has been recorded and submitted to " + (string.IsNullOrWhiteSpace(conversationAgent) ? "the assigned agent" : conversationAgent) + "."
+                        : "QA evaluation for this ticket has been recorded and will be submitted automatically to " + (string.IsNullOrWhiteSpace(conversationAgent) ? "the assigned agent" : conversationAgent) + ".")
+                    : "Complete all 9 scores to save automatically.")
                 : string.Empty)));
 
     })();

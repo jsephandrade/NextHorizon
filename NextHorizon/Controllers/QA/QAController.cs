@@ -245,6 +245,8 @@ public sealed class QAController : Controller
     [HttpGet("api/agent-tickets")]
     public async Task<IActionResult> AgentTicketsData(
         [FromQuery] int id,
+        [FromQuery] int? awaitingPage,
+        [FromQuery] int? ratedPage,
         [FromQuery] string? range,
         [FromQuery] DateOnly? from,
         [FromQuery] DateOnly? to,
@@ -254,6 +256,8 @@ public sealed class QAController : Controller
     {
         var payload = await _qaAgentTicketsService.GetAgentTicketsAsync(
             id,
+            awaitingPage ?? 1,
+            ratedPage ?? 1,
             range,
             from,
             to,
@@ -271,6 +275,7 @@ public sealed class QAController : Controller
 
     [HttpGet("api/resolved-tickets")]
     public async Task<IActionResult> ResolvedTicketsData(
+        [FromQuery] int? page,
         [FromQuery] string? range,
         [FromQuery] DateOnly? from,
         [FromQuery] DateOnly? to,
@@ -278,6 +283,7 @@ public sealed class QAController : Controller
         CancellationToken cancellationToken)
     {
         var payload = await _qaResolvedTicketsService.GetResolvedTicketsAsync(
+            page ?? 1,
             range,
             from,
             to,
@@ -289,6 +295,7 @@ public sealed class QAController : Controller
 
     [HttpGet("api/rated-history")]
     public async Task<IActionResult> RatedHistoryData(
+        [FromQuery] int? page,
         [FromQuery] string? range,
         [FromQuery] DateOnly? from,
         [FromQuery] DateOnly? to,
@@ -297,6 +304,7 @@ public sealed class QAController : Controller
         CancellationToken cancellationToken)
     {
         var payload = await _qaRatedHistoryService.GetRatedHistoryAsync(
+            page ?? 1,
             range,
             from,
             to,

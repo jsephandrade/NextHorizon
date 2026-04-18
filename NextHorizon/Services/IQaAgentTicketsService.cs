@@ -6,6 +6,8 @@ public interface IQaAgentTicketsService
 {
     Task<QaAgentTicketsResponse?> GetAgentTicketsAsync(
         int agentUserId,
+        int awaitingPage,
+        int ratedPage,
         string? range,
         DateOnly? from,
         DateOnly? to,

@@ -8,6 +8,7 @@ namespace NextHorizon.Services;
 
 public sealed class QaAgentTicketsService : IQaAgentTicketsService
 {
+    private const int DefaultPageSize = 10;
     private readonly ApplicationDbContext _dbContext;
 
     public QaAgentTicketsService(ApplicationDbContext dbContext)
@@ -17,6 +18,8 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
 
     public async Task<QaAgentTicketsResponse?> GetAgentTicketsAsync(
         int agentUserId,
+        int awaitingPage,
+        int ratedPage,
         string? range,
         DateOnly? from,
         DateOnly? to,
@@ -59,6 +62,15 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
                     agentName,
                     0,
                     0,
+                    1,
+                    1,
+                    DefaultPageSize,
+                    1,
+                    1,
+                    false,
+                    false,
+                    false,
+                    false,
                     Array.Empty<QaAgentTicketItem>(),
                     Array.Empty<QaAgentTicketItem>());
         }
@@ -156,13 +168,39 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
                 Math.Round((double)item.Review!.OverallPercent, 1)))
             .ToList();
 
+        var awaitingTotalPages = awaitingItems.Count == 0
+            ? 1
+            : (int)Math.Ceiling(awaitingItems.Count / (double)DefaultPageSize);
+        var ratedTotalPages = ratedItems.Count == 0
+            ? 1
+            : (int)Math.Ceiling(ratedItems.Count / (double)DefaultPageSize);
+        var currentAwaitingPage = Math.Clamp(awaitingPage, 1, awaitingTotalPages);
+        var currentRatedPage = Math.Clamp(ratedPage, 1, ratedTotalPages);
+        var pagedAwaitingItems = awaitingItems
+            .Skip((currentAwaitingPage - 1) * DefaultPageSize)
+            .Take(DefaultPageSize)
+            .ToList();
+        var pagedRatedItems = ratedItems
+            .Skip((currentRatedPage - 1) * DefaultPageSize)
+            .Take(DefaultPageSize)
+            .ToList();
+
         return new QaAgentTicketsResponse(
             agentUserId,
             agentName ?? $"Agent {agentUserId}",
             awaitingItems.Count,
             ratedItems.Count,
-            awaitingItems,
-            ratedItems);
+            currentAwaitingPage,
+            currentRatedPage,
+            DefaultPageSize,
+            awaitingTotalPages,
+            ratedTotalPages,
+            currentAwaitingPage > 1,
+            currentAwaitingPage < awaitingTotalPages,
+            currentRatedPage > 1,
+            currentRatedPage < ratedTotalPages,
+            pagedAwaitingItems,
+            pagedRatedItems);
     }
 
     private async Task<string?> LoadAgentNameAsync(int agentUserId, CancellationToken cancellationToken)

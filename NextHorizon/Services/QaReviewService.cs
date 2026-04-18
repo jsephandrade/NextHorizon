@@ -1,3 +1,5 @@
+using System.Data;
+using System.Globalization;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using NextHorizon.Data;
@@ -9,6 +11,8 @@ namespace NextHorizon.Services;
 
 public sealed class QaReviewService : IQaReviewService
 {
+    private const string QaScoreNotificationCategory = "QAScore";
+    private const string NotificationRecipientTypeUser = "User";
     private static readonly string[] AccuracyKeys = ["accuracy_q1", "accuracy_q2", "accuracy_q3"];
     private static readonly string[] ToneKeys = ["tone_q1", "tone_q2", "tone_q3"];
     private static readonly string[] ResolutionKeys = ["resolution_q1", "resolution_q2", "resolution_q3"];
@@ -182,6 +186,8 @@ public sealed class QaReviewService : IQaReviewService
         var resolutionAverage = Round2(resolutionScores.Average());
         var overallPercent = CalculateOverallPercent(accuracyAverage, toneAverage, resolutionAverage);
 
+        var wasAlreadySubmittedToAgent = review?.SubmittedToAgent ?? false;
+
         if (review is null)
         {
             review = new QaReview
@@ -207,7 +213,7 @@ public sealed class QaReviewService : IQaReviewService
         review.InlineCommentsJson = inlineCommentsJson;
         review.UpdatedAtUtc = nowUtc;
 
-        if (request.SubmitToAgentNow)
+        if (request.SubmitToAgentNow && !wasAlreadySubmittedToAgent)
         {
             review.SubmittedToAgent = true;
             review.SubmittedToAgentAtUtc = nowUtc;
@@ -238,9 +244,24 @@ public sealed class QaReviewService : IQaReviewService
             cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (request.SubmitToAgentNow && !wasAlreadySubmittedToAgent)
+        {
+            await CreateQaScoreNotificationAsync(review.SupportFaqId, review.AgentUserId, reviewerName, review.OverallPercent, cancellationToken);
+        }
+
         await _agentRankingService.RecomputeMonthAsync(AgentRankingMetricType.QaScore, review.CreatedAtUtc, cancellationToken);
         await _agentRankingService.RecomputeMonthAsync(AgentRankingMetricType.AverageHandlingTime, review.CreatedAtUtc, cancellationToken);
-        return new QaReviewMutationResponse(true, "QA review saved.");
+        var saveMessage = request.SubmitToAgentNow && review.SubmittedToAgent
+            ? "QA review saved and submitted to agent."
+            : "QA review saved.";
+
+        return new QaReviewMutationResponse(
+            true,
+            saveMessage,
+            review.SubmittedToAgent,
+            review.SubmittedToAgentAtUtc?.ToString("MMM dd, yyyy hh:mm tt") ?? string.Empty,
+            (double)Math.Round(review.OverallPercent, 1, MidpointRounding.AwayFromZero));
     }
 
     public async Task<QaReviewMutationResponse> UpsertInlineCommentsAsync(
@@ -300,14 +321,34 @@ public sealed class QaReviewService : IQaReviewService
             return new QaReviewMutationResponse(false, "QA review not found.");
         }
 
+        var wasAlreadySubmittedToAgent = review.SubmittedToAgent;
+        var nowUtc = DateTime.UtcNow;
         review.ReviewerStaffId = reviewerStaffId;
         review.ReviewerName = reviewerName;
-        review.SubmittedToAgent = true;
-        review.SubmittedToAgentAtUtc = DateTime.UtcNow;
-        review.UpdatedAtUtc = DateTime.UtcNow;
+        if (!wasAlreadySubmittedToAgent)
+        {
+            review.SubmittedToAgent = true;
+            review.SubmittedToAgentAtUtc = nowUtc;
+        }
+        review.UpdatedAtUtc = nowUtc;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return new QaReviewMutationResponse(true, "QA review submitted to agent.");
+
+        if (!wasAlreadySubmittedToAgent)
+        {
+            await CreateQaScoreNotificationAsync(review.SupportFaqId, review.AgentUserId, reviewerName, review.OverallPercent, cancellationToken);
+        }
+
+        var submitMessage = wasAlreadySubmittedToAgent
+            ? "QA review already submitted to agent."
+            : "QA review submitted to agent.";
+
+        return new QaReviewMutationResponse(
+            true,
+            submitMessage,
+            review.SubmittedToAgent,
+            review.SubmittedToAgentAtUtc?.ToString("MMM dd, yyyy hh:mm tt") ?? string.Empty,
+            (double)Math.Round(review.OverallPercent, 1, MidpointRounding.AwayFromZero));
     }
 
     private static string? ValidateRequest(QaReviewUpsertRequest? request)
@@ -437,6 +478,68 @@ public sealed class QaReviewService : IQaReviewService
         draft.UpdatedByName = reviewerName;
         draft.InlineCommentsJson = inlineCommentsJson;
         draft.UpdatedAtUtc = nowUtc;
+    }
+
+    private async Task CreateQaScoreNotificationAsync(
+        int supportFaqId,
+        int agentUserId,
+        string reviewerName,
+        decimal overallPercent,
+        CancellationToken cancellationToken)
+    {
+        var message = BuildQaScoreNotificationMessage(supportFaqId, reviewerName, overallPercent);
+        var connection = _dbContext.Database.GetDbConnection();
+        var shouldClose = connection.State != ConnectionState.Open;
+
+        if (shouldClose)
+        {
+            await connection.OpenAsync(cancellationToken);
+        }
+
+        try
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText = """
+                INSERT INTO dbo.Notifications (RecipientType, RecipientId, OrderId, Message, IsRead, CreatedAt, category)
+                VALUES (@RecipientType, @RecipientId, @OrderId, @Message, @IsRead, @CreatedAt, @Category)
+                """;
+
+            AddParameter(command, "@RecipientType", NotificationRecipientTypeUser);
+            AddParameter(command, "@RecipientId", agentUserId);
+            AddParameter(command, "@OrderId", DBNull.Value);
+            AddParameter(command, "@Message", message);
+            AddParameter(command, "@IsRead", false);
+            AddParameter(command, "@CreatedAt", DateTime.UtcNow);
+            AddParameter(command, "@Category", QaScoreNotificationCategory);
+
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+        finally
+        {
+            if (shouldClose)
+            {
+                await connection.CloseAsync();
+            }
+        }
+    }
+
+    private static void AddParameter(IDbCommand command, string name, object value)
+    {
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = name;
+        parameter.Value = value;
+        command.Parameters.Add(parameter);
+    }
+
+    private static string BuildQaScoreNotificationMessage(int supportFaqId, string reviewerName, decimal overallPercent)
+    {
+        var roundedScore = Math.Round(overallPercent, 1, MidpointRounding.AwayFromZero);
+        var reviewerLabel = string.IsNullOrWhiteSpace(reviewerName)
+            ? "QA"
+            : reviewerName.Trim();
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"{reviewerLabel} has evaluated your QA score for ticket #{supportFaqId} as {roundedScore:0.0}/100.");
     }
 
     private static string ResolveInlineCommentsJson(string? reviewInlineCommentsJson, string? draftInlineCommentsJson)

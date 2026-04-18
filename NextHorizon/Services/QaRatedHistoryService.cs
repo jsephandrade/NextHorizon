@@ -8,6 +8,7 @@ namespace NextHorizon.Services;
 
 public sealed class QaRatedHistoryService : IQaRatedHistoryService
 {
+    private const int DefaultPageSize = 10;
     private readonly ApplicationDbContext _dbContext;
 
     public QaRatedHistoryService(ApplicationDbContext dbContext)
@@ -16,6 +17,7 @@ public sealed class QaRatedHistoryService : IQaRatedHistoryService
     }
 
     public async Task<QaRatedHistoryResponse> GetRatedHistoryAsync(
+        int page,
         string? range,
         DateOnly? from,
         DateOnly? to,
@@ -44,7 +46,7 @@ public sealed class QaRatedHistoryService : IQaRatedHistoryService
 
         if (reviews.Count == 0)
         {
-            return new QaRatedHistoryResponse(0, Array.Empty<QaRatedHistoryItem>());
+            return new QaRatedHistoryResponse(0, 1, DefaultPageSize, 1, false, false, Array.Empty<QaRatedHistoryItem>());
         }
 
         var supportFaqIds = reviews
@@ -114,7 +116,24 @@ public sealed class QaRatedHistoryService : IQaRatedHistoryService
                 || BuildSearchText(item).Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        return new QaRatedHistoryResponse(items.Count, items);
+        var totalCount = items.Count;
+        var totalPages = totalCount == 0
+            ? 1
+            : (int)Math.Ceiling(totalCount / (double)DefaultPageSize);
+        var currentPage = Math.Clamp(page, 1, totalPages);
+        var pagedItems = items
+            .Skip((currentPage - 1) * DefaultPageSize)
+            .Take(DefaultPageSize)
+            .ToList();
+
+        return new QaRatedHistoryResponse(
+            totalCount,
+            currentPage,
+            DefaultPageSize,
+            totalPages,
+            currentPage > 1,
+            currentPage < totalPages,
+            pagedItems);
     }
 
     private async Task<Dictionary<int, string>> LoadAgentNamesAsync(int[] agentUserIds, CancellationToken cancellationToken)

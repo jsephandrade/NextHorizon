@@ -5,6 +5,7 @@ namespace NextHorizon.Services;
 public interface IQaRatedHistoryService
 {
     Task<QaRatedHistoryResponse> GetRatedHistoryAsync(
+        int page,
         string? range,
         DateOnly? from,
         DateOnly? to,

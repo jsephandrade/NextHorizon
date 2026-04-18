@@ -27,7 +27,9 @@ public sealed class QaAgentsService : IQaAgentsService
 
         var resolvedCounts = await _dbContext.SupportFaqRecords
             .AsNoTracking()
-            .Where(item => item.Status == "Resolved" && item.AgentId.HasValue)
+            .Where(item => item.Status == "Resolved"
+                && item.AgentId.HasValue
+                && item.EndTime != null)
             .GroupBy(item => item.AgentId!.Value)
             .Select(group => new
             {
@@ -41,6 +43,7 @@ public sealed class QaAgentsService : IQaAgentsService
             join faq in _dbContext.SupportFaqRecords.AsNoTracking()
                 on review.SupportFaqId equals faq.Id
             where faq.Status == "Resolved"
+                && faq.EndTime != null
             group review by review.AgentUserId
             into grouped
             select new

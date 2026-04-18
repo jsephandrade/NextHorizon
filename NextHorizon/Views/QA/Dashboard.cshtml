@@ -566,14 +566,14 @@
     <section class="boards">
         <article class="card">
             <div class="card-head">
-                <h3>Top performing agents on selected date</h3>
+                <h3>Top performing agents this month</h3>
             </div>
             <div id="top-agent-list" class="agent-list"></div>
         </article>
 
         <article class="card">
             <div class="card-head">
-                <h3>Selected-date tickets awaiting QA</h3>
+                <h3>This month&apos;s tickets awaiting QA</h3>
             </div>
             <div id="awaiting-ticket-list" class="ticket-list"></div>
         </article>
@@ -609,7 +609,7 @@
             if (!agentList) return;
 
             if (!items || !items.length) {
-                agentList.innerHTML = '<div class="agent-item"><div><div class="agent-name">No agents yet</div><div class="agent-sub">No QA reviews were created on the selected date.</div></div></div>';
+                agentList.innerHTML = '<div class="agent-item"><div><div class="agent-name">No agents yet</div><div class="agent-sub">No QA reviews were created in the selected month.</div></div></div>';
                 return;
             }
 
@@ -632,7 +632,7 @@
             if (!ticketList) return;
 
             if (!items || !items.length) {
-                ticketList.innerHTML = '<div class="ticket-item"><div><div class="ticket-id">No tickets awaiting QA</div><div class="ticket-sub">All conversations resolved on the selected date already have a QA review.</div></div></div>';
+                ticketList.innerHTML = '<div class="ticket-item"><div><div class="ticket-id">No tickets awaiting QA</div><div class="ticket-sub">All conversations resolved in the selected month already have a QA review.</div></div></div>';
                 return;
             }
 
@@ -794,7 +794,7 @@
             if (throughputNote) throughputNote.textContent = payload.throughputNote || 'No throughput insight available.';
             if (throughputProgress) throughputProgress.style.width = Math.max(0, Math.min(100, payload.throughputPercent || 0)) + '%';
             if (qualityNote) qualityNote.textContent = payload.qualityNote || 'No quality insight available.';
-            if (dateContext) dateContext.textContent = 'Showing QA activity and backlog for ' + (payload.label || dateInput.value) + '. Trend chart covers the selected month through this date.';
+            if (dateContext) dateContext.textContent = 'Showing selected-date QA activity for ' + (payload.label || dateInput.value) + '. Lower panels summarize the full selected month, and the trend chart covers the month through this date.';
 
             renderAgents(payload.topAgents || []);
             renderTickets(payload.awaitingTickets || []);

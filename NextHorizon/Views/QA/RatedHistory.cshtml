@@ -137,6 +137,43 @@
         font-size: .86rem;
     }
 
+    .pager {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+    }
+
+    .pager-status {
+        font-size: .82rem;
+        color: #555555;
+    }
+
+    .pager-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .pager-btn {
+        border: 1px solid rgba(0, 0, 0, 0.14);
+        background: #111111;
+        color: #ffffff;
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-size: .82rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .pager-btn:disabled {
+        background: #e5e5e5;
+        color: #8a8a8a;
+        cursor: not-allowed;
+    }
+
     @@media (max-width: 700px) {
         .filter-grid {
             grid-template-columns: 1fr 1fr;
@@ -199,6 +236,13 @@
 
     <div class="rows" id="rated-list"></div>
     <div id="rated-empty" class="empty-state">No rated tickets found for the selected filters.</div>
+    <div id="rated-pager" class="pager">
+        <div id="rated-pager-status" class="pager-status">Page 1 of 1</div>
+        <div class="pager-actions">
+            <button id="rated-pager-prev" class="pager-btn" type="button">Previous</button>
+            <button id="rated-pager-next" class="pager-btn" type="button">Next</button>
+        </div>
+    </div>
 </section>
 
 <script>
@@ -210,9 +254,14 @@
         var scoreFilter = document.getElementById('score-filter');
         var list = document.getElementById('rated-list');
         var emptyState = document.getElementById('rated-empty');
-        if (!input || !quickRange || !fromDate || !toDate || !scoreFilter || !list || !emptyState) return;
+        var pager = document.getElementById('rated-pager');
+        var pagerStatus = document.getElementById('rated-pager-status');
+        var pagerPrev = document.getElementById('rated-pager-prev');
+        var pagerNext = document.getElementById('rated-pager-next');
+        if (!input || !quickRange || !fromDate || !toDate || !scoreFilter || !list || !emptyState || !pager || !pagerStatus || !pagerPrev || !pagerNext) return;
 
         var searchDebounceHandle = 0;
+        var currentPage = 1;
 
         function escHtml(value) {
             return String(value || '')
@@ -247,6 +296,7 @@
 
         function buildQueryString() {
             var query = new URLSearchParams();
+            query.set('page', String(currentPage));
             query.set('range', quickRange.value || 'custom');
             if (fromDate.value) query.set('from', fromDate.value);
             if (toDate.value) query.set('to', toDate.value);
@@ -270,6 +320,15 @@
             return html;
         }
 
+        function renderPagination(payload) {
+            var totalPages = payload && payload.totalPages ? payload.totalPages : 1;
+            var page = payload && payload.page ? payload.page : 1;
+            pagerStatus.textContent = 'Page ' + page + ' of ' + totalPages;
+            pagerPrev.disabled = !(payload && payload.hasPrevious);
+            pagerNext.disabled = !(payload && payload.hasNext);
+            pager.style.display = payload && payload.count > 0 ? 'flex' : 'none';
+        }
+
         function loadRatedHistory() {
             fetch('/qa/api/rated-history?' + buildQueryString(), {
                 headers: { 'Accept': 'application/json' }
@@ -281,19 +340,23 @@
                     return response.json();
                 })
                 .then(function (payload) {
+                    currentPage = payload.page || 1;
                     var items = payload.items || [];
                     if (!items.length) {
                         list.innerHTML = '';
                         emptyState.textContent = 'No rated tickets found for the selected filters.';
                         emptyState.style.display = 'block';
+                        renderPagination(payload);
                         return;
                     }
 
                     list.innerHTML = items.map(renderRow).join('');
                     emptyState.style.display = 'none';
+                    renderPagination(payload);
                 })
                 .catch(function (error) {
                     list.innerHTML = '';
+                    pager.style.display = 'none';
                     emptyState.textContent = error && error.message ? error.message : 'Unable to load rated history.';
                     emptyState.style.display = 'block';
                 });
@@ -303,17 +366,27 @@
             quickRange.value = 'custom';
         }
 
+        function resetToFirstPage() {
+            currentPage = 1;
+        }
+
         input.addEventListener('input', function () {
             window.clearTimeout(searchDebounceHandle);
+            resetToFirstPage();
             searchDebounceHandle = window.setTimeout(loadRatedHistory, 200);
         });
-        scoreFilter.addEventListener('change', loadRatedHistory);
+        scoreFilter.addEventListener('change', function () {
+            resetToFirstPage();
+            loadRatedHistory();
+        });
         fromDate.addEventListener('change', function () {
             setCustomRangeOnManualDate();
+            resetToFirstPage();
             loadRatedHistory();
         });
         toDate.addEventListener('change', function () {
             setCustomRangeOnManualDate();
+            resetToFirstPage();
             loadRatedHistory();
         });
         fromDate.addEventListener('focus', setCustomRangeOnManualDate);
@@ -326,6 +399,18 @@
                 toDate.value = '';
             }
             applyQuickRange();
+            resetToFirstPage();
+            loadRatedHistory();
+        });
+
+        pagerPrev.addEventListener('click', function () {
+            if (currentPage <= 1) return;
+            currentPage--;
+            loadRatedHistory();
+        });
+
+        pagerNext.addEventListener('click', function () {
+            currentPage++;
             loadRatedHistory();
         });
 

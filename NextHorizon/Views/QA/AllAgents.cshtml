@@ -117,6 +117,54 @@
     .sub-progress { color: #5a5a5a; font-size: .78rem; margin-top: 2px; }
     .score { background: #e7e7e7; border-radius: 999px; padding: 5px 10px; font-weight: 700; }
 
+    .empty-state {
+        display: none;
+        border: 1px dashed rgba(0, 0, 0, 0.2);
+        border-radius: 12px;
+        padding: 14px;
+        color: #555555;
+        background: #fafafa;
+        font-size: .86rem;
+        margin-top: 10px;
+    }
+
+    .pager {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+    }
+
+    .pager-status {
+        font-size: .82rem;
+        color: #555555;
+    }
+
+    .pager-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .pager-btn {
+        border: 1px solid rgba(0, 0, 0, 0.14);
+        background: #111111;
+        color: #ffffff;
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-size: .82rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .pager-btn:disabled {
+        background: #e5e5e5;
+        color: #8a8a8a;
+        cursor: not-allowed;
+    }
+
     @@media (max-width: 700px) {
         .head-top {
             flex-direction: column;
@@ -181,17 +229,32 @@
             }
         }
     </div>
+    <div id="agent-empty" class="empty-state">No agents found for the current search.</div>
+    <div id="agent-pager" class="pager">
+        <div id="agent-pager-status" class="pager-status">Page 1 of 1</div>
+        <div class="pager-actions">
+            <button id="agent-pager-prev" class="pager-btn" type="button">Previous</button>
+            <button id="agent-pager-next" class="pager-btn" type="button">Next</button>
+        </div>
+    </div>
 </section>
 
 <script>
     (function () {
+        var pageSize = 10;
         var input = document.getElementById('agent-search');
         var sort = document.getElementById('agent-sort');
         var list = document.getElementById('agent-list');
         var title = document.getElementById('agent-title');
-        if (!input || !sort || !list || !title) return;
+        var emptyState = document.getElementById('agent-empty');
+        var pager = document.getElementById('agent-pager');
+        var pagerStatus = document.getElementById('agent-pager-status');
+        var pagerPrev = document.getElementById('agent-pager-prev');
+        var pagerNext = document.getElementById('agent-pager-next');
+        if (!input || !sort || !list || !title || !emptyState || !pager || !pagerStatus || !pagerPrev || !pagerNext) return;
 
-        var rows = Array.prototype.slice.call(list.querySelectorAll('.agent'));
+        var rows = Array.prototype.slice.call(list.querySelectorAll('.agent[data-name]'));
+        var currentPage = 1;
 
         function sortRows() {
             var mode = sort.value;
@@ -214,36 +277,69 @@
             });
 
             rows.forEach(function (row) { list.appendChild(row); });
-            rows.forEach(function (row, index) {
+        }
+
+        function getFilteredRows() {
+            var q = (input.value || '').toLowerCase().trim();
+            return rows.filter(function (row) {
+                var haystack = (row.getAttribute('data-search') || '').toLowerCase();
+                return !q || haystack.indexOf(q) !== -1;
+            });
+        }
+
+        function renderRows() {
+            var filteredRows = getFilteredRows();
+            var filteredCount = filteredRows.length;
+            var totalPages = filteredCount === 0 ? 1 : Math.ceil(filteredCount / pageSize);
+            currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+            var startIndex = (currentPage - 1) * pageSize;
+            var endIndex = startIndex + pageSize;
+
+            rows.forEach(function (row) {
+                row.style.display = 'none';
+            });
+
+            filteredRows.forEach(function (row, index) {
                 var rank = row.querySelector('.rank');
                 if (rank) rank.textContent = String(index + 1);
+
+                if (index >= startIndex && index < endIndex) {
+                    row.style.display = '';
+                }
             });
+
+            title.textContent = 'Agents (' + filteredCount + ')';
+            emptyState.style.display = filteredCount === 0 ? 'block' : 'none';
+            pager.style.display = filteredCount > 0 ? 'flex' : 'none';
+            pagerStatus.textContent = 'Page ' + currentPage + ' of ' + totalPages;
+            pagerPrev.disabled = currentPage <= 1;
+            pagerNext.disabled = currentPage >= totalPages;
         }
 
-        function updateCount() {
-            var visible = 0;
-            rows.forEach(function (row) {
-                if (row.style.display !== 'none') visible++;
-            });
-            title.textContent = 'Agents (' + visible + ')';
+        function resetToFirstPage() {
+            currentPage = 1;
         }
 
-        function applyFilters() {
-            var q = (input.value || '').toLowerCase().trim();
-            rows.forEach(function (row) {
-                var haystack = (row.getAttribute('data-search') || '').toLowerCase();
-                row.style.display = !q || haystack.indexOf(q) !== -1 ? '' : 'none';
-            });
-            updateCount();
-        }
-
-        input.addEventListener('input', applyFilters);
+        input.addEventListener('input', function () {
+            resetToFirstPage();
+            renderRows();
+        });
         sort.addEventListener('change', function () {
             sortRows();
-            applyFilters();
+            resetToFirstPage();
+            renderRows();
+        });
+        pagerPrev.addEventListener('click', function () {
+            if (currentPage <= 1) return;
+            currentPage--;
+            renderRows();
+        });
+        pagerNext.addEventListener('click', function () {
+            currentPage++;
+            renderRows();
         });
 
         sortRows();
-        updateCount();
+        renderRows();
     })();
 </script>

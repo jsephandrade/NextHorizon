@@ -122,6 +122,43 @@
         font-size: .86rem;
     }
 
+    .pager {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+    }
+
+    .pager-status {
+        font-size: .82rem;
+        color: #555555;
+    }
+
+    .pager-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .pager-btn {
+        border: 1px solid rgba(0, 0, 0, 0.14);
+        background: #111111;
+        color: #ffffff;
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-size: .82rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .pager-btn:disabled {
+        background: #e5e5e5;
+        color: #8a8a8a;
+        cursor: not-allowed;
+    }
+
     @@media (max-width: 700px) {
         .filter-grid {
             grid-template-columns: 1fr 1fr;
@@ -165,6 +202,13 @@
 
     <div class="tickets" id="ticket-list"></div>
     <div id="ticket-empty" class="empty-state">No tickets found for the selected filters.</div>
+    <div id="ticket-pager" class="pager">
+        <div id="pager-status" class="pager-status">Page 1 of 1</div>
+        <div class="pager-actions">
+            <button id="pager-prev" class="pager-btn" type="button">Previous</button>
+            <button id="pager-next" class="pager-btn" type="button">Next</button>
+        </div>
+    </div>
 </section>
 
 <script>
@@ -177,9 +221,14 @@
         var toDate = document.getElementById('to-date');
         var list = document.getElementById('ticket-list');
         var emptyState = document.getElementById('ticket-empty');
-        if (!progress || !input || !list || !quickRange || !customRangeOption || !fromDate || !toDate || !emptyState) return;
+        var pager = document.getElementById('ticket-pager');
+        var pagerStatus = document.getElementById('pager-status');
+        var pagerPrev = document.getElementById('pager-prev');
+        var pagerNext = document.getElementById('pager-next');
+        if (!progress || !input || !list || !quickRange || !customRangeOption || !fromDate || !toDate || !emptyState || !pager || !pagerStatus || !pagerPrev || !pagerNext) return;
 
         var searchDebounceHandle = 0;
+        var currentPage = 1;
 
         function toIsoDate(d) {
             var y = d.getFullYear();
@@ -214,6 +263,7 @@
 
         function buildQueryString() {
             var query = new URLSearchParams();
+            query.set('page', String(currentPage));
             query.set('range', quickRange.value || 'custom');
 
             if (fromDate.value) query.set('from', fromDate.value);
@@ -227,6 +277,15 @@
 
         function renderSummary(payload) {
             progress.textContent = (payload.ratedCount || 0) + ' tickets rated out of ' + (payload.resolvedCount || 0);
+        }
+
+        function renderPagination(payload) {
+            var totalPages = payload && payload.totalPages ? payload.totalPages : 1;
+            var page = payload && payload.page ? payload.page : 1;
+            pagerStatus.textContent = 'Page ' + page + ' of ' + totalPages;
+            pagerPrev.disabled = !(payload && payload.hasPrevious);
+            pagerNext.disabled = !(payload && payload.hasNext);
+            pager.style.display = payload && payload.totalPendingCount > 0 ? 'flex' : 'none';
         }
 
         function renderTickets(items) {
@@ -266,13 +325,16 @@
                     return response.json();
                 })
                 .then(function (payload) {
+                    currentPage = payload.page || 1;
                     renderSummary(payload);
                     renderTickets(payload.items || []);
+                    renderPagination(payload);
                     emptyState.textContent = 'No tickets found for the selected filters.';
                 })
                 .catch(function () {
                     progress.textContent = 'Unable to load queue summary.';
                     list.innerHTML = '';
+                    pager.style.display = 'none';
                     emptyState.textContent = 'Unable to load tickets for the selected filters.';
                     emptyState.style.display = 'block';
                 });
@@ -282,18 +344,25 @@
             quickRange.value = 'custom';
         }
 
+        function resetToFirstPage() {
+            currentPage = 1;
+        }
+
         function queueSearchReload() {
             window.clearTimeout(searchDebounceHandle);
+            resetToFirstPage();
             searchDebounceHandle = window.setTimeout(loadTickets, 200);
         }
 
         input.addEventListener('input', queueSearchReload);
         fromDate.addEventListener('change', function () {
             setCustomRangeOnManualDate();
+            resetToFirstPage();
             loadTickets();
         });
         toDate.addEventListener('change', function () {
             setCustomRangeOnManualDate();
+            resetToFirstPage();
             loadTickets();
         });
         fromDate.addEventListener('focus', setCustomRangeOnManualDate);
@@ -307,6 +376,18 @@
             }
 
             applyQuickRange();
+            resetToFirstPage();
+            loadTickets();
+        });
+
+        pagerPrev.addEventListener('click', function () {
+            if (currentPage <= 1) return;
+            currentPage--;
+            loadTickets();
+        });
+
+        pagerNext.addEventListener('click', function () {
+            currentPage++;
             loadTickets();
         });
 

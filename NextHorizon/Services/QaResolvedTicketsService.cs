@@ -8,6 +8,7 @@ namespace NextHorizon.Services;
 
 public sealed class QaResolvedTicketsService : IQaResolvedTicketsService
 {
+    private const int DefaultPageSize = 10;
     private readonly ApplicationDbContext _dbContext;
 
     public QaResolvedTicketsService(ApplicationDbContext dbContext)
@@ -16,6 +17,7 @@ public sealed class QaResolvedTicketsService : IQaResolvedTicketsService
     }
 
     public async Task<QaResolvedTicketsResponse> GetResolvedTicketsAsync(
+        int page,
         string? range,
         DateOnly? from,
         DateOnly? to,
@@ -47,7 +49,7 @@ public sealed class QaResolvedTicketsService : IQaResolvedTicketsService
 
         if (resolvedFaqs.Count == 0)
         {
-            return new QaResolvedTicketsResponse(0, 0, 0, Array.Empty<QaResolvedTicketItem>());
+            return new QaResolvedTicketsResponse(0, 0, 0, 1, DefaultPageSize, 0, 1, false, false, Array.Empty<QaResolvedTicketItem>());
         }
 
         var supportFaqIds = resolvedFaqs.Select(item => item.SupportFaqId).Distinct().ToArray();
@@ -135,12 +137,27 @@ public sealed class QaResolvedTicketsService : IQaResolvedTicketsService
 
         var resolvedCount = filteredResolvedSnapshots.Count;
         var ratedCount = filteredResolvedSnapshots.Count(item => item.IsRated);
+        var totalPendingCount = pendingItems.Count;
+        var totalPages = totalPendingCount == 0
+            ? 1
+            : (int)Math.Ceiling(totalPendingCount / (double)DefaultPageSize);
+        var currentPage = Math.Clamp(page, 1, totalPages);
+        var pagedItems = pendingItems
+            .Skip((currentPage - 1) * DefaultPageSize)
+            .Take(DefaultPageSize)
+            .ToList();
 
         return new QaResolvedTicketsResponse(
             ratedCount,
             resolvedCount,
-            pendingItems.Count,
-            pendingItems);
+            totalPendingCount,
+            currentPage,
+            DefaultPageSize,
+            totalPendingCount,
+            totalPages,
+            currentPage > 1,
+            currentPage < totalPages,
+            pagedItems);
     }
 
     private async Task<Dictionary<int, string>> LoadAgentNamesAsync(int[] agentUserIds, CancellationToken cancellationToken)

@@ -34,6 +34,12 @@ public sealed record QaResolvedTicketsResponse(
     int RatedCount,
     int ResolvedCount,
     int PendingCount,
+    int Page,
+    int PageSize,
+    int TotalPendingCount,
+    int TotalPages,
+    bool HasPrevious,
+    bool HasNext,
     IReadOnlyList<QaResolvedTicketItem> Items);
 
 public sealed record QaResolvedTicketItem(
@@ -65,6 +71,15 @@ public sealed record QaAgentTicketsResponse(
     string AgentName,
     int AwaitingCount,
     int RatedCount,
+    int AwaitingPage,
+    int RatedPage,
+    int PageSize,
+    int AwaitingTotalPages,
+    int RatedTotalPages,
+    bool HasAwaitingPrevious,
+    bool HasAwaitingNext,
+    bool HasRatedPrevious,
+    bool HasRatedNext,
     IReadOnlyList<QaAgentTicketItem> AwaitingItems,
     IReadOnlyList<QaAgentTicketItem> RatedItems);
 
@@ -79,6 +94,11 @@ public sealed record QaAgentTicketItem(
 
 public sealed record QaRatedHistoryResponse(
     int Count,
+    int Page,
+    int PageSize,
+    int TotalPages,
+    bool HasPrevious,
+    bool HasNext,
     IReadOnlyList<QaRatedHistoryItem> Items);
 
 public sealed record QaRatedHistoryItem(
@@ -132,7 +152,10 @@ public sealed class QaInlineCommentsUpsertRequest
 
 public sealed record QaReviewMutationResponse(
     bool Success,
-    string Message);
+    string Message,
+    bool SubmittedToAgent = false,
+    string SubmittedToAgentAtUtc = "",
+    double? OverallPercent = null);
 
 public sealed record QaConversationMessageViewModel(
     string MessageId,
