@@ -20,6 +20,7 @@ public sealed record AgentDashboardResponse(
     bool AcwAvailable,
     IReadOnlyList<AgentDashboardMonthScorecard> MonthScorecards,
     IReadOnlyList<AgentDashboardTicketItem> RatedTickets,
+    IReadOnlyList<AgentDashboardResolvedTicketItem> ResolvedTickets,
     IReadOnlyList<AgentDashboardAcwItem> AcwRecords);
 
 public sealed record AgentDashboardMonthScorecard(
@@ -41,6 +42,7 @@ public sealed record AgentDashboardTicketItem(
     int SupportFaqId,
     string AgentName,
     string CustomerName,
+    string ConcernSourceLabel,
     string ReviewerName,
     string RatedAtLabel,
     string RatedAtDate,
@@ -54,11 +56,27 @@ public sealed record AgentDashboardTicketItem(
     string EndTimeLabel,
     string SearchText);
 
+public sealed record AgentDashboardResolvedTicketItem(
+    int SupportFaqId,
+    string AgentName,
+    string CustomerName,
+    string ConcernSourceLabel,
+    string ReviewerName,
+    string ReviewStateLabel,
+    string ResolvedAtLabel,
+    string ResolvedAtDate,
+    bool IsReviewed,
+    double OverallPercent,
+    string SearchText);
+
 public sealed record AgentDashboardTicketDetail(
     int SupportFaqId,
     string AgentName,
     string CustomerName,
+    string ConcernSourceLabel,
     string ReviewerName,
+    bool IsReviewed,
+    string ReviewStateLabel,
     string ConversationDateLabel,
     string RatedAtLabel,
     string ReviewUpdatedLabel,
@@ -111,6 +129,7 @@ public sealed record AgentDashboardAcwItem(
     int SupportFaqId,
     string AgentName,
     string CustomerName,
+    string ConcernSourceLabel,
     string ReviewerName,
     bool IsRated,
     bool CanViewDetails,

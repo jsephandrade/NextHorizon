@@ -47,6 +47,8 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<AgentRanking> AgentRankings => Set<AgentRanking>();
 
+    public DbSet<AgentNotificationRecord> Notifications => Set<AgentNotificationRecord>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -440,6 +442,33 @@ public class ApplicationDbContext : DbContext
             .IsUnique();
         agentRanking.HasIndex(x => new { x.PeriodStartUtc, x.MetricType, x.RankPosition });
 
+        var notification = builder.Entity<AgentNotificationRecord>();
+        notification.ToTable("Notifications", "dbo", table => table.ExcludeFromMigrations());
+        notification.HasKey(x => x.NotificationId);
+        notification.Property(x => x.NotificationId)
+            .HasColumnName("NotificationId");
+        notification.Property(x => x.RecipientType)
+            .HasColumnName("RecipientType")
+            .IsRequired();
+        notification.Property(x => x.RecipientId)
+            .HasColumnName("RecipientId")
+            .IsRequired();
+        notification.Property(x => x.OrderId)
+            .HasColumnName("OrderId");
+        notification.Property(x => x.Message)
+            .HasColumnName("Message")
+            .IsRequired();
+        notification.Property(x => x.IsRead)
+            .HasColumnName("IsRead")
+            .IsRequired();
+        notification.Property(x => x.CreatedAt)
+            .HasColumnName("CreatedAt")
+            .HasColumnType("datetime2")
+            .IsRequired();
+        notification.Property(x => x.Category)
+            .HasColumnName("category")
+            .IsRequired();
+
         var qaReviewQuestionScore = builder.Entity<QaReviewQuestionScore>();
         qaReviewQuestionScore.ToTable("QaReviewQuestionScores");
         qaReviewQuestionScore.HasKey(x => x.QaReviewQuestionScoreId);
@@ -615,6 +644,5 @@ public class ApplicationDbContext : DbContext
             .IsDescending(false, true);
     }
 }
-
 
 

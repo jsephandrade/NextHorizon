@@ -42,6 +42,8 @@ public sealed class AgentRankingService : IAgentRankingService
                 join supportFaq in _dbContext.SupportFaqRecords.AsNoTracking()
                     on review.SupportFaqId equals supportFaq.Id
                 where supportFaq.AgentId.HasValue
+                    && supportFaq.Status == "Resolved"
+                    && supportFaq.EndTime != null
                 select review.CreatedAtUtc)
             .ToListAsync(cancellationToken);
 
@@ -78,6 +80,8 @@ public sealed class AgentRankingService : IAgentRankingService
                 join supportFaq in _dbContext.SupportFaqRecords.AsNoTracking()
                     on review.SupportFaqId equals supportFaq.Id
                 where supportFaq.AgentId.HasValue
+                    && supportFaq.Status == "Resolved"
+                    && supportFaq.EndTime != null
                     && review.CreatedAtUtc >= earliestMonthStartUtc
                     && review.CreatedAtUtc < upperBoundUtc
                 select new
@@ -123,6 +127,8 @@ public sealed class AgentRankingService : IAgentRankingService
                 join supportFaq in _dbContext.SupportFaqRecords.AsNoTracking()
                     on review.SupportFaqId equals supportFaq.Id
                 where supportFaq.AgentId.HasValue
+                    && supportFaq.Status == "Resolved"
+                    && supportFaq.EndTime != null
                     && review.CreatedAtUtc >= monthStartUtc
                     && review.CreatedAtUtc < nextMonthStartUtc
                 select new
@@ -338,4 +344,3 @@ public sealed class AgentRankingService : IAgentRankingService
         string MessageText,
         DateTime CreatedAt);
 }
-

@@ -428,6 +428,17 @@
     margin-bottom: 12px;
 }
 
+.head-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.head-action-btn {
+    align-self: flex-start;
+}
+
 .head h2 {
     font-size: 1.3rem;
     margin: 0;
@@ -503,6 +514,62 @@
     gap: 10px;
 }
 
+.pagination-bar {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+.pagination-controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+}
+
+.pagination-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    color: #5f5f5f;
+    font-size: .9rem;
+    font-weight: 700;
+}
+
+.pagination-btn {
+    min-width: 38px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.14);
+    background: #f7f7f7;
+    color: #181818;
+    font-size: .8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.pagination-btn:hover {
+    background: #ededed;
+    border-color: rgba(0, 0, 0, 0.22);
+}
+
+.pagination-btn.is-active {
+    background: #111111;
+    border-color: #111111;
+    color: #ffffff;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.pagination-next-btn {
+    min-width: 92px;
+}
+
 .row {
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 12px;
@@ -512,6 +579,44 @@
     gap: 8px;
     align-items: center;
     background: #f6f6f6;
+}
+
+.resolved-row {
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;
+}
+
+.resolved-row[data-is-reviewed="true"] {
+    cursor: pointer;
+}
+
+.resolved-row[data-is-reviewed="true"]:hover,
+.resolved-row[data-is-reviewed="true"]:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(0, 0, 0, 0.2);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+    outline: none;
+}
+
+.resolved-row[data-is-reviewed="false"] {
+    opacity: 0.82;
+}
+
+.resolved-row.is-loading {
+    opacity: 0.72;
+    pointer-events: none;
+}
+
+.resolved-row.is-loading .score::after {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-left: 8px;
+    vertical-align: -2px;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 0, 0, 0.18);
+    border-top-color: #111111;
+    animation: heroSpinner 0.8s linear infinite;
 }
 
 .name { font-weight: 700; color: #131212; }
@@ -631,10 +736,18 @@
 @media (max-width: 700px) {
     .filter-grid { grid-template-columns: 1fr 1fr; }
     .row { grid-template-columns: 1fr; }
+    .head-top { display: grid; grid-template-columns: 1fr; }
+    .resolved-filter-grid { grid-template-columns: 1fr 1fr; }
+    .resolved-summary-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 520px) {
     .filter-grid { grid-template-columns: 1fr; }
+    .resolved-filter-grid { grid-template-columns: 1fr; }
+}
+
+body.modal-open {
+    overflow: hidden;
 }
 
 /* Modal Overlay Setup */
@@ -708,6 +821,7 @@
 .panel-title { font-size: .9rem; font-weight: 600; color: #131212; }
 .sub { font-size: .78rem; color: #666666; margin-top: 2px; }
 .rated-badge { border-radius: 999px; padding: 5px 10px; font-size: .74rem; font-weight: 600; background: #e9f2e9; color: #165f2e; border: 0.5px solid #bcd7c4; }
+.rated-badge.pending { background: #fff5e7; color: #9a6220; border-color: #edcf9d; }
 
 .summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .summary-card { border: 0.5px solid rgba(0, 0, 0, 0.14); border-radius: 10px; background: #fafafa; padding: 11px; }
@@ -796,6 +910,131 @@
     position: relative;
     display: grid;
     gap: 18px;
+}
+
+.resolved-modal-overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.44);
+    padding: 20px;
+    z-index: 9998;
+}
+
+.resolved-modal-overlay[hidden] {
+    display: none !important;
+}
+
+.resolved-modal-overlay.is-open {
+    display: flex;
+}
+
+.resolved-modal-card {
+    width: min(920px, 100%);
+    max-height: min(88vh, 900px);
+    overflow: hidden;
+    background: #ffffff;
+    border-radius: 18px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.16);
+    padding: 22px;
+    position: relative;
+    display: grid;
+    gap: 16px;
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+}
+
+.resolved-modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding-right: 36px;
+}
+
+.resolved-modal-subtext {
+    font-size: .82rem;
+    color: #6a6a6a;
+}
+
+.resolved-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.resolved-summary-card {
+    display: grid;
+    gap: 6px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: #f5f5f5;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.resolved-summary-label {
+    font-size: .74rem;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: #737373;
+}
+
+.resolved-summary-value {
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: #111111;
+}
+
+.resolved-modal-filters {
+    display: grid;
+    gap: 10px;
+}
+
+.resolved-filter-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.resolved-ticket-list {
+    display: grid;
+    gap: 10px;
+    overflow-y: auto;
+    padding-right: 4px;
+    align-content: start;
+    min-height: 0;
+}
+
+.resolved-ticket-list .modal-state {
+    display: grid;
+    place-items: center;
+    min-height: 120px;
+    text-align: center;
+}
+
+.resolved-empty-state {
+    margin-top: -4px;
+}
+
+.resolved-status-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 4px 10px;
+    margin-right: 8px;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+.resolved-status-pill.reviewed {
+    background: #e9f6eb;
+    color: #1f6f39;
+}
+
+.resolved-status-pill.pending {
+    background: #fff5e7;
+    color: #9a6220;
 }
 
 .scorecard-modal-close {

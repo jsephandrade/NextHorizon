@@ -21,7 +21,7 @@
         <button class="hero tab-btn" data-tab="aht" aria-label="View Average Handling Time Tab" type="button">
             <div class="hero-top-flex">
                 <h1>Average Handling Time (AHT)</h1>
-                <div class="hero-metric" id="aht-metric">0mins 0secs</div>
+                <div class="hero-metric hero-metric-clock" id="aht-metric">0:00<span class="hero-metric-unit">minutes</span></div>
             </div>
             <p id="aht-update">Last Update: No updates yet</p>
             <p id="aht-rank">Rank: Not ranked yet</p>
@@ -31,7 +31,7 @@
         <button class="hero tab-btn" data-tab="acw" aria-label="View After Chat Work Tab" type="button">
             <div class="hero-top-flex">
                 <h1>After Chat Work (ACW)</h1>
-                <div class="hero-metric" id="acw-metric">0mins 0secs</div>
+                <div class="hero-metric hero-metric-clock" id="acw-metric">0:00<span class="hero-metric-unit">minutes</span></div>
             </div>
             <p>Completed after-chat intervals this month</p>
             <span class="tab-btn-spinner" aria-hidden="true"></span>
@@ -41,9 +41,14 @@
     <section class="dashboard-lower-grid">
         <section class="page-wrap">
             <div class="head">
-                <h2 id="dynamic-section-title">Quality Evaluations</h2>
-                <div class="head-sub" id="dynamic-section-sub">Review your performance evaluations and detailed quality
-                    feedback.</div>
+                <div class="head-top">
+                    <div>
+                        <h2 id="dynamic-section-title">Quality Evaluations</h2>
+                        <div class="head-sub" id="dynamic-section-sub">Review your performance evaluations and detailed quality
+                            feedback.</div>
+                    </div>
+                    <button id="resolved-tickets-trigger" class="btn secondary head-action-btn" type="button">Resolved tickets</button>
+                </div>
                     <div class="filters">
                         <div class="filter-help" id="filter-help">
                             Use the filters below to browse rated tickets from your dashboard history.
@@ -86,6 +91,7 @@
                 </div>
 
                 <div class="rows" id="rated-list"></div>
+                <div class="pagination-bar" id="rated-pagination" hidden></div>
                 <div id="rated-empty" class="empty-state" style="display:none;">No rated tickets found for the selected filters.
                 </div>
                 <div id="dashboard-loading" class="empty-state">Loading dashboard data...</div>
@@ -105,7 +111,13 @@
             </div>
 
             <div class="scorecard-subtext">
-                Select a month to open the full scorecard.
+                Filter by month to open past, current, or future scorecards.
+            </div>
+
+            <div class="scorecard-filter">
+                <label class="scorecard-filter-label" for="scorecard-month-filter">Filter month</label>
+                <input id="scorecard-month-filter" class="scorecard-filter-input" type="month" />
+                <p class="scorecard-filter-help">Choose any month to check scorecard history or preview a future month.</p>
             </div>
 
             <div class="scorecard-month-list" id="scorecard-month-list">
@@ -139,13 +151,13 @@
 
                 <article class="scorecard-modal-item">
                     <div class="scorecard-metric-label">AHT</div>
-                    <div class="scorecard-modal-value" id="scorecard-modal-aht">No data</div>
+                    <div class="scorecard-modal-value scorecard-modal-value-clock" id="scorecard-modal-aht">No data</div>
                     <div class="scorecard-metric-meta" id="scorecard-modal-aht-rank">Rank: Not ranked yet</div>
                 </article>
 
                 <article class="scorecard-modal-item">
                     <div class="scorecard-metric-label">ACW</div>
-                    <div class="scorecard-modal-value" id="scorecard-modal-acw">No data</div>
+                    <div class="scorecard-modal-value scorecard-modal-value-clock" id="scorecard-modal-acw">No data</div>
                     <div class="scorecard-metric-meta">Monthly average from tracked ACW records</div>
                 </article>
             </div>
@@ -154,6 +166,64 @@
                 <span class="scorecard-foot-label">Database sync</span>
                 <span id="scorecard-modal-updated">Last Update: No updates yet</span>
             </div>
+        </div>
+    </div>
+
+    <div id="resolved-tickets-modal" class="resolved-modal-overlay" aria-hidden="true" hidden>
+        <div class="resolved-modal-card" role="dialog" aria-modal="true" aria-labelledby="resolved-modal-title">
+            <button class="scorecard-modal-close" id="resolved-modal-close" type="button" aria-label="Close resolved tickets">&times;</button>
+            <div class="resolved-modal-head">
+                <div>
+                    <h3 id="resolved-modal-title">Resolved tickets</h3>
+                </div>
+                <div class="scorecard-month" id="resolved-modal-count">0 tickets</div>
+            </div>
+
+            <div class="resolved-summary-grid">
+                <article class="resolved-summary-card">
+                    <div class="resolved-summary-label">Total resolved tickets</div>
+                    <div class="resolved-summary-value" id="resolved-summary-total">0</div>
+                </article>
+                <article class="resolved-summary-card">
+                    <div class="resolved-summary-label">Reviewed tickets</div>
+                    <div class="resolved-summary-value" id="resolved-summary-reviewed">0</div>
+                </article>
+                <article class="resolved-summary-card">
+                    <div class="resolved-summary-label">Pending tickets</div>
+                    <div class="resolved-summary-value" id="resolved-summary-pending">0</div>
+                </article>
+            </div>
+
+            <div class="resolved-modal-filters">
+                <div class="filter-grid resolved-filter-grid">
+                    <div class="filter-field">
+                        <label class="filter-label" for="resolved-quick-range">Date preset</label>
+                        <select id="resolved-quick-range" class="filter-select">
+                            <option value="custom">Custom range</option>
+                            <option value="today">Today</option>
+                            <option value="last7">Last 7 days</option>
+                            <option value="last30">Last 30 days</option>
+                        </select>
+                    </div>
+                    <div class="filter-field">
+                        <label class="filter-label" for="resolved-from-date">Resolved date from</label>
+                        <input id="resolved-from-date" class="filter-input" type="date" />
+                    </div>
+                    <div class="filter-field">
+                        <label class="filter-label" for="resolved-to-date">Resolved date to</label>
+                        <input id="resolved-to-date" class="filter-input" type="date" />
+                    </div>
+                </div>
+                <div class="search-wrap">
+                    <i class="bi bi-search"></i>
+                    <input id="resolved-search" class="search" type="text"
+                           placeholder="Search by ticket, customer, review status, reviewer, or date..." />
+                </div>
+            </div>
+
+            <div id="resolved-ticket-list" class="resolved-ticket-list"></div>
+            <div class="pagination-bar" id="resolved-pagination" hidden></div>
+            <div id="resolved-ticket-empty" class="empty-state resolved-empty-state" style="display:none;">No resolved tickets found for the selected filters.</div>
         </div>
     </div>
 
@@ -182,7 +252,7 @@
                                 <div class="panel-title" id="modal-rating-title">QA rating panel</div>
                                 <div class="sub">Review your interaction evaluation</div>
                             </div>
-                            <span class="rated-badge">Rated</span>
+                            <span class="rated-badge" id="modal-review-badge">Rated</span>
                         </header>
 
                         <div class="rate-body">
@@ -257,6 +327,7 @@
             const toDate = document.getElementById('to-date');
             const scoreFilter = document.getElementById('score-filter');
             const scorecardMonthList = document.getElementById('scorecard-month-list');
+            const scorecardMonthFilter = document.getElementById('scorecard-month-filter');
             const scorecardModal = document.getElementById('scorecard-modal');
             const scorecardModalClose = document.getElementById('scorecard-modal-close');
             const scorecardModalTitle = document.getElementById('scorecard-modal-title');
@@ -267,6 +338,20 @@
             const scorecardModalAhtRank = document.getElementById('scorecard-modal-aht-rank');
             const scorecardModalAcw = document.getElementById('scorecard-modal-acw');
             const scorecardModalUpdated = document.getElementById('scorecard-modal-updated');
+            const resolvedTicketsTrigger = document.getElementById('resolved-tickets-trigger');
+            const resolvedTicketsModal = document.getElementById('resolved-tickets-modal');
+            const resolvedModalClose = document.getElementById('resolved-modal-close');
+            const resolvedModalCount = document.getElementById('resolved-modal-count');
+            const resolvedSummaryTotal = document.getElementById('resolved-summary-total');
+            const resolvedSummaryReviewed = document.getElementById('resolved-summary-reviewed');
+            const resolvedSummaryPending = document.getElementById('resolved-summary-pending');
+            const resolvedTicketList = document.getElementById('resolved-ticket-list');
+            const resolvedPagination = document.getElementById('resolved-pagination');
+            const resolvedTicketEmpty = document.getElementById('resolved-ticket-empty');
+            const resolvedQuickRange = document.getElementById('resolved-quick-range');
+            const resolvedFromDate = document.getElementById('resolved-from-date');
+            const resolvedToDate = document.getElementById('resolved-to-date');
+            const resolvedSearch = document.getElementById('resolved-search');
             const qaModal = document.getElementById('qa-review-modal');
             const closeQaModal = document.getElementById('close-qa-modal');
             const modalCloseBtn = document.getElementById('modal-close-btn');
@@ -275,6 +360,7 @@
             const modalAcknowledgeBtn = document.getElementById('modal-acknowledge-btn');
             const modalAgentNotes = document.getElementById('modal-agent-notes');
             const modalFeedbackStatus = document.getElementById('modal-feedback-status');
+            const modalReviewBadge = document.getElementById('modal-review-badge');
             const sectionTitle = document.getElementById('dynamic-section-title');
             const sectionSub = document.getElementById('dynamic-section-sub');
             const filterHelp = document.getElementById('filter-help');
@@ -282,6 +368,9 @@
             const toDateLabel = document.querySelector('label[for="to-date"]');
             const detailCache = new Map();
             const minTabTransitionMs = 220;
+            const initialTicketIdParam = new URLSearchParams(window.location.search).get('ticketId');
+            const ratedPagination = document.getElementById('rated-pagination');
+            const dashboardRefreshIntervalMs = 5000;
 
             const questionTextByKey = {
                 accuracy_q1: 'Did the agent provide correct policy or product details?',
@@ -327,6 +416,18 @@
             let currentDetail = null;
             let currentScorecard = null;
             let tabTransitionRequestId = 0;
+            let currentMainPage = 1;
+            let currentResolvedPage = 1;
+            let hasOpenedTicketFromQueryParam = false;
+            let isDashboardLoading = false;
+            let dashboardRefreshTimerId = 0;
+            let modalNotesDirty = false;
+            const pageSize = 10;
+
+            function getCurrentMonthKey() {
+                const now = new Date();
+                return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            }
 
             function setMetricText(id, text) {
                 const node = document.getElementById(id);
@@ -374,8 +475,8 @@
 
                 try {
                     currentTab = nextTab;
+                    currentMainPage = 1;
                     setSectionState();
-                    renderRows(getCurrentRows());
                     applyFilters();
 
                     if (currentDetail) {
@@ -404,7 +505,15 @@
             }
 
             function applyQuickRange() {
-                const selected = quickRange.value;
+                applyRangeInputs(quickRange, fromDate, toDate);
+            }
+
+            function applyResolvedQuickRange() {
+                applyRangeInputs(resolvedQuickRange, resolvedFromDate, resolvedToDate);
+            }
+
+            function applyRangeInputs(rangeSelect, startInput, endInput) {
+                const selected = rangeSelect.value;
                 if (!selected || selected === 'custom') return;
 
                 const end = new Date();
@@ -414,8 +523,8 @@
                 if (selected === 'last7') start.setDate(start.getDate() - 6);
                 else if (selected === 'last30') start.setDate(start.getDate() - 29);
 
-                fromDate.value = toIsoDate(start);
-                toDate.value = toIsoDate(end);
+                startInput.value = toIsoDate(start);
+                endInput.value = toIsoDate(end);
             }
 
             function setSectionState() {
@@ -424,6 +533,9 @@
                 sectionSub.textContent = config.sub;
                 filterHelp.textContent = config.help;
                 document.getElementById('modal-overall-label').textContent = config.overallLabel;
+                if (resolvedTicketsTrigger) {
+                    resolvedTicketsTrigger.hidden = currentTab !== 'qa';
+                }
 
                 if (fromDateLabel) {
                     fromDateLabel.textContent = currentTab === 'acw' ? 'ACW end date from' : 'Rated date from';
@@ -453,29 +565,122 @@
                 return escapeHtml(value).replace(/\r?\n/g, '<br>');
             }
 
+            function renderMinuteClock(totalSeconds) {
+                const safeSeconds = Number.isFinite(totalSeconds) && totalSeconds > 0 ? Math.round(totalSeconds) : 0;
+                const minutes = Math.floor(safeSeconds / 60);
+                const seconds = safeSeconds % 60;
+                return `${minutes}:${String(seconds).padStart(2, '0')}<span class="hero-metric-unit">minutes</span>`;
+            }
+
+            function setClockMetricHtml(id, totalSeconds) {
+                const node = document.getElementById(id);
+                if (!node) return;
+                node.innerHTML = renderMinuteClock(totalSeconds);
+            }
+
+            function findScorecardByMonthKey(months, monthKey) {
+                if (!monthKey) {
+                    return null;
+                }
+
+                return (months || []).find(function (item) {
+                    return item.monthKey === monthKey;
+                }) || null;
+            }
+
+            function setSelectedScorecardMonth(monthKey, options) {
+                if (!scorecardMonthFilter) {
+                    return;
+                }
+
+                const shouldOpen = !options || options.openModal !== false;
+                const normalizedMonthKey = monthKey || getCurrentMonthKey();
+                scorecardMonthFilter.value = normalizedMonthKey;
+
+                if (!dashboardData) {
+                    return;
+                }
+
+                renderScorecardMonths(dashboardData.monthScorecards || []);
+
+                if (!shouldOpen) {
+                    return;
+                }
+
+                const matchingScorecard = findScorecardByMonthKey(dashboardData.monthScorecards || [], normalizedMonthKey);
+                openScorecardModal(matchingScorecard || buildEmptyScorecard(normalizedMonthKey));
+            }
+
             function renderScorecardMonths(months) {
                 if (!scorecardMonthList) {
                     return;
                 }
 
-                if (!months || !months.length) {
+                const selectedMonthKey = scorecardMonthFilter && scorecardMonthFilter.value
+                    ? scorecardMonthFilter.value
+                    : getCurrentMonthKey();
+                const filteredMonths = selectedMonthKey
+                    ? (months || []).filter(function (item) { return item.monthKey === selectedMonthKey; })
+                    : (months || []);
+
+                if (selectedMonthKey && filteredMonths.length === 0) {
+                    scorecardMonthList.innerHTML = `
+                        <button class="scorecard-month-button is-empty-month is-selected" type="button" data-empty-month="${escapeHtml(selectedMonthKey)}">
+                            <span class="scorecard-month-button-title">${escapeHtml(formatMonthKeyLabel(selectedMonthKey))}</span>
+                            <span class="scorecard-month-button-tags">No scorecard data yet</span>
+                        </button>
+                    `;
+                    return;
+                }
+
+                if (!filteredMonths.length) {
                     scorecardMonthList.innerHTML = '<div class="scorecard-month-empty">No monthly scorecards available.</div>';
                     return;
                 }
 
-                scorecardMonthList.innerHTML = months.map(function (item, index) {
+                scorecardMonthList.innerHTML = filteredMonths.map(function (item) {
                     const tags = [];
                     if (item.hasQaData) tags.push('QA');
                     if (item.hasAhtData) tags.push('AHT');
                     if (item.hasAcwData) tags.push('ACW');
 
                     return `
-                        <button class="scorecard-month-button${index === 0 ? ' is-current' : ''}" type="button" data-month-scorecard='${escapeHtml(JSON.stringify(item))}'>
+                        <button class="scorecard-month-button${item.monthKey === getCurrentMonthKey() ? ' is-current' : ''}${item.monthKey === selectedMonthKey ? ' is-selected' : ''}" type="button" data-month-scorecard='${escapeHtml(JSON.stringify(item))}'>
                             <span class="scorecard-month-button-title">${escapeHtml(item.monthLabel)}</span>
                             <span class="scorecard-month-button-tags">${escapeHtml(tags.length ? tags.join(' • ') : 'No data')}</span>
                         </button>
                     `;
                 }).join('');
+            }
+
+            function formatMonthKeyLabel(monthKey) {
+                if (!monthKey || !/^\d{4}-\d{2}$/.test(monthKey)) {
+                    return 'Selected month';
+                }
+
+                const parts = monthKey.split('-');
+                const year = Number(parts[0]);
+                const monthIndex = Number(parts[1]) - 1;
+                const date = new Date(year, monthIndex, 1);
+                return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+            }
+
+            function buildEmptyScorecard(monthKey) {
+                return {
+                    monthKey: monthKey,
+                    monthLabel: formatMonthKeyLabel(monthKey),
+                    qaScoreLabel: 'No data',
+                    qaRankLabel: 'Rank: Not ranked yet',
+                    ahtSeconds: 0,
+                    ahtLabel: 'No data',
+                    ahtRankLabel: 'Rank: Not ranked yet',
+                    acwSeconds: 0,
+                    acwLabel: 'No data',
+                    lastUpdatedLabel: 'No updates yet',
+                    hasQaData: false,
+                    hasAhtData: false,
+                    hasAcwData: false
+                };
             }
 
             function openScorecardModal(scorecard) {
@@ -484,13 +689,14 @@
                 }
 
                 currentScorecard = scorecard;
+                syncBodyModalState(true);
                 scorecardModalTitle.textContent = 'Scorecard';
                 scorecardModalMonth.textContent = scorecard.monthLabel || 'Month';
                 scorecardModalQa.textContent = scorecard.qaScoreLabel || 'No data';
                 scorecardModalQaRank.textContent = scorecard.qaRankLabel || 'Rank: Not ranked yet';
-                scorecardModalAht.textContent = scorecard.ahtLabel || 'No data';
+                scorecardModalAht.innerHTML = scorecard.hasAhtData ? renderMinuteClock(scorecard.ahtSeconds) : 'No data';
                 scorecardModalAhtRank.textContent = scorecard.ahtRankLabel || 'Rank: Not ranked yet';
-                scorecardModalAcw.textContent = scorecard.acwLabel || 'No data';
+                scorecardModalAcw.innerHTML = scorecard.hasAcwData ? renderMinuteClock(scorecard.acwSeconds) : 'No data';
                 scorecardModalUpdated.textContent = 'Last Update: ' + (scorecard.lastUpdatedLabel || 'No updates yet');
                 scorecardModal.classList.add('is-open');
                 scorecardModal.setAttribute('aria-hidden', 'false');
@@ -504,6 +710,7 @@
                 scorecardModal.classList.remove('is-open');
                 scorecardModal.setAttribute('aria-hidden', 'true');
                 currentScorecard = null;
+                syncBodyModalState();
             }
 
             function renderRows(items) {
@@ -520,7 +727,7 @@
                     const rowSubline = isAcwTab
                         ? `${item.isRated ? `QA <strong>${escapeHtml(item.reviewerName)}</strong>` : `<strong>${escapeHtml(item.ratingLabel || 'Not rated yet')}</strong>`} &middot; <strong>${escapeHtml(item.category)}</strong> &middot; ${escapeHtml(item.chatStatus)} &middot; ACW ${escapeHtml(item.acwStartLabel)} - ${escapeHtml(item.acwEndLabel)}`
                         : `QA <strong>${escapeHtml(item.reviewerName)}</strong> on ${escapeHtml(item.ratedAtLabel)} - <strong>Accuracy ${item.accuracyPoints.toFixed(1)}/35</strong>, <strong>Empathy ${item.tonePoints.toFixed(1)}/35</strong>, <strong>Resolution ${item.resolutionPoints.toFixed(1)}/30</strong>`;
-                    const rowName = `Ticket #${escapeHtml(item.supportFaqId)} - Agent: ${escapeHtml(item.agentName)} &middot; Customer: ${escapeHtml(item.customerName)}`;
+                    const rowName = `Ticket #${escapeHtml(item.supportFaqId)} - Agent: ${escapeHtml(item.agentName)} &middot; Concern from: ${escapeHtml(item.concernSourceLabel)}`;
                     const canViewDetails = !isAcwTab || !!item.canViewDetails;
                     const viewButtonAttr = canViewDetails ? '' : 'disabled title="No QA review yet"';
 
@@ -544,19 +751,61 @@
                 });
             }
 
+            function paginateItems(items, page) {
+                const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+                const safePage = Math.min(Math.max(1, page), totalPages);
+                const start = (safePage - 1) * pageSize;
+                return {
+                    items: items.slice(start, start + pageSize),
+                    page: safePage,
+                    totalPages: items.length === 0 ? 0 : totalPages
+                };
+            }
+
+            function buildPaginationHtml(totalPages, currentPage, clickHandlerName) {
+                if (totalPages <= 1) {
+                    return '';
+                }
+
+                let numberButtons = '';
+                for (let page = 1; page <= totalPages; page++) {
+                    numberButtons += `<button class="pagination-btn${page === currentPage ? ' is-active' : ''}" type="button" onclick="${clickHandlerName}(${page})">${page}</button>`;
+                }
+
+                return `
+                    <div class="pagination-controls">
+                        ${numberButtons}
+                        <button class="pagination-btn pagination-next-btn" type="button" onclick="${clickHandlerName}(${currentPage + 1})" ${currentPage >= totalPages ? 'disabled' : ''}>Next page</button>
+                    </div>
+                `;
+            }
+
+            function renderRatedPagination(totalPages, currentPage) {
+                if (!ratedPagination) {
+                    return;
+                }
+
+                if (totalPages <= 1) {
+                    ratedPagination.hidden = true;
+                    ratedPagination.innerHTML = '';
+                    return;
+                }
+
+                ratedPagination.hidden = false;
+                ratedPagination.innerHTML = buildPaginationHtml(totalPages, currentPage, 'window.setRatedPage');
+            }
+
             function applyFilters() {
                 const query = (searchInput.value || '').toLowerCase().trim();
                 const fromVal = fromDate.value || '';
                 const toVal = toDate.value || '';
                 const scoreVal = scoreFilter.value || '';
-                const rows = ratedList.querySelectorAll('.row');
-                let visibleCount = 0;
-
-                rows.forEach(row => {
-                    const searchText = (row.dataset.search || '').toLowerCase();
-                    const rowDate = row.dataset.date || '';
-                    const rowScore = parseFloat(row.dataset.score || '0');
-                    const isRatedRow = (row.dataset.isRated || 'false') === 'true';
+                const filteredItems = getCurrentRows().filter(item => {
+                    const isAcwTab = currentTab === 'acw';
+                    const searchText = (item.searchText || '').toLowerCase();
+                    const rowDate = isAcwTab ? (item.acwEndDate || '') : (item.ratedAtDate || '');
+                    const rowScore = Number.parseFloat(item.overallPercent || '0');
+                    const isRatedRow = isAcwTab ? !!item.isRated : true;
 
                     const matchesSearch = !query || searchText.includes(query);
                     const matchesFrom = !fromVal || (rowDate && rowDate >= fromVal);
@@ -570,13 +819,154 @@
                     else if (scoreVal === 'mid') matchesScore = rowScore >= 70 && rowScore < 80;
                     else if (scoreVal === 'low') matchesScore = rowScore < 70;
 
-                    const visible = matchesSearch && matchesFrom && matchesTo && matchesScore;
-                    row.style.display = visible ? '' : 'none';
-                    if (visible) visibleCount++;
+                    return matchesSearch && matchesFrom && matchesTo && matchesScore;
                 });
 
-                emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+                const pagination = paginateItems(filteredItems, currentMainPage);
+                currentMainPage = pagination.page || 1;
+                renderRows(pagination.items);
+                renderRatedPagination(pagination.totalPages, currentMainPage);
+                emptyState.style.display = filteredItems.length === 0 ? 'block' : 'none';
             }
+
+            function renderResolvedRows(items) {
+                resolvedTicketList.innerHTML = '';
+
+                items.forEach(function (item) {
+                    const row = document.createElement('div');
+                    row.className = 'row resolved-row';
+                    row.dataset.date = item.resolvedAtDate || '';
+                    row.dataset.search = item.searchText || '';
+                    row.dataset.ticket = JSON.stringify(item);
+                    row.dataset.isReviewed = String(!!item.isReviewed);
+                    row.setAttribute('data-is-reviewed', String(!!item.isReviewed));
+                    row.dataset.isClickable = String(!!item.isReviewed);
+                    row.tabIndex = item.isReviewed ? 0 : -1;
+                    row.setAttribute('role', item.isReviewed ? 'button' : 'group');
+                    row.setAttribute('aria-disabled', item.isReviewed ? 'false' : 'true');
+                    row.innerHTML = `
+                            <div>
+                                <div class="name">Ticket #${escapeHtml(item.supportFaqId)} - Agent: ${escapeHtml(item.agentName)} &middot; Concern from: ${escapeHtml(item.concernSourceLabel)}</div>
+                                <div class="sub">
+                                    <span class="resolved-status-pill${item.isReviewed ? ' reviewed' : ' pending'}">${escapeHtml(item.reviewStateLabel)}</span>
+                                    Resolved on ${escapeHtml(item.resolvedAtLabel)} &middot; QA ${escapeHtml(item.reviewerName)}
+                                    ${item.isReviewed ? ` &middot; <strong>${escapeHtml(item.overallPercent.toFixed(1))} / 100</strong>` : ''}
+                                </div>
+                            </div>
+                            <div class="score"><strong class="row-metric">${item.isReviewed ? escapeHtml(item.overallPercent.toFixed(1) + ' / 100') : 'Pending'}</strong></div>
+                            <button class="btn view-resolved-ticket-btn" type="button">${item.isReviewed ? 'Open review' : 'Open ticket'}</button>
+                        `;
+
+                    resolvedTicketList.appendChild(row);
+                });
+            }
+
+            function renderResolvedPagination(totalPages, currentPage) {
+                if (!resolvedPagination) {
+                    return;
+                }
+
+                if (totalPages <= 1) {
+                    resolvedPagination.hidden = true;
+                    resolvedPagination.innerHTML = '';
+                    return;
+                }
+
+                resolvedPagination.hidden = false;
+                resolvedPagination.innerHTML = buildPaginationHtml(totalPages, currentPage, 'window.setResolvedPage');
+            }
+
+            function applyResolvedFilters() {
+                const query = (resolvedSearch.value || '').toLowerCase().trim();
+                const fromVal = resolvedFromDate.value || '';
+                const toVal = resolvedToDate.value || '';
+                const filteredItems = ((dashboardData && dashboardData.resolvedTickets) || []).filter(function (item) {
+                    const searchText = (item.searchText || '').toLowerCase();
+                    const rowDate = item.resolvedAtDate || '';
+                    const matchesSearch = !query || searchText.includes(query);
+                    const matchesFrom = !fromVal || (rowDate && rowDate >= fromVal);
+                    const matchesTo = !toVal || (rowDate && rowDate <= toVal);
+
+                    return matchesSearch && matchesFrom && matchesTo;
+                });
+
+                const visibleCount = filteredItems.length;
+                const reviewedCount = filteredItems.filter(function (item) { return !!item.isReviewed; }).length;
+                const pendingCount = visibleCount - reviewedCount;
+                const pagination = paginateItems(filteredItems, currentResolvedPage);
+                currentResolvedPage = pagination.page || 1;
+
+                renderResolvedRows(pagination.items);
+                renderResolvedPagination(pagination.totalPages, currentResolvedPage);
+
+                resolvedModalCount.textContent = `${visibleCount} ticket${visibleCount === 1 ? '' : 's'}`;
+                resolvedSummaryTotal.textContent = String(visibleCount);
+                resolvedSummaryReviewed.textContent = String(reviewedCount);
+                resolvedSummaryPending.textContent = String(pendingCount);
+                resolvedTicketEmpty.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+
+            function openResolvedTicketsModal() {
+                if (!resolvedTicketsModal) {
+                    return;
+                }
+
+                syncBodyModalState(true);
+                if (!dashboardData) {
+                    resolvedTicketList.innerHTML = '<div class="modal-state">Loading resolved tickets...</div>';
+                    if (resolvedTicketEmpty) {
+                        resolvedTicketEmpty.style.display = 'none';
+                    }
+                    resolvedTicketsModal.hidden = false;
+                    resolvedTicketsModal.classList.add('is-open');
+                    resolvedTicketsModal.setAttribute('aria-hidden', 'false');
+                    loadDashboard();
+                    return;
+                }
+
+                renderResolvedRows(dashboardData.resolvedTickets || []);
+                applyResolvedFilters();
+                resolvedTicketsModal.hidden = false;
+                resolvedTicketsModal.classList.add('is-open');
+                resolvedTicketsModal.setAttribute('aria-hidden', 'false');
+            }
+
+            function closeResolvedTicketsModal() {
+                if (!resolvedTicketsModal) {
+                    return;
+                }
+
+                resolvedTicketsModal.classList.remove('is-open');
+                resolvedTicketsModal.setAttribute('aria-hidden', 'true');
+                resolvedTicketsModal.hidden = true;
+                syncBodyModalState();
+            }
+
+            function setResolvedRowLoading(row, isLoading) {
+                if (!row) {
+                    return;
+                }
+
+                row.classList.toggle('is-loading', isLoading);
+                const actionButton = row.querySelector('.view-resolved-ticket-btn');
+                if (actionButton) {
+                    actionButton.disabled = isLoading;
+                    actionButton.textContent = isLoading ? 'Loading...' : 'Open';
+                }
+            }
+
+            function openResolvedTicketFromRow(row) {
+                if (!row || !row.dataset.ticket) {
+                    return;
+                }
+
+                setResolvedRowLoading(row, true);
+                closeResolvedTicketsModal();
+                openModal(JSON.parse(row.dataset.ticket)).finally(function () {
+                    setResolvedRowLoading(row, false);
+                });
+            }
+
             function resetModalState() {
                 currentDetail = null;
                 document.getElementById('modal-convo-summary').textContent = 'Loading review...';
@@ -591,6 +981,13 @@
                 modalAgentNotes.disabled = true;
                 modalSaveNotesBtn.disabled = true;
                 modalAcknowledgeBtn.disabled = true;
+                modalSaveNotesBtn.hidden = false;
+                modalAcknowledgeBtn.hidden = false;
+                modalViewRatingBtn.hidden = false;
+                if (modalReviewBadge) {
+                    modalReviewBadge.textContent = 'Loading';
+                    modalReviewBadge.className = 'rated-badge';
+                }
                 setRatingVisibility(false);
                 hideFeedbackStatus();
             }
@@ -724,26 +1121,45 @@
                 return html;
             }
 
-            function renderModal(detail, summaryItem) {
+            function renderModal(detail, summaryItem, options) {
+                const preserveAgentNotes = !!(options && options.preserveAgentNotes);
+                const preservedAgentNotes = preserveAgentNotes ? modalAgentNotes.value : null;
+                const preservedFeedbackStatus = preserveAgentNotes && !modalFeedbackStatus.hidden
+                    ? {
+                        text: modalFeedbackStatus.textContent || '',
+                        className: modalFeedbackStatus.className || 'modal-feedback-status'
+                    }
+                    : null;
+
                 currentDetail = detail;
-                document.getElementById('modal-convo-summary').textContent = 'Agent: ' + detail.agentName + ' - Ticket #' + detail.supportFaqId;
+                document.getElementById('modal-convo-summary').textContent = 'Agent: ' + detail.agentName + ' - Ticket #' + detail.supportFaqId + ' - Concern from: ' + detail.concernSourceLabel;
                 document.getElementById('modal-convo-body').innerHTML = renderConversation(detail.messages || []);
                 document.getElementById('modal-accuracy').innerHTML = '<strong>' + detail.accuracyPoints.toFixed(1) + ' / 35</strong>';
                 document.getElementById('modal-tone').innerHTML = '<strong>' + detail.tonePoints.toFixed(1) + ' / 35</strong>';
                 document.getElementById('modal-resolution').innerHTML = '<strong>' + detail.resolutionPoints.toFixed(1) + ' / 30</strong>';
-                document.getElementById('modal-reviewed-by').textContent = 'QA: ' + detail.reviewerName;
+                document.getElementById('modal-reviewed-by').textContent = detail.isReviewed ? 'QA: ' + detail.reviewerName : detail.reviewStateLabel;
                 document.getElementById('modal-qa-notes').innerHTML = escapeWithBreaks(detail.qaNotes);
                 document.getElementById('modal-rating-breakdown').innerHTML = renderBreakdown(detail.questionScores || []);
                 modalAgentNotes.value = detail.agentNotes || '';
-                modalAgentNotes.disabled = false;
-                modalSaveNotesBtn.disabled = false;
-                modalAcknowledgeBtn.disabled = false;
+                modalAgentNotes.disabled = !detail.isReviewed;
+                modalSaveNotesBtn.disabled = !detail.isReviewed;
+                modalAcknowledgeBtn.disabled = !detail.isReviewed;
+                modalSaveNotesBtn.hidden = !detail.isReviewed;
+                modalAcknowledgeBtn.hidden = !detail.isReviewed;
+                modalViewRatingBtn.hidden = !detail.isReviewed;
                 modalAcknowledgeBtn.textContent = detail.isAcknowledged ? 'Acknowledged' : 'Acknowledge';
-                if (detail.isAcknowledged) {
+                if (detail.isReviewed && detail.isAcknowledged) {
                     modalAcknowledgeBtn.disabled = true;
                 }
+                if (modalReviewBadge) {
+                    modalReviewBadge.textContent = detail.reviewStateLabel;
+                    modalReviewBadge.className = detail.isReviewed ? 'rated-badge' : 'rated-badge pending';
+                }
 
-                if (currentTab === 'qa') {
+                if (!detail.isReviewed) {
+                    document.getElementById('modal-overall').innerHTML = '<strong>Pending QA review</strong>';
+                    setRatingVisibility(false);
+                } else if (currentTab === 'qa') {
                     document.getElementById('modal-overall').innerHTML = '<strong>' + detail.overallPercent.toFixed(1) + ' / 100</strong>';
                 } else if (currentTab === 'acw') {
                     const acwLabel = summaryItem && summaryItem.acwLabel ? summaryItem.acwLabel : '0mins 0secs';
@@ -751,6 +1167,20 @@
                 } else {
                     const handlingLabel = detail.handlingLabel || (summaryItem ? summaryItem.handlingLabel : '0mins 0secs');
                     document.getElementById('modal-overall').innerHTML = '<strong>' + escapeHtml(handlingLabel) + '</strong>';
+                }
+
+                if (preserveAgentNotes && preservedAgentNotes !== null) {
+                    modalAgentNotes.value = preservedAgentNotes;
+                    currentDetail.agentNotes = preservedAgentNotes;
+                    modalAgentNotes.disabled = !detail.isReviewed;
+                    modalSaveNotesBtn.disabled = !detail.isReviewed;
+                    if (preservedFeedbackStatus && preservedFeedbackStatus.text) {
+                        modalFeedbackStatus.textContent = preservedFeedbackStatus.text;
+                        modalFeedbackStatus.className = preservedFeedbackStatus.className;
+                        modalFeedbackStatus.hidden = false;
+                    }
+                } else {
+                    modalNotesDirty = false;
                 }
             }
 
@@ -763,14 +1193,26 @@
                 return dashboardData.ratedTickets || [];
             }
 
+            window.setRatedPage = function (page) {
+                currentMainPage = page;
+                applyFilters();
+            };
+
+            window.setResolvedPage = function (page) {
+                currentResolvedPage = page;
+                applyResolvedFilters();
+            };
+
             function renderModalError(message) {
-                document.getElementById('modal-convo-summary').textContent = 'Unable to load review';
+                document.getElementById('modal-convo-summary').textContent = 'Unable to load ticket';
                 document.getElementById('modal-convo-body').innerHTML = '<div class="modal-state">' + escapeHtml(message) + '</div>';
-                document.getElementById('modal-qa-notes').textContent = 'Review details are unavailable.';
+                document.getElementById('modal-qa-notes').textContent = 'Ticket details are unavailable.';
             }
 
-            async function fetchTicketDetail(supportFaqId) {
-                if (detailCache.has(supportFaqId)) {
+            async function fetchTicketDetail(supportFaqId, options) {
+                const forceRefresh = !!(options && options.forceRefresh);
+
+                if (!forceRefresh && detailCache.has(supportFaqId)) {
                     return detailCache.get(supportFaqId);
                 }
 
@@ -780,8 +1222,8 @@
 
                 if (!response.ok) {
                     throw new Error(response.status === 404
-                        ? 'No review detail was found for this ticket.'
-                        : 'Review detail request failed with status ' + response.status);
+                        ? 'No ticket detail was found for this ticket.'
+                        : 'Ticket detail request failed with status ' + response.status);
                 }
 
                 const payload = await response.json();
@@ -812,6 +1254,8 @@
 
             async function openModal(item) {
                 resetModalState();
+                modalNotesDirty = false;
+                syncBodyModalState(true);
                 qaModal.classList.add('is-open');
                 qaModal.setAttribute('aria-hidden', 'false');
 
@@ -827,10 +1271,83 @@
             function closeModal() {
                 qaModal.classList.remove('is-open');
                 qaModal.setAttribute('aria-hidden', 'true');
+                syncBodyModalState();
             }
 
-            async function loadDashboard() {
+            function syncBodyModalState(forceOpen) {
+                const hasOpenModal = forceOpen || document.querySelector('.qa-modal-overlay.is-open, .resolved-modal-overlay.is-open, .scorecard-modal-overlay.is-open');
+                document.body.classList.toggle('modal-open', !!hasOpenModal);
+            }
+
+            async function openTicketFromQueryParam() {
+                if (hasOpenedTicketFromQueryParam) {
+                    return;
+                }
+
+                const parsedTicketId = Number.parseInt(initialTicketIdParam || '', 10);
+                if (!Number.isInteger(parsedTicketId) || parsedTicketId <= 0) {
+                    hasOpenedTicketFromQueryParam = true;
+                    return;
+                }
+
+                const summaryItem = (dashboardData && dashboardData.ratedTickets || []).find(function (item) {
+                    return item.supportFaqId === parsedTicketId;
+                }) || (dashboardData && dashboardData.resolvedTickets || []).find(function (item) {
+                    return item.supportFaqId === parsedTicketId;
+                }) || { supportFaqId: parsedTicketId };
+
                 try {
+                    await openModal(summaryItem);
+                } finally {
+                    hasOpenedTicketFromQueryParam = true;
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('ticketId');
+                    window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+                }
+            }
+
+            async function refreshCurrentDetail() {
+                if (!currentDetail || !qaModal || !qaModal.classList.contains('is-open')) {
+                    return;
+                }
+
+                try {
+                    const preserveAgentNotes = modalNotesDirty && document.activeElement === modalAgentNotes;
+                    const matchedSummary = getCurrentRows().find(function (item) {
+                        return item.supportFaqId === currentDetail.supportFaqId;
+                    }) || ((dashboardData && dashboardData.resolvedTickets) || []).find(function (item) {
+                        return item.supportFaqId === currentDetail.supportFaqId;
+                    }) || null;
+                    const detail = await fetchTicketDetail(currentDetail.supportFaqId, { forceRefresh: true });
+                    renderModal(detail, matchedSummary, { preserveAgentNotes: preserveAgentNotes });
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+
+            function syncOpenScorecard() {
+                if (!currentScorecard || !scorecardModal || !scorecardModal.classList.contains('is-open') || !dashboardData) {
+                    return;
+                }
+
+                const monthKey = currentScorecard.monthKey || (scorecardMonthFilter ? scorecardMonthFilter.value : '');
+                const nextScorecard = findScorecardByMonthKey(dashboardData.monthScorecards || [], monthKey)
+                    || buildEmptyScorecard(monthKey || getCurrentMonthKey());
+                openScorecardModal(nextScorecard);
+            }
+
+            async function loadDashboard(options) {
+                const silent = !!(options && options.silent);
+                if (isDashboardLoading) {
+                    return;
+                }
+
+                isDashboardLoading = true;
+                try {
+                    if (!silent) {
+                        loadingState.style.display = 'block';
+                    }
+
                     const response = await fetch(dashboardEndpoint, {
                         headers: { 'Accept': 'application/json' }
                     });
@@ -840,28 +1357,59 @@
                     }
 
                     dashboardData = await response.json();
+                    if (scorecardMonthFilter && !scorecardMonthFilter.value) {
+                        const defaultMonthKey = dashboardData.monthScorecards && dashboardData.monthScorecards.length
+                            ? dashboardData.monthScorecards[0].monthKey
+                            : getCurrentMonthKey();
+                        setSelectedScorecardMonth(defaultMonthKey, { openModal: false });
+                    }
                     setMetricText('qa-score-metric', dashboardData.qaScoreLabel);
-                    setMetricText('aht-metric', dashboardData.averageHandlingLabel);
+                    setClockMetricHtml('aht-metric', dashboardData.averageHandlingSeconds);
                     setMetricText('qa-score-update', 'Last Update: ' + dashboardData.lastUpdatedLabel);
                     setMetricText('qa-score-reviewed', dashboardData.qaReviewedResolvedLabel || '0/0 reviewed this month');
                     setMetricText('qa-score-rank', dashboardData.qaRankLabel || 'Rank: Not ranked yet');
                     setMetricText('aht-update', 'Last Update: ' + dashboardData.lastUpdatedLabel);
                     setMetricText('aht-rank', dashboardData.ahtRankLabel || 'Rank: Not ranked yet');
-                    setMetricText('acw-metric', dashboardData.acwLabel);
+                    setClockMetricHtml('acw-metric', dashboardData.averageAcwSeconds);
                     renderScorecardMonths(dashboardData.monthScorecards || []);
+                    syncOpenScorecard();
 
                     renderRows(getCurrentRows());
+                    if (resolvedTicketsModal && resolvedTicketsModal.classList.contains('is-open')) {
+                        applyResolvedFilters();
+                    }
                     loadingState.style.display = 'none';
                     applyFilters();
+                    await refreshCurrentDetail();
+                    await openTicketFromQueryParam();
                 } catch (error) {
-                    setMetricText('acw-metric', '0mins 0secs');
-                    setMetricText('qa-score-reviewed', '0/0 reviewed this month');
-                    setMetricText('qa-score-rank', 'Rank: Not ranked yet');
-                    setMetricText('aht-rank', 'Rank: Not ranked yet');
-                    renderScorecardMonths([]);
-                    loadingState.textContent = 'Unable to load dashboard data.';
+                    if (!silent) {
+                        setClockMetricHtml('aht-metric', 0);
+                        setClockMetricHtml('acw-metric', 0);
+                        setMetricText('qa-score-reviewed', '0/0 reviewed this month');
+                        setMetricText('qa-score-rank', 'Rank: Not ranked yet');
+                        setMetricText('aht-rank', 'Rank: Not ranked yet');
+                        renderScorecardMonths([]);
+                        loadingState.textContent = 'Unable to load dashboard data.';
+                    }
                     console.error(error);
+                } finally {
+                    isDashboardLoading = false;
                 }
+            }
+
+            function startDashboardAutoRefresh() {
+                if (dashboardRefreshTimerId) {
+                    window.clearInterval(dashboardRefreshTimerId);
+                }
+
+                dashboardRefreshTimerId = window.setInterval(function () {
+                    if (document.hidden) {
+                        return;
+                    }
+
+                    loadDashboard({ silent: true });
+                }, dashboardRefreshIntervalMs);
             }
 
             tabs.forEach(tab => {
@@ -871,6 +1419,7 @@
             });
 
             quickRange.addEventListener('change', function () {
+                currentMainPage = 1;
                 if (quickRange.value === 'custom') {
                     fromDate.value = '';
                     toDate.value = '';
@@ -881,23 +1430,68 @@
             });
 
             fromDate.addEventListener('change', function () {
+                currentMainPage = 1;
                 quickRange.value = 'custom';
                 applyFilters();
             });
 
             toDate.addEventListener('change', function () {
+                currentMainPage = 1;
                 quickRange.value = 'custom';
                 applyFilters();
             });
 
-            searchInput.addEventListener('input', applyFilters);
-            scoreFilter.addEventListener('change', applyFilters);
+            searchInput.addEventListener('input', function () {
+                currentMainPage = 1;
+                applyFilters();
+            });
+            scoreFilter.addEventListener('change', function () {
+                currentMainPage = 1;
+                applyFilters();
+            });
+            resolvedTicketsTrigger.addEventListener('click', openResolvedTicketsModal);
+            resolvedModalClose.addEventListener('click', closeResolvedTicketsModal);
+            resolvedQuickRange.addEventListener('change', function () {
+                currentResolvedPage = 1;
+                if (resolvedQuickRange.value === 'custom') {
+                    resolvedFromDate.value = '';
+                    resolvedToDate.value = '';
+                } else {
+                    applyResolvedQuickRange();
+                }
+                applyResolvedFilters();
+            });
+            resolvedFromDate.addEventListener('change', function () {
+                currentResolvedPage = 1;
+                resolvedQuickRange.value = 'custom';
+                applyResolvedFilters();
+            });
+            resolvedToDate.addEventListener('change', function () {
+                currentResolvedPage = 1;
+                resolvedQuickRange.value = 'custom';
+                applyResolvedFilters();
+            });
+            resolvedSearch.addEventListener('input', function () {
+                currentResolvedPage = 1;
+                applyResolvedFilters();
+            });
+            scorecardMonthFilter.addEventListener('change', function () {
+                setSelectedScorecardMonth(scorecardMonthFilter.value);
+            });
             scorecardMonthList.addEventListener('click', function (event) {
                 const button = event.target.closest('.scorecard-month-button');
-                if (!button || !button.dataset.monthScorecard) return;
+                if (!button) return;
+
+                if (button.dataset.emptyMonth) {
+                    setSelectedScorecardMonth(button.dataset.emptyMonth);
+                    return;
+                }
+
+                if (!button.dataset.monthScorecard) return;
 
                 try {
-                    openScorecardModal(JSON.parse(button.dataset.monthScorecard));
+                    const scorecard = JSON.parse(button.dataset.monthScorecard);
+                    setSelectedScorecardMonth(scorecard.monthKey);
                 } catch (error) {
                     console.error(error);
                 }
@@ -910,6 +1504,21 @@
                 if (!row || !row.dataset.ticket) return;
                 if (currentTab === 'acw' && row.dataset.isRated !== 'true') return;
                 openModal(JSON.parse(row.dataset.ticket));
+            });
+            resolvedTicketList.addEventListener('click', function (event) {
+                const row = event.target.closest('.resolved-row');
+                if (!row) return;
+
+                const button = event.target.closest('.view-resolved-ticket-btn');
+                if (button && button.disabled) return;
+                openResolvedTicketFromRow(row);
+            });
+            resolvedTicketList.addEventListener('keydown', function (event) {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                const row = event.target.closest('.resolved-row');
+                if (!row) return;
+                event.preventDefault();
+                openResolvedTicketFromRow(row);
             });
 
             closeQaModal.addEventListener('click', closeModal);
@@ -936,9 +1545,11 @@
                     currentDetail.isAcknowledged = result.isAcknowledged;
                     currentDetail.acknowledgedLabel = result.acknowledgedLabel || 'Not acknowledged';
                     modalAgentNotes.value = currentDetail.agentNotes;
+                    modalNotesDirty = false;
                     showFeedbackStatus(result.message || 'Agent notes saved.', 'success');
 
                     detailCache.set(currentDetail.supportFaqId, currentDetail);
+                    await loadDashboard({ silent: true });
                 } catch (error) {
                     showFeedbackStatus(error && error.message ? error.message : 'Unable to save agent notes.', 'error');
                 } finally {
@@ -962,9 +1573,11 @@
                     currentDetail.isAcknowledged = result.isAcknowledged;
                     currentDetail.acknowledgedLabel = result.acknowledgedLabel || 'Acknowledged';
                     modalAgentNotes.value = currentDetail.agentNotes || '';
+                    modalNotesDirty = false;
                     showFeedbackStatus(result.message || 'QA review acknowledged.', 'success');
 
                     detailCache.set(currentDetail.supportFaqId, currentDetail);
+                    await loadDashboard({ silent: true });
                 } catch (error) {
                     showFeedbackStatus(error && error.message ? error.message : 'Unable to acknowledge this QA review.', 'error');
                 } finally {
@@ -978,17 +1591,33 @@
             qaModal.addEventListener('click', function (event) {
                 if (event.target === qaModal) closeModal();
             });
+            resolvedTicketsModal.addEventListener('click', function (event) {
+                if (event.target === resolvedTicketsModal) closeResolvedTicketsModal();
+            });
             scorecardModal.addEventListener('click', function (event) {
                 if (event.target === scorecardModal) closeScorecardModal();
             });
             window.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape') {
                     closeModal();
+                    closeResolvedTicketsModal();
                     closeScorecardModal();
                 }
+            });
+            window.addEventListener('focus', function () {
+                loadDashboard({ silent: true });
+            });
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) {
+                    loadDashboard({ silent: true });
+                }
+            });
+            modalAgentNotes.addEventListener('input', function () {
+                modalNotesDirty = true;
             });
 
             setSectionState();
             loadDashboard();
+            startDashboardAutoRefresh();
         })();
     </script>

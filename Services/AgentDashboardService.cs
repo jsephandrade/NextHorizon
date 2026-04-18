@@ -43,6 +43,16 @@ public sealed class AgentDashboardService : IAgentDashboardService
         var nowLocal = DateTime.Now;
         var acwMonthStartLocal = new DateTime(nowLocal.Year, nowLocal.Month, 1, 0, 0, 0, DateTimeKind.Local);
         var nextAcwMonthStartLocal = acwMonthStartLocal.AddMonths(1);
+        var resolvedFaqs = await _dbContext.SupportFaqRecords
+            .AsNoTracking()
+            .Where(item => item.AgentId == agentUserId
+                && item.Status == "Resolved"
+                && item.EndTime != null)
+            .Select(item => new AgentResolvedTicketSeed(
+                item.Id,
+                item.UserType,
+                item.EndTime!.Value))
+            .ToListAsync(cancellationToken);
 
         var agentName = await LoadAgentNameAsync(agentUserId, cancellationToken) ?? $"Agent {agentUserId}";
         var averageAcwSeconds = await ResolveAverageAcwSecondsAsync(agentUserId, acwMonthStartLocal, nextAcwMonthStartLocal, cancellationToken);
@@ -72,6 +82,54 @@ public sealed class AgentDashboardService : IAgentDashboardService
         var ahtRankPosition = currentMonthAhtRanking?.RankPosition;
         var ahtRankedAgentCount = currentMonthAhtRanking?.RankedAgentCount ?? 0;
         var ahtRankLabel = BuildRankLabel(ahtRankPosition, ahtRankedAgentCount);
+        var resolvedSupportFaqIds = resolvedFaqs
+            .Select(item => item.SupportFaqId)
+            .Distinct()
+            .ToArray();
+        var resolvedReviews = resolvedSupportFaqIds.Length == 0
+            ? new List<QaReview>()
+            : await _dbContext.QaReviews
+                .AsNoTracking()
+                .Where(item => resolvedSupportFaqIds.Contains(item.SupportFaqId))
+                .ToListAsync(cancellationToken);
+        var resolvedReviewBySupportFaqId = resolvedReviews
+            .GroupBy(item => item.SupportFaqId)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .OrderByDescending(item => item.UpdatedAtUtc)
+                    .ThenByDescending(item => item.QaReviewId)
+                    .First());
+        var resolvedSessionsBySupportFaqId = await LoadLatestSessionsBySupportFaqIdAsync(resolvedSupportFaqIds, cancellationToken);
+        var resolvedConsumers = await LoadConsumersAsync(resolvedSessionsBySupportFaqId, cancellationToken);
+        var resolvedTickets = resolvedFaqs
+            .Select(item =>
+            {
+                resolvedSessionsBySupportFaqId.TryGetValue(item.SupportFaqId, out var session);
+                var customerName = ResolveCustomerName(session, resolvedConsumers);
+                var concernSourceLabel = ResolveConcernSourceLabel(item.UserType);
+                var resolvedAtLabel = item.ResolvedAtUtc.ToString("MMM dd, yyyy hh:mm tt");
+                var isReviewed = resolvedReviewBySupportFaqId.TryGetValue(item.SupportFaqId, out var review);
+                var reviewerName = isReviewed ? ResolveReviewerName(review!.ReviewerName) : "Not reviewed yet";
+                var reviewStateLabel = isReviewed ? "Reviewed" : "Not reviewed";
+                var overallPercent = isReviewed ? Math.Round((double)review!.OverallPercent, 1) : 0d;
+
+                return new AgentDashboardResolvedTicketItem(
+                    item.SupportFaqId,
+                    agentName,
+                    customerName,
+                    concernSourceLabel,
+                    reviewerName,
+                    reviewStateLabel,
+                    resolvedAtLabel,
+                    item.ResolvedAtUtc.ToString("yyyy-MM-dd"),
+                    isReviewed,
+                    overallPercent,
+                    BuildResolvedSearchText(item.SupportFaqId, agentName, customerName, concernSourceLabel, reviewerName, reviewStateLabel, resolvedAtLabel, overallPercent));
+            })
+            .OrderByDescending(item => item.ResolvedAtDate)
+            .ThenByDescending(item => item.SupportFaqId)
+            .ToList();
 
         var reviews = await _dbContext.QaReviews
             .AsNoTracking()
@@ -97,7 +155,8 @@ public sealed class AgentDashboardService : IAgentDashboardService
                 qaRankLabel,
                 ahtRankPosition,
                 ahtRankedAgentCount,
-                ahtRankLabel);
+                ahtRankLabel,
+                resolvedTickets);
         }
 
         var reviewFaqIds = reviews
@@ -107,7 +166,10 @@ public sealed class AgentDashboardService : IAgentDashboardService
 
         var faqById = await _dbContext.SupportFaqRecords
             .AsNoTracking()
-            .Where(item => reviewFaqIds.Contains(item.Id) && item.AgentId == agentUserId)
+            .Where(item => reviewFaqIds.Contains(item.Id)
+                && item.AgentId == agentUserId
+                && item.Status == "Resolved"
+                && item.EndTime != null)
             .ToDictionaryAsync(item => item.Id, cancellationToken);
 
         var agentReviews = reviews
@@ -133,7 +195,8 @@ public sealed class AgentDashboardService : IAgentDashboardService
                 qaRankLabel,
                 ahtRankPosition,
                 ahtRankedAgentCount,
-                ahtRankLabel);
+                ahtRankLabel,
+                resolvedTickets);
         }
 
         var supportFaqIds = agentReviews
@@ -153,6 +216,7 @@ public sealed class AgentDashboardService : IAgentDashboardService
                 meaningfulMessagesBySupportFaqId.TryGetValue(review.SupportFaqId, out var ticketMessages);
 
                 var customerName = ResolveCustomerName(session, consumers);
+                var concernSourceLabel = ResolveConcernSourceLabel(faq.UserType);
                 var handlingSeconds = ResolveHandlingSeconds(faq, ticketMessages);
                 var ratedAtUtc = review.CreatedAtUtc;
                 var resolvedAtUtc = faq.EndTime ?? faq.CreatedAt;
@@ -162,6 +226,7 @@ public sealed class AgentDashboardService : IAgentDashboardService
                     review.SupportFaqId,
                     agentName,
                     customerName,
+                    concernSourceLabel,
                     reviewerName,
                     ratedAtUtc,
                     resolvedAtUtc,
@@ -219,6 +284,7 @@ public sealed class AgentDashboardService : IAgentDashboardService
                 && review.CreatedAtUtc >= monthStartUtc
                 && review.CreatedAtUtc < nextMonthStartUtc
                 && supportFaq.Status == "Resolved"
+                && supportFaq.EndTime != null
             select review.SupportFaqId)
             .Distinct()
             .CountAsync(cancellationToken);
@@ -252,6 +318,7 @@ public sealed class AgentDashboardService : IAgentDashboardService
                 item.SupportFaqId,
                 item.AgentName,
                 item.CustomerName,
+                item.ConcernSourceLabel,
                 item.ReviewerName,
                 item.RatedAtUtc.ToString("MMM dd, yyyy"),
                 item.RatedAtUtc.ToString("yyyy-MM-dd"),
@@ -288,29 +355,28 @@ public sealed class AgentDashboardService : IAgentDashboardService
             acwAvailable,
             monthScorecards,
             responseItems,
+            resolvedTickets,
             acwRecords);
     }
 
     public async Task<AgentDashboardTicketDetail?> GetTicketDetailAsync(int agentUserId, int supportFaqId, CancellationToken cancellationToken)
     {
-        var review = await _dbContext.QaReviews
-            .AsNoTracking()
-            .Include(item => item.QuestionScores)
-            .FirstOrDefaultAsync(item => item.SupportFaqId == supportFaqId, cancellationToken);
-
-        if (review is null)
-        {
-            return null;
-        }
-
         var faq = await _dbContext.SupportFaqRecords
             .AsNoTracking()
-            .FirstOrDefaultAsync(item => item.Id == supportFaqId && item.AgentId == agentUserId, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == supportFaqId
+                && item.AgentId == agentUserId
+                && item.Status == "Resolved"
+                && item.EndTime != null, cancellationToken);
 
         if (faq is null)
         {
             return null;
         }
+
+        var review = await _dbContext.QaReviews
+            .AsNoTracking()
+            .Include(item => item.QuestionScores)
+            .FirstOrDefaultAsync(item => item.SupportFaqId == supportFaqId, cancellationToken);
 
         var agentName = await LoadAgentNameAsync(agentUserId, cancellationToken) ?? $"Agent {agentUserId}";
         var latestSession = await _dbContext.LiveAgentSessions
@@ -335,16 +401,21 @@ public sealed class AgentDashboardService : IAgentDashboardService
             .ThenBy(item => item.Id)
             .ToListAsync(cancellationToken);
         var customerName = ResolveCustomerName(consumer);
+        var concernSourceLabel = ResolveConcernSourceLabel(faq.UserType);
 
         var meaningfulMessages = allMessages
             .Where(item => !IsSystemQueueMessage(item.MessageText))
             .ToList();
 
         var handlingSeconds = ResolveHandlingSeconds(faq, meaningfulMessages);
-        var inlineComments = ParseInlineComments(review.InlineCommentsJson);
-        var feedback = await _dbContext.AgentReviewFeedbackEntries
-            .AsNoTracking()
-            .FirstOrDefaultAsync(item => item.SupportFaqId == supportFaqId && item.AgentUserId == agentUserId, cancellationToken);
+        var inlineComments = review is null
+            ? new Dictionary<string, IReadOnlyList<AgentDashboardInlineComment>>(StringComparer.Ordinal)
+            : ParseInlineComments(review.InlineCommentsJson);
+        var feedback = review is null
+            ? null
+            : await _dbContext.AgentReviewFeedbackEntries
+                .AsNoTracking()
+                .FirstOrDefaultAsync(item => item.SupportFaqId == supportFaqId && item.AgentUserId == agentUserId, cancellationToken);
 
         var messageItems = allMessages
             .Select(item => new AgentDashboardConversationMessage(
@@ -369,32 +440,40 @@ public sealed class AgentDashboardService : IAgentDashboardService
                 Array.Empty<AgentDashboardInlineComment>()));
         }
 
-        var questionScores = review.QuestionScores
-            .OrderBy(item => Array.IndexOf(QuestionScoreOrder, item.QuestionKey))
-            .ThenBy(item => item.QaReviewQuestionScoreId)
-            .Select(item => new AgentDashboardQuestionScore(item.QuestionKey, item.Score))
-            .ToList();
+        var questionScores = review is null
+            ? new List<AgentDashboardQuestionScore>()
+            : review.QuestionScores
+                .OrderBy(item => Array.IndexOf(QuestionScoreOrder, item.QuestionKey))
+                .ThenBy(item => item.QaReviewQuestionScoreId)
+                .Select(item => new AgentDashboardQuestionScore(item.QuestionKey, item.Score))
+                .ToList();
+        var isReviewed = review is not null;
 
         return new AgentDashboardTicketDetail(
             supportFaqId,
             agentName,
             customerName,
-            ResolveReviewerName(review.ReviewerName),
+            concernSourceLabel,
+            isReviewed ? ResolveReviewerName(review!.ReviewerName) : "Not reviewed yet",
+            isReviewed,
+            isReviewed ? "Reviewed" : "Pending QA review",
             (faq.EndTime ?? faq.CreatedAt).ToLocalTime().ToString("MMM dd, yyyy"),
-            review.CreatedAtUtc.ToLocalTime().ToString("MMM dd, yyyy"),
-            review.UpdatedAtUtc.ToLocalTime().ToString("MMMM dd, yyyy 'at' hh:mm tt"),
-            string.IsNullOrWhiteSpace(review.Notes) ? "No QA notes were recorded for this review." : review.Notes.Trim(),
-            Math.Round((double)((review.AccuracyAverage / 5m) * 35m), 1),
-            Math.Round((double)((review.ToneAverage / 5m) * 35m), 1),
-            Math.Round((double)((review.ResolutionAverage / 5m) * 30m), 1),
-            Math.Round((double)review.OverallPercent, 1),
+            isReviewed ? review!.CreatedAtUtc.ToLocalTime().ToString("MMM dd, yyyy") : "Pending QA review",
+            isReviewed ? review!.UpdatedAtUtc.ToLocalTime().ToString("MMMM dd, yyyy 'at' hh:mm tt") : "Not reviewed yet",
+            isReviewed
+                ? string.IsNullOrWhiteSpace(review!.Notes) ? "No QA notes were recorded for this review." : review.Notes.Trim()
+                : "This resolved ticket is still pending QA review.",
+            isReviewed ? Math.Round((double)((review!.AccuracyAverage / 5m) * 35m), 1) : 0,
+            isReviewed ? Math.Round((double)((review!.ToneAverage / 5m) * 35m), 1) : 0,
+            isReviewed ? Math.Round((double)((review!.ResolutionAverage / 5m) * 30m), 1) : 0,
+            isReviewed ? Math.Round((double)review!.OverallPercent, 1) : 0,
             handlingSeconds,
             FormatDuration(handlingSeconds),
             faq.StartTime?.ToLocalTime().ToString("hh:mm tt") ?? "N/A",
             faq.EndTime?.ToLocalTime().ToString("hh:mm tt") ?? "N/A",
             feedback?.Notes ?? string.Empty,
-            feedback?.Acknowledged ?? false,
-            FormatAcknowledgedLabel(feedback?.AcknowledgedAtUtc, feedback?.Acknowledged ?? false),
+            isReviewed && feedback?.Acknowledged == true,
+            isReviewed ? FormatAcknowledgedLabel(feedback?.AcknowledgedAtUtc, feedback?.Acknowledged ?? false) : "Not available until reviewed",
             questionScores,
             messageItems);
     }
@@ -687,6 +766,7 @@ public sealed class AgentDashboardService : IAgentDashboardService
             var resolvedCustomerName = !string.IsNullOrWhiteSpace(row.ClientName)
                 ? row.ClientName.Trim()
                 : ticket?.CustomerName ?? "Unknown Customer";
+            var concernSourceLabel = ticket?.ConcernSourceLabel ?? "Customer";
             var resolvedCategory = string.IsNullOrWhiteSpace(row.Category) ? "N/A" : row.Category.Trim();
             var resolvedChatStatus = string.IsNullOrWhiteSpace(row.ChatStatus) ? "N/A" : row.ChatStatus.Trim();
             var resolvedPreviewQuestion = string.IsNullOrWhiteSpace(row.PreviewQuestion) ? "N/A" : row.PreviewQuestion.Trim();
@@ -705,6 +785,7 @@ public sealed class AgentDashboardService : IAgentDashboardService
                 supportFaqId,
                 resolvedAgentName,
                 resolvedCustomerName,
+                concernSourceLabel,
                 reviewerName,
                 ratingLabel,
                 resolvedCategory,
@@ -719,6 +800,7 @@ public sealed class AgentDashboardService : IAgentDashboardService
                 supportFaqId,
                 resolvedAgentName,
                 resolvedCustomerName,
+                concernSourceLabel,
                 reviewerName,
                 isRated,
                 canViewDetails,
@@ -749,7 +831,8 @@ public sealed class AgentDashboardService : IAgentDashboardService
         string qaRankLabel,
         int? ahtRankPosition,
         int ahtRankedAgentCount,
-        string ahtRankLabel)
+        string ahtRankLabel,
+        IReadOnlyList<AgentDashboardResolvedTicketItem> resolvedTickets)
     {
         return new AgentDashboardResponse(
             agentName,
@@ -771,6 +854,7 @@ public sealed class AgentDashboardService : IAgentDashboardService
             acwAvailable,
             monthScorecards,
             Array.Empty<AgentDashboardTicketItem>(),
+            resolvedTickets,
             Array.Empty<AgentDashboardAcwItem>());
     }
 
@@ -951,6 +1035,22 @@ public sealed class AgentDashboardService : IAgentDashboardService
         return string.IsNullOrWhiteSpace(consumer.Username) ? "Unknown Customer" : consumer.Username.Trim();
     }
 
+    private static string ResolveConcernSourceLabel(string? userType)
+    {
+        var normalizedUserType = userType?.Trim() ?? string.Empty;
+        if (string.Equals(normalizedUserType, "Seller", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Seller";
+        }
+
+        if (string.Equals(normalizedUserType, "Consumer", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Consumer";
+        }
+
+        return "Customer";
+    }
+
     private static string ResolveSenderDisplayName(SupportMessage message, string customerName, string agentName)
     {
         if (string.Equals(message.SenderRole, "Consumer", StringComparison.OrdinalIgnoreCase))
@@ -1000,7 +1100,10 @@ public sealed class AgentDashboardService : IAgentDashboardService
 
         var faq = await _dbContext.SupportFaqRecords
             .AsNoTracking()
-            .FirstOrDefaultAsync(item => item.Id == supportFaqId && item.AgentId == agentUserId, cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == supportFaqId
+                && item.AgentId == agentUserId
+                && item.Status == "Resolved"
+                && item.EndTime != null, cancellationToken);
         if (faq is null)
         {
             return null;
@@ -1081,10 +1184,34 @@ public sealed class AgentDashboardService : IAgentDashboardService
             .ToLowerInvariant();
     }
 
+    private static string BuildResolvedSearchText(
+        int supportFaqId,
+        string agentName,
+        string customerName,
+        string concernSourceLabel,
+        string reviewerName,
+        string reviewStateLabel,
+        string resolvedAtLabel,
+        double overallPercent)
+    {
+        return string.Join(
+                ' ',
+                supportFaqId,
+                agentName,
+                customerName,
+                concernSourceLabel,
+                reviewerName,
+                reviewStateLabel,
+                resolvedAtLabel,
+                overallPercent > 0 ? overallPercent.ToString("0.0") : string.Empty)
+            .ToLowerInvariant();
+    }
+
     private static string BuildAcwSearchText(
         int supportFaqId,
         string agentName,
         string customerName,
+        string concernSourceLabel,
         string reviewerName,
         string ratingLabel,
         string category,
@@ -1100,6 +1227,7 @@ public sealed class AgentDashboardService : IAgentDashboardService
                 supportFaqId,
                 agentName,
                 customerName,
+                concernSourceLabel,
                 reviewerName,
                 ratingLabel,
                 category,
@@ -1167,6 +1295,7 @@ public sealed class AgentDashboardService : IAgentDashboardService
         int SupportFaqId,
         string AgentName,
         string CustomerName,
+        string ConcernSourceLabel,
         string ReviewerName,
         DateTime RatedAtUtc,
         DateTime ResolvedAtUtc,
@@ -1177,6 +1306,11 @@ public sealed class AgentDashboardService : IAgentDashboardService
         int HandlingSeconds,
         DateTime? StartTimeUtc,
         DateTime? EndTimeUtc);
+
+    private sealed record AgentResolvedTicketSeed(
+        int SupportFaqId,
+        string UserType,
+        DateTime ResolvedAtUtc);
 
     private sealed record MonthlyAcwSummary(
         int AverageSeconds,

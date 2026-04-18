@@ -22,6 +22,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="NextHorizon\**\*.cs" />
+    <Content Remove="NextHorizon\**\*" />
+    <EmbeddedResource Remove="NextHorizon\**\*" />
+    <None Remove="NextHorizon\**\*" />
+    <RazorGenerate Remove="NextHorizon\**\*" />
+
     <Compile Remove="Controllers\CartController.cs" />
     <Compile Remove="Controllers\CsrfController.cs" />
     <Compile Remove="Controllers\ProductsController.cs" />
