@@ -8,6 +8,7 @@ public sealed class QaEvaluationService : IQaEvaluationService
 {
     private const string QaEvaluationNotificationCategory = "QaEvaluation";
     private const string QaAnalystRole = "QA Analyst";
+    private const string SupportAgentRole = "Support Agent";
 
     private readonly ApplicationDbContext _dbContext;
     private readonly INotificationService _notificationService;
@@ -140,11 +141,9 @@ public sealed class QaEvaluationService : IQaEvaluationService
 
         _dbContext.QaEvaluationTemplates.Add(template);
         await _dbContext.SaveChangesAsync(cancellationToken);
-        await _notificationService.NotifyUsersByUserTypeAsync(
-            QaAnalystRole,
+        await NotifyEvaluationChangeRecipientsAsync(
             BuildPublishedNotificationMessage(updatedByName, template.VersionNumber),
-            QaEvaluationNotificationCategory,
-            orderId: template.QaEvaluationTemplateId,
+            template.QaEvaluationTemplateId,
             cancellationToken);
 
         var viewModel = MapTemplate(template, null);
@@ -170,11 +169,9 @@ public sealed class QaEvaluationService : IQaEvaluationService
             return new QaEvaluationTemplateMutationResponse(false, "QA evaluation template not found.");
         }
 
-        await _notificationService.NotifyUsersByUserTypeAsync(
-            QaAnalystRole,
+        await NotifyEvaluationChangeRecipientsAsync(
             BuildReuseNotificationMessage(updatedByName, template.VersionNumber),
-            QaEvaluationNotificationCategory,
-            orderId: templateId,
+            templateId,
             cancellationToken);
 
         return new QaEvaluationTemplateMutationResponse(true, "QA evaluation reuse notification saved.");
@@ -255,17 +252,38 @@ public sealed class QaEvaluationService : IQaEvaluationService
 
     private static string BuildPublishedNotificationMessage(string updatedByName, int versionNumber)
     {
-        return BuildGenericEvaluationChangeNotificationMessage();
+        return BuildGenericEvaluationChangeNotificationMessage(updatedByName);
     }
 
     private static string BuildReuseNotificationMessage(string updatedByName, int versionNumber)
     {
-        return BuildGenericEvaluationChangeNotificationMessage();
+        return BuildGenericEvaluationChangeNotificationMessage(updatedByName);
     }
 
-    private static string BuildGenericEvaluationChangeNotificationMessage()
+    private static string BuildGenericEvaluationChangeNotificationMessage(string updatedByName)
     {
-        return "The QA head has made a change to the QA evaluation. Please check and review.";
+        var actorLabel = string.IsNullOrWhiteSpace(updatedByName) ? "QA Head" : updatedByName.Trim();
+        return $"The QA head {actorLabel} has made a change to the QA evaluation. Please check and review.";
+    }
+
+    private async Task NotifyEvaluationChangeRecipientsAsync(
+        string message,
+        int templateId,
+        CancellationToken cancellationToken)
+    {
+        await _notificationService.NotifyUsersByUserTypeAsync(
+            QaAnalystRole,
+            message,
+            QaEvaluationNotificationCategory,
+            orderId: templateId,
+            cancellationToken);
+
+        await _notificationService.NotifyUsersByUserTypeAsync(
+            SupportAgentRole,
+            message,
+            QaEvaluationNotificationCategory,
+            orderId: templateId,
+            cancellationToken);
     }
 
     internal static QaEvaluationTemplateViewModel MapTemplate(
