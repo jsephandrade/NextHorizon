@@ -83,6 +83,7 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
 
         var reviews = await _dbContext.QaReviews
             .AsNoTracking()
+            .Include(item => item.CategoryScores)
             .Where(item => supportFaqIds.Contains(item.SupportFaqId) && item.AgentUserId == agentUserId)
             .ToListAsync(cancellationToken);
 
@@ -128,9 +129,8 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
                 null,
                 string.Empty,
                 string.Empty,
-                null,
-                null,
-                null))
+                Array.Empty<QaCategoryScoreItem>(),
+                string.Empty))
             .ToList();
 
         var ratedItems = snapshots
@@ -146,9 +146,8 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
                 Math.Round((double)item.Review!.OverallPercent, 1),
                 QaConcernFormatting.NormalizeReviewerName(item.Review!.ReviewerName),
                 item.Review!.CreatedAtUtc.ToString("MMM dd, yyyy"),
-                Math.Round((double)((item.Review!.AccuracyAverage / 5m) * 35m), 1),
-                Math.Round((double)((item.Review!.ToneAverage / 5m) * 35m), 1),
-                Math.Round((double)((item.Review!.ResolutionAverage / 5m) * 30m), 1)))
+                BuildCategoryScores(item.Review!),
+                BuildCategorySummary(item.Review!)))
             .ToList();
 
         var awaitingTotalPages = awaitingItems.Count == 0
@@ -325,4 +324,29 @@ public sealed class QaAgentTicketsService : IQaAgentTicketsService
         int UserId,
         string? AgentName,
         string? AgentStatus);
+
+    private static IReadOnlyList<QaCategoryScoreItem> BuildCategoryScores(QaReview review)
+    {
+        return review.CategoryScores
+            .OrderBy(item => item.DisplayOrder)
+            .ThenBy(item => item.QaReviewCategoryScoreId)
+            .Select(item => new QaCategoryScoreItem(
+                string.IsNullOrWhiteSpace(item.CategoryNameSnapshot) ? "QA Category" : item.CategoryNameSnapshot.Trim(),
+                Math.Round((double)item.WeightedPoints, 1),
+                Math.Round((double)item.AverageScore, 2),
+                Math.Round((double)item.WeightPercentSnapshot, 2),
+                item.DisplayOrder))
+            .ToList();
+    }
+
+    private static string BuildCategorySummary(QaReview review)
+    {
+        var items = BuildCategoryScores(review);
+        if (items.Count == 0)
+        {
+            return "No category breakdown recorded.";
+        }
+
+        return string.Join(", ", items.Select(item => $"{item.CategoryName} {item.WeightedPoints:0.0}/{item.WeightPercent:0.##}"));
+    }
 }

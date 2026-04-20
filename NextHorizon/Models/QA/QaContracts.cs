@@ -94,9 +94,8 @@ public sealed record QaAgentTicketItem(
     double? OverallPercent,
     string ReviewerName,
     string RatedAtLabel,
-    double? AccuracyPoints,
-    double? TonePoints,
-    double? ResolutionPoints);
+    IReadOnlyList<QaCategoryScoreItem> CategoryScores,
+    string CategorySummary);
 
 public sealed record QaRatedHistoryResponse(
     int Count,
@@ -114,21 +113,24 @@ public sealed record QaRatedHistoryItem(
     string ReviewerName,
     string RatedAtLabel,
     string RatedAtDate,
-    double AccuracyPoints,
-    double TonePoints,
-    double ResolutionPoints,
+    IReadOnlyList<QaCategoryScoreItem> CategoryScores,
+    string CategorySummary,
     double OverallPercent);
+
+public sealed record QaCategoryScoreItem(
+    string CategoryName,
+    double WeightedPoints,
+    double AverageScore,
+    double WeightPercent,
+    int DisplayOrder);
 
 public sealed class QaReviewUpsertRequest
 {
     [Required]
-    public IReadOnlyList<int> AccuracyScores { get; set; } = Array.Empty<int>();
+    public int TemplateId { get; set; }
 
     [Required]
-    public IReadOnlyList<int> ToneScores { get; set; } = Array.Empty<int>();
-
-    [Required]
-    public IReadOnlyList<int> ResolutionScores { get; set; } = Array.Empty<int>();
+    public IReadOnlyList<QaReviewScoreInput> Scores { get; set; } = Array.Empty<QaReviewScoreInput>();
 
     [StringLength(4000)]
     public string Notes { get; set; } = string.Empty;
@@ -136,6 +138,15 @@ public sealed class QaReviewUpsertRequest
     public bool SubmitToAgentNow { get; set; }
 
     public Dictionary<string, List<QaInlineCommentEntry>> InlineCommentThreads { get; set; } = new(StringComparer.Ordinal);
+}
+
+public sealed class QaReviewScoreInput
+{
+    [Required]
+    public int QuestionId { get; set; }
+
+    [Range(1, 5)]
+    public int Score { get; set; }
 }
 
 public sealed class QaInlineCommentEntry
@@ -184,6 +195,10 @@ public sealed class QaRatingPageData
 
     public string AgentName { get; init; } = string.Empty;
 
+    public string ConcernFrom { get; init; } = string.Empty;
+
+    public string ParticipantName { get; init; } = string.Empty;
+
     public string CustomerName { get; init; } = string.Empty;
 
     public string ConversationDateLabel { get; init; } = string.Empty;
@@ -195,6 +210,8 @@ public sealed class QaRatingPageData
     public string InlineCommentsJson { get; init; } = "{}";
 
     public QaReview? Review { get; init; }
+
+    public QaEvaluationTemplateViewModel? EvaluationTemplate { get; init; }
 
     public int QueueCount { get; init; }
 
@@ -210,3 +227,78 @@ public sealed class QaRatingPageData
 
     public string QueueSearch { get; init; } = string.Empty;
 }
+
+public sealed class QaEvaluationTemplateUpsertRequest
+{
+    [Required]
+    public IReadOnlyList<QaEvaluationCategoryUpsertRequest> Categories { get; set; } = Array.Empty<QaEvaluationCategoryUpsertRequest>();
+}
+
+public sealed class QaEvaluationCategoryUpsertRequest
+{
+    [Required]
+    [StringLength(120)]
+    public string Name { get; set; } = string.Empty;
+
+    [Range(typeof(decimal), "0.01", "100")]
+    public decimal WeightPercent { get; set; }
+
+    [Required]
+    public IReadOnlyList<QaEvaluationQuestionUpsertRequest> Questions { get; set; } = Array.Empty<QaEvaluationQuestionUpsertRequest>();
+}
+
+public sealed class QaEvaluationQuestionUpsertRequest
+{
+    [Required]
+    [StringLength(400)]
+    public string Prompt { get; set; } = string.Empty;
+}
+
+public sealed record QaEvaluationTemplateMutationResponse(
+    bool Success,
+    string Message,
+    QaEvaluationTemplateViewModel? Template = null);
+
+public sealed class QaEvaluationsPageData
+{
+    public QaEvaluationTemplateViewModel? ActiveTemplate { get; init; }
+
+    public IReadOnlyList<QaEvaluationTemplateHistoryItem> History { get; init; } = Array.Empty<QaEvaluationTemplateHistoryItem>();
+}
+
+public sealed record QaEvaluationTemplateHistoryItem(
+    int TemplateId,
+    int VersionNumber,
+    bool IsActive,
+    string ActivatedAtLabel,
+    int CategoryCount,
+    int QuestionCount);
+
+public sealed record QaEvaluationTemplateViewModel(
+    int TemplateId,
+    int VersionNumber,
+    bool IsActive,
+    int TotalQuestionCount,
+    decimal TotalWeightPercent,
+    int CreatedById,
+    int UpdatedById,
+    string CreatedAtLabel,
+    string UpdatedAtLabel,
+    string ActivatedAtLabel,
+    IReadOnlyList<QaEvaluationCategoryViewModel> Categories);
+
+public sealed record QaEvaluationCategoryViewModel(
+    int CategoryId,
+    string Name,
+    decimal WeightPercent,
+    int DisplayOrder,
+    decimal WeightedPoints,
+    decimal AverageScore,
+    IReadOnlyList<QaEvaluationQuestionViewModel> Questions);
+
+public sealed record QaEvaluationQuestionViewModel(
+    int QuestionId,
+    string QuestionKey,
+    string Prompt,
+    int DisplayOrder,
+    int? Score);

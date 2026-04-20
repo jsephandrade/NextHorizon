@@ -436,7 +436,7 @@
             html += '<div>';
             html += '<div class="name">Ticket #' + item.supportFaqId + ' - Agent: ' + escHtml(item.agentName) + ' - Concern from: ' + escHtml(item.concernFrom) + '</div>';
             if (item.isRated) {
-                html += '<div class="sub">QA ' + escHtml(item.reviewerName) + ' on ' + escHtml(item.ratedAtLabel) + ' - <strong>Accuracy ' + Number(item.accuracyPoints).toFixed(1) + '/35</strong>, <strong>Empathy ' + Number(item.tonePoints).toFixed(1) + '/35</strong>, <strong>Resolution ' + Number(item.resolutionPoints).toFixed(1) + '/30</strong></div>';
+                html += '<div class="sub">QA ' + escHtml(item.reviewerName) + ' on ' + escHtml(item.ratedAtLabel) + ' - <strong>' + escHtml(item.categorySummary || 'No category breakdown recorded.') + '</strong></div>';
             } else {
                 html += '<div class="sub">Resolved ' + escHtml(item.resolvedAtLabel) + ', waiting QA rating</div>';
             }

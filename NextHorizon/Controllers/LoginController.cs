@@ -9,8 +9,8 @@ namespace NextHorizon.Controllers;
 
 public sealed class LoginController : Controller
 {
-    private static readonly string[] AllowedWorkspaceRoles = ["QA Analyst", "Support Agent"];
-    private const string AllowedWorkspaceRolesLabel = "QA Analyst and Support Agent";
+    private static readonly string[] AllowedWorkspaceRoles = ["QA Analyst", "QA Head", "Support Agent"];
+    private const string AllowedWorkspaceRolesLabel = "QA Analyst, QA Head, and Support Agent";
 
     private readonly IAuthService _authService;
     private readonly IEmailService _emailService;

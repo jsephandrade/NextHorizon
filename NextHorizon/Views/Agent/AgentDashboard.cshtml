@@ -122,20 +122,7 @@
                         </header>
 
                         <div class="rate-body">
-                            <div id="modal-rating-summary" class="summary-grid" hidden>
-                                <div class="summary-card">
-                                    <div class="summary-label">Accuracy (35%)</div>
-                                    <div id="modal-accuracy" class="summary-value"><strong>0.0 / 35</strong></div>
-                                </div>
-                                <div class="summary-card">
-                                    <div class="summary-label">Empathy (35%)</div>
-                                    <div id="modal-tone" class="summary-value"><strong>0.0 / 35</strong></div>
-                                </div>
-                                <div class="summary-card">
-                                    <div class="summary-label">Resolution (30%)</div>
-                                    <div id="modal-resolution" class="summary-value"><strong>0.0 / 30</strong></div>
-                                </div>
-                            </div>
+                            <div id="modal-rating-summary" class="summary-grid" hidden></div>
 
                             <div id="modal-rating-overall" class="summary-card" hidden>
                                 <div class="summary-label" id="modal-overall-label">Overall weighted score</div>
@@ -207,24 +194,6 @@
             const toDateLabel = document.querySelector('label[for="to-date"]');
             const detailCache = new Map();
             const minTabTransitionMs = 220;
-
-            const questionTextByKey = {
-                accuracy_q1: 'Did the agent provide correct policy or product details?',
-                accuracy_q2: 'Did the response avoid factual errors or contradictions?',
-                accuracy_q3: 'Were the next steps accurate and actionable?',
-                tone_q1: 'Did the agent acknowledge the customer concern with empathy?',
-                tone_q2: 'Was the tone respectful and professional throughout?',
-                tone_q3: 'Did the language stay clear, calm, and customer-friendly?',
-                resolution_q1: 'Was the core issue fully resolved?',
-                resolution_q2: 'Did the agent provide a complete and practical solution?',
-                resolution_q3: 'Did the agent set clear follow-up expectations when needed?'
-            };
-
-            const scoreGroups = [
-                { key: 'accuracy', title: 'Accuracy', weight: '35%' },
-                { key: 'tone', title: 'Empathy', weight: '35%' },
-                { key: 'resolution', title: 'Resolution', weight: '30%' }
-            ];
 
             const tabConfig = {
                 qa: {
@@ -376,6 +345,24 @@
             function escapeWithBreaks(value) {
                 return escapeHtml(value).replace(/\r?\n/g, '<br>');
             }
+
+            function renderCategorySummary(item) {
+                return escapeHtml(item.categorySummary || 'No category breakdown recorded.');
+            }
+
+            function renderCategoryCards(categoryScores) {
+                if (!categoryScores || !categoryScores.length) {
+                    return '<div class="summary-card"><div class="summary-label">Category breakdown</div><div class="summary-value"><strong>No category breakdown recorded.</strong></div></div>';
+                }
+
+                return categoryScores.map(score => `
+                        <div class="summary-card">
+                            <div class="summary-label">${escapeHtml(score.categoryName)} (${Number(score.weightPercent || 0).toFixed(0)}%)</div>
+                            <div class="summary-value"><strong>${Number(score.weightedPoints || 0).toFixed(1)} / ${Number(score.weightPercent || 0).toFixed(Number(score.weightPercent || 0) % 1 === 0 ? 0 : 2)}</strong></div>
+                        </div>
+                    `).join('');
+            }
+
             function renderRows(items) {
                 ratedList.innerHTML = '';
 
@@ -389,7 +376,7 @@
                     const rowDate = isAcwTab ? item.acwEndDate : item.ratedAtDate;
                     const rowSubline = isAcwTab
                         ? `${item.isRated ? `QA <strong>${escapeHtml(item.reviewerName)}</strong>` : `<strong>${escapeHtml(item.ratingLabel || 'Not rated yet')}</strong>`} &middot; <strong>${escapeHtml(item.category)}</strong> &middot; ${escapeHtml(item.chatStatus)} &middot; ACW ${escapeHtml(item.acwStartLabel)} - ${escapeHtml(item.acwEndLabel)}`
-                        : `QA <strong>${escapeHtml(item.reviewerName)}</strong> on ${escapeHtml(item.ratedAtLabel)} - <strong>Accuracy ${item.accuracyPoints.toFixed(1)}/35</strong>, <strong>Empathy ${item.tonePoints.toFixed(1)}/35</strong>, <strong>Resolution ${item.resolutionPoints.toFixed(1)}/30</strong>`;
+                        : `QA <strong>${escapeHtml(item.reviewerName)}</strong> on ${escapeHtml(item.ratedAtLabel)} - <strong>${renderCategorySummary(item)}</strong>`;
                     const rowName = `Ticket #${escapeHtml(item.supportFaqId)} - Agent: ${escapeHtml(item.agentName)} &middot; Customer: ${escapeHtml(item.customerName)}`;
                     const canViewDetails = !isAcwTab || !!item.canViewDetails;
                     const viewButtonAttr = canViewDetails ? '' : 'disabled title="No QA review yet"';
@@ -451,9 +438,7 @@
                 currentDetail = null;
                 document.getElementById('modal-convo-summary').textContent = 'Loading review...';
                 document.getElementById('modal-convo-body').innerHTML = '<div class="modal-state">Loading review details...</div>';
-                document.getElementById('modal-accuracy').innerHTML = '<strong>0.0 / 35</strong>';
-                document.getElementById('modal-tone').innerHTML = '<strong>0.0 / 35</strong>';
-                document.getElementById('modal-resolution').innerHTML = '<strong>0.0 / 30</strong>';
+                document.getElementById('modal-rating-summary').innerHTML = '';
                 document.getElementById('modal-overall').innerHTML = '<strong>0.0 / 100</strong>';
                 document.getElementById('modal-reviewed-by').textContent = 'QA: QA Reviewer';
                 document.getElementById('modal-qa-notes').textContent = 'No QA notes were recorded for this review.';
@@ -551,20 +536,20 @@
             }
 
             function renderBreakdown(questionScores) {
-                const grouped = {
-                    accuracy: [],
-                    tone: [],
-                    resolution: []
-                };
+                const groups = new Map();
 
                 (questionScores || []).forEach(score => {
-                    if (score.questionKey.indexOf('accuracy_') === 0) grouped.accuracy.push(score);
-                    else if (score.questionKey.indexOf('tone_') === 0) grouped.tone.push(score);
-                    else if (score.questionKey.indexOf('resolution_') === 0) grouped.resolution.push(score);
+                    const categoryName = score.categoryName || 'QA Category';
+                    if (!groups.has(categoryName)) {
+                        groups.set(categoryName, []);
+                    }
+
+                    groups.get(categoryName).push(score);
                 });
 
-                const html = scoreGroups.map(group => {
-                    const items = grouped[group.key] || [];
+                const html = Array.from(groups.entries()).map(entry => {
+                    const categoryName = entry[0];
+                    const items = entry[1] || [];
                     const rows = items.map(score => {
                         const options = [1, 2, 3, 4, 5].map(value => `
                                 <label class="score-radio-option">
@@ -575,7 +560,7 @@
 
                         return `
                                 <div class="question-row">
-                                    <div class="question-text">${escapeHtml(questionTextByKey[score.questionKey] || score.questionKey)}</div>
+                                    <div class="question-text">${escapeHtml(score.questionText || score.questionKey)}</div>
                                     <div class="score-radio-group">${options}</div>
                                 </div>
                             `;
@@ -584,7 +569,7 @@
                     return `
                             <section class="category-block">
                                 <div class="category-head">
-                                    <div class="category-title">${escapeHtml(group.title)} (${escapeHtml(group.weight)})</div>
+                                    <div class="category-title">${escapeHtml(categoryName)}</div>
                                 </div>
                                 <div class="question-grid">${rows || '<div class="question-text">No detailed question scores were recorded.</div>'}</div>
                             </section>
@@ -598,9 +583,7 @@
                 currentDetail = detail;
                 document.getElementById('modal-convo-summary').textContent = 'Agent: ' + detail.agentName + ' - Ticket #' + detail.supportFaqId;
                 document.getElementById('modal-convo-body').innerHTML = renderConversation(detail.messages || []);
-                document.getElementById('modal-accuracy').innerHTML = '<strong>' + detail.accuracyPoints.toFixed(1) + ' / 35</strong>';
-                document.getElementById('modal-tone').innerHTML = '<strong>' + detail.tonePoints.toFixed(1) + ' / 35</strong>';
-                document.getElementById('modal-resolution').innerHTML = '<strong>' + detail.resolutionPoints.toFixed(1) + ' / 30</strong>';
+                document.getElementById('modal-rating-summary').innerHTML = renderCategoryCards(detail.categoryScores || []);
                 document.getElementById('modal-reviewed-by').textContent = 'QA: ' + detail.reviewerName;
                 document.getElementById('modal-qa-notes').innerHTML = escapeWithBreaks(detail.qaNotes);
                 document.getElementById('modal-rating-breakdown').innerHTML = renderBreakdown(detail.questionScores || []);
@@ -841,4 +824,3 @@
             loadDashboard();
         })();
     </script>
-

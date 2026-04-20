@@ -73,6 +73,7 @@ public sealed class AgentDashboardService : IAgentDashboardService
 
         var reviews = await _dbContext.QaReviews
             .AsNoTracking()
+            .Include(item => item.CategoryScores)
             .OrderByDescending(item => item.UpdatedAtUtc)
             .ToListAsync(cancellationToken);
 
@@ -147,9 +148,8 @@ public sealed class AgentDashboardService : IAgentDashboardService
                     customerName,
                     reviewerName,
                     ratedAtUtc,
-                    Math.Round((double)((review.AccuracyAverage / 5m) * 35m), 1),
-                    Math.Round((double)((review.ToneAverage / 5m) * 35m), 1),
-                    Math.Round((double)((review.ResolutionAverage / 5m) * 30m), 1),
+                    BuildCategoryScores(review),
+                    BuildCategorySummary(review),
                     Math.Round((double)review.OverallPercent, 1),
                     handlingSeconds,
                     faq.StartTime,
@@ -207,9 +207,8 @@ public sealed class AgentDashboardService : IAgentDashboardService
                 item.ReviewerName,
                 item.RatedAtUtc.ToString("MMM dd, yyyy"),
                 item.RatedAtUtc.ToString("yyyy-MM-dd"),
-                item.AccuracyPoints,
-                item.TonePoints,
-                item.ResolutionPoints,
+                item.CategoryScores,
+                item.CategorySummary,
                 item.OverallPercent,
                 item.HandlingSeconds,
                 FormatDuration(item.HandlingSeconds),
@@ -244,6 +243,7 @@ public sealed class AgentDashboardService : IAgentDashboardService
     {
         var review = await _dbContext.QaReviews
             .AsNoTracking()
+            .Include(item => item.CategoryScores)
             .Include(item => item.QuestionScores)
             .FirstOrDefaultAsync(item => item.SupportFaqId == supportFaqId && item.AgentUserId == agentUserId, cancellationToken);
 
@@ -321,7 +321,11 @@ public sealed class AgentDashboardService : IAgentDashboardService
         var questionScores = review.QuestionScores
             .OrderBy(item => Array.IndexOf(QuestionScoreOrder, item.QuestionKey))
             .ThenBy(item => item.QaReviewQuestionScoreId)
-            .Select(item => new AgentDashboardQuestionScore(item.QuestionKey, item.Score))
+            .Select(item => new AgentDashboardQuestionScore(
+                string.IsNullOrWhiteSpace(item.CategoryNameSnapshot) ? "QA Category" : item.CategoryNameSnapshot.Trim(),
+                string.IsNullOrWhiteSpace(item.QuestionTextSnapshot) ? item.QuestionKey : item.QuestionTextSnapshot.Trim(),
+                item.QuestionKey,
+                item.Score))
             .ToList();
 
         return new AgentDashboardTicketDetail(
@@ -333,9 +337,7 @@ public sealed class AgentDashboardService : IAgentDashboardService
             review.CreatedAtUtc.ToLocalTime().ToString("MMM dd, yyyy"),
             review.UpdatedAtUtc.ToLocalTime().ToString("MMMM dd, yyyy 'at' hh:mm tt"),
             string.IsNullOrWhiteSpace(review.Notes) ? "No QA notes were recorded for this review." : review.Notes.Trim(),
-            Math.Round((double)((review.AccuracyAverage / 5m) * 35m), 1),
-            Math.Round((double)((review.ToneAverage / 5m) * 35m), 1),
-            Math.Round((double)((review.ResolutionAverage / 5m) * 30m), 1),
+            BuildCategoryScores(review),
             Math.Round((double)review.OverallPercent, 1),
             handlingSeconds,
             FormatDuration(handlingSeconds),
@@ -884,9 +886,7 @@ public sealed class AgentDashboardService : IAgentDashboardService
             item.ReviewerName,
             item.RatedAtUtc.ToString("MMM dd, yyyy"),
             item.OverallPercent.ToString("0.0"),
-            item.AccuracyPoints.ToString("0.0"),
-            item.TonePoints.ToString("0.0"),
-            item.ResolutionPoints.ToString("0.0"))
+            item.CategorySummary)
             .ToLowerInvariant();
     }
 
@@ -978,9 +978,8 @@ public sealed class AgentDashboardService : IAgentDashboardService
         string CustomerName,
         string ReviewerName,
         DateTime RatedAtUtc,
-        double AccuracyPoints,
-        double TonePoints,
-        double ResolutionPoints,
+        IReadOnlyList<AgentDashboardCategoryScore> CategoryScores,
+        string CategorySummary,
         double OverallPercent,
         int HandlingSeconds,
         DateTime? StartTimeUtc,
@@ -990,4 +989,29 @@ public sealed class AgentDashboardService : IAgentDashboardService
         int UserId,
         string? AgentName,
         string? AgentStatus);
+
+    private static IReadOnlyList<AgentDashboardCategoryScore> BuildCategoryScores(QaReview review)
+    {
+        return review.CategoryScores
+            .OrderBy(item => item.DisplayOrder)
+            .ThenBy(item => item.QaReviewCategoryScoreId)
+            .Select(item => new AgentDashboardCategoryScore(
+                string.IsNullOrWhiteSpace(item.CategoryNameSnapshot) ? "QA Category" : item.CategoryNameSnapshot.Trim(),
+                Math.Round((double)item.WeightedPoints, 1),
+                Math.Round((double)item.AverageScore, 2),
+                Math.Round((double)item.WeightPercentSnapshot, 2),
+                item.DisplayOrder))
+            .ToList();
+    }
+
+    private static string BuildCategorySummary(QaReview review)
+    {
+        var items = BuildCategoryScores(review);
+        if (items.Count == 0)
+        {
+            return "No category breakdown recorded.";
+        }
+
+        return string.Join(", ", items.Select(item => $"{item.CategoryName} {item.WeightedPoints:0.0}/{item.WeightPercent:0.##}"));
+    }
 }

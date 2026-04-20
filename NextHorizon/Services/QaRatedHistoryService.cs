@@ -27,8 +27,9 @@ public sealed class QaRatedHistoryService : IQaRatedHistoryService
     {
         var (startUtc, endExclusiveUtc) = ResolveDateRange(range, from, to);
 
-        var reviewQuery = _dbContext.QaReviews
-            .AsNoTracking();
+        IQueryable<QaReview> reviewQuery = _dbContext.QaReviews
+            .AsNoTracking()
+            .Include(item => item.CategoryScores);
 
         if (startUtc.HasValue)
         {
@@ -86,9 +87,8 @@ public sealed class QaRatedHistoryService : IQaRatedHistoryService
                     QaConcernFormatting.NormalizeReviewerName(item.ReviewerName),
                     ratedAtLabel,
                     item.CreatedAtUtc.ToString("yyyy-MM-dd"),
-                    Math.Round((double)((item.AccuracyAverage / 5m) * 35m), 1),
-                    Math.Round((double)((item.ToneAverage / 5m) * 35m), 1),
-                    Math.Round((double)((item.ResolutionAverage / 5m) * 30m), 1),
+                    BuildCategoryScores(item),
+                    BuildCategorySummary(item),
                     Math.Round((double)item.OverallPercent, 1));
             })
             .Where(item => string.IsNullOrWhiteSpace(normalizedSearch)
@@ -252,4 +252,29 @@ public sealed class QaRatedHistoryService : IQaRatedHistoryService
         int UserId,
         string? AgentName,
         string? AgentStatus);
+
+    private static IReadOnlyList<QaCategoryScoreItem> BuildCategoryScores(QaReview review)
+    {
+        return review.CategoryScores
+            .OrderBy(item => item.DisplayOrder)
+            .ThenBy(item => item.QaReviewCategoryScoreId)
+            .Select(item => new QaCategoryScoreItem(
+                string.IsNullOrWhiteSpace(item.CategoryNameSnapshot) ? "QA Category" : item.CategoryNameSnapshot.Trim(),
+                Math.Round((double)item.WeightedPoints, 1),
+                Math.Round((double)item.AverageScore, 2),
+                Math.Round((double)item.WeightPercentSnapshot, 2),
+                item.DisplayOrder))
+            .ToList();
+    }
+
+    private static string BuildCategorySummary(QaReview review)
+    {
+        var items = BuildCategoryScores(review);
+        if (items.Count == 0)
+        {
+            return "No category breakdown recorded.";
+        }
+
+        return string.Join(", ", items.Select(item => $"{item.CategoryName} {item.WeightedPoints:0.0}/{item.WeightPercent:0.##}"));
+    }
 }

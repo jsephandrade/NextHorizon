@@ -1,4 +1,3 @@
-using System.Data;
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
@@ -6,16 +5,13 @@ using NextHorizon.Data;
 using NextHorizon.Models.Agent;
 using NextHorizon.Models.HelpCenter;
 using NextHorizon.Models.QA;
+using NextHorizon.Messaging.Models;
 
 namespace NextHorizon.Services;
 
 public sealed class QaReviewService : IQaReviewService
 {
     private const string QaScoreNotificationCategory = "QAScore";
-    private const string NotificationRecipientTypeUser = "User";
-    private static readonly string[] AccuracyKeys = ["accuracy_q1", "accuracy_q2", "accuracy_q3"];
-    private static readonly string[] ToneKeys = ["tone_q1", "tone_q2", "tone_q3"];
-    private static readonly string[] ResolutionKeys = ["resolution_q1", "resolution_q2", "resolution_q3"];
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -23,15 +19,18 @@ public sealed class QaReviewService : IQaReviewService
     };
 
     private readonly ApplicationDbContext _dbContext;
+    private readonly INotificationService _notificationService;
     private readonly IQaRatingQueueService _qaRatingQueueService;
     private readonly IAgentRankingService _agentRankingService;
 
     public QaReviewService(
         ApplicationDbContext dbContext,
+        INotificationService notificationService,
         IQaRatingQueueService qaRatingQueueService,
         IAgentRankingService agentRankingService)
     {
         _dbContext = dbContext;
+        _notificationService = notificationService;
         _qaRatingQueueService = qaRatingQueueService;
         _agentRankingService = agentRankingService;
     }
@@ -68,17 +67,22 @@ public sealed class QaReviewService : IQaReviewService
                 .AsNoTracking()
                 .FirstOrDefaultAsync(item => item.ConsumerId == consumerId, cancellationToken);
         }
+
         var messages = await _dbContext.SupportMessages
             .AsNoTracking()
             .Where(item => item.ConversationId == supportFaqId)
             .OrderBy(item => item.CreatedAt)
             .ThenBy(item => item.Id)
             .ToListAsync(cancellationToken);
-        var customerName = ResolveCustomerName(consumer);
+        var concernFrom = QaConcernFormatting.NormalizeConcernFrom(supportFaq.UserType);
+        var participantName = ResolveParticipantName(concernFrom, consumer);
 
         var review = await _dbContext.QaReviews
             .AsNoTracking()
             .Include(item => item.QuestionScores)
+            .Include(item => item.EvaluationTemplate!)
+                .ThenInclude(item => item.Categories.OrderBy(category => category.DisplayOrder))
+                    .ThenInclude(item => item.Questions.OrderBy(question => question.DisplayOrder))
             .FirstOrDefaultAsync(item => item.SupportFaqId == supportFaqId, cancellationToken);
         var inlineCommentDraft = await _dbContext.QaReviewInlineCommentDrafts
             .AsNoTracking()
@@ -87,26 +91,14 @@ public sealed class QaReviewService : IQaReviewService
             ?? inlineCommentDraft?.AgentUserId
             ?? supportFaq.AgentId;
         var agentName = await ResolveAgentNameAsync(agentUserId, cancellationToken);
-        var messageViewModels = messages
-            .Select(item => new QaConversationMessageViewModel(
-                item.Id.ToString(),
-                string.Equals(item.SenderRole, "Consumer", StringComparison.OrdinalIgnoreCase) ? "user" : "agent",
-                ResolveSenderDisplayName(item, customerName, agentName),
-                item.CreatedAt.ToString("MMM dd, yyyy hh:mm tt"),
-                item.MessageText,
-                true))
-            .ToList();
-
-        if (messageViewModels.Count == 0 && !string.IsNullOrWhiteSpace(supportFaq.Question))
-        {
-            messageViewModels.Add(new QaConversationMessageViewModel(
-                "question",
-                "user",
-                customerName,
-                supportFaq.CreatedAt.ToString("MMM dd, yyyy hh:mm tt"),
-                supportFaq.Question,
-                true));
-        }
+        var messageViewModels = await BuildConversationMessagesAsync(
+            supportFaq,
+            session,
+            consumer,
+            participantName,
+            agentName,
+            messages,
+            cancellationToken);
 
         var queueState = await _qaRatingQueueService.GetQueueAsync(
             range,
@@ -116,6 +108,23 @@ public sealed class QaReviewService : IQaReviewService
             supportFaqId,
             cancellationToken);
 
+        var template = review?.EvaluationTemplate;
+        if (template is null)
+        {
+            template = await _dbContext.QaEvaluationTemplates
+                .AsNoTracking()
+                .Where(item => item.IsActive)
+                .Include(item => item.Categories.OrderBy(category => category.DisplayOrder))
+                    .ThenInclude(item => item.Questions.OrderBy(question => question.DisplayOrder))
+                .OrderByDescending(item => item.VersionNumber)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        var scoreMap = review?.QuestionScores
+            .Where(item => item.QaEvaluationQuestionId.HasValue)
+            .ToDictionary(item => item.QaEvaluationQuestionId!.Value, item => item.Score)
+            ?? new Dictionary<int, int>();
+
         return new QaRatingPageData
         {
             SupportFaqId = supportFaqId,
@@ -123,12 +132,15 @@ public sealed class QaReviewService : IQaReviewService
             PreviousSupportFaqId = queueState.PreviousSupportFaqId,
             NextSupportFaqId = queueState.NextSupportFaqId,
             AgentName = agentName,
-            CustomerName = customerName,
+            ConcernFrom = concernFrom,
+            ParticipantName = participantName,
+            CustomerName = participantName,
             ConversationDateLabel = (supportFaq.EndTime ?? supportFaq.CreatedAt).ToString("MMM dd, yyyy"),
             Messages = messageViewModels,
             ReviewerDisplayName = string.IsNullOrWhiteSpace(review?.ReviewerName) ? reviewerDisplayName : review!.ReviewerName,
             InlineCommentsJson = ResolveInlineCommentsJson(review?.InlineCommentsJson, inlineCommentDraft?.InlineCommentsJson),
             Review = review,
+            EvaluationTemplate = template is null ? null : QaEvaluationService.MapTemplate(template, scoreMap),
             QueueCount = queueState.QueueCount,
             QueuePosition = queueState.QueuePosition,
             CurrentTicketInQueue = queueState.CurrentTicketInQueue,
@@ -146,10 +158,9 @@ public sealed class QaReviewService : IQaReviewService
         QaReviewUpsertRequest request,
         CancellationToken cancellationToken)
     {
-        var validationMessage = ValidateRequest(request);
-        if (validationMessage is not null)
+        if (request is null)
         {
-            return new QaReviewMutationResponse(false, validationMessage);
+            return new QaReviewMutationResponse(false, "Invalid QA review payload.");
         }
 
         var supportFaq = await _dbContext.SupportFaqRecords
@@ -169,22 +180,55 @@ public sealed class QaReviewService : IQaReviewService
         var agentUserId = supportFaq.AgentId.Value;
 
         var review = await _dbContext.QaReviews
+            .Include(item => item.CategoryScores)
             .Include(item => item.QuestionScores)
             .FirstOrDefaultAsync(item => item.SupportFaqId == supportFaqId, cancellationToken);
 
-        var accuracyScores = request.AccuracyScores ?? Array.Empty<int>();
-        var toneScores = request.ToneScores ?? Array.Empty<int>();
-        var resolutionScores = request.ResolutionScores ?? Array.Empty<int>();
+        var templateId = review?.QaEvaluationTemplateId ?? request.TemplateId;
+        var template = await _dbContext.QaEvaluationTemplates
+            .AsNoTracking()
+            .Where(item => item.QaEvaluationTemplateId == templateId)
+            .Include(item => item.Categories.OrderBy(category => category.DisplayOrder))
+                .ThenInclude(item => item.Questions.OrderBy(question => question.DisplayOrder))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (template is null)
+        {
+            return new QaReviewMutationResponse(false, "QA evaluation template not found.");
+        }
+
+        var validationMessage = ValidateRequest(request, template);
+        if (validationMessage is not null)
+        {
+            return new QaReviewMutationResponse(false, validationMessage);
+        }
+
+        var scoreMap = request.Scores
+            .ToDictionary(item => item.QuestionId, item => item.Score);
         var notes = (request.Notes ?? string.Empty).Trim();
         var inlineCommentThreads = request.InlineCommentThreads;
         var inlineCommentsJson = SerializeInlineComments(inlineCommentThreads);
 
-        var nowUtc = DateTime.UtcNow;
-        var accuracyAverage = Round2(accuracyScores.Average());
-        var toneAverage = Round2(toneScores.Average());
-        var resolutionAverage = Round2(resolutionScores.Average());
-        var overallPercent = CalculateOverallPercent(accuracyAverage, toneAverage, resolutionAverage);
+        var orderedCategories = template.Categories
+            .OrderBy(category => category.DisplayOrder)
+            .ToList();
+        var categoryAverages = orderedCategories
+            .Select(category =>
+            {
+                var questionScores = category.Questions
+                    .OrderBy(question => question.DisplayOrder)
+                    .Select(question => scoreMap[question.QaEvaluationQuestionId])
+                    .ToArray();
+                return Round2(questionScores.Average());
+            })
+            .ToList();
 
+        var overallPercent = Math.Round(
+            orderedCategories.Select((category, index) => (categoryAverages[index] / 5m) * category.WeightPercent).Sum(),
+            2,
+            MidpointRounding.AwayFromZero);
+
+        var nowUtc = DateTime.UtcNow;
         var wasAlreadySubmittedToAgent = review?.SubmittedToAgent ?? false;
 
         if (review is null)
@@ -195,6 +239,7 @@ public sealed class QaReviewService : IQaReviewService
                 AgentUserId = agentUserId,
                 ReviewerStaffId = reviewerStaffId,
                 ReviewerName = reviewerName,
+                QaEvaluationTemplateId = template.QaEvaluationTemplateId,
                 CreatedAtUtc = nowUtc
             };
 
@@ -204,10 +249,8 @@ public sealed class QaReviewService : IQaReviewService
         review.ReviewerStaffId = reviewerStaffId;
         review.ReviewerName = reviewerName;
         review.AgentUserId = agentUserId;
+        review.QaEvaluationTemplateId = template.QaEvaluationTemplateId;
         review.Notes = notes;
-        review.AccuracyAverage = accuracyAverage;
-        review.ToneAverage = toneAverage;
-        review.ResolutionAverage = resolutionAverage;
         review.OverallPercent = overallPercent;
         review.InlineCommentsJson = inlineCommentsJson;
         review.UpdatedAtUtc = nowUtc;
@@ -224,13 +267,36 @@ public sealed class QaReviewService : IQaReviewService
             review.QuestionScores.Clear();
         }
 
-        foreach (var pair in BuildQuestionScorePairs(accuracyScores, toneScores, resolutionScores))
+        if (review.CategoryScores.Count > 0)
         {
-            review.QuestionScores.Add(new QaReviewQuestionScore
+            _dbContext.QaReviewCategoryScores.RemoveRange(review.CategoryScores);
+            review.CategoryScores.Clear();
+        }
+
+        for (var categoryIndex = 0; categoryIndex < orderedCategories.Count; categoryIndex++)
+        {
+            var category = orderedCategories[categoryIndex];
+            review.CategoryScores.Add(new QaReviewCategoryScore
             {
-                QuestionKey = pair.Key,
-                Score = pair.Value
+                QaEvaluationCategoryId = category.QaEvaluationCategoryId,
+                CategoryNameSnapshot = category.Name,
+                WeightPercentSnapshot = category.WeightPercent,
+                AverageScore = categoryAverages[categoryIndex],
+                WeightedPoints = Math.Round((categoryAverages[categoryIndex] / 5m) * category.WeightPercent, 2, MidpointRounding.AwayFromZero),
+                DisplayOrder = category.DisplayOrder
             });
+
+            foreach (var question in category.Questions.OrderBy(item => item.DisplayOrder))
+            {
+                review.QuestionScores.Add(new QaReviewQuestionScore
+                {
+                    QaEvaluationQuestionId = question.QaEvaluationQuestionId,
+                    QuestionKey = question.QuestionKey,
+                    CategoryNameSnapshot = category.Name,
+                    QuestionTextSnapshot = question.Prompt,
+                    Score = scoreMap[question.QaEvaluationQuestionId]
+                });
+            }
         }
 
         await UpsertInlineCommentDraftAsync(
@@ -350,23 +416,42 @@ public sealed class QaReviewService : IQaReviewService
             (double)Math.Round(review.OverallPercent, 1, MidpointRounding.AwayFromZero));
     }
 
-    private static string? ValidateRequest(QaReviewUpsertRequest? request)
+    private static string? ValidateRequest(QaReviewUpsertRequest request, QaEvaluationTemplate template)
     {
-        if (request is null)
-        {
-            return "Invalid QA review payload.";
-        }
-
-        if (!IsValidScoreSet(request.AccuracyScores)
-            || !IsValidScoreSet(request.ToneScores)
-            || !IsValidScoreSet(request.ResolutionScores))
-        {
-            return "All 9 questions must be scored from 1 to 5.";
-        }
-
         if ((request.Notes ?? string.Empty).Length > 4000)
         {
             return "QA notes exceed the maximum length.";
+        }
+
+        var questions = template.Categories
+            .SelectMany(category => category.Questions)
+            .ToList();
+        if (questions.Count == 0)
+        {
+            return "QA evaluation template is missing questions.";
+        }
+
+        if (request.Scores is null || request.Scores.Count != questions.Count)
+        {
+            return $"All {questions.Count} questions must be scored from 1 to 5.";
+        }
+
+        var validQuestionIds = questions
+            .Select(question => question.QaEvaluationQuestionId)
+            .ToHashSet();
+        var distinctQuestionIds = new HashSet<int>();
+
+        foreach (var score in request.Scores)
+        {
+            if (score.QuestionId <= 0 || score.Score is < 1 or > 5)
+            {
+                return $"All {questions.Count} questions must be scored from 1 to 5.";
+            }
+
+            if (!validQuestionIds.Contains(score.QuestionId) || !distinctQuestionIds.Add(score.QuestionId))
+            {
+                return "Invalid QA question payload.";
+            }
         }
 
         return null;
@@ -382,37 +467,9 @@ public sealed class QaReviewService : IQaReviewService
         return null;
     }
 
-    private static bool IsValidScoreSet(IReadOnlyList<int>? scores)
-    {
-        return scores is not null
-            && scores.Count == 3
-            && scores.All(score => score is >= 1 and <= 5);
-    }
-
-    private static IEnumerable<KeyValuePair<string, int>> BuildQuestionScorePairs(
-        IReadOnlyList<int> accuracyScores,
-        IReadOnlyList<int> toneScores,
-        IReadOnlyList<int> resolutionScores)
-    {
-        for (var index = 0; index < 3; index++)
-        {
-            yield return new KeyValuePair<string, int>(AccuracyKeys[index], accuracyScores[index]);
-            yield return new KeyValuePair<string, int>(ToneKeys[index], toneScores[index]);
-            yield return new KeyValuePair<string, int>(ResolutionKeys[index], resolutionScores[index]);
-        }
-    }
-
     private static decimal Round2(double value)
     {
         return Math.Round((decimal)value, 2, MidpointRounding.AwayFromZero);
-    }
-
-    private static decimal CalculateOverallPercent(decimal accuracyAverage, decimal toneAverage, decimal resolutionAverage)
-    {
-        var accuracyPoints = (accuracyAverage / 5m) * 35m;
-        var tonePoints = (toneAverage / 5m) * 35m;
-        var resolutionPoints = (resolutionAverage / 5m) * 30m;
-        return Math.Round(accuracyPoints + tonePoints + resolutionPoints, 2, MidpointRounding.AwayFromZero);
     }
 
     private static string SerializeInlineComments(IReadOnlyDictionary<string, List<QaInlineCommentEntry>>? inlineCommentThreads)
@@ -487,47 +544,12 @@ public sealed class QaReviewService : IQaReviewService
         CancellationToken cancellationToken)
     {
         var message = BuildQaScoreNotificationMessage(supportFaqId, reviewerName, overallPercent);
-        var connection = _dbContext.Database.GetDbConnection();
-        var shouldClose = connection.State != ConnectionState.Open;
-
-        if (shouldClose)
-        {
-            await connection.OpenAsync(cancellationToken);
-        }
-
-        try
-        {
-            await using var command = connection.CreateCommand();
-            command.CommandText = """
-                INSERT INTO dbo.Notifications (RecipientType, RecipientId, OrderId, Message, IsRead, CreatedAt, category)
-                VALUES (@RecipientType, @RecipientId, @OrderId, @Message, @IsRead, @CreatedAt, @Category)
-                """;
-
-            AddParameter(command, "@RecipientType", NotificationRecipientTypeUser);
-            AddParameter(command, "@RecipientId", agentUserId);
-            AddParameter(command, "@OrderId", DBNull.Value);
-            AddParameter(command, "@Message", message);
-            AddParameter(command, "@IsRead", false);
-            AddParameter(command, "@CreatedAt", DateTime.UtcNow);
-            AddParameter(command, "@Category", QaScoreNotificationCategory);
-
-            await command.ExecuteNonQueryAsync(cancellationToken);
-        }
-        finally
-        {
-            if (shouldClose)
-            {
-                await connection.CloseAsync();
-            }
-        }
-    }
-
-    private static void AddParameter(IDbCommand command, string name, object value)
-    {
-        var parameter = command.CreateParameter();
-        parameter.ParameterName = name;
-        parameter.Value = value;
-        command.Parameters.Add(parameter);
+        await _notificationService.NotifyUserAsync(
+            agentUserId,
+            message,
+            QaScoreNotificationCategory,
+            orderId: null,
+            cancellationToken);
     }
 
     private static string BuildQaScoreNotificationMessage(int supportFaqId, string reviewerName, decimal overallPercent)
@@ -584,8 +606,117 @@ public sealed class QaReviewService : IQaReviewService
         return string.IsNullOrWhiteSpace(agentName) ? "Unknown Agent" : agentName.Trim();
     }
 
-    private static string ResolveCustomerName(ConsumerRef? consumer)
+    private async Task<List<QaConversationMessageViewModel>> BuildConversationMessagesAsync(
+        SupportFaqRecord supportFaq,
+        LiveAgentSession? session,
+        ConsumerRef? consumer,
+        string participantName,
+        string agentName,
+        IReadOnlyList<SupportMessage> supportMessages,
+        CancellationToken cancellationToken)
     {
+        var seeds = supportMessages
+            .Where(item => !string.IsNullOrWhiteSpace(item.MessageText))
+            .Select(item => new QaConversationSeed(
+                item.Id.ToString(),
+                ResolveSupportSenderCssClass(item.SenderRole),
+                ResolveSenderDisplayName(item, participantName, agentName),
+                item.CreatedAt,
+                item.MessageText.Trim(),
+                0))
+            .ToList();
+
+        var hasCustomerMessage = seeds.Any(item => string.Equals(item.SenderCssClass, "user", StringComparison.Ordinal));
+
+        if (!hasCustomerMessage && !string.IsNullOrWhiteSpace(supportFaq.Question))
+        {
+            seeds.Add(new QaConversationSeed(
+                "faq-question",
+                "user",
+                participantName,
+                supportFaq.CreatedAt,
+                supportFaq.Question.Trim(),
+                -1));
+            hasCustomerMessage = true;
+        }
+
+        if (!hasCustomerMessage)
+        {
+            var supplementalMessages = await LoadSupplementalConversationMessagesAsync(session, consumer, cancellationToken);
+            if (supplementalMessages.Count > 0)
+            {
+                var supplementalSeeds = supplementalMessages
+                    .Where(item => !string.IsNullOrWhiteSpace(item.Body))
+                    .Select(item => MapSupplementalMessage(item, session!, consumer!, participantName))
+                    .Where(item => item is not null)
+                    .Select(item => item!)
+                    .ToList();
+
+                foreach (var supplementalSeed in supplementalSeeds)
+                {
+                    if (seeds.Any(existing => IsDuplicateMessage(existing, supplementalSeed)))
+                    {
+                        continue;
+                    }
+
+                    seeds.Add(supplementalSeed);
+                }
+            }
+        }
+
+        return seeds
+            .OrderBy(item => item.TimestampUtc)
+            .ThenBy(item => item.SourceRank)
+            .ThenBy(item => item.MessageId, StringComparer.Ordinal)
+            .Select(item => new QaConversationMessageViewModel(
+                item.MessageId,
+                item.SenderCssClass,
+                item.SenderDisplayName,
+                item.TimestampUtc.ToString("MMM dd, yyyy hh:mm tt"),
+                item.MessageText,
+                true))
+            .ToList();
+    }
+
+    private async Task<List<ConversationMessage>> LoadSupplementalConversationMessagesAsync(
+        LiveAgentSession? session,
+        ConsumerRef? consumer,
+        CancellationToken cancellationToken)
+    {
+        if (session is null || consumer is null || session.UserId <= 0 || consumer.UserId <= 0)
+        {
+            return [];
+        }
+
+        var candidateConversationIds = await _dbContext.MessageConversations
+            .AsNoTracking()
+            .Where(item =>
+                (item.BuyerUserId == consumer.UserId && item.SellerUserId == session.UserId)
+                || (item.BuyerUserId == session.UserId && item.SellerUserId == consumer.UserId))
+            .Select(item => item.ConversationId)
+            .ToListAsync(cancellationToken);
+
+        if (candidateConversationIds.Count != 1)
+        {
+            return [];
+        }
+
+        var conversationId = candidateConversationIds[0];
+        return await _dbContext.ConversationMessages
+            .AsNoTracking()
+            .Where(item => item.ConversationId == conversationId && !item.IsDeleted)
+            .OrderBy(item => item.SentAt)
+            .ThenBy(item => item.MessageId)
+            .ToListAsync(cancellationToken);
+    }
+
+    private static string ResolveParticipantName(string concernFrom, ConsumerRef? consumer)
+    {
+        if (string.Equals(concernFrom, "Seller", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Seller";
+        }
+
         if (consumer is null)
         {
             return "Unknown Customer";
@@ -604,11 +735,69 @@ public sealed class QaReviewService : IQaReviewService
         return string.IsNullOrWhiteSpace(consumer.Username) ? "Unknown Customer" : consumer.Username.Trim();
     }
 
-    private static string ResolveSenderDisplayName(SupportMessage message, string customerName, string agentName)
+    private static QaConversationSeed? MapSupplementalMessage(
+        ConversationMessage message,
+        LiveAgentSession session,
+        ConsumerRef consumer,
+        string participantName)
     {
-        if (string.Equals(message.SenderRole, "Consumer", StringComparison.OrdinalIgnoreCase))
+        var senderCssClass = ResolveSupplementalSenderCssClass(message.SenderUserId, session, consumer);
+        if (senderCssClass is null)
         {
-            return customerName;
+            return null;
+        }
+
+        return new QaConversationSeed(
+            $"commerce-{message.ConversationId}-{message.MessageId}",
+            senderCssClass,
+            string.Equals(senderCssClass, "user", StringComparison.Ordinal) ? participantName : "Seller",
+            message.SentAt,
+            message.Body.Trim(),
+            1);
+    }
+
+    private static bool IsDuplicateMessage(QaConversationSeed left, QaConversationSeed right)
+    {
+        return string.Equals(left.SenderCssClass, right.SenderCssClass, StringComparison.Ordinal)
+            && string.Equals(left.MessageText, right.MessageText, StringComparison.Ordinal)
+            && left.TimestampUtc == right.TimestampUtc;
+    }
+
+    private static string ResolveSupportSenderCssClass(string? senderRole)
+    {
+        return IsConcernParticipantSenderRole(senderRole) ? "user" : "agent";
+    }
+
+    private static bool IsConcernParticipantSenderRole(string? senderRole)
+    {
+        var normalized = (senderRole ?? string.Empty).Trim();
+        return normalized.Equals("Consumer", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("Customer", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("Buyer", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("User", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("Seller", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? ResolveSupplementalSenderCssClass(int senderUserId, LiveAgentSession session, ConsumerRef consumer)
+    {
+        if (senderUserId == consumer.UserId)
+        {
+            return "user";
+        }
+
+        if (senderUserId == session.UserId)
+        {
+            return "agent";
+        }
+
+        return null;
+    }
+
+    private static string ResolveSenderDisplayName(SupportMessage message, string participantName, string agentName)
+    {
+        if (IsConcernParticipantSenderRole(message.SenderRole))
+        {
+            return participantName;
         }
 
         return message.SenderId == 0 ? "Support" : $"Agent {agentName}";
@@ -619,4 +808,12 @@ public sealed class QaReviewService : IQaReviewService
         var normalized = (range ?? "custom").Trim().ToLowerInvariant();
         return normalized is "today" or "last7" or "last30" ? normalized : "custom";
     }
+
+    private sealed record QaConversationSeed(
+        string MessageId,
+        string SenderCssClass,
+        string SenderDisplayName,
+        DateTime TimestampUtc,
+        string MessageText,
+        int SourceRank);
 }

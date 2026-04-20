@@ -43,6 +43,8 @@ builder.Services.AddScoped<IAgentRankingService, AgentRankingService>();
 builder.Services.AddScoped<IQaAgentTicketsService, QaAgentTicketsService>();
 builder.Services.AddScoped<IQaAgentsService, QaAgentsService>();
 builder.Services.AddScoped<IQaDashboardService, QaDashboardService>();
+builder.Services.AddScoped<IQaEvaluationService, QaEvaluationService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IQaRatingQueueService, QaRatingQueueService>();
 builder.Services.AddScoped<IQaRatedHistoryService, QaRatedHistoryService>();
 builder.Services.AddScoped<IQaResolvedTicketsService, QaResolvedTicketsService>();

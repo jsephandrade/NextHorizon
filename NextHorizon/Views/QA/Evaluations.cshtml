@@ -1,0 +1,984 @@
+@model NextHorizon.Models.QA.QaEvaluationsPageData
+@using System.Text.Json
+@{
+    Layout = "~/Views/Shared/_QALayout.cshtml";
+    ViewData["Title"] = "QA Evaluations";
+}
+
+@section Styles {
+<style>
+    .eval-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 280px;
+        gap: 16px;
+    }
+
+    .eval-panel {
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        border-radius: 16px;
+        padding: 18px;
+        backdrop-filter: blur(5px);
+    }
+
+    .eval-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #141414;
+    }
+
+    .eval-sub {
+        margin-top: 6px;
+        font-size: .9rem;
+        color: #5f5f5f;
+        line-height: 1.5;
+    }
+
+    .eval-banner {
+        margin-top: 14px;
+        border-radius: 12px;
+        padding: 10px 12px;
+        background: #111111;
+        color: #ffffff;
+        font-size: .8rem;
+        font-weight: 600;
+        display: none;
+    }
+
+    .eval-toolbar {
+        margin-top: 18px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .eval-btn {
+        border: none;
+        border-radius: 12px;
+        padding: 10px 16px;
+        font: inherit;
+        font-size: .84rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .eval-btn.primary {
+        background: #111111;
+        color: #ffffff;
+    }
+
+    .eval-btn.secondary {
+        background: #f1f1f1;
+        color: #1d1d1d;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+    }
+
+    .eval-btn:disabled {
+        opacity: .6;
+        cursor: default;
+    }
+
+    .eval-status {
+        margin-top: 12px;
+        border-radius: 12px;
+        padding: 10px 12px;
+        background: #f6f6f6;
+        border: 1px dashed rgba(0, 0, 0, 0.12);
+        color: #5c5c5c;
+        font-size: .82rem;
+    }
+
+    .eval-status.error { color: #9f2d2d; }
+    .eval-status.saved { color: #1b6b37; }
+    .eval-status.saving { color: #1c5096; }
+
+    .template-meta {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .meta-card {
+        border-radius: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        background: #fafafa;
+        padding: 11px 12px;
+    }
+
+    .meta-label {
+        font-size: .73rem;
+        color: #656565;
+        margin-bottom: 4px;
+    }
+
+    .meta-value {
+        font-size: .88rem;
+        font-weight: 700;
+        color: #141414;
+        line-height: 1.35;
+    }
+
+    .eval-content {
+        margin-top: 18px;
+    }
+
+    .category-stack {
+        display: grid;
+        gap: 14px;
+    }
+
+    .category-editor,
+    .category-readonly {
+        border-radius: 14px;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        background: #fcfcfc;
+        padding: 14px;
+        display: grid;
+        gap: 12px;
+    }
+
+    .category-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 170px max-content;
+        gap: 10px;
+        align-items: start;
+    }
+
+    .readonly-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .readonly-title {
+        font-size: .96rem;
+        font-weight: 700;
+        color: #141414;
+    }
+
+    .readonly-weight {
+        border-radius: 999px;
+        padding: 5px 10px;
+        background: #efefef;
+        color: #2b2b2b;
+        font-size: .78rem;
+        font-weight: 700;
+    }
+
+    .field {
+        display: grid;
+        gap: 6px;
+    }
+
+    .field label {
+        font-size: .76rem;
+        color: #5d5d5d;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+    }
+
+    .field input {
+        border-radius: 11px;
+        border: 1px solid rgba(0, 0, 0, 0.14);
+        background: #ffffff;
+        padding: 10px 12px;
+        font: inherit;
+        font-size: .84rem;
+    }
+
+    .field-help {
+        font-size: .73rem;
+        color: #6a6a6a;
+        line-height: 1.35;
+        min-height: 2.05em;
+        padding-inline: 2px;
+    }
+
+    .category-head .field {
+        align-self: start;
+    }
+
+    .category-head .eval-btn {
+        align-self: end;
+        margin-bottom: 2.05em;
+        white-space: nowrap;
+    }
+
+    .question-stack,
+    .readonly-question-list {
+        display: grid;
+        gap: 10px;
+    }
+
+    .question-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: end;
+    }
+
+    .readonly-question {
+        border-radius: 10px;
+        background: #ffffff;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        padding: 10px 12px;
+        font-size: .84rem;
+        color: #242424;
+        line-height: 1.45;
+    }
+
+    .readonly-question-index {
+        display: block;
+        font-size: .73rem;
+        color: #666666;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+
+    .history-list {
+        margin-top: 16px;
+        display: grid;
+        gap: 10px;
+    }
+
+    .history-card {
+        width: 100%;
+        text-align: left;
+        border-radius: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        background: #fafafa;
+        padding: 12px;
+        display: grid;
+        gap: 5px;
+        cursor: pointer;
+        transition: border-color .15s ease, background-color .15s ease, transform .15s ease;
+    }
+
+    .history-card:hover {
+        border-color: rgba(0, 0, 0, 0.24);
+        background: #f5f5f5;
+    }
+
+    .history-card.selected {
+        border-color: #111111;
+        background: #f1f1f1;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+    }
+
+    .history-version {
+        font-size: .92rem;
+        font-weight: 700;
+        color: #151515;
+    }
+
+    .history-meta {
+        font-size: .79rem;
+        color: #5c5c5c;
+        line-height: 1.45;
+    }
+
+    .active-pill {
+        display: inline-flex;
+        width: fit-content;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #111111;
+        color: #ffffff;
+        font-size: .72rem;
+        font-weight: 700;
+    }
+
+    .empty-card {
+        border-radius: 14px;
+        border: 1px dashed rgba(0, 0, 0, 0.14);
+        background: #fafafa;
+        padding: 16px;
+        color: #5c5c5c;
+        font-size: .84rem;
+        line-height: 1.55;
+    }
+
+    @@media (max-width: 980px) {
+        .eval-shell {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 720px) {
+        .category-head,
+        .question-row,
+        .template-meta {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+}
+
+<div class="eval-shell">
+    <section class="eval-panel">
+        <div class="eval-title" id="main-title">QA Evaluations</div>
+        <div class="eval-sub" id="main-sub">Create the live evaluation categories, their question sets, and the percentage weight each category contributes inside the rating queue panel.</div>
+
+        <div class="eval-banner" id="mode-banner"></div>
+
+        <div class="eval-toolbar">
+            <button type="button" class="eval-btn secondary" id="edit-live-btn">Edit evaluation</button>
+            <button type="button" class="eval-btn secondary" id="reuse-version-btn">Reuse this version</button>
+            <button type="button" class="eval-btn secondary" id="add-category-btn">Add category</button>
+            <button type="button" class="eval-btn primary" id="save-template-btn">Save</button>
+        </div>
+
+        <div class="eval-status" id="template-status">Category percentages must total exactly 100 before saving.</div>
+
+        <div class="template-meta" id="template-meta"></div>
+        <div class="eval-content" id="eval-content"></div>
+    </section>
+
+    <aside class="eval-panel">
+        <div class="eval-title" style="font-size:1.05rem;">Version history</div>
+        <div class="eval-sub">Previous versions stay attached to reviews that already used them.</div>
+
+        <div class="history-list" id="history-list">
+            @foreach (var item in Model.History)
+            {
+                <button type="button" class="history-card @(item.IsActive ? "selected" : string.Empty)" data-template-id="@item.TemplateId">
+                    <div class="history-version">Version @item.VersionNumber</div>
+                    @if (item.IsActive)
+                    {
+                        <span class="active-pill">Live</span>
+                    }
+                    <div class="history-meta">@item.ActivatedAtLabel</div>
+                    <div class="history-meta">@item.CategoryCount categories &middot; @item.QuestionCount questions</div>
+                </button>
+            }
+        </div>
+    </aside>
+</div>
+
+<script>
+    (function () {
+        var activeTemplate = @Html.Raw(JsonSerializer.Serialize(Model.ActiveTemplate, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+        var historyItems = @Html.Raw(JsonSerializer.Serialize(Model.History, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+        var mode = activeTemplate ? 'edit-live' : 'history';
+        var selectedTemplate = activeTemplate;
+        var selectedHistoryId = activeTemplate ? activeTemplate.templateId : (historyItems && historyItems.length ? historyItems[0].templateId : 0);
+        var draft = cloneTemplateToDraft(activeTemplate);
+
+        var mainTitle = document.getElementById('main-title');
+        var mainSub = document.getElementById('main-sub');
+        var modeBanner = document.getElementById('mode-banner');
+        var statusEl = document.getElementById('template-status');
+        var metaEl = document.getElementById('template-meta');
+        var contentEl = document.getElementById('eval-content');
+        var historyList = document.getElementById('history-list');
+        var saveBtn = document.getElementById('save-template-btn');
+        var addCategoryBtn = document.getElementById('add-category-btn');
+        var editLiveBtn = document.getElementById('edit-live-btn');
+        var reuseVersionBtn = document.getElementById('reuse-version-btn');
+        var activeTemplateId = activeTemplate ? activeTemplate.templateId : 0;
+
+        function cloneTemplateToDraft(template) {
+            if (!template || !template.categories || !template.categories.length) {
+                return [{
+                    name: '',
+                    weightPercent: 0,
+                    questions: [{ prompt: '' }]
+                }];
+            }
+
+            return template.categories.map(function (category) {
+                return {
+                    name: category.name || '',
+                    weightPercent: Number(category.weightPercent || 0),
+                    questions: (category.questions || []).map(function (question) {
+                        return { prompt: question.prompt || '' };
+                    })
+                };
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function escapeAttribute(value) {
+            return String(value == null ? '' : value).replace(/"/g, '&quot;');
+        }
+
+        function setStatus(message, state) {
+            if (!statusEl) {
+                return;
+            }
+
+            statusEl.classList.remove('error', 'saved', 'saving');
+            if (state) {
+                statusEl.classList.add(state);
+            }
+            statusEl.textContent = message;
+        }
+
+        function totalWeight(categories) {
+            var source = Array.isArray(categories) ? categories : draft;
+            return source.reduce(function (sum, category) {
+                return sum + (Number(category.weightPercent) || 0);
+            }, 0);
+        }
+
+        function totalQuestionsFromDraft(categories) {
+            return (categories || draft).reduce(function (sum, category) {
+                return sum + ((category.questions || []).filter(function (question) {
+                    return String(question.prompt || '').trim().length > 0;
+                }).length || 0);
+            }, 0);
+        }
+
+        function formatPercent(value) {
+            return Number(value || 0).toFixed(2).replace(/\.00$/, '');
+        }
+
+        function resolveSuggestionBaseWeight(name, index) {
+            var normalized = String(name || '').trim().toLowerCase();
+
+            if (!normalized) {
+                return index === 0 ? 40 : index === 1 ? 35 : index === 2 ? 25 : 25;
+            }
+
+            if (normalized.indexOf('complete') >= 0 || normalized.indexOf('resolution') >= 0 || normalized.indexOf('resolve') >= 0) {
+                return 40;
+            }
+
+            if (normalized.indexOf('accur') >= 0 || normalized.indexOf('correct') >= 0) {
+                return 35;
+            }
+
+            if (normalized.indexOf('read') >= 0
+                || normalized.indexOf('tone') >= 0
+                || normalized.indexOf('empathy') >= 0
+                || normalized.indexOf('clar') >= 0
+                || normalized.indexOf('language') >= 0) {
+                return 25;
+            }
+
+            return index === 0 ? 40 : index === 1 ? 35 : index === 2 ? 25 : 25;
+        }
+
+        function calculateSuggestedWeights() {
+            var suggestions = [];
+            var filledTotal = 0;
+            var emptyIndices = [];
+
+            for (var index = 0; index < draft.length; index++) {
+                var weight = Number(draft[index].weightPercent || 0);
+                if (weight > 0) {
+                    suggestions[index] = weight;
+                    filledTotal += weight;
+                } else {
+                    emptyIndices.push(index);
+                }
+            }
+
+            var remaining = Math.max(0, 100 - filledTotal);
+            if (!emptyIndices.length) {
+                return suggestions;
+            }
+
+            var baseWeights = emptyIndices.map(function (categoryIndex, offset) {
+                return resolveSuggestionBaseWeight(draft[categoryIndex].name, categoryIndex + offset);
+            });
+            var baseTotal = baseWeights.reduce(function (sum, value) { return sum + value; }, 0);
+
+            if (baseTotal <= 0) {
+                var evenShare = remaining / emptyIndices.length;
+                for (var evenIndex = 0; evenIndex < emptyIndices.length; evenIndex++) {
+                    suggestions[emptyIndices[evenIndex]] = evenShare;
+                }
+                return suggestions;
+            }
+
+            for (var suggestionIndex = 0; suggestionIndex < emptyIndices.length; suggestionIndex++) {
+                suggestions[emptyIndices[suggestionIndex]] = remaining * (baseWeights[suggestionIndex] / baseTotal);
+            }
+
+            return suggestions;
+        }
+
+        function buildSuggestionHelp(categoryIndex) {
+            var suggestions = calculateSuggestedWeights();
+            var suggestion = suggestions[categoryIndex];
+            var current = Number(draft[categoryIndex].weightPercent || 0);
+
+            if (suggestion == null) {
+                suggestion = 0;
+            }
+
+            if (current > 0) {
+                return 'Suggested: ' + formatPercent(suggestion) + '%. Current: ' + formatPercent(current) + '%.';
+            }
+
+            return 'Suggested: ' + formatPercent(suggestion) + '%.';
+        }
+
+        function updateIdleStatus() {
+            if (mode === 'history') {
+                setStatus('Viewing a saved version. History is read-only until you choose Reuse this version.');
+                return;
+            }
+
+            var prefix = mode === 'reuse'
+                ? 'Editing a reusable draft. '
+                : 'Editing the live template draft. ';
+            setStatus(prefix + 'Current total weight: ' + totalWeight().toFixed(2) + '%. Category percentages must total exactly 100 before saving.');
+        }
+
+        function findHistoryItem(templateId) {
+            return (historyItems || []).find(function (item) { return item.templateId === templateId; }) || null;
+        }
+
+        function updateHistorySelection() {
+            if (!historyList) {
+                return;
+            }
+
+            var cards = historyList.querySelectorAll('.history-card[data-template-id]');
+            for (var index = 0; index < cards.length; index++) {
+                var card = cards[index];
+                var templateId = Number(card.getAttribute('data-template-id'));
+                card.classList.toggle('selected', templateId === selectedHistoryId);
+            }
+        }
+
+        function renderMeta(template) {
+            if (!metaEl) {
+                return;
+            }
+
+            if (!template) {
+                metaEl.innerHTML = '';
+                return;
+            }
+
+            metaEl.innerHTML = '' +
+                renderMetaCard('Questions', template.totalQuestionCount) +
+                renderMetaCard('Weight Total', Number(template.totalWeightPercent || 0).toFixed(2) + '%');
+        }
+
+        function renderDraftMeta() {
+            if (!metaEl) {
+                return;
+            }
+
+            metaEl.innerHTML = '' +
+                renderMetaCard('Questions', totalQuestionsFromDraft(draft)) +
+                renderMetaCard('Weight Total', totalWeight().toFixed(2) + '%');
+        }
+
+        function refreshWeightHelpers() {
+            renderDraftMeta();
+
+            var editors = document.querySelectorAll('.category-editor[data-category-index]');
+            for (var index = 0; index < editors.length; index++) {
+                var categoryIndex = Number(editors[index].getAttribute('data-category-index'));
+                var helpNode = editors[index].querySelector('.field-help');
+                if (helpNode) {
+                    helpNode.textContent = buildSuggestionHelp(categoryIndex);
+                }
+            }
+        }
+
+        function renderMetaCard(label, value) {
+            return '<div class="meta-card"><div class="meta-label">' + escapeHtml(label) + '</div><div class="meta-value">' + escapeHtml(value) + '</div></div>';
+        }
+
+        function buildField(labelText, inputHtml) {
+            return '<div class="field"><label>' + labelText + '</label>' + inputHtml + '</div>';
+        }
+
+        function buildWeightField(category, categoryIndex) {
+            return buildField(
+                'Percent',
+                '<input type="number" min="0.01" max="100" step="0.01" class="category-weight-input" value="' + escapeAttribute(category.weightPercent) + '" />' +
+                '<div class="field-help">' + escapeHtml(buildSuggestionHelp(categoryIndex)) + '</div>');
+        }
+
+        function renderEditor() {
+            if (!contentEl) {
+                return;
+            }
+
+            contentEl.innerHTML = '<div class="category-stack">' + draft.map(function (category, categoryIndex) {
+                var questionRows = (category.questions || []).map(function (question, questionIndex) {
+                    return '' +
+                        '<div class="question-row" data-category-index="' + categoryIndex + '" data-question-index="' + questionIndex + '">' +
+                            buildField('Question', '<input type="text" class="question-input" value="' + escapeHtml(question.prompt || '') + '" placeholder="Question prompt" />') +
+                            '<button type="button" class="eval-btn secondary remove-question-btn">Remove question</button>' +
+                        '</div>';
+                }).join('');
+
+                return '' +
+                    '<section class="category-editor" data-category-index="' + categoryIndex + '">' +
+                        '<div class="category-head">' +
+                            buildField('Category', '<input type="text" class="category-name-input" value="' + escapeHtml(category.name || '') + '" placeholder="Category name" />') +
+                            buildWeightField(category, categoryIndex) +
+                            '<button type="button" class="eval-btn secondary remove-category-btn">Remove category</button>' +
+                        '</div>' +
+                        '<div class="question-stack">' + questionRows + '</div>' +
+                        '<button type="button" class="eval-btn secondary add-question-btn">Add question</button>' +
+                    '</section>';
+            }).join('') + '</div>';
+        }
+
+        function renderReadonly(template) {
+            if (!contentEl) {
+                return;
+            }
+
+            if (!template || !template.categories || !template.categories.length) {
+                contentEl.innerHTML = '<div class="empty-card">No categories were saved for this version.</div>';
+                return;
+            }
+
+            contentEl.innerHTML = '<div class="category-stack">' + template.categories
+                .slice()
+                .sort(function (left, right) { return left.displayOrder - right.displayOrder; })
+                .map(function (category) {
+                    return '' +
+                        '<section class="category-readonly">' +
+                            '<div class="readonly-head">' +
+                                '<div class="readonly-title">' + escapeHtml(category.name) + '</div>' +
+                                '<div class="readonly-weight">' + Number(category.weightPercent || 0).toFixed(2) + '%</div>' +
+                            '</div>' +
+                            '<div class="readonly-question-list">' + (category.questions || [])
+                                .slice()
+                                .sort(function (left, right) { return left.displayOrder - right.displayOrder; })
+                                .map(function (question, questionIndex) {
+                                    return '<div class="readonly-question"><span class="readonly-question-index">Question ' + (questionIndex + 1) + '</span>' + escapeHtml(question.prompt) + '</div>';
+                                }).join('') + '</div>' +
+                        '</section>';
+                }).join('') + '</div>';
+        }
+
+        function render() {
+            updateHistorySelection();
+
+            if (mode === 'history') {
+                if (mainTitle) mainTitle.textContent = selectedTemplate ? ('Version ' + selectedTemplate.versionNumber + ' history view') : 'Version history';
+                if (mainSub) mainSub.textContent = 'Inspect saved categories, questions, percentages, and audit IDs without editing the selected version.';
+                if (modeBanner) {
+                    modeBanner.style.display = 'block';
+                    modeBanner.textContent = selectedTemplate && selectedTemplate.isActive
+                        ? 'You are viewing the current live version in read-only mode.'
+                        : 'You are viewing a historical version in read-only mode.';
+                }
+                if (addCategoryBtn) addCategoryBtn.style.display = 'none';
+                if (saveBtn) saveBtn.style.display = 'none';
+                if (reuseVersionBtn) reuseVersionBtn.style.display = selectedTemplate ? '' : 'none';
+                if (editLiveBtn) editLiveBtn.style.display = activeTemplate ? '' : 'none';
+                renderMeta(selectedTemplate);
+                renderReadonly(selectedTemplate);
+                updateIdleStatus();
+                return;
+            }
+
+            if (mainTitle) {
+                mainTitle.textContent = mode === 'reuse'
+                    ? 'Reusable QA draft'
+                    : 'QA Evaluations';
+            }
+            if (mainSub) {
+                mainSub.textContent = mode === 'reuse'
+                    ? 'This draft was copied from a saved version. You can change anything here and save it as a new live version.'
+                    : 'Create the live evaluation categories, their question sets, and the percentage weight each category contributes inside the rating queue panel.';
+            }
+            if (modeBanner) {
+                if (mode === 'reuse' && selectedTemplate) {
+                    modeBanner.style.display = 'block';
+                    modeBanner.textContent = 'Copied from Version ' + selectedTemplate.versionNumber + '. Saving will create a new live version.';
+                } else {
+                    modeBanner.style.display = 'none';
+                    modeBanner.textContent = '';
+                }
+            }
+            if (addCategoryBtn) addCategoryBtn.style.display = '';
+            if (saveBtn) saveBtn.style.display = '';
+            if (reuseVersionBtn) reuseVersionBtn.style.display = 'none';
+            if (editLiveBtn) editLiveBtn.style.display = mode === 'reuse' && activeTemplate ? '' : 'none';
+            renderDraftMeta();
+            renderEditor();
+            updateIdleStatus();
+        }
+
+        function normalizeDraft() {
+            return draft.map(function (category) {
+                return {
+                    name: (category.name || '').trim(),
+                    weightPercent: Number(category.weightPercent || 0),
+                    questions: (category.questions || [])
+                        .map(function (question) { return { prompt: (question.prompt || '').trim() }; })
+                        .filter(function (question) { return question.prompt.length > 0; })
+                };
+            }).filter(function (category) {
+                return category.name.length > 0 || category.weightPercent > 0 || category.questions.length > 0;
+            });
+        }
+
+        function saveTemplate() {
+            var payload = { categories: normalizeDraft() };
+            setStatus('Saving live QA evaluation template...', 'saving');
+            if (saveBtn) saveBtn.disabled = true;
+
+            fetch('/qa/api/evaluations', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+                .then(function (response) {
+                    return response.json()
+                        .catch(function () {
+                            return { success: false, message: 'Unable to save QA evaluation template.' };
+                        })
+                        .then(function (result) {
+                            if (!response.ok || !result.success) {
+                                throw new Error(result.message || 'Unable to save QA evaluation template.');
+                            }
+
+                            return result;
+                        });
+                })
+                .then(function () {
+                    setStatus('QA evaluation template saved. Reloading the page...', 'saved');
+                    window.location.reload();
+                })
+                .catch(function (error) {
+                    setStatus(error && error.message ? error.message : 'Unable to save QA evaluation template.', 'error');
+                })
+                .finally(function () {
+                    if (saveBtn) saveBtn.disabled = false;
+                });
+        }
+
+        function loadTemplate(templateId) {
+            if (!templateId) {
+                return Promise.resolve(null);
+            }
+
+            if (activeTemplate && activeTemplate.templateId === templateId) {
+                return Promise.resolve(activeTemplate);
+            }
+
+            return fetch('/qa/api/evaluations/' + templateId, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('Unable to load version details.');
+                    }
+
+                    return response.json();
+                });
+        }
+
+        function selectHistoryVersion(templateId) {
+            setStatus('Loading version details...', 'saving');
+            loadTemplate(templateId)
+                .then(function (template) {
+                    selectedTemplate = template;
+                    selectedHistoryId = template ? template.templateId : 0;
+                    mode = 'history';
+                    render();
+                })
+                .catch(function (error) {
+                    setStatus(error && error.message ? error.message : 'Unable to load version details.', 'error');
+                });
+        }
+
+        function reuseSelectedVersion() {
+            if (!selectedTemplate) {
+                return;
+            }
+
+            setStatus('Recording reusable draft activity...', 'saving');
+
+            fetch('/qa/api/evaluations/' + selectedTemplate.templateId + '/reuse', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+                .then(function (response) {
+                    return response.json()
+                        .catch(function () {
+                            return { success: false, message: 'Unable to track reusable draft activity.' };
+                        })
+                        .then(function (result) {
+                            if (!response.ok || !result.success) {
+                                throw new Error(result.message || 'Unable to track reusable draft activity.');
+                            }
+
+                            return result;
+                        });
+                })
+                .then(function () {
+                    draft = cloneTemplateToDraft(selectedTemplate);
+                    mode = 'reuse';
+                    render();
+                    setStatus('Reusable draft loaded. Current total weight: ' + totalWeight().toFixed(2) + '%.', 'saved');
+                })
+                .catch(function (error) {
+                    setStatus(error && error.message ? error.message : 'Unable to track reusable draft activity.', 'error');
+                });
+        }
+
+        function resetToLiveEditor() {
+            draft = cloneTemplateToDraft(activeTemplate);
+            selectedTemplate = activeTemplate;
+            selectedHistoryId = activeTemplateId;
+            mode = 'edit-live';
+            render();
+        }
+
+        if (addCategoryBtn) {
+            addCategoryBtn.addEventListener('click', function () {
+                draft.push({
+                    name: '',
+                    weightPercent: 0,
+                    questions: [{ prompt: '' }]
+                });
+                renderEditor();
+                updateIdleStatus();
+            });
+        }
+
+        if (saveBtn) {
+            saveBtn.addEventListener('click', saveTemplate);
+        }
+
+        if (reuseVersionBtn) {
+            reuseVersionBtn.addEventListener('click', reuseSelectedVersion);
+        }
+
+        if (editLiveBtn) {
+            editLiveBtn.addEventListener('click', resetToLiveEditor);
+        }
+
+        document.addEventListener('input', function (event) {
+            if (mode === 'history') {
+                return;
+            }
+
+            var categoryEditor = event.target.closest('.category-editor');
+            if (!categoryEditor) {
+                return;
+            }
+
+            var categoryIndex = Number(categoryEditor.getAttribute('data-category-index'));
+            if (!draft[categoryIndex]) {
+                return;
+            }
+
+            if (event.target.classList.contains('category-name-input')) {
+                draft[categoryIndex].name = event.target.value;
+                refreshWeightHelpers();
+                updateIdleStatus();
+                return;
+            }
+
+            if (event.target.classList.contains('category-weight-input')) {
+                var previousWeight = Number(draft[categoryIndex].weightPercent || 0);
+                var attemptedWeight = Number(event.target.value || 0);
+                var currentWithoutField = totalWeight() - previousWeight;
+
+                if (attemptedWeight > 0 && currentWithoutField + attemptedWeight > 100.0001) {
+                    event.target.value = previousWeight ? String(previousWeight) : '';
+                    setStatus('Total cannot exceed 100%. Current total is ' + formatPercent(currentWithoutField) + '%, you tried to add ' + formatPercent(attemptedWeight) + '%.', 'error');
+                    return;
+                }
+
+                draft[categoryIndex].weightPercent = attemptedWeight;
+                refreshWeightHelpers();
+                updateIdleStatus();
+                return;
+            }
+
+            if (event.target.classList.contains('question-input')) {
+                var questionRow = event.target.closest('.question-row');
+                var questionIndex = Number(questionRow.getAttribute('data-question-index'));
+                if (draft[categoryIndex].questions[questionIndex]) {
+                    draft[categoryIndex].questions[questionIndex].prompt = event.target.value;
+                }
+                renderDraftMeta();
+            }
+        });
+
+        document.addEventListener('click', function (event) {
+            var historyCard = event.target.closest('.history-card[data-template-id]');
+            if (historyCard) {
+                selectHistoryVersion(Number(historyCard.getAttribute('data-template-id')));
+                return;
+            }
+
+            if (mode === 'history') {
+                return;
+            }
+
+            var categoryEditor = event.target.closest('.category-editor');
+
+            if (event.target.classList.contains('remove-category-btn')) {
+                if (!categoryEditor) {
+                    return;
+                }
+
+                var categoryIndex = Number(categoryEditor.getAttribute('data-category-index'));
+                draft.splice(categoryIndex, 1);
+                renderEditor();
+                updateIdleStatus();
+                return;
+            }
+
+            if (event.target.classList.contains('add-question-btn')) {
+                if (!categoryEditor) {
+                    return;
+                }
+
+                var addCategoryIndex = Number(categoryEditor.getAttribute('data-category-index'));
+                draft[addCategoryIndex].questions.push({ prompt: '' });
+                renderEditor();
+                updateIdleStatus();
+                return;
+            }
+
+            if (event.target.classList.contains('remove-question-btn')) {
+                var questionRow = event.target.closest('.question-row');
+                if (!questionRow || !categoryEditor) {
+                    return;
+                }
+
+                var removeCategoryIndex = Number(categoryEditor.getAttribute('data-category-index'));
+                var questionIndex = Number(questionRow.getAttribute('data-question-index'));
+                draft[removeCategoryIndex].questions.splice(questionIndex, 1);
+                renderEditor();
+                updateIdleStatus();
+            }
+        });
+
+        if (!activeTemplate && historyItems && historyItems.length) {
+            selectHistoryVersion(historyItems[0].templateId);
+            return;
+        }
+
+        render();
+    })();
+</script>

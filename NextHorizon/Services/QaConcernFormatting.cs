@@ -20,9 +20,12 @@ internal static class QaConcernFormatting
             return "Seller";
         }
 
-        if (string.Equals(normalized, "consumer", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(normalized, "consumer", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "customer", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "buyer", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "user", StringComparison.OrdinalIgnoreCase))
         {
-            return "Consumer";
+            return "Customer";
         }
 
         return normalized;

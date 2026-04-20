@@ -3,17 +3,20 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NextHorizon.Data;
 
 #nullable disable
 
-namespace NextHorizon.Migrations
+namespace NextHorizon.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260420023325_AddQaEvaluationAuditIds")]
+    partial class AddQaEvaluationAuditIds
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -909,6 +912,9 @@ namespace NextHorizon.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("QaReviewId"));
 
+                    b.Property<decimal>("AccuracyAverage")
+                        .HasColumnType("decimal(5,2)");
+
                     b.Property<int>("AgentUserId")
                         .HasColumnType("int");
 
@@ -932,6 +938,9 @@ namespace NextHorizon.Migrations
                     b.Property<int>("QaEvaluationTemplateId")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("ResolutionAverage")
+                        .HasColumnType("decimal(5,2)");
+
                     b.Property<string>("ReviewerName")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -949,6 +958,9 @@ namespace NextHorizon.Migrations
                     b.Property<int>("SupportFaqId")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("ToneAverage")
+                        .HasColumnType("decimal(5,2)");
+
                     b.Property<DateTime>("UpdatedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -962,49 +974,6 @@ namespace NextHorizon.Migrations
                         .IsUnique();
 
                     b.ToTable("QaReviews", (string)null);
-                });
-
-            modelBuilder.Entity("NextHorizon.Models.QA.QaReviewCategoryScore", b =>
-                {
-                    b.Property<int>("QaReviewCategoryScoreId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("QaReviewCategoryScoreId"));
-
-                    b.Property<decimal>("AverageScore")
-                        .HasColumnType("decimal(5,2)");
-
-                    b.Property<string>("CategoryNameSnapshot")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)")
-                        .HasDefaultValue("");
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("QaEvaluationCategoryId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("QaReviewId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("WeightPercentSnapshot")
-                        .HasColumnType("decimal(5,2)");
-
-                    b.Property<decimal>("WeightedPoints")
-                        .HasColumnType("decimal(5,2)");
-
-                    b.HasKey("QaReviewCategoryScoreId");
-
-                    b.HasIndex("QaEvaluationCategoryId");
-
-                    b.HasIndex("QaReviewId", "DisplayOrder")
-                        .IsUnique();
-
-                    b.ToTable("QaReviewCategoryScores", (string)null);
                 });
 
             modelBuilder.Entity("NextHorizon.Models.QA.QaReviewInlineCommentDraft", b =>
@@ -1269,24 +1238,6 @@ namespace NextHorizon.Migrations
                     b.Navigation("SupportFaq");
                 });
 
-            modelBuilder.Entity("NextHorizon.Models.QA.QaReviewCategoryScore", b =>
-                {
-                    b.HasOne("NextHorizon.Models.QA.QaEvaluationCategory", "EvaluationCategory")
-                        .WithMany("ReviewScores")
-                        .HasForeignKey("QaEvaluationCategoryId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("NextHorizon.Models.QA.QaReview", "Review")
-                        .WithMany("CategoryScores")
-                        .HasForeignKey("QaReviewId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("EvaluationCategory");
-
-                    b.Navigation("Review");
-                });
-
             modelBuilder.Entity("NextHorizon.Models.QA.QaReviewInlineCommentDraft", b =>
                 {
                     b.HasOne("NextHorizon.Models.HelpCenter.SupportFaqRecord", "SupportFaq")
@@ -1340,8 +1291,6 @@ namespace NextHorizon.Migrations
             modelBuilder.Entity("NextHorizon.Models.QA.QaEvaluationCategory", b =>
                 {
                     b.Navigation("Questions");
-
-                    b.Navigation("ReviewScores");
                 });
 
             modelBuilder.Entity("NextHorizon.Models.QA.QaEvaluationQuestion", b =>
@@ -1358,8 +1307,6 @@ namespace NextHorizon.Migrations
 
             modelBuilder.Entity("NextHorizon.Models.QA.QaReview", b =>
                 {
-                    b.Navigation("CategoryScores");
-
                     b.Navigation("QuestionScores");
                 });
 #pragma warning restore 612, 618

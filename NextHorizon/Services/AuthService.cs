@@ -8,6 +8,7 @@ namespace NextHorizon.Services;
 public sealed class AuthService : IAuthService
 {
     private const string QaAnalystRole = "QA Analyst";
+    private const string QaHeadRole = "QA Head";
     private const string SupportAgentRole = "Support Agent";
 
     private readonly string _connectionString;
@@ -138,7 +139,9 @@ public sealed class AuthService : IAuthService
                     s.last_active
                 FROM staff_info s
                 INNER JOIN users u ON s.user_id = u.user_id
-                WHERE s.staff_id = @StaffId AND s.IsActive = 1
+                WHERE s.staff_id = @StaffId
+                  AND u.is_active = 1
+                  AND s.revoked_at IS NULL
                 """;
 
             await using var command = new SqlCommand(query, connection);
@@ -209,6 +212,7 @@ public sealed class AuthService : IAuthService
         return normalizedUserType switch
         {
             QaAnalystRole => "/qa/dashboard",
+            QaHeadRole => "/qa/dashboard",
             SupportAgentRole => "/Agent/AgentDashboard",
             _ => "/Login/AdminLogin"
         };

@@ -39,9 +39,17 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<QaReview> QaReviews => Set<QaReview>();
 
+    public DbSet<QaReviewCategoryScore> QaReviewCategoryScores => Set<QaReviewCategoryScore>();
+
     public DbSet<QaReviewQuestionScore> QaReviewQuestionScores => Set<QaReviewQuestionScore>();
 
     public DbSet<QaReviewInlineCommentDraft> QaReviewInlineCommentDrafts => Set<QaReviewInlineCommentDraft>();
+
+    public DbSet<QaEvaluationTemplate> QaEvaluationTemplates => Set<QaEvaluationTemplate>();
+
+    public DbSet<QaEvaluationCategory> QaEvaluationCategories => Set<QaEvaluationCategory>();
+
+    public DbSet<QaEvaluationQuestion> QaEvaluationQuestions => Set<QaEvaluationQuestion>();
 
     public DbSet<AgentReviewFeedback> AgentReviewFeedbackEntries => Set<AgentReviewFeedback>();
 
@@ -350,6 +358,8 @@ public class ApplicationDbContext : DbContext
         var qaReview = builder.Entity<QaReview>();
         qaReview.ToTable("QaReviews");
         qaReview.HasKey(x => x.QaReviewId);
+        qaReview.Property(x => x.QaEvaluationTemplateId)
+            .IsRequired();
         qaReview.Property(x => x.AgentUserId)
             .IsRequired();
         qaReview.Property(x => x.ReviewerName)
@@ -357,12 +367,6 @@ public class ApplicationDbContext : DbContext
             .HasMaxLength(200);
         qaReview.Property(x => x.Notes)
             .HasMaxLength(4000);
-        qaReview.Property(x => x.AccuracyAverage)
-            .HasColumnType("decimal(5,2)");
-        qaReview.Property(x => x.ToneAverage)
-            .HasColumnType("decimal(5,2)");
-        qaReview.Property(x => x.ResolutionAverage)
-            .HasColumnType("decimal(5,2)");
         qaReview.Property(x => x.OverallPercent)
             .HasColumnType("decimal(5,2)");
         qaReview.Property(x => x.InlineCommentsJson)
@@ -376,9 +380,41 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey<QaReview>(x => x.SupportFaqId)
             .HasPrincipalKey<SupportFaqRecord>(x => x.Id)
             .OnDelete(DeleteBehavior.Restrict);
+        qaReview.HasOne(x => x.EvaluationTemplate)
+            .WithMany(x => x.Reviews)
+            .HasForeignKey(x => x.QaEvaluationTemplateId)
+            .OnDelete(DeleteBehavior.Restrict);
         qaReview.HasIndex(x => x.SupportFaqId)
             .IsUnique();
         qaReview.HasIndex(x => x.AgentUserId);
+        qaReview.HasIndex(x => x.QaEvaluationTemplateId);
+
+        var qaReviewCategoryScore = builder.Entity<QaReviewCategoryScore>();
+        qaReviewCategoryScore.ToTable("QaReviewCategoryScores");
+        qaReviewCategoryScore.HasKey(x => x.QaReviewCategoryScoreId);
+        qaReviewCategoryScore.Property(x => x.CategoryNameSnapshot)
+            .IsRequired()
+            .HasMaxLength(200)
+            .HasDefaultValue(string.Empty);
+        qaReviewCategoryScore.Property(x => x.WeightPercentSnapshot)
+            .HasColumnType("decimal(5,2)");
+        qaReviewCategoryScore.Property(x => x.AverageScore)
+            .HasColumnType("decimal(5,2)");
+        qaReviewCategoryScore.Property(x => x.WeightedPoints)
+            .HasColumnType("decimal(5,2)");
+        qaReviewCategoryScore.Property(x => x.DisplayOrder)
+            .IsRequired();
+        qaReviewCategoryScore.HasOne(x => x.Review)
+            .WithMany(x => x.CategoryScores)
+            .HasForeignKey(x => x.QaReviewId)
+            .OnDelete(DeleteBehavior.Cascade);
+        qaReviewCategoryScore.HasOne(x => x.EvaluationCategory)
+            .WithMany(x => x.ReviewScores)
+            .HasForeignKey(x => x.QaEvaluationCategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+        qaReviewCategoryScore.HasIndex(x => new { x.QaReviewId, x.DisplayOrder })
+            .IsUnique();
+        qaReviewCategoryScore.HasIndex(x => x.QaEvaluationCategoryId);
 
         var qaReviewInlineCommentDraft = builder.Entity<QaReviewInlineCommentDraft>();
         qaReviewInlineCommentDraft.ToTable("QaReviewInlineCommentDrafts");
@@ -461,14 +497,91 @@ public class ApplicationDbContext : DbContext
         qaReviewQuestionScore.HasKey(x => x.QaReviewQuestionScoreId);
         qaReviewQuestionScore.Property(x => x.QuestionKey)
             .IsRequired()
-            .HasMaxLength(40);
+            .HasMaxLength(80);
+        qaReviewQuestionScore.Property(x => x.CategoryNameSnapshot)
+            .IsRequired()
+            .HasMaxLength(200)
+            .HasDefaultValue(string.Empty);
+        qaReviewQuestionScore.Property(x => x.QuestionTextSnapshot)
+            .IsRequired()
+            .HasMaxLength(500)
+            .HasDefaultValue(string.Empty);
         qaReviewQuestionScore.Property(x => x.Score)
             .IsRequired();
         qaReviewQuestionScore.HasOne(x => x.Review)
             .WithMany(x => x.QuestionScores)
             .HasForeignKey(x => x.QaReviewId)
             .OnDelete(DeleteBehavior.Cascade);
+        qaReviewQuestionScore.HasOne(x => x.EvaluationQuestion)
+            .WithMany(x => x.ReviewScores)
+            .HasForeignKey(x => x.QaEvaluationQuestionId)
+            .OnDelete(DeleteBehavior.Restrict);
         qaReviewQuestionScore.HasIndex(x => new { x.QaReviewId, x.QuestionKey })
+            .IsUnique();
+
+        var qaEvaluationTemplate = builder.Entity<QaEvaluationTemplate>();
+        qaEvaluationTemplate.ToTable("QaEvaluationTemplates");
+        qaEvaluationTemplate.HasKey(x => x.QaEvaluationTemplateId);
+        qaEvaluationTemplate.Property(x => x.VersionNumber)
+            .IsRequired();
+        qaEvaluationTemplate.Property(x => x.IsActive)
+            .IsRequired();
+        qaEvaluationTemplate.Property(x => x.CreatedById)
+            .IsRequired();
+        qaEvaluationTemplate.Property(x => x.UpdatedById)
+            .IsRequired();
+        qaEvaluationTemplate.Property(x => x.CreatedAtUtc)
+            .IsRequired();
+        qaEvaluationTemplate.Property(x => x.UpdatedAtUtc)
+            .IsRequired();
+        qaEvaluationTemplate.Property(x => x.ActivatedAtUtc);
+        qaEvaluationTemplate.HasIndex(x => x.VersionNumber)
+            .IsUnique();
+        qaEvaluationTemplate.HasIndex(x => x.IsActive);
+
+        var qaEvaluationCategory = builder.Entity<QaEvaluationCategory>();
+        qaEvaluationCategory.ToTable("QaEvaluationCategories");
+        qaEvaluationCategory.HasKey(x => x.QaEvaluationCategoryId);
+        qaEvaluationCategory.Property(x => x.CreatedById)
+            .IsRequired();
+        qaEvaluationCategory.Property(x => x.UpdatedById)
+            .IsRequired();
+        qaEvaluationCategory.Property(x => x.Name)
+            .IsRequired()
+            .HasMaxLength(120);
+        qaEvaluationCategory.Property(x => x.WeightPercent)
+            .HasColumnType("decimal(5,2)");
+        qaEvaluationCategory.Property(x => x.DisplayOrder)
+            .IsRequired();
+        qaEvaluationCategory.HasOne(x => x.Template)
+            .WithMany(x => x.Categories)
+            .HasForeignKey(x => x.QaEvaluationTemplateId)
+            .OnDelete(DeleteBehavior.Cascade);
+        qaEvaluationCategory.HasIndex(x => new { x.QaEvaluationTemplateId, x.DisplayOrder })
+            .IsUnique();
+
+        var qaEvaluationQuestion = builder.Entity<QaEvaluationQuestion>();
+        qaEvaluationQuestion.ToTable("QaEvaluationQuestions");
+        qaEvaluationQuestion.HasKey(x => x.QaEvaluationQuestionId);
+        qaEvaluationQuestion.Property(x => x.CreatedById)
+            .IsRequired();
+        qaEvaluationQuestion.Property(x => x.UpdatedById)
+            .IsRequired();
+        qaEvaluationQuestion.Property(x => x.QuestionKey)
+            .IsRequired()
+            .HasMaxLength(80);
+        qaEvaluationQuestion.Property(x => x.Prompt)
+            .IsRequired()
+            .HasMaxLength(400);
+        qaEvaluationQuestion.Property(x => x.DisplayOrder)
+            .IsRequired();
+        qaEvaluationQuestion.HasOne(x => x.Category)
+            .WithMany(x => x.Questions)
+            .HasForeignKey(x => x.QaEvaluationCategoryId)
+            .OnDelete(DeleteBehavior.Cascade);
+        qaEvaluationQuestion.HasIndex(x => new { x.QaEvaluationCategoryId, x.DisplayOrder })
+            .IsUnique();
+        qaEvaluationQuestion.HasIndex(x => new { x.QaEvaluationCategoryId, x.QuestionKey })
             .IsUnique();
 
         supportContactChannel.HasData(HelpCenterSeed.ContactChannels);

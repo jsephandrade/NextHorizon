@@ -8,6 +8,8 @@ public sealed class QaReview
 
     public int SupportFaqId { get; set; }
 
+    public int QaEvaluationTemplateId { get; set; }
+
     public int AgentUserId { get; set; }
 
     public int ReviewerStaffId { get; set; }
@@ -15,12 +17,6 @@ public sealed class QaReview
     public string ReviewerName { get; set; } = string.Empty;
 
     public string Notes { get; set; } = string.Empty;
-
-    public decimal AccuracyAverage { get; set; }
-
-    public decimal ToneAverage { get; set; }
-
-    public decimal ResolutionAverage { get; set; }
 
     public decimal OverallPercent { get; set; }
 
@@ -36,7 +32,34 @@ public sealed class QaReview
 
     public SupportFaqRecord? SupportFaq { get; set; }
 
+    public QaEvaluationTemplate? EvaluationTemplate { get; set; }
+
+    public ICollection<QaReviewCategoryScore> CategoryScores { get; set; } = new List<QaReviewCategoryScore>();
+
     public ICollection<QaReviewQuestionScore> QuestionScores { get; set; } = new List<QaReviewQuestionScore>();
+}
+
+public sealed class QaReviewCategoryScore
+{
+    public int QaReviewCategoryScoreId { get; set; }
+
+    public int QaReviewId { get; set; }
+
+    public int? QaEvaluationCategoryId { get; set; }
+
+    public string CategoryNameSnapshot { get; set; } = string.Empty;
+
+    public decimal WeightPercentSnapshot { get; set; }
+
+    public decimal AverageScore { get; set; }
+
+    public decimal WeightedPoints { get; set; }
+
+    public int DisplayOrder { get; set; }
+
+    public QaReview? Review { get; set; }
+
+    public QaEvaluationCategory? EvaluationCategory { get; set; }
 }
 
 public sealed class QaReviewQuestionScore
@@ -45,11 +68,19 @@ public sealed class QaReviewQuestionScore
 
     public int QaReviewId { get; set; }
 
+    public int? QaEvaluationQuestionId { get; set; }
+
     public string QuestionKey { get; set; } = string.Empty;
+
+    public string CategoryNameSnapshot { get; set; } = string.Empty;
+
+    public string QuestionTextSnapshot { get; set; } = string.Empty;
 
     public int Score { get; set; }
 
     public QaReview? Review { get; set; }
+
+    public QaEvaluationQuestion? EvaluationQuestion { get; set; }
 }
 
 public sealed class QaReviewInlineCommentDraft

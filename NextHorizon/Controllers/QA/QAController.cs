@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using NextHorizon.Models;
 using NextHorizon.Models.QA;
 using NextHorizon.Services;
 
@@ -10,11 +9,14 @@ namespace NextHorizon.Controllers;
 public sealed class QAController : Controller
 {
     private const string QaAnalystRole = "QA Analyst";
+    private const string QaHeadRole = "QA Head";
     private const string SupportAgentRole = "Support Agent";
 
     private readonly IQaAgentTicketsService _qaAgentTicketsService;
     private readonly IQaAgentsService _qaAgentsService;
     private readonly IQaDashboardService _qaDashboardService;
+    private readonly IQaEvaluationService _qaEvaluationService;
+    private readonly INotificationService _notificationService;
     private readonly IQaRatingQueueService _qaRatingQueueService;
     private readonly IQaRatedHistoryService _qaRatedHistoryService;
     private readonly IQaResolvedTicketsService _qaResolvedTicketsService;
@@ -24,6 +26,8 @@ public sealed class QAController : Controller
         IQaAgentTicketsService qaAgentTicketsService,
         IQaAgentsService qaAgentsService,
         IQaDashboardService qaDashboardService,
+        IQaEvaluationService qaEvaluationService,
+        INotificationService notificationService,
         IQaRatingQueueService qaRatingQueueService,
         IQaRatedHistoryService qaRatedHistoryService,
         IQaResolvedTicketsService qaResolvedTicketsService,
@@ -32,6 +36,8 @@ public sealed class QAController : Controller
         _qaAgentTicketsService = qaAgentTicketsService;
         _qaAgentsService = qaAgentsService;
         _qaDashboardService = qaDashboardService;
+        _qaEvaluationService = qaEvaluationService;
+        _notificationService = notificationService;
         _qaRatingQueueService = qaRatingQueueService;
         _qaRatedHistoryService = qaRatedHistoryService;
         _qaResolvedTicketsService = qaResolvedTicketsService;
@@ -64,7 +70,7 @@ public sealed class QAController : Controller
         if (HttpContext.Session.GetInt32("StaffId").HasValue)
         {
             HttpContext.Session.Clear();
-            TempData["LoginError"] = "QA workspace access is restricted to QA Analyst users only.";
+            TempData["LoginError"] = "QA workspace access is restricted to QA Analyst and QA Head users only.";
         }
 
         context.Result = RedirectToAction("AdminLogin", "Login");
@@ -110,7 +116,6 @@ public sealed class QAController : Controller
         CancellationToken cancellationToken = default)
     {
         ViewData["Title"] = "QA Rating Page";
-        ApplyQueueViewState(range, from, to, search);
 
         if (id <= 0)
         {
@@ -128,8 +133,8 @@ public sealed class QAController : Controller
             cancellationToken);
         if (pageData is not null)
         {
-            ApplyRatingPageData(pageData);
-            return View();
+            ViewData["Title"] = "QA Rating Page";
+            return View(pageData);
         }
 
         return await RedirectToQueueOrRenderEmptyAsync(range, from, to, search, cancellationToken);
@@ -340,65 +345,131 @@ public sealed class QAController : Controller
         return View();
     }
 
-    private void ApplyRatingPageData(QaRatingPageData pageData)
+    [HttpGet("evaluations")]
+    public async Task<IActionResult> Evaluations(CancellationToken cancellationToken)
     {
-        ViewData["HasActiveTicket"] = pageData.HasActiveTicket;
-        ViewData["ConversationId"] = pageData.SupportFaqId;
-        ViewData["ConversationAgent"] = pageData.AgentName;
-        ViewData["ConversationCustomer"] = pageData.CustomerName;
-        ViewData["ConversationDate"] = pageData.ConversationDateLabel;
-        ViewData["ConversationMessages"] = pageData.Messages;
-        ViewData["ReviewerDisplayName"] = pageData.ReviewerDisplayName;
-        ViewData["InlineCommentsJson"] = pageData.InlineCommentsJson;
-        ViewData["PrevTicketId"] = pageData.PreviousSupportFaqId ?? pageData.SupportFaqId;
-        ViewData["NextTicketId"] = pageData.NextSupportFaqId ?? pageData.SupportFaqId;
-        ViewData["QueueCount"] = pageData.QueueCount;
-        ViewData["QueuePosition"] = pageData.QueuePosition;
-        ViewData["CurrentTicketInQueue"] = pageData.CurrentTicketInQueue;
-        ApplyQueueViewState(pageData.QueueRange, pageData.QueueFrom, pageData.QueueTo, pageData.QueueSearch);
-
-        if (pageData.Review is null)
+        if (!IsQaHeadSession())
         {
-            ViewData["IsRated"] = false;
-            return;
+            return RedirectToAction(nameof(Dashboard));
         }
 
-        var scoreMap = pageData.Review.QuestionScores
-            .ToDictionary(item => item.QuestionKey, item => item.Score, StringComparer.OrdinalIgnoreCase);
+        ViewData["Title"] = "QA Evaluations";
+        var pageData = await _qaEvaluationService.GetPageDataAsync(cancellationToken);
+        return View(pageData);
+    }
 
-        var ratedAccuracy = ResolveAverage(scoreMap, "accuracy_q1", "accuracy_q2", "accuracy_q3");
-        var ratedTone = ResolveAverage(scoreMap, "tone_q1", "tone_q2", "tone_q3");
-        var ratedResolution = ResolveAverage(scoreMap, "resolution_q1", "resolution_q2", "resolution_q3");
+    [HttpPost("api/evaluations")]
+    public async Task<IActionResult> SaveEvaluations(
+        [FromBody] QaEvaluationTemplateUpsertRequest? request,
+        CancellationToken cancellationToken)
+    {
+        if (!IsQaHeadSession())
+        {
+            return Forbid();
+        }
 
-        ViewData["IsRated"] = true;
-        ViewData["RatedAccuracy"] = ratedAccuracy;
-        ViewData["RatedTone"] = ratedTone;
-        ViewData["RatedResolution"] = ratedResolution;
-        ViewData["RatedAccuracyQ1"] = scoreMap.GetValueOrDefault("accuracy_q1", ratedAccuracy);
-        ViewData["RatedAccuracyQ2"] = scoreMap.GetValueOrDefault("accuracy_q2", ratedAccuracy);
-        ViewData["RatedAccuracyQ3"] = scoreMap.GetValueOrDefault("accuracy_q3", ratedAccuracy);
-        ViewData["RatedToneQ1"] = scoreMap.GetValueOrDefault("tone_q1", ratedTone);
-        ViewData["RatedToneQ2"] = scoreMap.GetValueOrDefault("tone_q2", ratedTone);
-        ViewData["RatedToneQ3"] = scoreMap.GetValueOrDefault("tone_q3", ratedTone);
-        ViewData["RatedResolutionQ1"] = scoreMap.GetValueOrDefault("resolution_q1", ratedResolution);
-        ViewData["RatedResolutionQ2"] = scoreMap.GetValueOrDefault("resolution_q2", ratedResolution);
-        ViewData["RatedResolutionQ3"] = scoreMap.GetValueOrDefault("resolution_q3", ratedResolution);
-        ViewData["RatedNotes"] = pageData.Review.Notes;
-        ViewData["RatedBy"] = pageData.Review.ReviewerName;
-        ViewData["RatedOn"] = pageData.Review.CreatedAtUtc.ToString("MMM dd, yyyy hh:mm tt");
-        ViewData["RatedSubmittedToAgent"] = pageData.Review.SubmittedToAgent;
-        ViewData["RatedSubmittedOn"] = pageData.Review.SubmittedToAgentAtUtc?.ToString("MMM dd, yyyy hh:mm tt") ?? string.Empty;
-        ViewData["RatedAccuracyPoints"] = (double)Math.Round((pageData.Review.AccuracyAverage / 5m) * 35m, 1);
-        ViewData["RatedTonePoints"] = (double)Math.Round((pageData.Review.ToneAverage / 5m) * 35m, 1);
-        ViewData["RatedResolutionPoints"] = (double)Math.Round((pageData.Review.ResolutionAverage / 5m) * 30m, 1);
-        ViewData["RatedOverallPercent"] = (double)Math.Round(pageData.Review.OverallPercent, 1);
+        if (request is null)
+        {
+            return BadRequest(new QaEvaluationTemplateMutationResponse(false, "Invalid QA evaluation payload."));
+        }
+
+        var updatedById = HttpContext.Session.GetInt32("StaffId");
+        if (!updatedById.HasValue || updatedById.Value <= 0)
+        {
+            return Unauthorized();
+        }
+
+        var response = await _qaEvaluationService.SaveTemplateAsync(
+            request,
+            updatedById.Value,
+            GetReviewerDisplayName(),
+            cancellationToken);
+        if (!response.Success)
+        {
+            return BadRequest(response);
+        }
+
+        return Json(response);
+    }
+
+    [HttpPost("api/evaluations/{templateId:int}/reuse")]
+    public async Task<IActionResult> TrackEvaluationReuse(int templateId, CancellationToken cancellationToken)
+    {
+        if (!IsQaHeadSession())
+        {
+            return Forbid();
+        }
+
+        var response = await _qaEvaluationService.TrackReuseAsync(
+            templateId,
+            GetReviewerDisplayName(),
+            cancellationToken);
+        if (!response.Success)
+        {
+            return BadRequest(response);
+        }
+
+        return Json(response);
+    }
+
+    [HttpGet("api/evaluations/{templateId:int}")]
+    public async Task<IActionResult> EvaluationTemplateDetail(int templateId, CancellationToken cancellationToken)
+    {
+        if (!IsAuthorizedQaSession())
+        {
+            return Unauthorized();
+        }
+
+        var template = await _qaEvaluationService.GetTemplateAsync(templateId, cancellationToken);
+        if (template is null)
+        {
+            return NotFound();
+        }
+
+        return Json(template);
+    }
+
+    [HttpPost("api/notifications/read")]
+    public async Task<IActionResult> MarkNotificationsRead(CancellationToken cancellationToken)
+    {
+        if (!IsAuthorizedQaSession())
+        {
+            return Unauthorized();
+        }
+
+        var userId = HttpContext.Session.GetInt32("UserId");
+        if (!userId.HasValue || userId.Value <= 0)
+        {
+            return Unauthorized();
+        }
+
+        await _notificationService.MarkAllReadAsync(userId.Value, cancellationToken);
+        return Json(new { success = true });
+    }
+
+    [HttpPost("api/notifications/clear")]
+    public async Task<IActionResult> ClearNotifications(CancellationToken cancellationToken)
+    {
+        if (!IsAuthorizedQaSession())
+        {
+            return Unauthorized();
+        }
+
+        var userId = HttpContext.Session.GetInt32("UserId");
+        if (!userId.HasValue || userId.Value <= 0)
+        {
+            return Unauthorized();
+        }
+
+        await _notificationService.ClearAllAsync(userId.Value, cancellationToken);
+        return Json(new { success = true });
     }
 
     private string GetReviewerDisplayName()
     {
         return HttpContext.Session.GetString("FullName")
             ?? HttpContext.Session.GetString("Username")
-            ?? "QA Analyst - You";
+            ?? "QA Reviewer - You";
     }
 
     private bool TryGetReviewerContext(out int reviewerStaffId, out string reviewerName)
@@ -415,7 +486,17 @@ public sealed class QAController : Controller
 
         return staffId.HasValue
             && staffId.Value > 0
-            && string.Equals(userType?.Trim(), QaAnalystRole, StringComparison.OrdinalIgnoreCase);
+            && IsQaWorkspaceRole(userType);
+    }
+
+    private bool IsQaHeadSession()
+    {
+        var staffId = HttpContext.Session.GetInt32("StaffId");
+        var userType = HttpContext.Session.GetString("UserType");
+
+        return staffId.HasValue
+            && staffId.Value > 0
+            && string.Equals(userType?.Trim(), QaHeadRole, StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsSupportAgentSession(string? userType)
@@ -423,28 +504,12 @@ public sealed class QAController : Controller
         return string.Equals(userType?.Trim(), SupportAgentRole, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static int ResolveAverage(IReadOnlyDictionary<string, int> scoreMap, params string[] keys)
+    private static bool IsQaWorkspaceRole(string? userType)
     {
-        var values = keys
-            .Select(key => scoreMap.TryGetValue(key, out var value) ? value : 0)
-            .Where(value => value > 0)
-            .ToArray();
+        var normalizedUserType = userType?.Trim() ?? string.Empty;
 
-        return values.Length == 0 ? 0 : (int)Math.Round(values.Average());
-    }
-
-    private void ApplyQueueViewState(string? range, DateOnly? from, DateOnly? to, string? search)
-    {
-        ViewData["QueueRange"] = NormalizeRange(range);
-        ViewData["QueueFromDate"] = from?.ToString("yyyy-MM-dd") ?? string.Empty;
-        ViewData["QueueToDate"] = to?.ToString("yyyy-MM-dd") ?? string.Empty;
-        ViewData["QueueSearch"] = (search ?? string.Empty).Trim();
-    }
-
-    private static string NormalizeRange(string? range)
-    {
-        var normalized = (range ?? "custom").Trim().ToLowerInvariant();
-        return normalized is "today" or "last7" or "last30" ? normalized : "custom";
+        return string.Equals(normalizedUserType, QaAnalystRole, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalizedUserType, QaHeadRole, StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task<IActionResult> RedirectToQueueOrRenderEmptyAsync(
@@ -475,26 +540,34 @@ public sealed class QAController : Controller
             });
         }
 
-        ApplyEmptyRatingPageData(range, from, to, search, queueState.QueueCount);
-        return View("Rating");
+        var activeTemplate = await _qaEvaluationService.GetActiveTemplateAsync(cancellationToken);
+        return View("Rating", new QaRatingPageData
+        {
+            SupportFaqId = 0,
+            HasActiveTicket = false,
+            PreviousSupportFaqId = 0,
+            NextSupportFaqId = 0,
+            AgentName = string.Empty,
+            CustomerName = string.Empty,
+            ConversationDateLabel = string.Empty,
+            Messages = Array.Empty<QaConversationMessageViewModel>(),
+            ReviewerDisplayName = GetReviewerDisplayName(),
+            InlineCommentsJson = "{}",
+            Review = null,
+            EvaluationTemplate = activeTemplate,
+            QueueCount = queueState.QueueCount,
+            QueuePosition = null,
+            CurrentTicketInQueue = false,
+            QueueRange = NormalizeRange(range),
+            QueueFrom = from,
+            QueueTo = to,
+            QueueSearch = (search ?? string.Empty).Trim()
+        });
     }
 
-    private void ApplyEmptyRatingPageData(string? range, DateOnly? from, DateOnly? to, string? search, int queueCount)
+    private static string NormalizeRange(string? range)
     {
-        ViewData["HasActiveTicket"] = false;
-        ViewData["ConversationId"] = 0;
-        ViewData["ConversationAgent"] = string.Empty;
-        ViewData["ConversationCustomer"] = string.Empty;
-        ViewData["ConversationDate"] = string.Empty;
-        ViewData["ConversationMessages"] = Array.Empty<QaConversationMessageViewModel>();
-        ViewData["ReviewerDisplayName"] = GetReviewerDisplayName();
-        ViewData["InlineCommentsJson"] = "{}";
-        ViewData["PrevTicketId"] = 0;
-        ViewData["NextTicketId"] = 0;
-        ViewData["QueueCount"] = queueCount;
-        ViewData["QueuePosition"] = null;
-        ViewData["CurrentTicketInQueue"] = false;
-        ViewData["IsRated"] = false;
-        ApplyQueueViewState(range, from, to, search);
+        var normalized = (range ?? "custom").Trim().ToLowerInvariant();
+        return normalized is "today" or "last7" or "last30" ? normalized : "custom";
     }
 }

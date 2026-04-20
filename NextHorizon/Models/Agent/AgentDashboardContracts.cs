@@ -26,9 +26,8 @@ public sealed record AgentDashboardTicketItem(
     string ReviewerName,
     string RatedAtLabel,
     string RatedAtDate,
-    double AccuracyPoints,
-    double TonePoints,
-    double ResolutionPoints,
+    IReadOnlyList<AgentDashboardCategoryScore> CategoryScores,
+    string CategorySummary,
     double OverallPercent,
     int HandlingSeconds,
     string HandlingLabel,
@@ -45,9 +44,7 @@ public sealed record AgentDashboardTicketDetail(
     string RatedAtLabel,
     string ReviewUpdatedLabel,
     string QaNotes,
-    double AccuracyPoints,
-    double TonePoints,
-    double ResolutionPoints,
+    IReadOnlyList<AgentDashboardCategoryScore> CategoryScores,
     double OverallPercent,
     int HandlingSeconds,
     string HandlingLabel,
@@ -72,8 +69,17 @@ public sealed record AgentDashboardMutationResponse(
     string AcknowledgedLabel);
 
 public sealed record AgentDashboardQuestionScore(
+    string CategoryName,
+    string QuestionText,
     string QuestionKey,
     int Score);
+
+public sealed record AgentDashboardCategoryScore(
+    string CategoryName,
+    double WeightedPoints,
+    double AverageScore,
+    double WeightPercent,
+    int DisplayOrder);
 
 public sealed record AgentDashboardConversationMessage(
     string MessageId,

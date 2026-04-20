@@ -8,6 +8,7 @@ namespace NextHorizon.Controllers;
 public sealed class AgentController : Controller
 {
     private const string QaAnalystRole = "QA Analyst";
+    private const string QaHeadRole = "QA Head";
     private const string SupportAgentRole = "Support Agent";
     private readonly IAgentDashboardService _agentDashboardService;
 
@@ -34,7 +35,7 @@ public sealed class AgentController : Controller
             return;
         }
 
-        if (string.Equals(userType, QaAnalystRole, StringComparison.OrdinalIgnoreCase))
+        if (IsQaWorkspaceRole(userType))
         {
             context.Result = isApiRequest ? Unauthorized() : RedirectToAction("Dashboard", "QA");
             return;
@@ -43,6 +44,14 @@ public sealed class AgentController : Controller
         HttpContext.Session.Clear();
         TempData["LoginError"] = "Agent workspace access is restricted to Support Agent users only.";
         context.Result = isApiRequest ? Unauthorized() : RedirectToAction("AdminLogin", "Login");
+    }
+
+    private static bool IsQaWorkspaceRole(string? userType)
+    {
+        var normalizedUserType = userType?.Trim() ?? string.Empty;
+
+        return string.Equals(normalizedUserType, QaAnalystRole, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalizedUserType, QaHeadRole, StringComparison.OrdinalIgnoreCase);
     }
 
     public IActionResult AgentDashboard()
