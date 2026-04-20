@@ -14,13 +14,19 @@ public sealed class QaDashboardService : IQaDashboardService
         _dbContext = dbContext;
     }
 
-    public async Task<QaDashboardResponse> GetDashboardAsync(DateOnly selectedDate, CancellationToken cancellationToken)
+    public async Task<QaDashboardResponse> GetDashboardAsync(DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken)
     {
-        var dayStartUtc = selectedDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-        var dayEndExclusiveUtc = dayStartUtc.AddDays(1);
-        var monthStartUtc = new DateTime(selectedDate.Year, selectedDate.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        if (fromDate > toDate)
+        {
+            throw new ArgumentOutOfRangeException(nameof(fromDate), "The from date must be earlier than or equal to the to date.");
+        }
+
+        var rangeStartUtc = fromDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        var rangeEndExclusiveUtc = toDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc).AddDays(1);
+        var monthStartUtc = new DateTime(toDate.Year, toDate.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         var monthEndExclusiveUtc = monthStartUtc.AddMonths(1);
-        var selectedMonthLabel = selectedDate.ToString("MMM yyyy");
+        var selectedMonthLabel = toDate.ToString("MMM yyyy");
+        var selectedRangeLabel = BuildRangeLabel(fromDate, toDate);
 
         var fullMonthResolvedFaqs = await _dbContext.SupportFaqRecords
             .AsNoTracking()
@@ -37,20 +43,30 @@ public sealed class QaDashboardService : IQaDashboardService
             .ToListAsync(cancellationToken);
 
         var monthToDateResolvedFaqs = fullMonthResolvedFaqs
-            .Where(item => item.ResolvedAtUtc < dayEndExclusiveUtc)
+            .Where(item => item.ResolvedAtUtc < rangeEndExclusiveUtc)
             .ToList();
 
-        var dayResolvedFaqs = monthToDateResolvedFaqs
-            .Where(item => item.ResolvedAtUtc >= dayStartUtc && item.ResolvedAtUtc < dayEndExclusiveUtc)
-            .OrderBy(item => item.ResolvedAtUtc)
-            .ToList();
+        var rangeResolvedFaqs = await _dbContext.SupportFaqRecords
+            .AsNoTracking()
+            .Where(item => item.Status == "Resolved"
+                && item.EndTime != null
+                && item.EndTime >= rangeStartUtc
+                && item.EndTime < rangeEndExclusiveUtc)
+            .OrderBy(item => item.EndTime)
+            .Select(item => new ResolvedConversationSeed(
+                item.Id,
+                item.AgentId,
+                item.UserType,
+                item.Question,
+                item.EndTime!.Value))
+            .ToListAsync(cancellationToken);
 
         var fullMonthResolvedSupportFaqIds = fullMonthResolvedFaqs
             .Select(item => item.SupportFaqId)
             .Distinct()
             .ToArray();
 
-        var dayResolvedSupportFaqIds = dayResolvedFaqs
+        var rangeResolvedSupportFaqIds = rangeResolvedFaqs
             .Select(item => item.SupportFaqId)
             .Distinct()
             .ToArray();
@@ -66,12 +82,12 @@ public sealed class QaDashboardService : IQaDashboardService
             .GroupBy(item => item.SupportFaqId)
             .ToDictionary(group => group.Key, group => group.OrderByDescending(item => item.UpdatedAtUtc).First());
 
-        var reviewsForResolvedTickets = dayResolvedSupportFaqIds.Length == 0
+        var reviewsForResolvedTickets = rangeResolvedSupportFaqIds.Length == 0
             ? new List<QaReview>()
             : await _dbContext.QaReviews
                 .AsNoTracking()
-                .Where(item => dayResolvedSupportFaqIds.Contains(item.SupportFaqId)
-                    && item.CreatedAtUtc < dayEndExclusiveUtc)
+                .Where(item => rangeResolvedSupportFaqIds.Contains(item.SupportFaqId)
+                    && item.CreatedAtUtc < rangeEndExclusiveUtc)
                 .ToListAsync(cancellationToken);
 
         var reviewsByResolvedSupportFaqId = reviewsForResolvedTickets
@@ -85,17 +101,19 @@ public sealed class QaDashboardService : IQaDashboardService
             .ToListAsync(cancellationToken);
 
         var monthToDateCreatedReviews = fullMonthCreatedReviews
-            .Where(item => item.CreatedAtUtc < dayEndExclusiveUtc)
+            .Where(item => item.CreatedAtUtc < rangeEndExclusiveUtc)
             .ToList();
 
-        var dayCreatedReviews = monthToDateCreatedReviews
-            .Where(item => item.CreatedAtUtc >= dayStartUtc && item.CreatedAtUtc < dayEndExclusiveUtc)
-            .ToList();
-
-        var dayUpdatedReviews = await _dbContext.QaReviews
+        var rangeCreatedReviews = await _dbContext.QaReviews
             .AsNoTracking()
-            .Where(item => item.UpdatedAtUtc >= dayStartUtc
-                && item.UpdatedAtUtc < dayEndExclusiveUtc
+            .Where(item => item.CreatedAtUtc >= rangeStartUtc
+                && item.CreatedAtUtc < rangeEndExclusiveUtc)
+            .ToListAsync(cancellationToken);
+
+        var rangeUpdatedReviews = await _dbContext.QaReviews
+            .AsNoTracking()
+            .Where(item => item.UpdatedAtUtc >= rangeStartUtc
+                && item.UpdatedAtUtc < rangeEndExclusiveUtc
                 && item.UpdatedAtUtc > item.CreatedAtUtc)
             .ToListAsync(cancellationToken);
 
@@ -121,7 +139,7 @@ public sealed class QaDashboardService : IQaDashboardService
                         .Select(item => string.IsNullOrWhiteSpace(item.AgentName) ? "Unknown Agent" : item.AgentName!.Trim())
                         .First());
 
-        var dayConversationSnapshots = dayResolvedFaqs
+        var rangeConversationSnapshots = rangeResolvedFaqs
             .Select(item =>
             {
                 var agentName = item.AgentUserId.HasValue && agentNames.TryGetValue(item.AgentUserId.Value, out var resolvedAgentName)
@@ -157,27 +175,27 @@ public sealed class QaDashboardService : IQaDashboardService
             })
             .ToList();
 
-        var dayResolvedCount = dayConversationSnapshots.Count;
-        var dayRatedCount = dayConversationSnapshots.Count(item => reviewsByResolvedSupportFaqId.ContainsKey(item.SupportFaqId));
-        var dayPendingCount = Math.Max(0, dayResolvedCount - dayRatedCount);
+        var rangeResolvedCount = rangeConversationSnapshots.Count;
+        var rangeRatedCount = rangeConversationSnapshots.Count(item => reviewsByResolvedSupportFaqId.ContainsKey(item.SupportFaqId));
+        var rangePendingCount = Math.Max(0, rangeResolvedCount - rangeRatedCount);
 
-        var coveragePercent = dayResolvedCount == 0
+        var coveragePercent = rangeResolvedCount == 0
             ? 0
-            : Math.Round((double)dayRatedCount / dayResolvedCount * 100d, 1);
+            : Math.Round((double)rangeRatedCount / rangeResolvedCount * 100d, 1);
 
-        var averageOverallPercent = dayCreatedReviews.Count == 0
+        var averageOverallPercent = rangeCreatedReviews.Count == 0
             ? 0
-            : Math.Round((double)dayCreatedReviews.Average(item => item.OverallPercent), 1);
+            : Math.Round((double)rangeCreatedReviews.Average(item => item.OverallPercent), 1);
 
-        var averageQaScore = dayCreatedReviews.Count == 0
+        var averageQaScore = rangeCreatedReviews.Count == 0
             ? 0
             : Math.Round(averageOverallPercent / 20d, 1);
 
-        var agentMetricPercent = dayCreatedReviews.Count == 0
+        var agentMetricPercent = rangeCreatedReviews.Count == 0
             ? 0
-            : Math.Round((double)dayCreatedReviews.Average(item => item.OverallPercent), 1);
+            : Math.Round((double)rangeCreatedReviews.Average(item => item.OverallPercent), 1);
 
-        var ratingsUpdated = dayUpdatedReviews.Count;
+        var ratingsUpdated = rangeUpdatedReviews.Count;
 
         var topAgents = fullMonthCreatedReviews
             .GroupBy(item => item.AgentUserId)
@@ -219,9 +237,9 @@ public sealed class QaDashboardService : IQaDashboardService
 
         var resolvedTrend = new List<int>();
         var ratedTrend = new List<int>();
-        for (var day = 1; day <= selectedDate.Day; day++)
+        for (var day = 1; day <= toDate.Day; day++)
         {
-            var bucketDate = new DateOnly(selectedDate.Year, selectedDate.Month, day);
+            var bucketDate = new DateOnly(toDate.Year, toDate.Month, day);
             var bucketStartUtc = bucketDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
             var bucketEndUtc = bucketStartUtc.AddDays(1);
 
@@ -230,61 +248,62 @@ public sealed class QaDashboardService : IQaDashboardService
         }
 
         var throughputPercent = Math.Clamp((int)Math.Round(coveragePercent), 0, 100);
-        var ticketsRatedCount = dayCreatedReviews.Count;
+        var ticketsRatedCount = rangeCreatedReviews.Count;
 
         return new QaDashboardResponse(
-            selectedDate.ToString("MMM dd, yyyy"),
+            selectedRangeLabel,
+            selectedMonthLabel,
             $"{agentMetricPercent:0.0}%",
-            dayPendingCount,
+            rangeResolvedCount,
             ticketsRatedCount.ToString(),
-            BuildTicketsRatedSub(ticketsRatedCount, selectedDate),
-            dayPendingCount,
+            BuildTicketsRatedSub(ticketsRatedCount, selectedRangeLabel),
+            rangePendingCount,
             $"{averageQaScore:0.0} / 5",
             ratingsUpdated,
-            BuildThroughputNote(dayResolvedCount, dayPendingCount, coveragePercent, selectedDate),
+            BuildThroughputNote(rangeResolvedCount, rangePendingCount, coveragePercent, selectedRangeLabel),
             throughputPercent,
-            BuildQualityNote(dayCreatedReviews.Count, averageQaScore, selectedDate),
+            BuildQualityNote(rangeCreatedReviews.Count, averageQaScore, selectedRangeLabel),
             resolvedTrend,
             ratedTrend,
             topAgents,
             awaitingTickets);
     }
 
-    private static string BuildTicketsRatedSub(int reviewCount, DateOnly selectedDate)
+    private static string BuildTicketsRatedSub(int reviewCount, string selectedRangeLabel)
     {
         if (reviewCount == 0)
         {
-            return $"No QA reviews were created on {selectedDate:MMM dd, yyyy}.";
+            return $"No QA reviews were created during {selectedRangeLabel}.";
         }
 
-        return $"{reviewCount} QA review{(reviewCount == 1 ? string.Empty : "s")} created on {selectedDate:MMM dd, yyyy}.";
+        return $"{reviewCount} QA review{(reviewCount == 1 ? string.Empty : "s")} created during {selectedRangeLabel}.";
     }
 
-    private static string BuildThroughputNote(int resolvedCount, int pendingCount, double coveragePercent, DateOnly selectedDate)
+    private static string BuildThroughputNote(int resolvedCount, int pendingCount, double coveragePercent, string selectedRangeLabel)
     {
         if (resolvedCount == 0)
         {
-            return $"No resolved live-agent conversations were recorded on {selectedDate:MMM dd, yyyy}.";
+            return $"No resolved live-agent conversations were recorded during {selectedRangeLabel}.";
         }
 
         if (coveragePercent < 20)
         {
-            return $"Only {coveragePercent:0.0}% of tickets resolved on {selectedDate:MMM dd, yyyy} are rated. Prioritize the {pendingCount} pending conversation{(pendingCount == 1 ? string.Empty : "s")}.";
+            return $"Only {coveragePercent:0.0}% of tickets resolved during {selectedRangeLabel} are rated. Prioritize the {pendingCount} pending conversation{(pendingCount == 1 ? string.Empty : "s")}.";
         }
 
         if (coveragePercent < 50)
         {
-            return $"QA coverage for {selectedDate:MMM dd, yyyy} is {coveragePercent:0.0}%, with {pendingCount} resolved conversation{(pendingCount == 1 ? string.Empty : "s")} still needing review.";
+            return $"QA coverage for {selectedRangeLabel} is {coveragePercent:0.0}%, with {pendingCount} resolved conversation{(pendingCount == 1 ? string.Empty : "s")} still needing review.";
         }
 
-        return $"QA coverage for {selectedDate:MMM dd, yyyy} is healthy at {coveragePercent:0.0}%. Keep same-day reviews current on newly resolved conversations.";
+        return $"QA coverage for {selectedRangeLabel} is healthy at {coveragePercent:0.0}%. Keep review work current across the selected range.";
     }
 
-    private static string BuildQualityNote(int reviewCount, double averageQaScore, DateOnly selectedDate)
+    private static string BuildQualityNote(int reviewCount, double averageQaScore, string selectedRangeLabel)
     {
         if (reviewCount == 0)
         {
-            return $"No QA reviews were created on {selectedDate:MMM dd, yyyy}.";
+            return $"No QA reviews were created during {selectedRangeLabel}.";
         }
 
         if (averageQaScore < 3.5)
@@ -298,6 +317,16 @@ public sealed class QaDashboardService : IQaDashboardService
         }
 
         return "Average QA score is strong. Keep monitoring low outliers and edited reviews for consistency.";
+    }
+
+    private static string BuildRangeLabel(DateOnly fromDate, DateOnly toDate)
+    {
+        if (fromDate == toDate)
+        {
+            return fromDate.ToString("MMM dd, yyyy");
+        }
+
+        return $"{fromDate:MMM dd, yyyy} to {toDate:MMM dd, yyyy}";
     }
 
     private sealed record ResolvedConversationSeed(

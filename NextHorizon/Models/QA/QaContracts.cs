@@ -4,8 +4,9 @@ namespace NextHorizon.Models.QA;
 
 public sealed record QaDashboardResponse(
     string Label,
+    string AnchorMonthLabel,
     string AgentMetric,
-    int UnclosedResolved,
+    int TotalResolvedTickets,
     string TicketsRated,
     string TicketsRatedSub,
     int PendingRatings,

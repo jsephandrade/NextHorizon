@@ -84,10 +84,19 @@ public sealed class QAController : Controller
     }
 
     [HttpGet("api/dashboard")]
-    public async Task<IActionResult> DashboardData([FromQuery] DateOnly? date, CancellationToken cancellationToken)
+    public async Task<IActionResult> DashboardData([FromQuery] DateOnly? from, [FromQuery] DateOnly? to, CancellationToken cancellationToken)
     {
-        var selectedDate = date ?? DateOnly.FromDateTime(DateTime.UtcNow);
-        var payload = await _qaDashboardService.GetDashboardAsync(selectedDate, cancellationToken);
+        if (!from.HasValue || !to.HasValue)
+        {
+            return BadRequest(new { message = "Both from and to dates are required." });
+        }
+
+        if (from.Value > to.Value)
+        {
+            return BadRequest(new { message = "The from date must be earlier than or equal to the to date." });
+        }
+
+        var payload = await _qaDashboardService.GetDashboardAsync(from.Value, to.Value, cancellationToken);
         return Json(payload);
     }
 

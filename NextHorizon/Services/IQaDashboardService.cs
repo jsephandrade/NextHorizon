@@ -4,5 +4,5 @@ namespace NextHorizon.Services;
 
 public interface IQaDashboardService
 {
-    Task<QaDashboardResponse> GetDashboardAsync(DateOnly selectedDate, CancellationToken cancellationToken);
+    Task<QaDashboardResponse> GetDashboardAsync(DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken);
 }
