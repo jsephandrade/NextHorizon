@@ -156,6 +156,7 @@
 
             <tr class="order-row"
                 data-order-id="@order.OrderID"
+                data-consumer-id="@order.ConsumerID"
                 data-status="@order.Status"
                 data-display-status="@orderDisplayStatus"
                 data-return-status="@(matchingReturnRequest?.Status ?? order.EffectiveStatus ?? string.Empty)"
@@ -350,6 +351,7 @@
                     <tr class="return-row"
                         data-return-id="@returnRequest.ReturnId"
                         data-order-id="@returnRequest.OrderId"
+                        data-consumer-id="@(matchingOrder?.ConsumerID ?? 0)"
                         data-buyer="@returnRequest.BuyerName"
                         data-reason="@returnRequest.Reason"
                         data-message="@(returnRequest.Message ?? string.Empty)"
@@ -379,6 +381,14 @@
                                 <button class="action-icon-btn" type="button" aria-label="Open return actions">&#8942;</button>
                                 <div class="action-menu">
                                     <button type="button" class="action-menu-item return-view-details-btn">View Request</button>
+                                    @if (matchingOrder?.ConsumerID > 0)
+                                    {
+                                        <button type="button"
+                                                class="action-menu-item"
+                                                onclick="window.location.href='@Url.Action("SellerMessenger","Seller", new { orderId = returnRequest.OrderId, consumerId = matchingOrder.ConsumerID })'">
+                                            Contact Customer
+                                        </button>
+                                    }
                                 </div>
                             </div>
                         </td>

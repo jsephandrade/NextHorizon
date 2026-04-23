@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NextHorizon.Data;
+using NextHorizon.Models;
 
 namespace NextHorizon.Services
 {
@@ -52,6 +53,7 @@ namespace NextHorizon.Services
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+                var sellerNotificationService = scope.ServiceProvider.GetRequiredService<ISellerNotificationService>();
 
                 var twentyDaysAgo = DateTime.Now.AddDays(-20);
 
@@ -99,6 +101,18 @@ namespace NextHorizon.Services
                             await cmd.ExecuteNonQueryAsync(stoppingToken);
                         }
                     }
+
+                    await sellerNotificationService.CreateIfMissingAsync(new SellerNotification
+                    {
+                        RecipientType = "seller",
+                        RecipientId = order.seller_id.ToString(),
+                        OrderId = order.OrderID,
+                        Category = "order",
+                        Title = "Order Delivered",
+                        Message = $"Order #{order.OrderID} was automatically marked as delivered and the funds are now available in your wallet.",
+                        IsRead = false,
+                        CreatedAt = DateTime.UtcNow
+                    }, stoppingToken);
                 }
 
                 // 5. Save all the Order Status updates to the database in one single batch

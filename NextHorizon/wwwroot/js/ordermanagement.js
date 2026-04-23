@@ -1612,9 +1612,11 @@ function findOrderRowByOrderId(orderId) {
 function getMergedReturnDetail(row) {
     const orderId = row?.dataset.orderId || '';
     const orderRow = findOrderRowByOrderId(orderId);
+    const consumerId = row?.dataset.consumerId || orderRow?.dataset.consumerId || '';
 
     return {
         orderId,
+        consumerId,
         buyer: getDisplayValue(row?.dataset.buyer || orderRow?.dataset.buyer || orderRow?.children[1]?.innerText, 'Buyer'),
         reason: getDisplayValue(row?.dataset.reason, 'Not provided'),
         message: getDisplayValue(row?.dataset.message, 'No additional message provided.'),
@@ -1683,7 +1685,7 @@ function openReturnDetailsModalFromRow(row) {
     refundWrap.style.display = details.status === 'Item Returned' ? '' : 'none';
 
     renderReturnSellerReview(details.status, details.sellerDecisionReason, details.sellerDecisionNote, details.reviewedAt);
-    renderReturnDetailsActions(details.status, returnId, details.orderId);
+    renderReturnDetailsActions(details.status, returnId, details.orderId, details.consumerId);
     document.getElementById('returnDetailsModal').style.display = 'flex';
 }
 
@@ -1704,12 +1706,20 @@ function renderReturnSellerReview(status, sellerDecisionReason, sellerDecisionNo
     reviewedAtElement.textContent = reviewedAt || 'Not recorded.';
 }
 
-function renderReturnDetailsActions(status, returnId, orderId) {
+function renderReturnDetailsActions(status, returnId, orderId, consumerId) {
     const actions = document.getElementById('returnDetailsActions');
     actions.innerHTML = '';
 
     const parsedReturnId = parseInt(returnId, 10);
     const hasReturnId = Number.isFinite(parsedReturnId) && parsedReturnId > 0;
+    const parsedConsumerId = parseInt(consumerId, 10);
+    const canContactCustomer = Number.isFinite(parsedConsumerId) && parsedConsumerId > 0 && !!orderId;
+
+    if (canContactCustomer) {
+        actions.appendChild(buildReturnActionButton('Contact Customer', 'return-btn return-btn-secondary', function () {
+            openReturnCustomerMessenger(orderId, parsedConsumerId);
+        }));
+    }
 
     if (status === 'Return Requested' && hasReturnId) {
         actions.appendChild(buildReturnActionButton('Reject', 'return-btn return-btn-secondary', function () {
@@ -1808,6 +1818,15 @@ function buildReturnActionButton(label, className, onClick) {
     button.textContent = label;
     button.addEventListener('click', onClick);
     return button;
+}
+
+function openReturnCustomerMessenger(orderId, consumerId) {
+    const params = new URLSearchParams({
+        orderId: String(orderId),
+        consumerId: String(consumerId)
+    });
+
+    window.location.href = `/seller/messenger?${params.toString()}`;
 }
 
 async function updateReturnRequestStatus(url, payload) {

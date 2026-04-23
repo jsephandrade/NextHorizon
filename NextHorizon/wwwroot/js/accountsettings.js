@@ -36,6 +36,7 @@ async function confirmUpdate() {
     
     // Show success popup if API says OK
     if(success) {
+        await loadDashboardData();
         const successModal = document.getElementById("passwordChangedModal"); 
         if(successModal) successModal.style.display = "flex";
     }
@@ -199,8 +200,14 @@ async function loadDashboardData() {
             if (document.getElementById('taxId')) document.getElementById('taxId').value = data.business.taxId || '';
             if (document.getElementById('businessAddress')) document.getElementById('businessAddress').value = data.business.businessAddress || '';
             
-            if (data.business.logoPath && document.getElementById('logoPreview')) {
-                document.getElementById('logoPreview').src = data.business.logoPath;
+            if (document.getElementById('logoPreview')) {
+                if (data.business.logoUrl) {
+                    document.getElementById('logoPreview').src = data.business.logoUrl;
+                } else if (data.business.logoPath) {
+                    document.getElementById('logoPreview').src = data.business.logoPath;
+                } else {
+                    document.getElementById('logoPreview').src = '/images/new-logo.png';
+                }
             }
         }
     } catch (error) {
@@ -281,6 +288,12 @@ async function uploadLogoToDatabase(file) {
         if (!response.ok) {
             const result = await response.json();
             alert(`Error uploading logo to server: ${result.message}`);
+            return;
+        }
+
+        const result = await response.json();
+        if (result.logoUrl && document.getElementById('logoPreview')) {
+            document.getElementById('logoPreview').src = result.logoUrl;
         }
     } catch (error) {
         console.error('Error uploading logo:', error);

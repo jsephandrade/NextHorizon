@@ -15,7 +15,8 @@
     // Safely check authentication (this fixes the CS8602 warning!)
     if (userId == 0 && User?.Identity?.IsAuthenticated == true)
     {
-        var claimId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+        var claimId = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
         int.TryParse(claimId, out userId);
     }
 }
@@ -46,7 +47,7 @@
 
                 <div class="logo-section">
                     <div class="logo-box">
-                        <img src="~/images/placeholder.png" id="logoPreview"/>
+                        <img src="~/images/new-logo.png" id="logoPreview"/>
                     </div>
                     <input type="file" id="logoUpload" hidden />
                     <button class="upload-btn" onclick="document.getElementById('logoUpload').click()">

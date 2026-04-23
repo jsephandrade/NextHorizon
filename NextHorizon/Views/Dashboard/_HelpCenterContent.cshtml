@@ -1,4 +1,8 @@
-<div class="help-center-page">
+@{
+    var sellerId = Context.Session.GetInt32("SellerId") ?? 0;
+}
+
+<div class="help-center-page" data-seller-id="@sellerId">
     <div class="help-center-hero">
         <div>
             <p class="help-center-label">Support</p>
@@ -66,3 +70,7 @@
         </div>
     </div>
 </div>
+
+<script>
+    window.helpCenterSellerId = @sellerId;
+</script>

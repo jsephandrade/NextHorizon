@@ -56,5 +56,25 @@ namespace NextHorizon.Models
         public Dictionary<int, List<int>> MonthlyOrdersByYear { get; set; } = new();
         public Dictionary<int, List<int>> MonthlyUnitsByYear { get; set; } = new();
         public List<CategoryPerformanceViewModel> TopCategories { get; set; } = new();
+        public List<SellerDashboardNotificationViewModel> Notifications { get; set; } = new();
+        public int UnreadNotificationCount => Notifications.Count(notification => !notification.IsRead);
+    }
+
+    public class SellerDashboardNotificationViewModel
+    {
+        public string RecipientType { get; set; } = "seller";
+        public string RecipientId { get; set; } = string.Empty;
+        public int? OrderId { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public bool IsRead { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string Category { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Priority { get; set; } = "medium";
+        public bool ActionRequired { get; set; }
+        public string DeliveryMode { get; set; } = "in_app";
+        public string? LinkType { get; set; }
+        public string? LinkTarget { get; set; }
     }
 }

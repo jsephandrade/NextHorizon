@@ -19,6 +19,7 @@ public sealed class AppDbContext : DbContext
     public DbSet<SellerAccount> SellerAccounts => Set<SellerAccount>();
     public DbSet<MessageConversation> MessageConversations => Set<MessageConversation>();
     public DbSet<ConversationMessage> ConversationMessages => Set<ConversationMessage>();
+    public DbSet<SellerNotification> SellerNotifications => Set<SellerNotification>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<ReturnRequest> ReturnRequests => Set<ReturnRequest>();
@@ -290,6 +291,61 @@ public sealed class AppDbContext : DbContext
 
             entity.HasIndex(x => new { x.ConversationId, x.SentAt })
                 .IsDescending(false, true);
+        });
+
+        modelBuilder.Entity<SellerNotification>(entity =>
+        {
+            entity.ToTable("Notifications");
+            entity.HasKey(x => x.NotificationId);
+
+            entity.Property(x => x.RecipientType)
+                .IsRequired()
+                .HasMaxLength(32)
+                .HasColumnName("RecipientType");
+
+            entity.Property(x => x.RecipientId)
+                .IsRequired()
+                .HasMaxLength(64)
+                .HasColumnName("RecipientId");
+
+            entity.Ignore(x => x.SellerId);
+
+            entity.Property(x => x.Category)
+                .IsRequired()
+                .HasMaxLength(64);
+            entity.Property(x => x.Category)
+                .HasColumnName("category");
+
+            entity.Ignore(x => x.Type);
+            entity.Ignore(x => x.Title);
+
+            entity.Property(x => x.Message)
+                .IsRequired()
+                .HasMaxLength(2000)
+                .HasColumnName("Message");
+
+            entity.Property(x => x.CreatedAt)
+                .HasColumnType("datetime2")
+                .HasDefaultValueSql("SYSUTCDATETIME()")
+                .HasColumnName("CreatedAt");
+
+            entity.Property(x => x.OrderId)
+                .HasColumnName("OrderId");
+
+            entity.Property(x => x.IsRead)
+                .HasColumnName("IsRead");
+
+            entity.Ignore(x => x.ReadAt);
+            entity.Ignore(x => x.Priority);
+            entity.Ignore(x => x.DeliveryMode);
+            entity.Ignore(x => x.ActionRequired);
+            entity.Ignore(x => x.LinkType);
+            entity.Ignore(x => x.LinkTarget);
+            entity.Ignore(x => x.DeduplicationKey);
+            entity.Ignore(x => x.MetadataJson);
+
+            entity.HasIndex(x => new { x.RecipientType, x.RecipientId, x.IsRead, x.CreatedAt });
+            entity.HasIndex(x => new { x.RecipientType, x.RecipientId, x.Category, x.CreatedAt });
         });
     }
 }

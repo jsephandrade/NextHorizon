@@ -341,19 +341,6 @@ body {
     color: white;
 }
 
-.card-badge.urgent {
-    background-color: #e74c3c;
-}
-
-.card-badge.pending {
-    background-color: #f1c40f;
-    color: #333;
-}
-
-.card-badge.alert {
-    background-color: #e67e22;
-}
-
 /* Performance Cards */
 .performance-grid {
     grid-template-columns: repeat(3, 1fr);

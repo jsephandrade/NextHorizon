@@ -26,9 +26,9 @@
         const name = "@Model.SellerName";
 
         let greeting;
-        if (hour >= 5 && hour < 12)       greeting = 'Good Morning';
+        if (hour >= 5 && hour < 12) greeting = 'Good Morning';
         else if (hour >= 12 && hour < 18) greeting = 'Good Afternoon';
-        else                               greeting = 'Good Evening';
+        else greeting = 'Good Evening';
 
         document.getElementById('greeting-text').textContent = greeting + ', ' + name + '!';
 
@@ -70,7 +70,6 @@
                 <div class="card-badge alert">@Model.LowStockAlerts</div>
             </div>
         </a>
-
     </div>
 </section>
 
@@ -128,6 +127,3 @@
         </div>
     </section>
 </div>
-
-
-

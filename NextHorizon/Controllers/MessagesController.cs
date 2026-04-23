@@ -5,6 +5,7 @@ using NextHorizon.Messaging.Models;
 using NextHorizon.Modules.MemberTracker.Security;
 using NextHorizon.Validation;
 using NextHorizon.Security;
+using NextHorizon.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -28,19 +29,22 @@ public sealed class MessagesController : ControllerBase
     private readonly IWebHostEnvironment _webHostEnvironment;
     private readonly IAuthenticatedUserContextService _authenticatedUserContextService;
     private readonly AppDbContext _dbContext;
+    private readonly ISellerNotificationService _sellerNotificationService;
 
     public MessagesController(
         IMessagingRepository messagingRepository,
         IOrderConversationResolver orderConversationResolver,
         IWebHostEnvironment webHostEnvironment,
         IAuthenticatedUserContextService authenticatedUserContextService,
-        AppDbContext dbContext)
+        AppDbContext dbContext,
+        ISellerNotificationService sellerNotificationService)
     {
         _messagingRepository = messagingRepository;
         _orderConversationResolver = orderConversationResolver;
         _webHostEnvironment = webHostEnvironment;
         _authenticatedUserContextService = authenticatedUserContextService;
         _dbContext = dbContext;
+        _sellerNotificationService = sellerNotificationService;
     }
 
     [HttpPost("conversations")]
@@ -326,6 +330,37 @@ public sealed class MessagesController : ControllerBase
         if (message is null)
         {
             return NotFound();
+        }
+
+        if (scope.Value == ConversationActorScope.Consumer)
+        {
+            var conversation = await _messagingRepository.GetConversationAsync(
+                conversationId,
+                ToMessageActor(currentUser, scope.Value),
+                cancellationToken);
+
+            if (conversation is not null && conversation.SellerUserId > 0)
+            {
+                var notificationMessage = conversation.OrderId.HasValue
+                    ? $"You received a new message from a customer regarding order #{conversation.OrderId.Value}."
+                    : "You received a new message from a customer.";
+
+                if (attachment is not null)
+                {
+                    notificationMessage += " The message includes an attachment.";
+                }
+
+                await _sellerNotificationService.CreateAsync(new SellerNotification
+                {
+                    RecipientType = "seller",
+                    RecipientId = conversation.SellerUserId.ToString(),
+                    OrderId = conversation.OrderId,
+                    Category = "message",
+                    Message = notificationMessage,
+                    IsRead = false,
+                    CreatedAt = message.SentAt
+                }, cancellationToken);
+            }
         }
 
         return Ok(ToMessageDto(message, scope.Value));

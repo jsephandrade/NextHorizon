@@ -9,6 +9,7 @@ using NextHorizon.Data;
 using NextHorizon.Data.Messaging;
 using NextHorizon.Models;
 using NextHorizon.Security;
+using NextHorizon.Services;
 
 namespace NextHorizon.Controllers;
 
@@ -23,6 +24,7 @@ public sealed class SellerController : Controller
     private readonly AppDbContext _db;
     private readonly IMemoryCache _cache;
     private readonly ILogger<SellerController> _logger;
+    private readonly ISellerNotificationService _sellerNotificationService;
 
     public SellerController(
         IWebHostEnvironment webHostEnvironment,
@@ -32,7 +34,8 @@ public sealed class SellerController : Controller
         IMessagingRepository messagingRepository,
         AppDbContext db,
         IMemoryCache cache,
-        ILogger<SellerController> logger)
+        ILogger<SellerController> logger,
+        ISellerNotificationService sellerNotificationService)
     {
         _webHostEnvironment = webHostEnvironment;
         _configuration = configuration;
@@ -42,6 +45,7 @@ public sealed class SellerController : Controller
         _db = db;
         _cache = cache;
         _logger = logger;
+        _sellerNotificationService = sellerNotificationService;
     }
 
     // ─── EXISTING: Seller Messenger ───────────────────────────────────────────
@@ -563,6 +567,45 @@ public sealed class SellerController : Controller
             else if (mode == "renew") TempData["SuccessMessage"] = "Product renewed successfully.";
             else TempData["SuccessMessage"] = "Product added successfully and is pending approval.";
 
+            var sellerIdForNotification = HttpContext.Session.GetInt32("SellerId") ?? model.SellerId;
+            if (sellerIdForNotification > 0)
+            {
+                await _sellerNotificationService.CreateAsync(new SellerNotification
+                {
+                    RecipientType = "seller",
+                    RecipientId = sellerIdForNotification.ToString(),
+                    SellerId = sellerIdForNotification,
+                    Category = "system",
+                    Type = mode switch
+                    {
+                        "edit" => "system.product_updated",
+                        "relist" => "system.product_relisted",
+                        "renew" => "system.product_renewed",
+                        _ => "system.product_pending_approval"
+                    },
+                    Title = mode switch
+                    {
+                        "edit" => "Product Updated",
+                        "relist" => "Product Relisted",
+                        "renew" => "Product Renewed",
+                        _ => "Product Submitted"
+                    },
+                    Message = mode switch
+                    {
+                        "edit" => $"Product {model.ProductName} was updated successfully.",
+                        "relist" => $"Product {model.ProductName} was relisted successfully.",
+                        "renew" => $"Product {model.ProductName} was renewed successfully.",
+                        _ => $"Product {model.ProductName} was submitted and is pending approval."
+                    },
+                    Priority = mode is "edit" ? "medium" : "high",
+                    DeliveryMode = "in_app",
+                    LinkType = "product",
+                    LinkTarget = $"/Seller/ViewProduct?id={productId}&state={(mode is null ? "pending" : "active")}",
+                    ActionRequired = mode is null or "",
+                    DeduplicationKey = mode is "edit" ? $"system.product_updated:{productId}" : null
+                });
+            }
+
             InvalidateProductCaches();
 
             if (mode != "edit" && mode != "relist" && mode != "renew")
@@ -638,6 +681,22 @@ public sealed class SellerController : Controller
             await _db.SaveChangesAsync();
             TempData["SuccessMessage"] = "Product removed.";
             InvalidateProductCaches();
+
+            await _sellerNotificationService.CreateAsync(new SellerNotification
+            {
+                RecipientType = "seller",
+                RecipientId = sellerId.ToString(),
+                SellerId = sellerId,
+                Category = "system",
+                Type = "system.product_removed_to_relist",
+                Title = "Product Moved to Relist",
+                Message = $"Product {product.ProductName} was removed and moved to relist.",
+                Priority = "medium",
+                DeliveryMode = "in_app",
+                LinkType = "product",
+                LinkTarget = $"/Seller/ViewProduct?id={product.ProductId}&state=relist",
+                ActionRequired = false
+            });
         }
         return RedirectToAction("Index");
     }

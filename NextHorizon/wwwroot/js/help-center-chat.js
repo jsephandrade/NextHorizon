@@ -13,7 +13,7 @@ let currentConversationStatus = null;
 let inactivityTimer = null;
 let inactivityResolved = false;
 let isLoadingMessages = false;
-const sellerId = 102;
+const sellerId = Number(window.helpCenterSellerId || document.querySelector('.help-center-page')?.dataset?.sellerId || 0);
 
 function loadSupportState() {
   const storedConversationId = localStorage.getItem('supportConversationId');
@@ -263,6 +263,10 @@ async function loadMessages() {
 }
 
 async function ensureConversation(firstMessage) {
+  if (!sellerId || sellerId <= 0) {
+    throw new Error('Seller session is unavailable. Refresh and try again.');
+  }
+
   if (conversationId) {
     return { conversationId, initialMessageSent: false };
   }

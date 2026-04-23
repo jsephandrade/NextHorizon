@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NextHorizon.Data;
 using NextHorizon.Models;
+using NextHorizon.Services;
 using System.Data;
 
 namespace NextHorizon.Controllers
@@ -11,10 +12,12 @@ namespace NextHorizon.Controllers
     public class SupportConversationController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly ISellerNotificationService _sellerNotificationService;
 
-        public SupportConversationController(AppDbContext context)
+        public SupportConversationController(AppDbContext context, ISellerNotificationService sellerNotificationService)
         {
             _context = context;
+            _sellerNotificationService = sellerNotificationService;
         }
 
         // POST: /api/support/start - Start a new conversation
@@ -132,6 +135,19 @@ namespace NextHorizon.Controllers
 
                 _context.SupportMessages.Add(message);
                 await _context.SaveChangesAsync();
+
+                if (string.Equals(request.SenderRole, "Agent", StringComparison.OrdinalIgnoreCase))
+                {
+                    await CreateSupportNotificationAsync(
+                        conversation.SellerId,
+                        request.SupportFAQId,
+                        "message",
+                        "support.agent_replied",
+                        "Support Agent Replied",
+                        "A support agent replied to your help center conversation.",
+                        "high",
+                        "realtime,email,in_app");
+                }
 
                 if (string.Equals(request.SenderRole, "Seller", StringComparison.OrdinalIgnoreCase) && !conversation.AgentId.HasValue && !supportFaq.AgentId.HasValue)
                 {
@@ -492,6 +508,31 @@ namespace NextHorizon.Controllers
                     await AddAgentAvailableIndicatorAsync(supportFaqId.Value, conversation.AgentId);
                 }
 
+                if (supportFaqId.HasValue)
+                {
+                    var title = string.Equals(status, "Active", StringComparison.OrdinalIgnoreCase)
+                        ? "Support Conversation Active"
+                        : string.Equals(status, "Resolved", StringComparison.OrdinalIgnoreCase)
+                            ? "Support Conversation Resolved"
+                            : "Support Conversation Updated";
+
+                    var message = string.Equals(status, "Resolved", StringComparison.OrdinalIgnoreCase) && inactivity
+                        ? "Your help center conversation was resolved due to inactivity."
+                        : $"Your help center conversation status changed to {status}.";
+
+                    await CreateSupportNotificationAsync(
+                        conversation.SellerId,
+                        supportFaqId.Value,
+                        "system",
+                        string.Equals(status, "Resolved", StringComparison.OrdinalIgnoreCase) && inactivity
+                            ? "support.conversation_closed_for_inactivity"
+                            : $"support.status_{status.ToLowerInvariant()}",
+                        title,
+                        message,
+                        string.Equals(status, "Resolved", StringComparison.OrdinalIgnoreCase) ? "medium" : "high",
+                        "in_app");
+                }
+
                 return Ok(new { message = "Conversation status updated", status = conversation.Status });
             }
             catch (Exception ex)
@@ -625,6 +666,39 @@ namespace NextHorizon.Controllers
             {
                 return BadRequest(new { error = ex.Message });
             }
+        }
+
+        private Task CreateSupportNotificationAsync(
+            int sellerId,
+            int supportFaqId,
+            string category,
+            string type,
+            string title,
+            string message,
+            string priority,
+            string deliveryMode)
+        {
+            if (sellerId <= 0)
+            {
+                return Task.CompletedTask;
+            }
+
+            return _sellerNotificationService.CreateAsync(new SellerNotification
+            {
+                RecipientType = "seller",
+                RecipientId = sellerId.ToString(),
+                SellerId = sellerId,
+                Category = category,
+                Type = type,
+                Title = title,
+                Message = message,
+                Priority = priority,
+                DeliveryMode = deliveryMode,
+                LinkType = "system_page",
+                LinkTarget = "/Dashboard/HelpCenter",
+                ActionRequired = true,
+                DeduplicationKey = $"{type}:{supportFaqId}:{DateTime.UtcNow:yyyyMMddHHmm}"
+            });
         }
     }
 

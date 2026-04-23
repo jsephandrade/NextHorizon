@@ -107,6 +107,132 @@
             color: black;
         }
         .icon-btn:hover { background-color: #f0f0f0; color: #1a1a1a; }
+        .notif-wrap { position: relative; }
+        .notif-btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .notif-dot {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #dc2626;
+            display: none;
+        }
+        .notif-dot.active { display: block; }
+        .notif-dropdown {
+            position: absolute;
+            top: calc(100% + 12px);
+            right: 0;
+            width: 380px;
+            max-width: min(380px, calc(100vw - 40px));
+            background: #fff;
+            border: 1px solid #d9d9d9;
+            border-radius: 18px;
+            box-shadow: 0 18px 36px rgba(0,0,0,0.10);
+            display: none;
+            overflow: hidden;
+            z-index: 100;
+        }
+        .notif-dropdown.open { display: block; }
+        .notif-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 18px;
+            border-bottom: 1px solid #ececec;
+        }
+        .notif-header span {
+            font-size: 15px;
+            font-weight: 700;
+            color: #111;
+        }
+        .notif-clear-btn {
+            border: 1px solid #111;
+            background: #fff;
+            color: #111;
+            padding: 7px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .notif-clear-btn:hover {
+            background: #111;
+            color: #fff;
+        }
+        .notif-list {
+            list-style: none;
+            max-height: 420px;
+            overflow-y: auto;
+        }
+        .notif-item {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            padding: 14px 18px;
+            border-bottom: 1px solid #f0f0f0;
+            background: #fff;
+            transition: background-color .2s ease;
+        }
+        .notif-item:last-child { border-bottom: none; }
+        .notif-item:hover { background: #f7f7f7; }
+        .notif-item.unread { background: #f3f3f3; }
+        .notif-item-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        .notif-category {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: #111;
+        }
+        .notif-time {
+            font-size: 11px;
+            color: #777;
+            white-space: nowrap;
+        }
+        .notif-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #111;
+            margin-bottom: 4px;
+        }
+        .notif-text {
+            font-size: 13px;
+            color: #333;
+            line-height: 1.5;
+        }
+        .notif-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .notif-order,
+        .notif-link {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+        }
+        .notif-empty {
+            padding: 26px 18px;
+            text-align: center;
+            color: #555;
+            font-size: 13px;
+        }
 
         .seller-dropdown {
             display: flex;
@@ -359,9 +485,21 @@
             <header class="top-header order-header @(isMessenger ? "seller-messenger-topbar" : string.Empty)">
                 <h2 class="section-title">@pageHeading</h2>
                 <div class="header-right">
-                    <button class="icon-btn" type="button" aria-label="Notifications">
-                        <i class="fas fa-bell"></i>
-                    </button>
+                    <div class="notif-wrap" id="notif-wrap">
+                        <button class="icon-btn notif-btn" id="notif-btn" type="button" aria-label="Notifications" onclick="toggleSellerNotifDropdown()">
+                            <i class="fas fa-bell"></i>
+                            <span class="notif-dot" id="notif-dot"></span>
+                        </button>
+                        <div class="notif-dropdown" id="notif-dropdown">
+                            <div class="notif-header">
+                                <span>Notifications</span>
+                                <button class="notif-clear-btn" type="button" onclick="markAllSellerNotificationsRead()">Mark all read</button>
+                            </div>
+                            <ul class="notif-list" id="notif-list">
+                                <li class="notif-empty">Loading notifications...</li>
+                            </ul>
+                        </div>
+                    </div>
 
                     <div class="profile-dropdown">
                         <button class="icon-btn profile-btn" onclick="toggleProfileMenu()">
@@ -398,9 +536,258 @@
     @await RenderSectionAsync("Scripts", required: false)
     <script src="~/js/global-help-center.js" asp-append-version="true"></script>
     <script>
+        let sellerNotificationsLoaded = false;
+
         function toggleProfileMenu() {
             var menu = document.getElementById("profileMenu");
             menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+        }
+
+        function toggleSellerNotifDropdown() {
+            const dropdown = document.getElementById("notif-dropdown");
+            if (!dropdown) return;
+
+            dropdown.classList.toggle("open");
+
+            if (dropdown.classList.contains("open") && !sellerNotificationsLoaded) {
+                loadSellerNotifications();
+            }
+        }
+
+        function formatSellerNotifTime(value) {
+            const createdAt = value ? new Date(value) : new Date();
+            const deltaMs = Date.now() - createdAt.getTime();
+            const minutes = Math.floor(deltaMs / 60000);
+            const hours = Math.floor(deltaMs / 3600000);
+            const days = Math.floor(deltaMs / 86400000);
+
+            if (minutes < 1) return "Just now";
+            if (hours < 1) return `${minutes}m ago`;
+            if (days < 1) return `${hours}h ago`;
+            if (days < 7) return `${days}d ago`;
+            return createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function titleCaseWords(value) {
+            return String(value || "")
+                .split(/\s+/)
+                .filter(Boolean)
+                .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+                .join(" ");
+        }
+
+        function prettifyNotificationCode(value) {
+            return String(value || "")
+                .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+                .replace(/[_-]+/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
+        }
+
+        function normalizeSellerNotificationMessage(value) {
+            const text = String(value || "").trim();
+            if (!text) return "";
+
+            return text
+                .replace(/\?(\d[\d,]*\.\d{2})/g, "\u20B1$1")
+                .replace(/\bPHP\s+(\d[\d,]*\.\d{2})\b/g, "\u20B1$1")
+                .replace(/\s+/g, " ")
+                .replace(/\bno image attach\b/gi, "No image attached")
+                .trim();
+        }
+
+        function getNotificationTitle(item) {
+            const rawTitle = String(item?.title || "").trim();
+            const message = normalizeSellerNotificationMessage(item?.message || "");
+            const prettyTitle = prettifyNotificationCode(rawTitle);
+
+            if (prettyTitle && !/^notification$/i.test(prettyTitle)) {
+                return titleCaseWords(prettyTitle);
+            }
+
+            if (/approved and is now live/i.test(message)) {
+                return "Product Approved";
+            }
+
+            if (/rejected\./i.test(message)) {
+                return "Product Rejected";
+            }
+
+            if (/pending approval/i.test(message)) {
+                return "Product Submitted";
+            }
+
+            const category = String(item?.category || "").toLowerCase();
+            switch (category) {
+                case "productapproval":
+                case "product_approval":
+                    return "Product Approved";
+                case "productrejection":
+                case "product_rejection":
+                    return "Product Rejected";
+                case "order": return "Order Update";
+                case "refund": return "Refund Update";
+                case "return": return "Return Update";
+                case "cancellation": return "Cancellation Update";
+                case "message": return "New Message";
+                case "payout": return "Payout Update";
+                case "inventory": return "Inventory Alert";
+                case "system": return "System Update";
+                default: return "Notification";
+            }
+        }
+
+        function getNotificationCategoryLabel(item) {
+            const title = getNotificationTitle(item);
+            if (/^product /i.test(title)) {
+                return "Product";
+            }
+
+            const category = String(item?.category || "").trim().toLowerCase();
+            switch (category) {
+                case "productapproval":
+                case "productrejection":
+                case "product_approval":
+                case "product_rejection":
+                    return "Product";
+                case "order":
+                    return "Order";
+                case "refund":
+                    return "Refund";
+                case "return":
+                    return "Return";
+                case "cancellation":
+                    return "Cancellation";
+                case "message":
+                    return "Message";
+                case "payout":
+                    return "Payout";
+                case "inventory":
+                    return "Inventory";
+                case "system":
+                    return "System";
+                default:
+                    return "Notification";
+            }
+        }
+
+        function renderSellerNotifications(items) {
+            const list = document.getElementById("notif-list");
+            const dot = document.getElementById("notif-dot");
+            if (!list || !dot) return;
+
+            if (!items || items.length === 0) {
+                list.innerHTML = '<li class="notif-empty">No notifications yet.</li>';
+                dot.classList.remove("active");
+                return;
+            }
+
+            list.innerHTML = items.map(item => {
+                const title = getNotificationTitle(item);
+                const message = normalizeSellerNotificationMessage(item.message || "");
+                const href = item.linkTarget || "#";
+                const unreadClass = item.isRead ? "" : " unread";
+                const orderMeta = item.orderId ? `<span class="notif-order">Order #${item.orderId}</span>` : "";
+                const linkMeta = item.linkType ? `<span class="notif-link">Open ${String(item.linkType).replace(/_/g, " ")}</span>` : "";
+                const category = getNotificationCategoryLabel(item);
+
+                return `
+                    <li>
+                        <a class="notif-item${unreadClass}" href="${href}" data-notification-id="${item.notificationId}" onclick="handleSellerNotificationClick(event, this)">
+                            <div class="notif-item-head">
+                                <span class="notif-category">${category}</span>
+                                <span class="notif-time">${formatSellerNotifTime(item.createdAt)}</span>
+                            </div>
+                            <div class="notif-title">${title}</div>
+                            <div class="notif-text">${message}</div>
+                            <div class="notif-footer">
+                                ${orderMeta || '<span></span>'}
+                                ${linkMeta}
+                            </div>
+                        </a>
+                    </li>
+                `;
+            }).join("");
+
+            const hasUnread = items.some(item => !item.isRead);
+            dot.classList.toggle("active", hasUnread);
+        }
+
+        async function loadSellerNotifications() {
+            const list = document.getElementById("notif-list");
+            if (list) {
+                list.innerHTML = '<li class="notif-empty">Loading notifications...</li>';
+            }
+
+            try {
+                const response = await fetch('/api/seller/notifications?take=12', {
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to load notifications (${response.status})`);
+                }
+
+                const items = await response.json();
+                sellerNotificationsLoaded = true;
+                renderSellerNotifications(items);
+            } catch (error) {
+                if (list) {
+                    list.innerHTML = '<li class="notif-empty">Unable to load notifications.</li>';
+                }
+            }
+        }
+
+        async function refreshSellerNotificationCount() {
+            const dot = document.getElementById("notif-dot");
+            if (!dot) return;
+
+            try {
+                const response = await fetch('/api/seller/notifications/unread-count', {
+                    credentials: 'same-origin'
+                });
+                if (!response.ok) return;
+
+                const data = await response.json();
+                dot.classList.toggle("active", Number(data.unreadCount || 0) > 0);
+            } catch (error) {
+            }
+        }
+
+        async function markAllSellerNotificationsRead() {
+            try {
+                const response = await fetch('/api/seller/notifications/read-all', {
+                    method: 'POST',
+                    credentials: 'same-origin'
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to mark notifications as read');
+                }
+                await loadSellerNotifications();
+                await refreshSellerNotificationCount();
+            } catch (error) {
+            }
+        }
+
+        async function handleSellerNotificationClick(event, element) {
+            const id = element?.dataset?.notificationId;
+            const href = element?.getAttribute('href') || '#';
+
+            if (id) {
+                try {
+                    await fetch(`/api/seller/notifications/${id}/read`, {
+                        method: 'POST',
+                        credentials: 'same-origin'
+                    });
+                } catch (error) {
+                }
+            }
+
+            if (href && href !== '#') {
+                window.location.href = href;
+            }
+
+            event.preventDefault();
         }
 
         window.onclick = function(event) {
@@ -408,7 +795,18 @@
                 var menu = document.getElementById("profileMenu");
                 if(menu) menu.style.display = "none";
             }
+
+            if (!event.target.closest('#notif-wrap')) {
+                const dropdown = document.getElementById("notif-dropdown");
+                if (dropdown) {
+                    dropdown.classList.remove("open");
+                }
+            }
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshSellerNotificationCount();
+        });
         </script>
 <script src="~/js/modal.js"></script>
 @section Styles{

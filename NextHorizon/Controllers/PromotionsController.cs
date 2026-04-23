@@ -4,6 +4,7 @@ using NextHorizon.Data;
 using NextHorizon.Security;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using NextHorizon.Services;
 
 namespace NextHorizon.Controllers;
 
@@ -11,11 +12,13 @@ public class PromotionsController : Controller
 {
     private readonly AppDbContext _context;
     private readonly IAuthenticatedUserContextService _userContextService;
+    private readonly ISellerNotificationService _sellerNotificationService;
 
-    public PromotionsController(AppDbContext context, IAuthenticatedUserContextService userContextService)
+    public PromotionsController(AppDbContext context, IAuthenticatedUserContextService userContextService, ISellerNotificationService sellerNotificationService)
     {
         _context = context;
         _userContextService = userContextService;
+        _sellerNotificationService = sellerNotificationService;
     }
 
     // ── HELPER: Resolves the current logged-in seller's ID from the auth context ──
@@ -142,6 +145,26 @@ public class PromotionsController : Controller
             }
 
             await _context.SaveChangesAsync();
+
+            await _sellerNotificationService.CreateAsync(new SellerNotification
+            {
+                RecipientType = "seller",
+                RecipientId = sellerId.ToString(),
+                SellerId = sellerId,
+                Category = "system",
+                Type = model.Id > 0 ? "system.promotion_updated" : "system.promotion_pending_review",
+                Title = model.Id > 0 ? "Promotion Updated" : "Promotion Submitted",
+                Message = model.Id > 0
+                    ? $"Promotion {model.Name} was updated successfully."
+                    : $"Promotion {model.Name} was submitted and is awaiting review.",
+                Priority = model.Id > 0 ? "medium" : "high",
+                DeliveryMode = "in_app",
+                LinkType = "system_page",
+                LinkTarget = "/Promotions/Promotion",
+                ActionRequired = model.Id <= 0,
+                DeduplicationKey = model.Id > 0 ? $"system.promotion_updated:{model.Id}" : null
+            });
+
             return RedirectToAction(nameof(Promotion));
         }
         catch (Exception ex)
@@ -171,6 +194,8 @@ public class PromotionsController : Controller
         promotion.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
+        await CreatePromotionNotificationAsync(sellerId, "system.promotion_inactivated", "Promotion Inactivated", $"Promotion {promotion.Name} is now inactive.", "medium");
+
         return RedirectToAction(nameof(Promotion));
     }
 
@@ -193,6 +218,8 @@ public class PromotionsController : Controller
         promotion.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
+        await CreatePromotionNotificationAsync(sellerId, "system.promotion_activated", "Promotion Activated", $"Promotion {promotion.Name} is now active.", "high");
+
         return RedirectToAction(nameof(Promotion));
     }
 
@@ -213,6 +240,8 @@ public class PromotionsController : Controller
         promotion.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
+        await CreatePromotionNotificationAsync(sellerId, "system.promotion_deleted", "Promotion Deleted", $"Promotion {promotion.Name} was deleted.", "medium");
+
         return RedirectToAction(nameof(Promotion));
     }
 
@@ -232,6 +261,8 @@ public class PromotionsController : Controller
         promotion.Status = "Active";
         promotion.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+
+        await CreatePromotionNotificationAsync(sellerId, "system.promotion_restored", "Promotion Restored", $"Promotion {promotion.Name} was restored and reactivated.", "medium");
 
         return RedirectToAction(nameof(Promotion));
     }
@@ -321,4 +352,23 @@ public class PromotionsController : Controller
         Status = db.Status,
         SelectedProductIds = JsonSerializer.Deserialize<List<int>>(db.SelectedProductIdsJson) ?? new()
     };
+
+    private Task CreatePromotionNotificationAsync(int sellerId, string type, string title, string message, string priority)
+    {
+        return _sellerNotificationService.CreateAsync(new SellerNotification
+        {
+            RecipientType = "seller",
+            RecipientId = sellerId.ToString(),
+            SellerId = sellerId,
+            Category = "system",
+            Type = type,
+            Title = title,
+            Message = message,
+            Priority = priority,
+            DeliveryMode = "in_app",
+            LinkType = "system_page",
+            LinkTarget = "/Promotions/Promotion",
+            ActionRequired = false
+        });
+    }
 }

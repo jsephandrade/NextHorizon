@@ -3,7 +3,7 @@
 /* ===== GLOBAL STYLE ===== */
 
 body{
-    background:#f6f7fb;
+    background:#ffffff;
 }
 
 /* ===== GREETING ===== */
@@ -20,7 +20,7 @@ body{
 }
 
 .greeting p{
-    color:#8a8a8a;
+    color:#4a4a4a;
     font-size:14px;
 }
 
@@ -31,7 +31,7 @@ body{
     margin-bottom:35px;
 }
 
-.dashboard-section-title{
+.section-title{
     font-size:20px;
     font-weight:700;
     color:#111;
@@ -54,11 +54,11 @@ body{
     background:#ffffff;
     border-radius:14px;
     padding:22px;
-    border:1px solid #f0f0f0;
+    border:1px solid #d9d9d9;
 
     box-shadow:
-        0 2px 6px rgba(0,0,0,0.04),
-        0 8px 24px rgba(0,0,0,0.06);
+        0 2px 6px rgba(0,0,0,0.03),
+        0 10px 24px rgba(0,0,0,0.05);
 
     transition:all .25s ease;
 }
@@ -92,7 +92,7 @@ body{
 
 .card-label{
     font-size:13px;
-    color:#888;
+    color:#555;
     margin-bottom:6px;
 }
 
@@ -104,7 +104,7 @@ body{
 
 .card-value small{
     font-size:12px;
-    color:#aaa;
+    color:#666;
 }
 
 
@@ -122,18 +122,19 @@ body{
 }
 
 .card-badge.urgent{
-    background:#ff4d4f;
-    color:white;
+    background:#111;
+    color:#fff;
 }
 
 .card-badge.pending{
-    background:#ffd666;
-    color:#333;
+    background:#000000;
+    color:#ffffff;
+    border:1px solid #111;
 }
 
 .card-badge.alert{
-    background:#ffa940;
-    color:white;
+    background:#111;
+    color:#fff;
 }
 
 
@@ -157,7 +158,7 @@ body{
 }
 
 .metric-growth.positive{
-    color:#2ecc71;
+    color:#111;
 }
 
 
@@ -188,10 +189,11 @@ body{
     border-radius:14px;
     overflow:hidden;
     overflow-x:auto;
+    border:1px solid #d9d9d9;
 
     box-shadow:
-        0 2px 6px rgba(0,0,0,0.04),
-        0 8px 24px rgba(0,0,0,0.06);
+        0 2px 6px rgba(0,0,0,0.03),
+        0 10px 24px rgba(0,0,0,0.05);
 }
 
 .orders-table{
@@ -201,18 +203,18 @@ body{
 }
 
 .orders-table th{
-    background:#fafafa;
+    background:#f5f5f5;
     font-size:12px;
     text-transform:uppercase;
     letter-spacing:.8px;
-    color:#888;
+    color:#555;
     padding:14px 12px;
 }
 
 .orders-table td{
     padding:14px 12px;
     font-size:13px;
-    color:#333;
+    color:#222;
 }
 
 .orders-table tr{
@@ -220,7 +222,7 @@ body{
 }
 
 .orders-table tr:hover{
-    background:#f8f9fb;
+    background:#f7f7f7;
 }
 
 .recent-product-cell{
@@ -263,30 +265,32 @@ body{
     white-space: nowrap;
 }
 
-.status-badge.pending { background: #fef9c3; color: #854d0e; }
-.status-badge.to-ship { background: #fed7aa; color: #9a3412; }
-.status-badge.shipped { background: #dbeafe; color: #1d4ed8; }
-.status-badge.delivered { background: #dcfce7; color: #166534; }
-.status-badge.cancelled { background: #fee2e2; color: #b91c1c; }
+.status-badge.pending { background: #111; color: #fff; }
+.status-badge.to-ship { background: #111; color: #fff; }
+.status-badge.shipped { background: #f5f5f5; color: #111; border:1px solid #111; }
+.status-badge.delivered { background: #111; color: #fff; }
+.status-badge.cancelled { background: #e9e9e9; color: #111; }
 .status-badge.failed-delivery {
-    background-color: #ffedd5;
-    color: #ea580c;
+    background-color: #111;
+    color: #fff;
 }
 .status-badge.return-requested {
-    background: #fef3c7;
-    color: #b45309;
+    background: #111;
+    color: #fff;
 }
 .status-badge.return-approved {
-    background: #dbeafe;
-    color: #1d4ed8;
+    background: #f5f5f5;
+    color: #111;
+    border:1px solid #111;
 }
 .status-badge.item-returned {
-    background: #ede9fe;
-    color: #6d28d9;
+    background: #f5f5f5;
+    color: #111;
+    border:1px solid #111;
 }
 .status-badge.refunded {
-    background: #dcfce7;
-    color: #166534;
+    background: #111;
+    color: #fff;
 }
 
 /* ===== PRODUCT LIST ===== */
@@ -295,10 +299,11 @@ body{
     background:white;
     border-radius:14px;
     padding:22px;
+    border:1px solid #d9d9d9;
 
     box-shadow:
-        0 2px 6px rgba(0,0,0,0.04),
-        0 8px 24px rgba(0,0,0,0.06);
+        0 2px 6px rgba(0,0,0,0.03),
+        0 10px 24px rgba(0,0,0,0.05);
 }
 
 .product-item{
@@ -342,7 +347,170 @@ body{
 
 .product-info span{
     font-size:12px;
-    color:#888;
+    color:#555;
+}
+
+/* ===== NOTIFICATIONS ===== */
+
+.notification-section{
+    background:#fff;
+    border:1px solid #d9d9d9;
+    border-radius:18px;
+    padding:24px;
+    box-shadow:
+        0 2px 6px rgba(0,0,0,0.03),
+        0 10px 24px rgba(0,0,0,0.05);
+}
+
+.notification-section-header{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:20px;
+}
+
+.notification-section-subtitle{
+    margin:6px 0 0;
+    color:#555;
+    font-size:13px;
+}
+
+.notification-counter{
+    background:#111;
+    color:#fff;
+    padding:10px 14px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    white-space:nowrap;
+}
+
+.notification-list{
+    display:grid;
+    gap:14px;
+}
+
+.notification-item{
+    display:block;
+    text-decoration:none;
+    color:inherit;
+    background:#fff;
+    border:1px solid #d9d9d9;
+    border-radius:16px;
+    padding:18px;
+    transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+
+.notification-item:hover{
+    transform:translateY(-2px);
+    box-shadow:0 14px 28px rgba(0,0,0,0.07);
+}
+
+.notification-item.priority-critical{
+    background:#111;
+    color:#fff;
+    border-color:#111;
+}
+
+.notification-item-head,
+.notification-footer,
+.notification-title-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+}
+
+.notification-meta,
+.notification-context{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.notification-category,
+.notification-priority,
+.notification-order,
+.notification-link-label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+}
+
+.notification-category{
+    font-weight:700;
+}
+
+.notification-delivery,
+.notification-time{
+    font-size:12px;
+    color:#666;
+}
+
+.notification-item.priority-critical .notification-delivery,
+.notification-item.priority-critical .notification-time{
+    color:#ddd;
+}
+
+.notification-title-row{
+    justify-content:flex-start;
+    margin:14px 0 10px;
+}
+
+.notification-unread-dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    background:#111;
+    flex:0 0 auto;
+}
+
+.notification-item.priority-critical .notification-unread-dot{
+    background:#fff;
+}
+
+.notification-title{
+    margin:0;
+    font-size:17px;
+    font-weight:700;
+}
+
+.notification-message{
+    margin:0 0 16px;
+    font-size:14px;
+    line-height:1.6;
+    color:#222;
+}
+
+.notification-item.priority-critical .notification-message{
+    color:#f3f3f3;
+}
+
+.notification-link-label{
+    font-weight:700;
+}
+
+.notification-empty{
+    border:1px dashed #bfbfbf;
+    border-radius:16px;
+    padding:28px 20px;
+    text-align:center;
+}
+
+.notification-empty-title{
+    font-size:17px;
+    font-weight:700;
+    color:#111;
+    margin-bottom:8px;
+}
+
+.notification-empty p{
+    margin:0;
+    color:#555;
 }
 
 
@@ -382,6 +550,13 @@ body{
 
     .cards-grid{
         grid-template-columns:1fr;
+    }
+
+    .notification-section-header,
+    .notification-item-head,
+    .notification-footer{
+        flex-direction:column;
+        align-items:flex-start;
     }
 
 }

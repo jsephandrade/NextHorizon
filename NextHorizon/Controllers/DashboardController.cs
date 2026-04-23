@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using NextHorizon.Data;
 using Microsoft.EntityFrameworkCore;
+using NextHorizon.Messaging.Models;
 using NextHorizon.Validation;
 namespace NextHorizon.Controllers
 {
@@ -21,6 +22,7 @@ namespace NextHorizon.Controllers
         private readonly IOrderService _orderService;
         private readonly ISellerContextService _sellerContextService;
         private readonly ISellerPerformanceService _sellerPerformanceService;
+        private readonly ISellerNotificationService _sellerNotificationService;
         private readonly IConfiguration _configuration;
         private readonly IWebHostEnvironment _environment;
         public DashboardController(
@@ -28,6 +30,7 @@ namespace NextHorizon.Controllers
             ISellerPerformanceService sellerPerformanceService,
             IConfiguration configuration,
             IOrderService orderService,
+            ISellerNotificationService sellerNotificationService,
             AppDbContext context,
             IWebHostEnvironment environment)
             
@@ -36,6 +39,7 @@ namespace NextHorizon.Controllers
             _sellerPerformanceService = sellerPerformanceService;
             _configuration = configuration;
             _orderService = orderService;
+            _sellerNotificationService = sellerNotificationService;
             _context = context;
             _environment = environment;
         }
@@ -542,6 +546,19 @@ public async Task<IActionResult> SubmitReturnRequest([FromForm] SubmitReturnRequ
 
     _context.ReturnRequests.Add(returnRequest);
     await _context.SaveChangesAsync();
+
+    await _sellerNotificationService.CreateIfMissingAsync(new SellerNotification
+    {
+        RecipientType = "seller",
+        RecipientId = order.seller_id.ToString(),
+        SellerId = order.seller_id,
+        OrderId = order.OrderID,
+        Category = "return",
+        Title = "Return Request Submitted",
+        Message = $"A buyer requested a refund/return for order #{order.OrderID}.",
+        IsRead = false,
+        CreatedAt = returnRequest.CreatedAt
+    });
 
     return Json(new { success = true, message = "Return request submitted successfully." });
 }
@@ -1171,7 +1188,7 @@ private async Task RestoreStockForOrderAsync(Order order)
 // ============== SET DEFAULT PAYOUT ACCOUNT ==============
 [HttpPost]
 [HttpPost]
-public async Task<IActionResult> SetDefaultPayoutAccount([FromBody] SetDefaultAccountRequest request)
+        public async Task<IActionResult> SetDefaultPayoutAccount([FromBody] SetDefaultAccountRequest request)
 {
     var redirect = RedirectIfNotLoggedIn();
     if (redirect != null) return Unauthorized();
@@ -1193,6 +1210,23 @@ public async Task<IActionResult> SetDefaultPayoutAccount([FromBody] SetDefaultAc
                 await command.ExecuteNonQueryAsync();
             }
         }
+
+        await _sellerNotificationService.CreateAsync(new SellerNotification
+        {
+            RecipientType = "seller",
+            RecipientId = sellerId.Value.ToString(),
+            SellerId = sellerId.Value,
+            Category = "system",
+            Type = "system.payout_account_default_changed",
+            Title = "Default Payout Account Updated",
+            Message = "Your default payout account has been updated.",
+            Priority = "medium",
+            DeliveryMode = "in_app",
+            LinkType = "payout",
+            LinkTarget = "/Dashboard/PayoutAccounts",
+            ActionRequired = false,
+            DeduplicationKey = $"system.payout_account_default_changed:{sellerId.Value}:{request.AccountId}"
+        });
 
         return Ok();
     }
@@ -1232,6 +1266,26 @@ public async Task<IActionResult> RemovePayoutAccount([FromBody] RemoveAccountReq
                     if (await reader.ReadAsync())
                     {
                         int rowsAffected = reader.GetInt32(0);
+
+                        if (rowsAffected > 0)
+                        {
+                            await _sellerNotificationService.CreateAsync(new SellerNotification
+                            {
+                                RecipientType = "seller",
+                                RecipientId = sellerId.Value.ToString(),
+                                SellerId = sellerId.Value,
+                                Category = "system",
+                                Type = "system.payout_account_removed",
+                                Title = "Payout Account Removed",
+                                Message = "A payout account was removed from your seller profile.",
+                                Priority = "medium",
+                                DeliveryMode = "in_app",
+                                LinkType = "payout",
+                                LinkTarget = "/Dashboard/PayoutAccounts",
+                                ActionRequired = false,
+                                DeduplicationKey = $"system.payout_account_removed:{sellerId.Value}:{request.AccountId}"
+                            });
+                        }
                         
                         // Always return 200 OK with success flag
                         return Ok(new { 
@@ -1346,6 +1400,24 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
         }
 
         TempData["SuccessMessage"] = "Payout account added successfully";
+
+        await _sellerNotificationService.CreateAsync(new SellerNotification
+        {
+            RecipientType = "seller",
+            RecipientId = sellerId.Value.ToString(),
+            SellerId = sellerId.Value,
+            Category = "system",
+            Type = "system.payout_account_added",
+            Title = "Payout Account Added",
+            Message = "A new payout account was added to your seller profile.",
+            Priority = "medium",
+            DeliveryMode = "in_app",
+            LinkType = "payout",
+            LinkTarget = "/Dashboard/PayoutAccounts",
+            ActionRequired = false,
+            DeduplicationKey = $"system.payout_account_added:{sellerId.Value}:{model.AccountType}:{model.AccountNumber ?? model.CardNumber ?? model.EwalletAccountNumber ?? "unknown"}"
+        });
+
         return RedirectToAction("PayoutAccounts");
     }
     catch (Exception ex)
@@ -1473,6 +1545,23 @@ public async Task<IActionResult> AddPayoutAccount(AddPayoutAccountViewModel mode
 
                     string referenceNo = refNoParam.Value?.ToString() ?? "";
                     TempData["SuccessMessage"] = $"Withdrawal request submitted successfully. Reference: {referenceNo}";
+
+                    await _sellerNotificationService.CreateAsync(new SellerNotification
+                    {
+                        RecipientType = "seller",
+                        RecipientId = sellerId.Value.ToString(),
+                        SellerId = sellerId.Value,
+                        Category = "payout",
+                        Type = "payout.withdrawal_requested",
+                        Title = "Withdrawal Requested",
+                        Message = $"Your withdrawal request for PHP {model.Amount:N2} has been submitted for processing.",
+                        Priority = "high",
+                        DeliveryMode = "realtime,email,in_app",
+                        LinkType = "payout",
+                        LinkTarget = "/Dashboard/Withdraw",
+                        ActionRequired = false,
+                        DeduplicationKey = string.IsNullOrWhiteSpace(referenceNo) ? null : $"payout.withdrawal_requested:{referenceNo}"
+                    });
                     
                     return RedirectToAction("Finance");
                 }
@@ -1834,6 +1923,7 @@ public async Task<IActionResult> DeclineOrder([FromBody] DeclineRequest request)
             var recentOrders = sellerContext.SellerId > 0
                 ? await GetRecentOrdersAsync(sellerContext.SellerId, 5, cancellationToken)
                 : new List<Order>();
+            var notifications = await BuildDashboardNotificationsAsync(sellerContext.SellerId, cancellationToken);
             return new SellerDashboardViewModel
             {
                 SellerName = sellerContext.SellerName,
@@ -1873,6 +1963,7 @@ public async Task<IActionResult> DeclineOrder([FromBody] DeclineRequest request)
                 MonthlyOrdersByYear = monthlyOrders,
                 MonthlyUnitsByYear = monthlyUnits,
                 RecentOrders = recentOrders,
+                Notifications = notifications,
                 TopProducts = topProducts,
                 TopCategories = topCategories,
                 TopProductsByRange = new Dictionary<string, List<TopSellingProduct>>
@@ -1883,6 +1974,448 @@ public async Task<IActionResult> DeclineOrder([FromBody] DeclineRequest request)
                     ["ALL"] = topProducts,
                 }
             };
+        }
+
+        private async Task<List<SellerDashboardNotificationViewModel>> BuildSellerNotificationsAsync(int sellerId, CancellationToken cancellationToken)
+        {
+            var notifications = new List<SellerDashboardNotificationViewModel>();
+            if (sellerId <= 0)
+            {
+                return notifications;
+            }
+
+            var recipientId = sellerId.ToString();
+            var now = DateTime.UtcNow;
+            var dedupeKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            void AddNotification(
+                string category,
+                string type,
+                string title,
+                string message,
+                DateTime createdAt,
+                string priority,
+                string deliveryMode,
+                bool actionRequired,
+                int? orderId,
+                string? linkType,
+                string? linkTarget)
+            {
+                var dedupeKey = $"{type}:{orderId?.ToString() ?? "none"}:{createdAt:O}";
+                if (!dedupeKeys.Add(dedupeKey))
+                {
+                    return;
+                }
+
+                notifications.Add(new SellerDashboardNotificationViewModel
+                {
+                    RecipientType = "seller",
+                    RecipientId = recipientId,
+                    OrderId = orderId,
+                    Message = message,
+                    IsRead = false,
+                    CreatedAt = createdAt,
+                    Category = category,
+                    Type = type,
+                    Title = title,
+                    Priority = priority,
+                    ActionRequired = actionRequired,
+                    DeliveryMode = deliveryMode,
+                    LinkType = linkType,
+                    LinkTarget = linkTarget
+                });
+            }
+
+            var recentOrders = await _context.Orders
+                .AsNoTracking()
+                .Where(order => order.seller_id == sellerId)
+                .OrderByDescending(order => order.OrderDate)
+                .Take(12)
+                .ToListAsync(cancellationToken);
+
+            await _orderService.ApplySellerFacingStatusesAsync(sellerId, recentOrders, cancellationToken);
+
+            foreach (var order in recentOrders)
+            {
+                var effectiveStatus = string.IsNullOrWhiteSpace(order.EffectiveStatus)
+                    ? order.Status ?? string.Empty
+                    : order.EffectiveStatus;
+                var orderLink = Url.Action("OrderManagement", "Dashboard", new { orderId = order.OrderID }) ?? "/Dashboard/OrderManagement";
+
+                if (order.OrderDate >= now.AddDays(-1))
+                {
+                    AddNotification(
+                        "order",
+                        "order.new_received",
+                        "New Order Received",
+                        $"You received a new order #{order.OrderID}. Review and confirm fulfillment details.",
+                        order.OrderDate,
+                        "high",
+                        "realtime,email,in_app",
+                        true,
+                        order.OrderID,
+                        "order",
+                        orderLink);
+                }
+
+                if (effectiveStatus.Equals("Pending", StringComparison.OrdinalIgnoreCase))
+                {
+                    AddNotification(
+                        "order",
+                        "order.pending_seller_action",
+                        "Order Needs Your Action",
+                        $"Order #{order.OrderID} is waiting for your confirmation or fulfillment update.",
+                        order.OrderDate,
+                        "high",
+                        "realtime,email,in_app",
+                        true,
+                        order.OrderID,
+                        "order",
+                        orderLink);
+                    continue;
+                }
+
+                if (effectiveStatus.Equals("To Ship", StringComparison.OrdinalIgnoreCase))
+                {
+                    AddNotification(
+                        "order",
+                        "order.ready_to_ship",
+                        "Order Ready to Ship",
+                        $"Order #{order.OrderID} is ready for shipment. Print the label and dispatch it.",
+                        order.OrderDate,
+                        "high",
+                        "realtime,email,in_app",
+                        true,
+                        order.OrderID,
+                        "order",
+                        orderLink);
+                    continue;
+                }
+
+                if (effectiveStatus.Equals("Cancelled", StringComparison.OrdinalIgnoreCase))
+                {
+                    var cancelledByBuyer = !string.IsNullOrWhiteSpace(order.CancellationReason);
+                    AddNotification(
+                        "cancellation",
+                        cancelledByBuyer ? "cancellation.by_buyer" : "cancellation.by_system_admin",
+                        cancelledByBuyer ? "Order Canceled by Buyer" : "Order Canceled by Platform",
+                        cancelledByBuyer
+                            ? $"Buyer canceled order #{order.OrderID}."
+                            : $"Order #{order.OrderID} was canceled by the platform or an administrator.",
+                        order.OrderDate,
+                        "high",
+                        "realtime,email,in_app",
+                        false,
+                        order.OrderID,
+                        "order",
+                        orderLink);
+                    continue;
+                }
+
+                if (effectiveStatus.Equals("Failed Delivery", StringComparison.OrdinalIgnoreCase))
+                {
+                    AddNotification(
+                        "order",
+                        "order.issue_failed_processing",
+                        "Order Processing Issue",
+                        $"Order #{order.OrderID} could not be completed because delivery failed. Review the issue and take action.",
+                        order.OrderDate,
+                        "critical",
+                        "realtime,email,in_app",
+                        true,
+                        order.OrderID,
+                        "order",
+                        orderLink);
+                    continue;
+                }
+
+                if (effectiveStatus.Equals("Shipped", StringComparison.OrdinalIgnoreCase)
+                    || effectiveStatus.Equals("Delivered", StringComparison.OrdinalIgnoreCase))
+                {
+                    AddNotification(
+                        "order",
+                        "order.accepted_rejected",
+                        "Order Status Updated",
+                        $"Order #{order.OrderID} moved to {effectiveStatus}.",
+                        order.DateShipped ?? order.OrderDate,
+                        "medium",
+                        "in_app",
+                        false,
+                        order.OrderID,
+                        "order",
+                        orderLink);
+                }
+            }
+
+            var returnRequests = await _context.ReturnRequests
+                .AsNoTracking()
+                .Where(request => request.SellerId == sellerId)
+                .OrderByDescending(request => request.UpdatedAt)
+                .Take(10)
+                .ToListAsync(cancellationToken);
+
+            foreach (var request in returnRequests)
+            {
+                var activityAt = request.UpdatedAt == default ? request.CreatedAt : request.UpdatedAt;
+                var orderLink = Url.Action("OrderManagement", "Dashboard", new { status = "Return" }) ?? "/Dashboard/OrderManagement?status=Return";
+
+                if (request.Status.Equals("Return Requested", StringComparison.OrdinalIgnoreCase))
+                {
+                    AddNotification(
+                        "return",
+                        "return.request_submitted",
+                        "Return Request Submitted",
+                        $"A return request was submitted for order #{request.OrderId}.",
+                        activityAt,
+                        "high",
+                        "realtime,email,in_app",
+                        true,
+                        request.OrderId,
+                        "order",
+                        orderLink);
+                    continue;
+                }
+
+                if (request.Status.Equals("Return Approved", StringComparison.OrdinalIgnoreCase)
+                    || request.Status.Equals("Return Rejected", StringComparison.OrdinalIgnoreCase))
+                {
+                    AddNotification(
+                        "return",
+                        "return.approved_rejected",
+                        "Return Decision Updated",
+                        $"Return for order #{request.OrderId} has been {request.Status.Replace("Return ", string.Empty).ToLowerInvariant()}.",
+                        activityAt,
+                        "high",
+                        "realtime,in_app",
+                        false,
+                        request.OrderId,
+                        "order",
+                        orderLink);
+                    continue;
+                }
+
+                if (request.Status.Equals("Item Returned", StringComparison.OrdinalIgnoreCase))
+                {
+                    AddNotification(
+                        "return",
+                        "return.completed",
+                        "Return Completed",
+                        $"Return workflow for order #{request.OrderId} has been completed.",
+                        activityAt,
+                        "medium",
+                        "in_app",
+                        false,
+                        request.OrderId,
+                        "order",
+                        orderLink);
+                    continue;
+                }
+
+                if (request.Status.Equals("Refunded", StringComparison.OrdinalIgnoreCase))
+                {
+                    AddNotification(
+                        "refund",
+                        "refund.completed",
+                        "Refund Completed",
+                        $"Refund for order #{request.OrderId} has been completed successfully.",
+                        activityAt,
+                        "medium",
+                        "in_app",
+                        false,
+                        request.OrderId,
+                        "order",
+                        orderLink);
+                }
+            }
+
+            var lowStockProducts = await _context.ProductVariants
+                .AsNoTracking()
+                .Where(variant => variant.Product != null && variant.Product.SellerId == sellerId)
+                .GroupBy(variant => new
+                {
+                    variant.ProductId,
+                    ProductName = variant.Product != null ? variant.Product.ProductName : string.Empty
+                })
+                .Select(group => new
+                {
+                    group.Key.ProductId,
+                    group.Key.ProductName,
+                    Stock = group.Sum(item => item.Quantity)
+                })
+                .Where(item => item.Stock <= 5)
+                .OrderBy(item => item.Stock)
+                .Take(5)
+                .ToListAsync(cancellationToken);
+
+            foreach (var product in lowStockProducts)
+            {
+                var isOutOfStock = product.Stock <= 0;
+                var linkTarget = Url.Action("ViewProduct", "Seller", new { id = product.ProductId, state = "active" }) ?? $"/Seller/ViewProduct?id={product.ProductId}&state=active";
+
+                AddNotification(
+                    "inventory",
+                    isOutOfStock ? "inventory.out_of_stock" : "inventory.low_stock",
+                    isOutOfStock ? "Out of Stock" : "Low Stock Alert",
+                    isOutOfStock
+                        ? $"Product {product.ProductName} is now out of stock."
+                        : $"Product {product.ProductName} is running low on stock with {product.Stock} units left.",
+                    DateTime.UtcNow,
+                    "high",
+                    "in_app,email",
+                    true,
+                    null,
+                    "product",
+                    linkTarget);
+            }
+
+            var conversations = await _context.MessageConversations
+                .AsNoTracking()
+                .Where(conversation => conversation.SellerUserId == sellerId)
+                .OrderByDescending(conversation => conversation.LastMessageAt ?? conversation.CreatedAt)
+                .Take(10)
+                .Select(conversation => new
+                {
+                    conversation.ConversationId,
+                    conversation.OrderId,
+                    conversation.SellerLastReadAt
+                })
+                .ToListAsync(cancellationToken);
+
+            var conversationIds = conversations.Select(conversation => conversation.ConversationId).ToArray();
+            var latestMessages = new Dictionary<int, ConversationMessage>();
+            if (conversationIds.Length > 0)
+            {
+                var messages = await _context.ConversationMessages
+                    .AsNoTracking()
+                    .Where(message => conversationIds.Contains(message.ConversationId) && !message.IsDeleted)
+                    .OrderByDescending(message => message.SentAt)
+                    .ToListAsync(cancellationToken);
+
+                latestMessages = messages
+                    .GroupBy(message => message.ConversationId)
+                    .ToDictionary(group => group.Key, group => group.First());
+            }
+
+            foreach (var conversation in conversations)
+            {
+                if (!latestMessages.TryGetValue(conversation.ConversationId, out var latestMessage))
+                {
+                    continue;
+                }
+
+                var isUnread = !conversation.SellerLastReadAt.HasValue || latestMessage.SentAt > conversation.SellerLastReadAt.Value;
+                if (!isUnread || latestMessage.SenderUserId == sellerId)
+                {
+                    continue;
+                }
+
+                var messageLink = Url.Action(
+                    "SellerMessenger",
+                    "Seller",
+                    new
+                    {
+                        conversationId = conversation.ConversationId,
+                        orderId = conversation.OrderId
+                    }) ?? $"/seller/messenger?conversationId={conversation.ConversationId}";
+
+                AddNotification(
+                    "message",
+                    "message.new_customer_message",
+                    "New Customer Message",
+                    conversation.OrderId.HasValue
+                        ? $"You received a new message from a customer regarding order #{conversation.OrderId.Value}."
+                        : "You received a new message from a customer.",
+                    latestMessage.SentAt,
+                    "high",
+                    "realtime,email,in_app",
+                    true,
+                    conversation.OrderId,
+                    "message_thread",
+                    messageLink);
+
+                if (!string.IsNullOrWhiteSpace(latestMessage.AttachmentUrl)
+                    || latestMessage.AttachmentData is { Length: > 0 }
+                    || !string.IsNullOrWhiteSpace(latestMessage.AttachmentFileName))
+                {
+                    AddNotification(
+                        "message",
+                        "message.follow_up_attachment_alert",
+                        "Message Follow-up Needed",
+                        "A customer sent additional information or an attachment that needs review.",
+                        latestMessage.SentAt,
+                        "medium",
+                        "realtime,in_app",
+                        true,
+                        conversation.OrderId,
+                        "message_thread",
+                        messageLink);
+                }
+
+                if (latestMessage.SentAt <= now.AddHours(-12))
+                {
+                    AddNotification(
+                        "message",
+                        "message.unread_conversation_alert",
+                        "Unread Conversation Reminder",
+                        "You have unread customer messages awaiting response.",
+                        latestMessage.SentAt,
+                        "medium",
+                        "email,in_app",
+                        true,
+                        conversation.OrderId,
+                        "message_thread",
+                        messageLink);
+                }
+            }
+
+            return notifications
+                .OrderByDescending(notification => notification.CreatedAt)
+                .Take(12)
+                .ToList();
+        }
+
+        private async Task<List<SellerDashboardNotificationViewModel>> BuildDashboardNotificationsAsync(int sellerId, CancellationToken cancellationToken)
+        {
+            var persistedNotifications = sellerId > 0
+                ? await _sellerNotificationService.ListAsync(sellerId, 12, false, cancellationToken)
+                : Array.Empty<SellerNotification>();
+
+            var mappedPersisted = persistedNotifications
+                .Select(notification => new SellerDashboardNotificationViewModel
+                {
+                    RecipientType = notification.RecipientType,
+                    RecipientId = notification.RecipientId,
+                    OrderId = notification.OrderId,
+                    Message = notification.Message,
+                    IsRead = notification.IsRead,
+                    CreatedAt = notification.CreatedAt,
+                    Category = notification.Category,
+                    Type = notification.Type,
+                    Title = notification.Title,
+                    Priority = notification.Priority,
+                    ActionRequired = notification.ActionRequired,
+                    DeliveryMode = notification.DeliveryMode,
+                    LinkType = notification.LinkType,
+                    LinkTarget = notification.LinkTarget
+                })
+                .ToList();
+
+            var computed = await BuildSellerNotificationsAsync(sellerId, cancellationToken);
+            var merged = mappedPersisted
+                .Concat(computed)
+                .GroupBy(notification => string.Join("|",
+                    notification.Type,
+                    notification.OrderId?.ToString() ?? "none",
+                    notification.Title,
+                    notification.CreatedAt.ToString("O")))
+                .Select(group => group
+                    .OrderBy(item => item.IsRead)
+                    .First())
+                .OrderByDescending(notification => notification.CreatedAt)
+                .Take(12)
+                .ToList();
+
+            return merged;
         }
         
     }
