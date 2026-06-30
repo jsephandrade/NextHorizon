@@ -1,0 +1,445 @@
+@{
+    ViewData["Title"] = "Rated History";
+    Layout = "~/Views/Shared/_QALayout.cshtml";
+}
+
+@section Styles {
+<style>
+    .page-wrap {
+        background: #ffffff;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        border-radius: 14px;
+        padding: 16px;
+    }
+
+    .head {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .head h2 {
+        font-size: 1.3rem;
+        margin: 0;
+    }
+
+    .head-sub {
+        color: #666666;
+        font-size: .85rem;
+    }
+
+    .search-wrap {
+        position: relative;
+    }
+
+    .search-wrap i {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #777777;
+        font-size: .85rem;
+    }
+
+    .search {
+        width: 100%;
+        border: 1px solid rgba(0, 0, 0, 0.18);
+        border-radius: 10px;
+        padding: 9px 12px 9px 30px;
+        font-size: .86rem;
+        background: #ffffff;
+    }
+
+    .filters {
+        display: grid;
+        gap: 8px;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 8px;
+    }
+
+    .filter-field {
+        display: grid;
+        gap: 4px;
+    }
+
+    .filter-label {
+        font-size: .74rem;
+        font-weight: 700;
+        color: #5a5a5a;
+        letter-spacing: .01em;
+    }
+
+    .filter-help {
+        font-size: .78rem;
+        color: #6a6a6a;
+    }
+
+    .filter-input,
+    .filter-select {
+        width: 100%;
+        border: 1px solid rgba(0, 0, 0, 0.18);
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-size: .82rem;
+        background: #ffffff;
+        color: #222222;
+    }
+
+    .rows {
+        display: grid;
+        gap: 10px;
+    }
+
+    .row {
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        padding: 12px;
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 8px;
+        align-items: center;
+        background: #f7f7f7;
+    }
+
+    .name { font-weight: 700; color: #111111; }
+    .sub { color: #666666; }
+
+    .score {
+        border-radius: 999px;
+        padding: 6px 11px;
+        font-weight: 800;
+        background: #e7e7e7;
+        white-space: nowrap;
+    }
+
+    .btn {
+        text-decoration: none;
+        border-radius: 10px;
+        padding: 8px 12px;
+        background: #111111;
+        color: #ffffff;
+        font-weight: 600;
+        font-size: .8rem;
+        white-space: nowrap;
+    }
+
+    .empty-state {
+        display: none;
+        border: 1px dashed rgba(0, 0, 0, 0.2);
+        border-radius: 12px;
+        padding: 14px;
+        color: #555555;
+        background: #fafafa;
+        font-size: .86rem;
+    }
+
+    .pager {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+    }
+
+    .pager-pages {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .pager-btn {
+        border: 1px solid rgba(0, 0, 0, 0.14);
+        background: #ffffff;
+        color: #111111;
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-size: .82rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .pager-btn.active {
+        background: #111111;
+        color: #ffffff;
+    }
+
+    .pager-btn:disabled {
+        background: #e5e5e5;
+        color: #8a8a8a;
+        cursor: not-allowed;
+    }
+
+    .pager-ellipsis {
+        color: #666666;
+        font-size: .9rem;
+        padding: 0 2px;
+    }
+
+    @@media (max-width: 700px) {
+        .filter-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .row {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 520px) {
+        .filter-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+}
+
+<section class="page-wrap">
+    <div class="head">
+        <h2>Rated history</h2>
+        <div class="head-sub">QA can review all previously rated conversations here.</div>
+        <div class="filters">
+            <div class="filter-help">Date filters are based on when the ticket was first rated by QA.</div>
+            <div class="filter-grid">
+                <div class="filter-field">
+                    <label class="filter-label" for="quick-range">Date preset</label>
+                    <select id="quick-range" class="filter-select">
+                        <option value="custom">Custom range</option>
+                        <option value="today">Today</option>
+                        <option value="last7">Last 7 days</option>
+                        <option value="last30">Last 30 days</option>
+                    </select>
+                </div>
+                <div class="filter-field">
+                    <label class="filter-label" for="from-date">Rated date from</label>
+                    <input id="from-date" class="filter-input" type="date" />
+                </div>
+                <div class="filter-field">
+                    <label class="filter-label" for="to-date">Rated date to</label>
+                    <input id="to-date" class="filter-input" type="date" />
+                </div>
+                <div class="filter-field">
+                    <label class="filter-label" for="score-filter">Score range</label>
+                    <select id="score-filter" class="filter-select">
+                        <option value="">All scores</option>
+                        <option value="high">90% to 100%</option>
+                        <option value="good">80% to 89.9%</option>
+                        <option value="mid">70% to 79.9%</option>
+                        <option value="low">Below 70%</option>
+                    </select>
+                </div>
+            </div>
+            <div class="search-wrap">
+                <i class="bi bi-search"></i>
+                <input id="rated-search" class="search" type="text" placeholder="Search by ticket, concern source, or date..." />
+            </div>
+        </div>
+    </div>
+
+    <div class="rows" id="rated-list"></div>
+    <div id="rated-empty" class="empty-state">No rated tickets found for the selected filters.</div>
+    <div id="rated-pager" class="pager">
+        <div id="rated-pager-pages" class="pager-pages"></div>
+        <button id="rated-pager-next" class="pager-btn" type="button">Next page</button>
+    </div>
+</section>
+
+<script>
+    (function () {
+        var input = document.getElementById('rated-search');
+        var quickRange = document.getElementById('quick-range');
+        var fromDate = document.getElementById('from-date');
+        var toDate = document.getElementById('to-date');
+        var scoreFilter = document.getElementById('score-filter');
+        var list = document.getElementById('rated-list');
+        var emptyState = document.getElementById('rated-empty');
+        var pager = document.getElementById('rated-pager');
+        var pagerPages = document.getElementById('rated-pager-pages');
+        var pagerNext = document.getElementById('rated-pager-next');
+        if (!input || !quickRange || !fromDate || !toDate || !scoreFilter || !list || !emptyState || !pager || !pagerPages || !pagerNext) return;
+
+        var searchDebounceHandle = 0;
+        var currentPage = 1;
+
+        function escHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function toIsoDate(d) {
+            var y = d.getFullYear();
+            var m = String(d.getMonth() + 1).padStart(2, '0');
+            var day = String(d.getDate()).padStart(2, '0');
+            return y + '-' + m + '-' + day;
+        }
+
+        function applyQuickRange() {
+            var now = new Date();
+            var selected = quickRange.value;
+            if (!selected || selected === 'custom') return;
+
+            var end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            var start = new Date(end);
+            if (selected === 'today') start = end;
+            else if (selected === 'last7') start.setDate(start.getDate() - 6);
+            else if (selected === 'last30') start.setDate(start.getDate() - 29);
+
+            fromDate.value = toIsoDate(start);
+            toDate.value = toIsoDate(end);
+        }
+
+        function buildQueryString() {
+            var query = new URLSearchParams();
+            query.set('page', String(currentPage));
+            query.set('range', quickRange.value || 'custom');
+            if (fromDate.value) query.set('from', fromDate.value);
+            if (toDate.value) query.set('to', toDate.value);
+
+            var search = (input.value || '').trim();
+            if (search) query.set('search', search);
+            if (scoreFilter.value) query.set('score', scoreFilter.value);
+
+            return query.toString();
+        }
+
+        function getVisiblePages(currentPage, totalPages) {
+            var pages = [];
+            var start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+            var end = Math.min(totalPages, start + 4);
+            for (var page = start; page <= end; page++) {
+                pages.push(page);
+            }
+            return pages;
+        }
+
+        function renderRow(item) {
+            var html = '<div class="row">';
+            html += '<div>';
+            html += '<div class="name">Ticket #' + item.supportFaqId + ' - Agent: ' + escHtml(item.agentName) + ' - Concern from: ' + escHtml(item.concernFrom) + '</div>';
+            html += '<div class="sub">QA ' + escHtml(item.reviewerName) + ' on ' + escHtml(item.ratedAtLabel) + ' - <strong>' + escHtml(item.categorySummary || 'No category breakdown recorded.') + '</strong></div>';
+            html += '</div>';
+            html += '<div class="score"><strong>' + Number(item.overallPercent).toFixed(1) + ' / 100</strong></div>';
+            html += '<a class="btn" href="/qa/rating/' + item.supportFaqId + '">View</a>';
+            html += '</div>';
+            return html;
+        }
+
+        function renderPagination(payload) {
+            var totalPages = payload && payload.totalPages ? payload.totalPages : 1;
+            var page = payload && payload.page ? payload.page : 1;
+            var visiblePages = getVisiblePages(page, totalPages);
+            var html = '';
+            for (var i = 0; i < visiblePages.length; i++) {
+                var visiblePage = visiblePages[i];
+                html += '<button class="pager-btn' + (visiblePage === page ? ' active' : '') + '" type="button" data-page="' + visiblePage + '">' + visiblePage + '</button>';
+            }
+            if (visiblePages.length && visiblePages[visiblePages.length - 1] < totalPages) {
+                html += '<span class="pager-ellipsis">...</span>';
+            }
+            pagerPages.innerHTML = html;
+            pagerNext.disabled = !(payload && payload.hasNext);
+            pager.style.display = payload && payload.count > 0 && totalPages > 1 ? 'flex' : 'none';
+        }
+
+        function loadRatedHistory() {
+            fetch('/qa/api/rated-history?' + buildQueryString(), {
+                headers: { 'Accept': 'application/json' }
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('Unable to load rated history.');
+                    }
+                    return response.json();
+                })
+                .then(function (payload) {
+                    currentPage = payload.page || 1;
+                    var items = payload.items || [];
+                    if (!items.length) {
+                        list.innerHTML = '';
+                        emptyState.textContent = 'No rated tickets found for the selected filters.';
+                        emptyState.style.display = 'block';
+                        renderPagination(payload);
+                        return;
+                    }
+
+                    list.innerHTML = items.map(renderRow).join('');
+                    emptyState.style.display = 'none';
+                    renderPagination(payload);
+                })
+                .catch(function (error) {
+                    list.innerHTML = '';
+                    pager.style.display = 'none';
+                    pagerPages.innerHTML = '';
+                    emptyState.textContent = error && error.message ? error.message : 'Unable to load rated history.';
+                    emptyState.style.display = 'block';
+                });
+        }
+
+        function setCustomRangeOnManualDate() {
+            quickRange.value = 'custom';
+        }
+
+        function resetToFirstPage() {
+            currentPage = 1;
+        }
+
+        input.addEventListener('input', function () {
+            window.clearTimeout(searchDebounceHandle);
+            resetToFirstPage();
+            searchDebounceHandle = window.setTimeout(loadRatedHistory, 200);
+        });
+        scoreFilter.addEventListener('change', function () {
+            resetToFirstPage();
+            loadRatedHistory();
+        });
+        fromDate.addEventListener('change', function () {
+            setCustomRangeOnManualDate();
+            resetToFirstPage();
+            loadRatedHistory();
+        });
+        toDate.addEventListener('change', function () {
+            setCustomRangeOnManualDate();
+            resetToFirstPage();
+            loadRatedHistory();
+        });
+        fromDate.addEventListener('focus', setCustomRangeOnManualDate);
+        toDate.addEventListener('focus', setCustomRangeOnManualDate);
+        fromDate.addEventListener('click', setCustomRangeOnManualDate);
+        toDate.addEventListener('click', setCustomRangeOnManualDate);
+        quickRange.addEventListener('change', function () {
+            if (quickRange.value === 'custom') {
+                fromDate.value = '';
+                toDate.value = '';
+            }
+            applyQuickRange();
+            resetToFirstPage();
+            loadRatedHistory();
+        });
+
+        pagerNext.addEventListener('click', function () {
+            currentPage++;
+            loadRatedHistory();
+        });
+
+        pagerPages.addEventListener('click', function (event) {
+            var target = event.target;
+            if (!target || !target.matches('[data-page]')) return;
+            var nextPage = parseInt(target.getAttribute('data-page') || '0', 10);
+            if (!nextPage || nextPage === currentPage) return;
+            currentPage = nextPage;
+            loadRatedHistory();
+        });
+
+        loadRatedHistory();
+    })();
+</script>

@@ -1,0 +1,213 @@
+﻿@model NextHorizon.Models.Admin_Models.AnalyticsViewModel
+
+@{
+    ViewData["Title"] = "Admin Portal - Analytics Overview";
+    Layout = "_AdminLayout";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-5 bg-white p-3 rounded-3 border shadow-sm">
+    <div class="d-flex gap-2 align-items-center">
+        <select id="datePreset" class="form-select form-select-sm border shadow-sm" style="width: 150px;">
+            <option value="7">Last 7 Days</option>
+            <option value="30" selected>Last 30 Days</option>
+            <option value="90">Last Quarter</option>
+            <option value="custom">Custom Range...</option>
+        </select>
+
+        <div id="customDateContainer" class="d-none d-flex gap-2 align-items-center">
+            <input type="date" class="form-control form-control-sm" id="startDate">
+            <span class="text-muted small">to</span>
+            <input type="date" class="form-control form-control-sm" id="endDate">
+        </div>
+    </div>
+
+<button class="btn btn-dark btn-sm px-4 fw-bold" onclick="exportAnalyticsToExcel()">
+    <i class="bi bi-file-earmark-excel me-2"></i>Export Report
+</button>
+</div>
+
+<div class="row g-3 mb-5">
+    <div class="col-md-3">
+        <div class="analytics-card bg-white border shadow-sm h-100 p-4 rounded-4">
+            <p class="text-muted small fw-bold mb-1">TOTAL CONSUMERS</p>
+            <h2 class="fw-800 text-dark">@Model.TotalConsumers.ToString("N0")</h2>
+            <p class="text-success small fw-bold mb-0"><i class="bi bi-graph-up-arrow"></i> +12% Growth</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="analytics-card bg-white border shadow-sm h-100 p-4 rounded-4">
+            <p class="text-muted small fw-bold mb-1">TOTAL SELLERS</p>
+            <h2 class="fw-800 text-dark">@Model.TotalSellers.ToString("N0")</h2>
+            <p class="text-primary small fw-bold mb-0">Active Brands</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="analytics-card bg-white border shadow-sm h-100 p-4 rounded-4">
+            <p class="text-muted small fw-bold mb-1">AVG. ORDER VALUE</p>
+            <h2 class="fw-800 text-dark" id="avgOrderValue">₱@Model.AverageOrderValue.ToString("N2")</h2>
+            <p class="text-muted tiny mb-0">Per Transaction</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="analytics-card card-dark h-100">
+            <p class="text-white-50 small fw-bold mb-1">CONVERSION RATE</p>
+            <h2 class="text-white fw-800">@Model.ChallengeToSaleConversionRate.ToString("F1")%</h2>
+            <div class="progress bg-secondary" style="height: 4px;">
+                <div class="progress-bar bg-white" style="width: @Model.ChallengeToSaleConversionRate%"></div>
+            </div>
+            <p class="text-white-50 tiny mt-2 mb-0">+5.2% vs last month</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-5">
+    <div class="col-md-8">
+        <div class="chart-box bg-white border p-4 rounded-4 shadow-sm h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h6 class="fw-bold small text-uppercase m-0">Challenge Participation vs. Revenue</h6>
+                    <p class="text-muted tiny mb-0">Correlation between active challengers and platform sales</p>
+                </div>
+                <span class="badge bg-light text-dark border fw-bold" style="font-size: 10px;">ENGAGEMENT TREND</span>
+            </div>
+
+            <div style="height: 350px; position: relative;">
+                <canvas id="mainAnalyticsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="chart-box bg-white border p-4 rounded-4 shadow-sm h-100">
+            <h6 class="fw-bold small text-uppercase mb-4">Top Performing Sellers</h6>
+            <div class="seller-list">
+                @if (Model.TopSellers != null && Model.TopSellers.Any())
+                {
+                    @foreach (var seller in Model.TopSellers.Take(5))
+                    {
+                        <div class="seller-item d-flex align-items-center gap-3 mb-3 p-2 rounded-3 border-bottom pb-3">
+                            <div class="avatar-placeholder bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; flex-shrink: 0;">
+                                <i class="bi bi-shop text-dark"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <p class="mb-0 fw-bold small">@seller.SellerName</p>
+                                <p class="text-muted tiny mb-0">@seller.OrdersFulfilled Orders</p>
+                            </div>
+                            <div class="text-end">
+                                <span class="fw-800 text-dark d-block">₱@seller.RevenueGenerated.ToString("N0")</span>
+                                <span class="tiny text-uppercase fw-bold text-success">REVENUE</span>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted small italic">No seller data available.</p>
+                }
+            </div>
+
+            <div class="mt-3">
+                <a asp-controller="Admin" asp-action="SellerPerformance" asp-fragment="tab-sellers" class="text-decoration-none small fw-bold text-dark">
+                    View Full Rankings <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-5">
+    <div class="col-md-5">
+        <div class="chart-box bg-white border p-4 rounded-4 shadow-sm h-100">
+            <h6 class="fw-bold small text-uppercase mb-4">Most Purchased Products</h6>
+            <div class="product-list">
+                @if (Model.TopMovingProducts != null && Model.TopMovingProducts.Any())
+                {
+                    @foreach (var product in Model.TopMovingProducts.Take(5))
+                    {
+                        <div class="product-item d-flex align-items-center gap-3 mb-3 p-2 rounded-3 border-bottom pb-3">
+                            <div class="avatar-placeholder bg-soft-primary rounded-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; flex-shrink: 0;">
+                                <i class="bi bi-box-seam text-primary"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <p class="mb-0 fw-bold small">@product.ProductName</p>
+                                <p class="text-muted tiny mb-0">@product.UnitsSold Units Sold</p>
+                                <p class="text-muted tiny mb-0">@product.SellerName</p>
+                            </div>
+                            <div class="text-end">
+                                <span class="fw-800 text-dark d-block">₱@product.Revenue.ToString("N0")</span>
+                                <span class="tiny text-uppercase fw-bold text-muted">SALES</span>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted small italic">No product data available for this period.</p>
+                }
+            </div>
+
+            <div class="mt-3">
+                <a asp-controller="Admin" asp-action="SellerPerformance" asp-fragment="tab-products" class="text-decoration-none small fw-bold text-dark">
+                    View All Products <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="bg-white border p-4 rounded-4 shadow-sm h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="fw-bold small text-uppercase m-0">Peak Engagement Times</h6>
+                <span class="tiny text-muted fw-bold">Hourly Activity vs. Purchases</span>
+            </div>
+            <div style="height: 250px;">
+                <canvas id="peakActivityChart"></canvas>
+            </div>
+            <p class="text-muted tiny mt-2 mb-0 text-center">
+                <i class="bi bi-info-circle"></i> Tracking peak hours for daily platform activity against total successful purchases.
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_css/analytics.css" asp-append-version="true" />
+    <style>
+        .bg-soft-primary {
+            background-color: #eef2ff;
+        }
+
+        .bg-soft-success {
+            background-color: #e8f5e9;
+        }
+
+        .tiny {
+            font-size: 0.75rem;
+        }
+
+        .fw-800 {
+            font-weight: 800;
+        }
+
+        .card-dark {
+            background-color: #1a1a1a;
+            color: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+    </style>
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <input type="hidden" id="jsonLabels" value='@Json.Serialize(Model.PerformanceTrends.Select(x => x.DateLabel))' />
+    <input type="hidden" id="jsonRevenue" value='@Json.Serialize(Model.PerformanceTrends.Select(x => x.TotalRevenue))' />
+    <input type="hidden" id="jsonParticipants" value='@Json.Serialize(Model.PerformanceTrends.Select(x => x.ChallengeParticipants))' />
+
+    <input type="hidden" id="peakHours" value='@Json.Serialize(Model.PeakEngagementData.Select(x => x.Hour))' />
+    <input type="hidden" id="peakSyncs" value='@Json.Serialize(Model.PeakEngagementData.Select(x => x.ActivitySyncCount))' />
+    <input type="hidden" id="peakPurchases" value='@Json.Serialize(Model.PeakEngagementData.Select(x => x.PurchaseCount))' />
+
+    <script src="~/js/admin_js/analytics.js" asp-append-version="true"></script>
+}

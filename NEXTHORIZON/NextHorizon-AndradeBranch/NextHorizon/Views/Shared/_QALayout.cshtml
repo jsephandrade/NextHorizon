@@ -1,0 +1,937 @@
+@inject NextHorizon.Services.INotificationService NotificationService
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - NEXT HORIZON QA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    @await RenderSectionAsync("Styles", required: false)
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            min-height: 100vh;
+            color: #111111;
+            background:
+                radial-gradient(circle at 20% 20%, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0) 45%),
+                radial-gradient(circle at 80% 10%, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0) 38%),
+                linear-gradient(180deg, #f6f6f6 0%, #ececec 100%);
+        }
+
+        button,
+        input,
+        select,
+        textarea {
+            font: inherit;
+        }
+
+        .qa-shell {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .qa-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 24px;
+            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.8);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+        }
+
+        .qa-brand {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+
+        .qa-logo {
+            width: 120px;
+            height: 42px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-left: auto;
+        }
+
+        .hdr-icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            color: #4a4a4a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            line-height: 1;
+        }
+
+        .hdr-icon-btn:hover {
+            color: #111111;
+            background-color: rgba(0, 0, 0, 0.06);
+        }
+
+        .notif-wrap,
+        .profile-dropdown-wrap {
+            position: relative;
+        }
+
+        .notif-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 360px;
+            max-width: min(360px, 90vw);
+            background: #ffffff;
+            border: 1px solid #d9d9d9;
+            border-radius: 12px;
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.14);
+            display: none;
+            z-index: 1001;
+            overflow: hidden;
+        }
+
+        .notif-dropdown.open {
+            display: block;
+        }
+
+        .notif-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 14px;
+            border-bottom: 1px solid #ececec;
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: #191919;
+        }
+
+        .notif-clear-btn {
+            border: none;
+            background: none;
+            color: #6a6a6a;
+            cursor: pointer;
+            font: inherit;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .notif-clear-btn:hover {
+            color: #111111;
+        }
+
+        .notif-list {
+            list-style: none;
+            max-height: 360px;
+            overflow-y: auto;
+        }
+
+        .notif-item {
+            padding: 12px 14px;
+            border-bottom: 1px solid #f0f0f0;
+            display: grid;
+            gap: 5px;
+            background: #ffffff;
+        }
+
+        .notif-item.unread {
+            background: #fafafa;
+        }
+
+        .notif-item.clickable {
+            padding: 0;
+        }
+
+        .notif-item-btn {
+            width: 100%;
+            border: none;
+            background: none;
+            text-align: left;
+            padding: 12px 14px;
+            display: grid;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        .notif-item.clickable:hover,
+        .notif-item-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .notif-item:last-child {
+            border-bottom: none;
+        }
+
+        .notif-item-empty {
+            padding: 18px 14px;
+            color: #7a7a7a;
+            font-size: 0.82rem;
+            text-align: center;
+        }
+
+        .notif-category {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #8a8a8a;
+        }
+
+        .notif-message {
+            font-size: 0.82rem;
+            line-height: 1.45;
+            color: #1f1f1f;
+        }
+
+        .notif-time {
+            font-size: 0.74rem;
+            color: #7a7a7a;
+        }
+
+        .qa-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(10, 10, 10, 0.42);
+        }
+
+        .qa-modal.open {
+            display: flex;
+        }
+
+        .qa-modal-card {
+            width: min(760px, 100%);
+            max-height: min(80vh, 820px);
+            overflow: hidden;
+            display: grid;
+            grid-template-rows: auto auto minmax(0, 1fr);
+            border-radius: 18px;
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.2);
+        }
+
+        .qa-modal-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 18px 20px 14px;
+            border-bottom: 1px solid #efefef;
+        }
+
+        .qa-modal-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #171717;
+        }
+
+        .qa-modal-sub {
+            margin-top: 4px;
+            font-size: 0.82rem;
+            color: #666666;
+            line-height: 1.45;
+        }
+
+        .qa-modal-close {
+            border: none;
+            background: #f3f3f3;
+            color: #222222;
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.05rem;
+            line-height: 1;
+        }
+
+        .qa-modal-meta {
+            padding: 14px 20px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            border-bottom: 1px solid #efefef;
+            background: #fafafa;
+        }
+
+        .qa-modal-meta-card {
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            background: #ffffff;
+            padding: 10px 12px;
+        }
+
+        .qa-modal-meta-label {
+            font-size: 0.72rem;
+            color: #707070;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+        }
+
+        .qa-modal-meta-value {
+            font-size: 0.9rem;
+            color: #171717;
+            font-weight: 700;
+        }
+
+        .qa-modal-body {
+            overflow-y: auto;
+            padding: 18px 20px 20px;
+            display: grid;
+            gap: 14px;
+        }
+
+        .qa-modal-status {
+            font-size: 0.84rem;
+            color: #4d4d4d;
+            line-height: 1.5;
+        }
+
+        .qa-modal-status.error {
+            color: #a43b3b;
+        }
+
+        .qa-modal-category {
+            border-radius: 14px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            background: #fcfcfc;
+            padding: 14px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .qa-modal-category-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .qa-modal-category-title {
+            font-size: 0.96rem;
+            font-weight: 700;
+            color: #181818;
+        }
+
+        .qa-modal-category-weight {
+            border-radius: 999px;
+            padding: 5px 10px;
+            background: #efefef;
+            color: #2d2d2d;
+            font-size: 0.76rem;
+            font-weight: 700;
+        }
+
+        .qa-modal-question-list {
+            display: grid;
+            gap: 8px;
+        }
+
+        .qa-modal-question {
+            border-radius: 10px;
+            border: 1px solid rgba(0, 0, 0, 0.07);
+            background: #ffffff;
+            padding: 10px 12px;
+            font-size: 0.83rem;
+            color: #222222;
+            line-height: 1.5;
+        }
+
+        .qa-modal-question-index {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 0.72rem;
+            color: #717171;
+            font-weight: 700;
+        }
+
+        .notif-dot {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 7px;
+            height: 7px;
+            background-color: #d62323;
+            border-radius: 50%;
+            border: 1px solid #ffffff;
+            display: none;
+        }
+
+        .notif-dot.active {
+            display: block;
+        }
+
+        .profile-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: #ffffff;
+            border: 1px solid #d9d9d9;
+            border-radius: 8px;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+            min-width: 190px;
+            display: none;
+            z-index: 1001;
+        }
+
+        .profile-dropdown.open {
+            display: block;
+        }
+
+        .profile-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            border: none;
+            background: none;
+            text-align: left;
+            padding: 11px 14px;
+            color: #222222;
+            font-size: 0.88rem;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .profile-dropdown-item:hover {
+            background: #f4f4f4;
+        }
+
+        .profile-dropdown-item.profile-dd-logout {
+            border-top: 1px solid #e6e6e6;
+        }
+
+        .qa-main {
+            width: 100%;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .qa-workspace {
+            width: min(1380px, 97vw);
+            margin: 22px auto;
+            display: grid;
+            grid-template-columns: 206px minmax(0, 1fr);
+            gap: 12px;
+            flex: 1;
+        }
+
+        .qa-sidebar {
+            align-self: start;
+            position: sticky;
+            top: 84px;
+            margin-left: -10px;
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            border-radius: 12px;
+            padding: 10px;
+            backdrop-filter: blur(4px);
+        }
+
+        .qa-side-title {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #4a4a4a;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin: 0 0 8px;
+        }
+
+        .qa-side-nav {
+            display: grid;
+            gap: 6px;
+        }
+
+        .qa-side-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: #2b2b2b;
+            border-radius: 8px;
+            padding: 9px 10px;
+            border: 1px solid transparent;
+            font-size: 0.86rem;
+            font-weight: 500;
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+        }
+
+        .qa-side-link:hover {
+            background: #f3f3f3;
+            border-color: rgba(0, 0, 0, 0.1);
+            color: #111111;
+        }
+
+        .qa-side-link.active {
+            background: #111111;
+            border-color: #111111;
+            color: #ffffff;
+        }
+
+        @@media (max-width: 768px) {
+            .qa-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+                padding: 12px 16px;
+            }
+
+            .header-actions {
+                margin-left: auto;
+            }
+
+            .qa-main {
+                width: 100%;
+            }
+
+            .qa-workspace {
+                width: 94vw;
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .qa-sidebar {
+                position: static;
+                margin-left: 0;
+            }
+
+            .qa-side-nav {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @@media (max-width: 560px) {
+            .qa-side-nav {
+                grid-template-columns: 1fr;
+            }
+
+            .qa-modal {
+                padding: 12px;
+            }
+
+            .qa-modal-meta {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    @{
+        var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+        var action = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+        var qaUserType = Context.Session.GetString("UserType") ?? string.Empty;
+        var isQaHead = string.Equals(qaUserType.Trim(), "QA Head", StringComparison.OrdinalIgnoreCase);
+        var qaUserName = Context.Session.GetString("FullName");
+        var qaUserId = Context.Session.GetInt32("UserId");
+        qaUserName = string.IsNullOrWhiteSpace(qaUserName)
+            ? Context.Session.GetString("Username") ?? "QA User"
+            : qaUserName;
+        var notificationData = qaUserId.HasValue && qaUserId.Value > 0
+            ? await NotificationService.GetNotificationsAsync(qaUserId.Value, 12, Context.RequestAborted)
+            : new NextHorizon.Models.NotificationListData(Array.Empty<NextHorizon.Models.NotificationListItem>(), false);
+    }
+    <div class="qa-shell">
+        <header class="qa-header">
+            <div class="qa-brand">
+                <img src="/images/nh-logo.jpg" alt="NEXT HORIZON" class="qa-logo" />
+            </div>
+            <div class="header-actions">
+                <div class="notif-wrap" id="qa-notif-wrap">
+                    <button class="hdr-icon-btn" id="qa-notif-btn" aria-label="Notifications" title="Notifications" type="button">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                        <span class="notif-dot @(notificationData.HasUnread ? "active" : string.Empty)" id="qa-notif-dot"></span>
+                    </button>
+                    <div class="notif-dropdown" id="qa-notif-dropdown">
+                        <div class="notif-header">
+                            <span>Notifications</span>
+                            <button class="notif-clear-btn" id="qa-notif-clear-btn" type="button">Clear all</button>
+                        </div>
+                        <ul class="notif-list" id="qa-notif-list">
+                            @if (notificationData.Items.Count == 0)
+                            {
+                                <li class="notif-item-empty">No notifications</li>
+                            }
+                            else
+                            {
+                                @foreach (var item in notificationData.Items)
+                                {
+                                    if (item.IsClickable && item.TargetId.HasValue)
+                                    {
+                                        <li class="notif-item clickable @(item.IsRead ? string.Empty : "unread")">
+                                            <button
+                                                type="button"
+                                                class="notif-item-btn"
+                                                data-template-id="@item.TargetId.Value"
+                                                data-notification-category="@item.Category">
+                                                <div class="notif-category">@item.Category</div>
+                                                <div class="notif-message">@item.Message</div>
+                                                <div class="notif-time">@item.CreatedAtLabel</div>
+                                            </button>
+                                        </li>
+                                    }
+                                    else
+                                    {
+                                        <li class="notif-item @(item.IsRead ? string.Empty : "unread")">
+                                            <div class="notif-category">@item.Category</div>
+                                            <div class="notif-message">@item.Message</div>
+                                            <div class="notif-time">@item.CreatedAtLabel</div>
+                                        </li>
+                                    }
+                                }
+                            }
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="profile-dropdown-wrap" id="profile-wrap">
+                    <button class="hdr-icon-btn" id="profile-btn" onclick="toggleProfileDropdown()" aria-label="Account" aria-expanded="false" title="Account" type="button">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </button>
+                    <div class="profile-dropdown" id="profile-dropdown">
+                        <a href="@Url.Action("Dashboard", "QA")" class="profile-dropdown-item">
+                            <i class="bi bi-person-badge"></i> @qaUserName
+                        </a>
+                        <a href="@Url.Action("Logout", "Login")" class="profile-dropdown-item profile-dd-logout">
+                            <i class="bi bi-box-arrow-right"></i> Log out
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <div class="qa-workspace">
+            <aside class="qa-sidebar" aria-label="QA navigation">
+                <p class="qa-side-title">QA Workspace</p>
+                <nav class="qa-side-nav">
+                    <a href="@Url.Action("Dashboard", "QA")" class="qa-side-link @(controller == "QA" && action == "Dashboard" ? "active" : "")">
+                        <i class="bi bi-grid-1x2"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="@Url.Action("AllAgents", "QA")" class="qa-side-link @(controller == "QA" && (action == "AllAgents" || action == "AgentTickets") ? "active" : "")">
+                        <i class="bi bi-people"></i>
+                        <span>Agents</span>
+                    </a>
+                    <a href="@Url.Action("AllResolvedTickets", "QA")" class="qa-side-link @(controller == "QA" && action == "AllResolvedTickets" ? "active" : "")">
+                        <i class="bi bi-check2-square"></i>
+                        <span>Resolved tickets</span>
+                    </a>
+                    <a href="@Url.Action("Rating", "QA")" class="qa-side-link @(controller == "QA" && action == "Rating" ? "active" : "")">
+                        <i class="bi bi-star"></i>
+                        <span>Rating queue</span>
+                    </a>
+                    @if (isQaHead)
+                    {
+                        <a href="@Url.Action("Evaluations", "QA")" class="qa-side-link @(controller == "QA" && action == "Evaluations" ? "active" : "")">
+                            <i class="bi bi-sliders"></i>
+                            <span>QA Evaluations</span>
+                        </a>
+                    }
+                    <a href="@Url.Action("RatedHistory", "QA")" class="qa-side-link @(controller == "QA" && action == "RatedHistory" ? "active" : "")">
+                        <i class="bi bi-clock-history"></i>
+                        <span>Rated history</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <main class="qa-main">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <div class="qa-modal" id="qa-eval-modal" aria-hidden="true">
+        <div class="qa-modal-card" role="dialog" aria-modal="true" aria-labelledby="qa-eval-modal-title">
+            <div class="qa-modal-head">
+                <div>
+                    <div class="qa-modal-title" id="qa-eval-modal-title">QA evaluation details</div>
+                    <div class="qa-modal-sub" id="qa-eval-modal-sub">Saved evaluation version used in the rating workflow.</div>
+                </div>
+                <button type="button" class="qa-modal-close" id="qa-eval-modal-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="qa-modal-meta" id="qa-eval-modal-meta"></div>
+            <div class="qa-modal-body" id="qa-eval-modal-body">
+                <div class="qa-modal-status">Select a QA evaluation notification to view the saved categories and questions.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getQaNotifElements() {
+            return {
+                wrap: document.getElementById('qa-notif-wrap'),
+                button: document.getElementById('qa-notif-btn'),
+                dropdown: document.getElementById('qa-notif-dropdown'),
+                dot: document.getElementById('qa-notif-dot'),
+                list: document.getElementById('qa-notif-list'),
+                clearButton: document.getElementById('qa-notif-clear-btn')
+            };
+        }
+
+        function getQaEvalModalElements() {
+            return {
+                modal: document.getElementById('qa-eval-modal'),
+                closeButton: document.getElementById('qa-eval-modal-close'),
+                title: document.getElementById('qa-eval-modal-title'),
+                sub: document.getElementById('qa-eval-modal-sub'),
+                meta: document.getElementById('qa-eval-modal-meta'),
+                body: document.getElementById('qa-eval-modal-body')
+            };
+        }
+
+        function closeQaNotifDropdown() {
+            var dropdown = getQaNotifElements().dropdown;
+            if (dropdown) {
+                dropdown.classList.remove('open');
+            }
+        }
+
+        function setQaNotifListEmpty() {
+            var list = getQaNotifElements().list;
+            if (list) {
+                list.innerHTML = '<li class="notif-item-empty">No notifications</li>';
+            }
+        }
+
+        function markQaNotificationsRead() {
+            var elements = getQaNotifElements();
+            if (elements.list) {
+                elements.list.querySelectorAll('.notif-item.unread').forEach(function (item) {
+                    item.classList.remove('unread');
+                });
+            }
+            if (elements.dot) {
+                elements.dot.classList.remove('active');
+            }
+
+            fetch('/qa/api/notifications/read', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            }).catch(function () { });
+        }
+
+        function toggleQaNotifDropdown() {
+            var elements = getQaNotifElements();
+            if (!elements.dropdown) return;
+
+            closeProfileDropdown();
+            var isOpen = elements.dropdown.classList.toggle('open');
+            if (isOpen) {
+                markQaNotificationsRead();
+            }
+        }
+
+        function clearQaNotifications() {
+            fetch('/qa/api/notifications/clear', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(function () {
+                setQaNotifListEmpty();
+                var dot = getQaNotifElements().dot;
+                if (dot) {
+                    dot.classList.remove('active');
+                }
+            })
+            .catch(function () { });
+        }
+
+        function closeProfileDropdown() {
+            var dd = document.getElementById('profile-dropdown');
+            if (dd) {
+                dd.classList.remove('open');
+            }
+        }
+
+        function escapeQaHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function renderQaEvalModalStatus(message, isError) {
+            var body = getQaEvalModalElements().body;
+            if (!body) return;
+            body.innerHTML = '<div class="qa-modal-status' + (isError ? ' error' : '') + '">' + escapeQaHtml(message) + '</div>';
+        }
+
+        function openQaEvalModal() {
+            var elements = getQaEvalModalElements();
+            if (!elements.modal) return;
+            elements.modal.classList.add('open');
+            elements.modal.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeQaEvalModal() {
+            var elements = getQaEvalModalElements();
+            if (!elements.modal) return;
+            elements.modal.classList.remove('open');
+            elements.modal.setAttribute('aria-hidden', 'true');
+        }
+
+        function renderQaEvalModal(template) {
+            var elements = getQaEvalModalElements();
+            if (!elements.meta || !elements.body || !elements.title || !elements.sub) return;
+
+            elements.title.textContent = 'QA evaluation version ' + (template.versionNumber || '');
+            elements.sub.textContent = template.isActive
+                ? 'This version is currently live in the QA rating workflow.'
+                : 'This is a saved historical QA evaluation version.';
+
+            elements.meta.innerHTML = ''
+                + '<div class="qa-modal-meta-card"><div class="qa-modal-meta-label">Version</div><div class="qa-modal-meta-value">v' + escapeQaHtml(template.versionNumber) + '</div></div>'
+                + '<div class="qa-modal-meta-card"><div class="qa-modal-meta-label">Questions</div><div class="qa-modal-meta-value">' + escapeQaHtml(template.totalQuestionCount) + '</div></div>'
+                + '<div class="qa-modal-meta-card"><div class="qa-modal-meta-label">Weight Total</div><div class="qa-modal-meta-value">' + escapeQaHtml(Number(template.totalWeightPercent || 0).toFixed(2)) + '%</div></div>';
+
+            var categories = (template.categories || []).slice().sort(function (left, right) {
+                return Number(left.displayOrder || 0) - Number(right.displayOrder || 0);
+            });
+
+            if (!categories.length) {
+                renderQaEvalModalStatus('No categories were saved for this version.', false);
+                return;
+            }
+
+            elements.body.innerHTML = categories.map(function (category) {
+                var questions = (category.questions || []).slice().sort(function (left, right) {
+                    return Number(left.displayOrder || 0) - Number(right.displayOrder || 0);
+                });
+
+                return ''
+                    + '<section class="qa-modal-category">'
+                    +   '<div class="qa-modal-category-head">'
+                    +     '<div class="qa-modal-category-title">' + escapeQaHtml(category.name) + '</div>'
+                    +     '<div class="qa-modal-category-weight">' + escapeQaHtml(Number(category.weightPercent || 0).toFixed(2)) + '%</div>'
+                    +   '</div>'
+                    +   '<div class="qa-modal-question-list">'
+                    +       questions.map(function (question, index) {
+                                return ''
+                                    + '<div class="qa-modal-question">'
+                                    +   '<span class="qa-modal-question-index">Question ' + (index + 1) + '</span>'
+                                    +   escapeQaHtml(question.prompt)
+                                    + '</div>';
+                            }).join('')
+                    +   '</div>'
+                    + '</section>';
+            }).join('');
+        }
+
+        function loadQaEvaluationDetails(templateId) {
+            renderQaEvalModalStatus('Loading QA evaluation details...', false);
+            openQaEvalModal();
+
+            fetch('/qa/api/evaluations/' + templateId, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('Unable to load QA evaluation details.');
+                    }
+
+                    return response.json();
+                })
+                .then(function (template) {
+                    renderQaEvalModal(template);
+                })
+                .catch(function (error) {
+                    renderQaEvalModalStatus(error && error.message ? error.message : 'Unable to load QA evaluation details.', true);
+                });
+        }
+
+        function toggleProfileDropdown() {
+            var dd = document.getElementById('profile-dropdown');
+            if (!dd) return;
+            closeQaNotifDropdown();
+            dd.classList.toggle('open');
+        }
+
+        var qaNotifElements = getQaNotifElements();
+        if (qaNotifElements.button) {
+            qaNotifElements.button.addEventListener('click', toggleQaNotifDropdown);
+        }
+        if (qaNotifElements.clearButton) {
+            qaNotifElements.clearButton.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                clearQaNotifications();
+            });
+        }
+
+        var qaEvalModalElements = getQaEvalModalElements();
+        if (qaEvalModalElements.closeButton) {
+            qaEvalModalElements.closeButton.addEventListener('click', closeQaEvalModal);
+        }
+
+        document.addEventListener('click', function (e) {
+            var qaNotifButton = e.target.closest('.notif-item-btn[data-template-id]');
+            if (qaNotifButton) {
+                e.preventDefault();
+                e.stopPropagation();
+                loadQaEvaluationDetails(Number(qaNotifButton.getAttribute('data-template-id')));
+                return;
+            }
+
+            var notifWrap = document.getElementById('qa-notif-wrap');
+            if (notifWrap && !notifWrap.contains(e.target)) {
+                closeQaNotifDropdown();
+            }
+
+            var modal = document.getElementById('qa-eval-modal');
+            if (modal && e.target === modal) {
+                closeQaEvalModal();
+            }
+
+            var wrap = document.getElementById('profile-wrap');
+            if (!wrap) return;
+            if (!wrap.contains(e.target)) {
+                closeProfileDropdown();
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeQaNotifDropdown();
+                closeProfileDropdown();
+                closeQaEvalModal();
+            }
+        });
+    </script>
+</body>
+</html>

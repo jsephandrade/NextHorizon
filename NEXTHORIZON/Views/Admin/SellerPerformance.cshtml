@@ -1,0 +1,215 @@
+﻿@model NextHorizon.Models.Admin_Models.AnalyticsViewModel
+
+@{
+    ViewData["Title"] = "Admin Portal - Seller Performance";
+    Layout = "_AdminLayout";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_css/sellerPerformance.css" asp-append-version="true" />
+}
+
+<div class="container-fluid py-4 bg-light">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <button type="button" onclick="history.back()" class="btn btn-white btn-sm rounded-circle shadow-sm d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <div>
+                <h3 class="fw-bold mb-0 text-poppins">Marketplace Performance</h3>
+                <p class="text-muted small mb-0">Monitor vendor revenue and high-velocity products.</p>
+            </div>
+        </div>
+       <button type="button" class="btn btn-success shadow-sm rounded-pill px-4 border-0" onclick="exportToExcel()">
+    <i class="bi bi-file-earmark-excel me-2"></i><span class="small fw-bold">Export Excel</span>
+</button>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-2">
+            <ul class="nav nav-pills nav-fill nav-finance-style" id="performanceTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active rounded-pill" id="sellers-tab" data-bs-toggle="tab" data-bs-target="#tab-sellers" type="button" role="tab">
+                        <i class="bi bi-trophy me-2"></i>Top Sellers
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link rounded-pill" id="products-tab" data-bs-toggle="tab" data-bs-target="#tab-products" type="button" role="tab">
+                        <i class="bi bi-lightning-charge me-2"></i>Top Moving Products
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="tab-content" id="performanceTabContent">
+
+                <!-- Top Sellers Tab -->
+                <div class="tab-pane fade show active" id="tab-sellers" role="tabpanel">
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr class="x-small text-muted text-uppercase">
+                                        <th class="ps-4">Rank</th>
+                                        <th>Vendor / Shop</th>
+                                        <th>Gross Revenue</th>
+                                        <th class="text-end pe-4">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sellers-tbody">
+                                    @if (Model.TopSellers != null && Model.TopSellers.Any())
+                                    {
+                                        foreach (var s in Model.TopSellers)
+                                        {
+                                            <tr>
+                                                <td class="ps-4">
+                                                    <span class="badge rounded-pill @(s.Rank <= 3 ? "bg-dark" : "bg-light text-muted")">#@s.Rank</span>
+                                                </td>
+                                                <td>
+                                                    <span class="d-block fw-bold small">@s.SellerName</span>
+                                                    <span class="text-muted tiny">@s.ShopName</span>
+                                                </td>
+                                                <td><span class="fw-bold text-dark small">₱@s.RevenueGenerated.ToString("N2")</span></td>
+                                                <td class="text-end pe-4">
+                                                    <button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3 tiny fw-bold"
+                                                            onclick="viewSellerDetails('@s.SellerName', '@s.ShopName', '₱@s.RevenueGenerated.ToString("N2")', '@s.OrdersFulfilled')">
+                                                        Details
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr><td colspan="4" class="text-center text-muted py-4">No seller data available.</td></tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Products Tab -->
+                <div class="tab-pane fade" id="tab-products" role="tabpanel">
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr class="x-small text-muted text-uppercase">
+                                        <th class="ps-4" style="width: 80px;">Rank</th>
+                                        <th>Product Name</th>
+                                        <th>Category</th>
+                                        <th>Units Sold</th>
+                                        <th class="text-end pe-4">Total Revenue</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.TopProducts != null && Model.TopProducts.Any())
+                                    {
+                                        int rank = 1;
+                                        foreach (var prod in Model.TopProducts)
+                                        {
+                                            <tr>
+                                                <td class="ps-4">
+                                                    <span class="badge rounded-pill @(rank <= 3 ? "bg-dark" : "bg-light text-muted")">#@rank</span>
+                                                </td>
+                                                <td><span class="fw-bold small">@prod.ProductName</span></td>
+                                                <td><span class="text-muted tiny">@prod.Category</span></td>
+                                                <td><span class="badge bg-light text-dark border px-2">@prod.SalesCount</span></td>
+                                                <td class="text-end pe-4">
+                                                    <span class="fw-bold text-success small">₱@prod.Revenue.ToString("N2")</span>
+                                                </td>
+                                            </tr>
+                                            rank++;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr><td colspan="5" class="text-center text-muted py-4">No product data available.</td></tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Revenue Share Chart -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top" style="top: 20px;">
+                <div class="mb-4">
+                    <h6 class="fw-bold small text-uppercase mb-1">Revenue Share</h6>
+                    <p class="text-muted tiny">Top 3 Sellers vs. The Market</p>
+                </div>
+
+                <div class="position-relative d-flex justify-content-center align-items-center" style="height: 220px;">
+                    <canvas id="revenueShareChart"></canvas>
+                    <div class="chart-center-label">
+                        <p class="text-muted mb-0 text-uppercase fw-bold" style="font-size: 0.55rem;">Platform Total</p>
+                        <h6 class="fw-bold mb-0">₱@Model.TotalRevenue.ToString("N0")</h6>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width: 10px; height: 10px; background: #212529; border-radius: 2px;"></div>
+                            <span class="tiny fw-bold">Top 3 Sellers</span>
+                        </div>
+                        <span class="tiny fw-bold" id="top3-percent">...</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width: 10px; height: 10px; background: #dee2e6; border-radius: 2px;"></div>
+                            <span class="tiny fw-bold">Other Vendors</span>
+                        </div>
+                        <span class="tiny text-muted" id="others-percent">...</span>
+                    </div>
+
+                    <div class="p-3 rounded-4 border-dashed bg-light">
+                        <div class="d-flex gap-2">
+                            <i class="bi bi-info-circle-fill text-dark"></i>
+                            <p class="tiny text-muted mb-0">
+                                This highlights platform dependency. A balanced chart indicates a healthy vendor ecosystem.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Seller Detail Modal -->
+<div class="modal fade" id="sellerDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-body p-4">
+                <h5 class="fw-bold mb-1" id="detSellerName">Seller Detail</h5>
+                <p id="detShopName" class="text-muted small mb-4"></p>
+                <div class="bg-light p-3 rounded-4 mb-4">
+                    <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                        <span class="tiny text-muted text-uppercase">Revenue:</span>
+                        <span class="small fw-bold text-success" id="detRevenue"></span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="tiny text-muted text-uppercase">Orders:</span>
+                        <span class="small fw-bold" id="detOrders"></span>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-dark w-100 rounded-pill fw-bold" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="~/js/admin_js/sellerPerformance.js" asp-append-version="true"></script>
+}

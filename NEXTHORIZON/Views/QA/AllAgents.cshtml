@@ -1,0 +1,376 @@
+@model List<NextHorizon.Models.AgentSummaryViewModel>
+
+@{
+    ViewData["Title"] = "Agents";
+    Layout = "~/Views/Shared/_QALayout.cshtml";
+}
+
+@section Styles {
+<style>
+    .page-wrap {
+        background: #ffffff;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        border-radius: 14px;
+        padding: 16px;
+    }
+
+    .head {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .head h2 {
+        font-size: 1.3rem;
+        margin: 0;
+    }
+
+    .head-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .sort-select {
+        border: 1px solid rgba(0, 0, 0, 0.18);
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-size: .82rem;
+        background: #ffffff;
+        color: #222222;
+        min-width: 180px;
+    }
+
+    .head-sub {
+        color: #666666;
+        font-size: .85rem;
+    }
+
+    .search-wrap {
+        position: relative;
+    }
+
+    .search-wrap i {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #777777;
+        font-size: .85rem;
+    }
+
+    .search {
+        width: 100%;
+        border: 1px solid rgba(0, 0, 0, 0.18);
+        border-radius: 10px;
+        padding: 9px 12px 9px 30px;
+        font-size: .86rem;
+        background: #ffffff;
+    }
+
+    .agents {
+        display: grid;
+        gap: 10px;
+    }
+
+    .agent {
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        padding: 12px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+        align-items: center;
+        background: #f7f7f7;
+        text-decoration: none;
+        color: inherit;
+        transition: background .12s ease, border-color .12s ease;
+    }
+
+    .agent:hover {
+        background: #f0f0f0;
+        border-color: rgba(0, 0, 0, 0.22);
+    }
+
+    .left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .rank {
+        min-width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        background: #ffffff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: .78rem;
+    }
+
+    .name { font-weight: 700; color: #111111; }
+    .sub { color: #666666; }
+    .sub-progress { color: #5a5a5a; font-size: .78rem; margin-top: 2px; }
+    .score { background: #e7e7e7; border-radius: 999px; padding: 5px 10px; font-weight: 700; }
+
+    .empty-state {
+        display: none;
+        border: 1px dashed rgba(0, 0, 0, 0.2);
+        border-radius: 12px;
+        padding: 14px;
+        color: #555555;
+        background: #fafafa;
+        font-size: .86rem;
+        margin-top: 10px;
+    }
+
+    .pager {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+    }
+
+    .pager-pages {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .pager-btn {
+        border: 1px solid rgba(0, 0, 0, 0.14);
+        background: #ffffff;
+        color: #111111;
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-size: .82rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .pager-btn.active {
+        background: #111111;
+        color: #ffffff;
+    }
+
+    .pager-btn:disabled {
+        background: #e5e5e5;
+        color: #8a8a8a;
+        cursor: not-allowed;
+    }
+
+    .pager-ellipsis {
+        color: #666666;
+        font-size: .9rem;
+        padding: 0 2px;
+    }
+
+    @@media (max-width: 700px) {
+        .head-top {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .sort-select {
+            width: 100%;
+            min-width: 0;
+        }
+    }
+</style>
+}
+
+<section class="page-wrap">
+    <div class="head">
+        <div class="head-top">
+            <h2 id="agent-title">Agents (@Model.Count)</h2>
+            <select id="agent-sort" class="sort-select" aria-label="Sort agents">
+                <option value="resolved">Most resolved</option>
+                <option value="rated">Most rated</option>
+                <option value="az">A-Z</option>
+            </select>
+        </div>
+        <div class="head-sub">Click an agent to view all tickets handled by that agent, then open the conversation and rate it.</div>
+        <div class="search-wrap">
+            <i class="bi bi-search"></i>
+            <input id="agent-search" class="search" type="text" placeholder="Search by agent name..." />
+        </div>
+    </div>
+
+    <div class="agents" id="agent-list">
+        @if (Model.Count == 0)
+        {
+            <div class="agent" style="grid-template-columns: 1fr; cursor: default;">
+                <div class="sub">No agent records found in the Agents table yet.</div>
+            </div>
+        }
+        else
+        {
+            var rank = 1;
+            foreach (var agent in Model)
+            {
+                var searchable = $"{rank} {agent.AgentName} resolved {agent.ResolvedTickets} tickets rated {agent.RatedTickets}";
+                <a class="agent"
+                   href="@Url.Action("AgentTickets", "QA", new { id = agent.AgentUserId, agentName = agent.AgentName })"
+                   data-search="@searchable"
+                   data-name="@agent.AgentName"
+                   data-resolved="@agent.ResolvedTickets"
+                   data-rated="@agent.RatedTickets">
+                    <div class="left">
+                        <span class="rank">@rank</span>
+                        <div>
+                            <div class="name">@agent.AgentName</div>
+                            <div class="sub">Resolved @agent.ResolvedTickets ticket@(agent.ResolvedTickets == 1 ? "" : "s")</div>
+                            <div class="sub-progress">@agent.RatedTickets conversation@(agent.RatedTickets == 1 ? "" : "s") linked</div>
+                        </div>
+                    </div>
+                    <div class="score">@(agent.Score > 0 ? $"{agent.Score:0.0} / 5" : "- / 5")</div>
+                </a>
+                rank++;
+            }
+        }
+    </div>
+    <div id="agent-empty" class="empty-state">No agents found for the current search.</div>
+    <div id="agent-pager" class="pager">
+        <div id="agent-pager-pages" class="pager-pages"></div>
+        <button id="agent-pager-next" class="pager-btn" type="button">Next page</button>
+    </div>
+</section>
+
+<script>
+    (function () {
+        var pageSize = 10;
+        var input = document.getElementById('agent-search');
+        var sort = document.getElementById('agent-sort');
+        var list = document.getElementById('agent-list');
+        var title = document.getElementById('agent-title');
+        var emptyState = document.getElementById('agent-empty');
+        var pager = document.getElementById('agent-pager');
+        var pagerPages = document.getElementById('agent-pager-pages');
+        var pagerNext = document.getElementById('agent-pager-next');
+        if (!input || !sort || !list || !title || !emptyState || !pager || !pagerPages || !pagerNext) return;
+
+        var rows = Array.prototype.slice.call(list.querySelectorAll('.agent[data-name]'));
+        var currentPage = 1;
+
+        function sortRows() {
+            var mode = sort.value;
+            rows.sort(function (a, b) {
+                if (mode === 'az') {
+                    var aName = (a.getAttribute('data-name') || '').toLowerCase();
+                    var bName = (b.getAttribute('data-name') || '').toLowerCase();
+                    return aName.localeCompare(bName);
+                }
+
+                if (mode === 'rated') {
+                    var aRated = parseInt(a.getAttribute('data-rated') || '0', 10);
+                    var bRated = parseInt(b.getAttribute('data-rated') || '0', 10);
+                    return bRated - aRated;
+                }
+
+                var aResolved = parseInt(a.getAttribute('data-resolved') || '0', 10);
+                var bResolved = parseInt(b.getAttribute('data-resolved') || '0', 10);
+                return bResolved - aResolved;
+            });
+
+            rows.forEach(function (row) { list.appendChild(row); });
+        }
+
+        function getFilteredRows() {
+            var q = (input.value || '').toLowerCase().trim();
+            return rows.filter(function (row) {
+                var haystack = (row.getAttribute('data-search') || '').toLowerCase();
+                return !q || haystack.indexOf(q) !== -1;
+            });
+        }
+
+        function getVisiblePages(currentPage, totalPages) {
+            var pages = [];
+            var start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+            var end = Math.min(totalPages, start + 4);
+            for (var page = start; page <= end; page++) {
+                pages.push(page);
+            }
+            return pages;
+        }
+
+        function renderRows() {
+            var filteredRows = getFilteredRows();
+            var filteredCount = filteredRows.length;
+            var totalPages = filteredCount === 0 ? 1 : Math.ceil(filteredCount / pageSize);
+            currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+            var startIndex = (currentPage - 1) * pageSize;
+            var endIndex = startIndex + pageSize;
+
+            rows.forEach(function (row) {
+                row.style.display = 'none';
+            });
+
+            filteredRows.forEach(function (row, index) {
+                var rank = row.querySelector('.rank');
+                if (rank) rank.textContent = String(index + 1);
+
+                if (index >= startIndex && index < endIndex) {
+                    row.style.display = '';
+                }
+            });
+
+            title.textContent = 'Agents (' + filteredCount + ')';
+            emptyState.style.display = filteredCount === 0 ? 'block' : 'none';
+            if (filteredCount > 0 && totalPages > 1) {
+                var visiblePages = getVisiblePages(currentPage, totalPages);
+                var html = '';
+                for (var i = 0; i < visiblePages.length; i++) {
+                    var visiblePage = visiblePages[i];
+                    html += '<button class="pager-btn' + (visiblePage === currentPage ? ' active' : '') + '" type="button" data-page="' + visiblePage + '">' + visiblePage + '</button>';
+                }
+                if (visiblePages.length && visiblePages[visiblePages.length - 1] < totalPages) {
+                    html += '<span class="pager-ellipsis">...</span>';
+                }
+                pagerPages.innerHTML = html;
+                pager.style.display = 'flex';
+            } else {
+                pagerPages.innerHTML = '';
+                pager.style.display = 'none';
+            }
+            pagerNext.disabled = currentPage >= totalPages;
+        }
+
+        function resetToFirstPage() {
+            currentPage = 1;
+        }
+
+        input.addEventListener('input', function () {
+            resetToFirstPage();
+            renderRows();
+        });
+        sort.addEventListener('change', function () {
+            sortRows();
+            resetToFirstPage();
+            renderRows();
+        });
+        pagerNext.addEventListener('click', function () {
+            currentPage++;
+            renderRows();
+        });
+
+        pagerPages.addEventListener('click', function (event) {
+            var target = event.target;
+            if (!target || !target.matches('[data-page]')) return;
+            var nextPage = parseInt(target.getAttribute('data-page') || '0', 10);
+            if (!nextPage || nextPage === currentPage) return;
+            currentPage = nextPage;
+            renderRows();
+        });
+
+        sortRows();
+        renderRows();
+    })();
+</script>

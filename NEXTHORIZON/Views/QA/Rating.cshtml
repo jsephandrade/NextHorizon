@@ -1,0 +1,1489 @@
+@model NextHorizon.Models.QA.QaRatingPageData
+@using Microsoft.AspNetCore.Http
+@{
+    Layout = "~/Views/Shared/_QALayout.cshtml";
+    ViewData["Title"] = "QA Rating Page";
+
+    var template = Model.EvaluationTemplate;
+    var hasActiveTicket = Model.HasActiveTicket;
+    var totalQuestions = template?.TotalQuestionCount ?? 0;
+    var notes = Model.Review?.Notes ?? string.Empty;
+    var reviewerName = string.IsNullOrWhiteSpace(Model.Review?.ReviewerName)
+        ? Model.ReviewerDisplayName
+        : Model.Review!.ReviewerName;
+    var queueRange = string.IsNullOrWhiteSpace(Model.QueueRange) ? "custom" : Model.QueueRange;
+    var queueFromValue = Model.QueueFrom?.ToString("yyyy-MM-dd") ?? string.Empty;
+    var queueToValue = Model.QueueTo?.ToString("yyyy-MM-dd") ?? string.Empty;
+    var queueSearch = Model.QueueSearch ?? string.Empty;
+    var previousUrl = $"/qa/rating/{(Model.PreviousSupportFaqId ??
+Model.SupportFaqId)}?range={Uri.EscapeDataString(queueRange)}"
+        + (string.IsNullOrWhiteSpace(queueFromValue) ? string.Empty : $"&from={Uri.EscapeDataString(queueFromValue)}")
+        + (string.IsNullOrWhiteSpace(queueToValue) ? string.Empty : $"&to={Uri.EscapeDataString(queueToValue)}")
+        + (string.IsNullOrWhiteSpace(queueSearch) ? string.Empty : $"&search={Uri.EscapeDataString(queueSearch)}");
+    var nextUrl = $"/qa/rating/{(Model.NextSupportFaqId ?? Model.SupportFaqId)}?range={Uri.EscapeDataString(queueRange)}"
+        + (string.IsNullOrWhiteSpace(queueFromValue) ? string.Empty : $"&from={Uri.EscapeDataString(queueFromValue)}")
+        + (string.IsNullOrWhiteSpace(queueToValue) ? string.Empty : $"&to={Uri.EscapeDataString(queueToValue)}")
+        + (string.IsNullOrWhiteSpace(queueSearch) ? string.Empty : $"&search={Uri.EscapeDataString(queueSearch)}");
+    var ticketSummary = hasActiveTicket
+        ? $"Ticket #{Model.SupportFaqId} - Agent: {Model.AgentName} - Concern from: {Model.ConcernFrom}"
+        : "No active QA ticket";
+    var ticketHeader = hasActiveTicket
+        ? $"Ticket #{Model.SupportFaqId} - Agent: {Model.AgentName} - Concern from: {Model.ConcernFrom} - Date: {Model.ConversationDateLabel}"
+        : "No active QA ticket";
+    var templateVersionLabel = template is null ? string.Empty : $"v{template.VersionNumber}";
+    var overallScoreLabel = Model.Review is null
+        ? "0.0 / 100"
+        : $"{Math.Round((double)Model.Review.OverallPercent, 1, MidpointRounding.AwayFromZero):0.0} / 100";
+    var submitStatusLabel = Model.Review?.SubmittedToAgent == true
+        ? "Submitted to agent"
+        : "Pending";
+    var submittedOnLabel = Model.Review?.SubmittedToAgentAtUtc?.ToLocalTime().ToString("MMM dd, yyyy hh:mm tt") ?? "Not yet";
+    var autosaveMessage = totalQuestions <= 0
+        ? "Add questions to the active evaluation template to begin rating."
+        : $"Complete all {totalQuestions} question{(totalQuestions == 1 ? string.Empty : "s")}. Each question must be scored from 1 to 5.";
+    var reviewerRole = Context.Session.GetString("UserType") ?? "QA";
+    var reviewerRoleLabel = reviewerRole switch
+    {
+        "QA Head" => "QA Head",
+        "QA Analyst" => "QA Analyst",
+        _ => "QA"
+    };
+    var reviewerInlineAuthor = string.IsNullOrWhiteSpace(reviewerName)
+        ? reviewerRoleLabel
+        : $"{reviewerRoleLabel} - {reviewerName}";
+    var inlineCommentsJson = string.IsNullOrWhiteSpace(Model.InlineCommentsJson) ? "{}" : Model.InlineCommentsJson;
+}
+
+@section Styles {
+    <style>
+        .queue-toolbar {
+            display: grid;
+            gap: 10px;
+            background: #ffffff;
+            border: 1px solid #e4e4e4;
+            border-radius: 14px;
+            padding: 12px;
+            margin-bottom: 14px;
+            box-shadow: 0 8px 24px rgba(17, 17, 17, 0.04);
+        }
+
+        .queue-toolbar-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr 1fr 1.25fr auto;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .toolbar-field {
+            display: grid;
+            gap: 5px;
+            min-width: 0;
+        }
+
+        .toolbar-label {
+            font-size: .74rem;
+            font-weight: 700;
+            color: #6a6a6a;
+            letter-spacing: .01em;
+        }
+
+        .toolbar-control,
+        .toolbar-search {
+            width: 100%;
+            min-width: 0;
+            border: 1px solid #dddddd;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #202020;
+            padding: 9px 12px;
+            font-size: .84rem;
+            line-height: 1.2;
+        }
+
+        .toolbar-search-wrap {
+            position: relative;
+        }
+
+        .toolbar-search-wrap i {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7b7b7b;
+            font-size: .8rem;
+        }
+
+        .toolbar-search {
+            padding-left: 28px;
+        }
+
+        .toolbar-action {
+            align-self: end;
+            border: none;
+            border-radius: 10px;
+            background: #111111;
+            color: #ffffff;
+            font-size: .84rem;
+            font-weight: 700;
+            padding: 10px 15px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .toolbar-action:hover {
+            background: #252525;
+        }
+
+        .queue-feedback {
+            display: none;
+            font-size: .78rem;
+            color: #9d3333;
+        }
+
+        .queue-feedback.is-visible {
+            display: block;
+        }
+
+        .rating-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.55fr) minmax(330px, .95fr);
+            gap: 16px;
+            align-items: start;
+        }
+
+        .qa-surface {
+            background: #ffffff;
+            border: 1px solid #e3e3e3;
+            border-radius: 14px;
+            box-shadow: 0 10px 26px rgba(17, 17, 17, 0.05);
+            overflow: hidden;
+        }
+
+        .qa-surface-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid #ececec;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .qa-surface-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #1a1a1a;
+            line-height: 1.2;
+        }
+
+        .qa-surface-subtitle {
+            margin-top: 4px;
+            font-size: .8rem;
+            color: #707070;
+            line-height: 1.45;
+        }
+
+        .pill-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 84px;
+            border-radius: 999px;
+            background: #111111;
+            color: #ffffff;
+            font-size: .74rem;
+            font-weight: 700;
+            padding: 7px 12px;
+            white-space: nowrap;
+        }
+
+        .queue-badge {
+            min-width: 0;
+        }
+
+        .rating-version-badge {
+            min-width: 0;
+            padding-inline: 14px;
+        }
+
+        .conversation-scroll {
+            background: #fafafa;
+            padding: 14px;
+            min-height: 360px;
+            max-height: calc(100vh - 290px);
+            overflow-y: auto;
+            display: grid;
+            gap: 10px;
+        }
+
+        .chat-message {
+            width: fit-content;
+            max-width: 80%;
+            border-radius: 14px;
+            border: 1px solid #dddddd;
+            padding: 12px 14px;
+            font-size: .84rem;
+            line-height: 1.5;
+            color: #202020;
+            background: #ffffff;
+            min-width: 0;
+        }
+
+        .chat-message.agent {
+            justify-self: end;
+            background: #f0f0f0;
+        }
+
+        .chat-message.user {
+            justify-self: start;
+            background: #ffffff;
+        }
+
+        .chat-message.selectable-msg {
+            cursor: pointer;
+            transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+        }
+
+        .chat-message.selectable-msg:hover {
+            border-color: #c6c6c6;
+            box-shadow: 0 4px 12px rgba(17, 17, 17, 0.05);
+            transform: translateY(-1px);
+        }
+
+        .chat-message.has-inline-comment,
+        .chat-message.composer-open {
+            border-color: #e2b44b;
+        }
+
+        .chat-meta {
+            display: block;
+            margin-top: 6px;
+            font-size: .8rem;
+            color: #6b6b6b;
+        }
+
+        .chat-sender {
+            font-weight: 700;
+            color: #5d5d5d;
+        }
+
+        .inline-thread {
+            display: grid;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .inline-thread:empty {
+            display: none;
+        }
+
+        .inline-comment-card {
+            display: grid;
+            gap: 5px;
+            border: 1px solid #e2b44b;
+            border-radius: 12px;
+            background: #fff8e8;
+            padding: 10px 12px;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+        }
+
+        .inline-comment-meta {
+            font-size: .78rem;
+            font-weight: 800;
+            color: #6d5a2a;
+            line-height: 1.3;
+        }
+
+        .inline-comment-body {
+            font-size: .82rem;
+            color: #4c4330;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .inline-composer-host {
+            margin-top: 12px;
+        }
+
+        .inline-composer-host:empty {
+            display: none;
+        }
+
+        .inline-composer {
+            display: grid;
+            gap: 8px;
+            border: 1px solid #e2b44b;
+            border-radius: 12px;
+            background: #fffdf7;
+            padding: 10px 12px;
+        }
+
+        .inline-composer-title {
+            font-size: .78rem;
+            font-weight: 800;
+            color: #6d5a2a;
+        }
+
+        .inline-composer textarea {
+            min-height: 76px;
+            resize: vertical;
+            border: 1px solid #e0d2b0;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #242424;
+            padding: 9px 10px;
+            font: inherit;
+            font-size: .82rem;
+            line-height: 1.45;
+        }
+
+        .inline-composer textarea:focus {
+            outline: none;
+            border-color: #d5a53d;
+            box-shadow: 0 0 0 3px rgba(226, 180, 75, 0.16);
+        }
+
+        .inline-composer-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .inline-composer-feedback {
+            font-size: .76rem;
+            color: #9d3333;
+            min-height: 1em;
+        }
+
+        .inline-composer-buttons {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .inline-comment-btn {
+            border-radius: 999px;
+            border: 1px solid #dcc38a;
+            background: #ffffff;
+            color: #5a4b27;
+            font-size: .76rem;
+            font-weight: 700;
+            padding: 6px 12px;
+            cursor: pointer;
+        }
+
+        .inline-comment-btn:hover {
+            background: #fff8e8;
+        }
+
+        .inline-comment-btn.primary {
+            background: #e2b44b;
+            border-color: #d5a53d;
+            color: #3f3217;
+        }
+
+        .inline-comment-btn.primary:hover {
+            background: #d9ab43;
+        }
+
+        .inline-comment-btn:disabled {
+            opacity: .65;
+            cursor: default;
+        }
+
+        .conversation-footer {
+            border-top: 1px solid #ececec;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            background: #ffffff;
+        }
+
+        .ticket-nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .nav-arrow {
+            width: 30px;
+            height: 30px;
+            border-radius: 10px;
+            border: 1px solid #dbdbdb;
+            background: #ffffff;
+            color: #1a1a1a;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .86rem;
+            font-weight: 700;
+        }
+
+        .nav-arrow:hover {
+            background: #f6f6f6;
+        }
+
+        .ticket-chip {
+            display: inline-flex;
+            align-items: center;
+            min-height: 30px;
+            border-radius: 999px;
+            background: #f7f7f7;
+            border: 1px solid #dcdcdc;
+            color: #1c1c1c;
+            font-size: .84rem;
+            font-weight: 700;
+            padding: 0 14px;
+        }
+
+        .reviewer-inline {
+            font-size: .82rem;
+            color: #727272;
+        }
+
+        .reviewer-inline strong {
+            color: #404040;
+        }
+
+        .rating-panel-scroll {
+            max-height: calc(100vh - 245px);
+            overflow-y: auto;
+            padding: 14px;
+            display: grid;
+            gap: 14px;
+            background: #fafafa;
+        }
+
+        .rating-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .summary-card {
+            background: #ffffff;
+            border: 1px solid #e1e1e1;
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: grid;
+            gap: 4px;
+        }
+
+        .summary-label {
+            font-size: .77rem;
+            color: #7a7a7a;
+            line-height: 1.2;
+        }
+
+        .summary-value {
+            font-size: .95rem;
+            font-weight: 800;
+            color: #1b1b1b;
+            line-height: 1.25;
+        }
+
+        .autosave-banner {
+            border: 1px dashed #e0d2b3;
+            border-radius: 12px;
+            padding: 10px 12px;
+            background: #fffdf8;
+            color: #9d6a1f;
+            font-size: .83rem;
+            line-height: 1.4;
+        }
+
+        .autosave-banner.pending {
+            border-color: #e0d2b3;
+            background: #fffdf8;
+            color: #9d6a1f;
+        }
+
+        .autosave-banner.saving {
+            border-color: #bfd3f4;
+            background: #f7faff;
+            color: #225aa9;
+        }
+
+        .autosave-banner.saved {
+            border-color: #c4dec6;
+            background: #f8fff8;
+            color: #23713d;
+        }
+
+        .autosave-banner.error {
+            border-color: #ecc5c5;
+            background: #fff8f8;
+            color: #aa3434;
+        }
+
+        .category-card {
+            background: #ffffff;
+            border: 1px solid #dfdfdf;
+            border-radius: 14px;
+            padding: 14px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .category-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .category-name {
+            font-size: .95rem;
+            font-weight: 800;
+            color: #1a1a1a;
+            line-height: 1.2;
+        }
+
+        .category-weight {
+            margin-top: 3px;
+            font-size: .78rem;
+            color: #7a7a7a;
+        }
+
+        .category-points {
+            border-radius: 999px;
+            background: #f2f2f2;
+            color: #333333;
+            font-size: .78rem;
+            font-weight: 800;
+            padding: 5px 10px;
+            white-space: nowrap;
+        }
+
+        .question-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .question-item {
+            display: grid;
+            gap: 8px;
+        }
+
+        .question-text {
+            font-size: .83rem;
+            line-height: 1.45;
+            color: #222222;
+        }
+
+        .score-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+        }
+
+        .score-option {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            min-height: 30px;
+            padding: 0 10px;
+            border-radius: 999px;
+            border: 1px solid #d8d8d8;
+            background: #ffffff;
+            color: #333333;
+            font-size: .78rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .score-option input {
+            margin: 0;
+            accent-color: #111111;
+        }
+
+        .notes-block {
+            display: grid;
+            gap: 6px;
+        }
+
+        .notes-block label {
+            font-size: .82rem;
+            font-weight: 700;
+            color: #242424;
+        }
+
+        .notes-block textarea {
+            min-height: 110px;
+            resize: vertical;
+            border: 1px solid #d9d9d9;
+            border-radius: 12px;
+            background: #ffffff;
+            color: #1d1d1d;
+            padding: 10px 12px;
+            font: inherit;
+            font-size: .84rem;
+            line-height: 1.45;
+        }
+
+        .empty-state {
+            border: 1px dashed #d7d7d7;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 16px;
+            color: #555555;
+            font-size: .84rem;
+            line-height: 1.5;
+        }
+
+        @@media (max-width: 1120px) {
+            .queue-toolbar-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .toolbar-action {
+                width: 100%;
+            }
+
+            .rating-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .conversation-scroll,
+            .rating-panel-scroll {
+                max-height: none;
+            }
+        }
+
+        @@media (max-width: 640px) {
+
+            .queue-toolbar-grid,
+            .rating-summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .qa-surface-header,
+            .conversation-footer,
+            .category-head {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .chat-message {
+                width: auto;
+                max-width: 100%;
+            }
+        }
+    </style>
+}
+
+<section class="queue-toolbar" aria-label="QA queue filters">
+    <div class="queue-toolbar-grid">
+        <div class="toolbar-field">
+            <label class="toolbar-label" for="queue-quick-range">Date preset</label>
+            <select id="queue-quick-range" class="toolbar-control">
+                <option value="custom" selected="@(queueRange == "custom")">Custom range</option>
+                <option value="today" selected="@(queueRange == "today")">Today</option>
+                <option value="last7" selected="@(queueRange == "last7")">Last 7 days</option>
+                <option value="last30" selected="@(queueRange == "last30")">Last 30 days</option>
+            </select>
+        </div>
+        <div class="toolbar-field">
+            <label class="toolbar-label" for="queue-from-date">Resolved date from</label>
+            <input id="queue-from-date" class="toolbar-control" type="date" value="@queueFromValue" />
+        </div>
+        <div class="toolbar-field">
+            <label class="toolbar-label" for="queue-to-date">Resolved date to</label>
+            <input id="queue-to-date" class="toolbar-control" type="date" value="@queueToValue" />
+        </div>
+        <div class="toolbar-field">
+            <label class="toolbar-label" for="rating-ticket-search">Ticket or agent</label>
+            <div class="toolbar-search-wrap">
+                <i class="bi bi-search"></i>
+                <input id="rating-ticket-search" class="toolbar-search" type="search"
+                       placeholder="Enter ticket ID, agent name, or concern source" value="@queueSearch" />
+            </div>
+        </div>
+        <button id="rating-jump-btn" class="toolbar-action" type="button">Go</button>
+    </div>
+    <div id="queue-feedback" class="queue-feedback"></div>
+</section>
+
+<section class="rating-layout">
+    <article class="qa-surface">
+        <header class="qa-surface-header">
+            <div>
+                <div class="qa-surface-title">Conversation view</div>
+                <div class="qa-surface-subtitle">@ticketHeader</div>
+                @if (hasActiveTicket)
+                {
+                    <div class="qa-surface-subtitle">Click specific chat messages to tag them for QA comments.</div>
+                }
+            </div>
+            @if (hasActiveTicket)
+            {
+                <span class="pill-badge queue-badge">Queue @(Model.QueuePosition ?? 0) of @Model.QueueCount</span>
+            }
+        </header>
+
+        <div class="conversation-scroll">
+            @if (!hasActiveTicket)
+            {
+                <div class="empty-state">
+                    No pending QA ticket matches the current filters. Adjust the queue filters above and reopen the rating
+                    queue.
+                </div>
+            }
+            else if (Model.Messages.Count == 0)
+            {
+                <div class="chat-message user">
+                    No conversation messages are available for this ticket yet.
+                    <span class="chat-meta"><span class="chat-sender">System</span> - @Model.ConversationDateLabel</span>
+                </div>
+            }
+            else
+            {
+                foreach (var message in Model.Messages)
+                {
+                    var messageClasses = message.IsSelectable
+                        ? $"chat-message {message.SenderCssClass} selectable-msg"
+                        : $"chat-message {message.SenderCssClass}";
+                    <div class="@messageClasses" data-message-id="@message.MessageId"
+                         data-selectable="@(message.IsSelectable ? "true" : "false")">
+                        @message.MessageText
+                        <div class="inline-thread" data-inline-thread-for="@message.MessageId"></div>
+                        @if (message.IsSelectable)
+                        {
+                            <div class="inline-composer-host" data-inline-composer-for="@message.MessageId"></div>
+                        }
+                        <span class="chat-meta"><span class="chat-sender">@message.SenderDisplayName</span> -
+                            @message.TimestampLabel</span>
+                        </div>
+                    }
+                }
+            </div>
+
+            <footer class="conversation-footer">
+                <div class="ticket-nav">
+                    @if (hasActiveTicket)
+                    {
+                        <a href="@previousUrl" class="nav-arrow" aria-label="Previous ticket">&lt;</a>
+                        <span class="ticket-chip">@ticketSummary</span>
+                        <a href="@nextUrl" class="nav-arrow" aria-label="Next ticket">&gt;</a>
+                    }
+                    else
+                    {
+                        <span class="ticket-chip">No active QA ticket</span>
+                    }
+                </div>
+                <div class="reviewer-inline">Reviewer: <strong>@reviewerName</strong></div>
+            </footer>
+        </article>
+
+        <article class="qa-surface">
+            <header class="qa-surface-header">
+                <div>
+                    <div class="qa-surface-title">QA rating panel</div>
+                    <div class="qa-surface-subtitle">Rate this conversation from QA side @(template is null ? string.Empty :
+                                                                   "using the current evaluation definition.")</div>
+                    </div>
+                    @if (template is not null)
+                    {
+                        <span class="pill-badge rating-version-badge">@templateVersionLabel</span>
+                    }
+                </header>
+
+                <div class="rating-panel-scroll">
+                    @if (!hasActiveTicket)
+                    {
+                        <div class="empty-state">
+                            No QA rating form is available because no conversation is currently selected.
+                        </div>
+                    }
+                    else if (template is null)
+                    {
+                        <div class="empty-state">
+                            The QA rating form is unavailable because there is no active evaluation template in the database yet.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="rating-summary-grid">
+                            <div class="summary-card">
+                                <div class="summary-label">Overall score</div>
+                                <div id="overall-score" class="summary-value">@overallScoreLabel</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-label">Submit status</div>
+                                <div id="submit-status" class="summary-value">@submitStatusLabel</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-label">Questions</div>
+                                <div class="summary-value">@totalQuestions</div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-label">Submitted on</div>
+                                <div id="submitted-on" class="summary-value">@submittedOnLabel</div>
+                            </div>
+                        </div>
+
+                        <div id="qa-autosave-status" class="autosave-banner">@autosaveMessage</div>
+
+                        <form id="qa-review-form" novalidate>
+                            <input type="hidden" id="template-id" value="@template.TemplateId" />
+
+                            @foreach (var category in template.Categories.OrderBy(item => item.DisplayOrder))
+                            {
+                                <section class="category-card" data-category-id="@category.CategoryId"
+                                         data-category-weight="@category.WeightPercent">
+                                    <div class="category-head">
+                                        <div>
+                                            <div class="category-name">@category.Name</div>
+                                            <div class="category-weight">@category.WeightPercent.ToString("0.##")%</div>
+                                        </div>
+                                        <div id="category-score-@category.CategoryId" class="category-points">
+                                            @category.WeightedPoints.ToString("0.0") / @category.WeightPercent.ToString("0.##")</div>
+                                        </div>
+
+                                        <div class="question-list">
+                                            @foreach (var question in category.Questions.OrderBy(item => item.DisplayOrder))
+                                            {
+                                                <div class="question-item">
+                                                    <div class="question-text">@question.Prompt</div>
+                                                    <div class="score-options">
+                                                        @for (var score = 1; score <= 5; score++)
+                                                        {
+                                                            var inputId = $"q-{question.QuestionId}-score-{score}";
+                                                            <label class="score-option" for="@inputId">
+                                                                <input id="@inputId" class="score-input" type="radio"
+                                                                       name="question-@question.QuestionId" value="@score"
+                                                                       data-question-id="@question.QuestionId" data-category-id="@category.CategoryId"
+                                                                @(question.Score == score ? "checked" : null) />
+                                                                <span>@score</span>
+                                                            </label>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </section>
+                                }
+
+                                <div class="notes-block">
+                                    <label for="qa-notes">QA notes</label>
+                                    <textarea id="qa-notes"
+                                              placeholder="Add coaching notes or highlights for this conversation...">@notes</textarea>
+                                </div>
+                            </form>
+                        }
+                    </div>
+                </article>
+            </section>
+
+            <script>
+                (function () {
+                    var quickRange = document.getElementById('queue-quick-range');
+                    var fromDate = document.getElementById('queue-from-date');
+                    var toDate = document.getElementById('queue-to-date');
+                    var searchInput = document.getElementById('rating-ticket-search');
+                    var jumpButton = document.getElementById('rating-jump-btn');
+                    var queueFeedback = document.getElementById('queue-feedback');
+
+                    if (!quickRange || !fromDate || !toDate || !searchInput || !jumpButton || !queueFeedback) {
+                        return;
+                    }
+
+                    function setQueueFeedback(message) {
+                        queueFeedback.textContent = message || '';
+                        queueFeedback.classList.toggle('is-visible', Boolean(message));
+                    }
+
+                    function toIsoDate(value) {
+                        var year = value.getFullYear();
+                        var month = String(value.getMonth() + 1).padStart(2, '0');
+                        var day = String(value.getDate()).padStart(2, '0');
+                        return year + '-' + month + '-' + day;
+                    }
+
+                    function applyQuickRange() {
+                        var selected = quickRange.value;
+                        if (selected === 'custom') {
+                            return;
+                        }
+
+                        var end = new Date();
+                        end.setHours(0, 0, 0, 0);
+                        var start = new Date(end);
+
+                        if (selected === 'last7') {
+                            start.setDate(start.getDate() - 6);
+                        } else if (selected === 'last30') {
+                            start.setDate(start.getDate() - 29);
+                        }
+
+                        fromDate.value = toIsoDate(start);
+                        toDate.value = toIsoDate(end);
+                    }
+
+                    function buildQueueUrl() {
+                        if (quickRange.value === 'custom') {
+                            if (!fromDate.value || !toDate.value) {
+                                setQueueFeedback('Select both Resolved date from and Resolved date to.');
+                                return '';
+                            }
+
+                            if (fromDate.value > toDate.value) {
+                                setQueueFeedback('Resolved date from must be earlier than or equal to Resolved date to.');
+                                return '';
+                            }
+                        }
+
+                        setQueueFeedback('');
+
+                        var params = new URLSearchParams();
+                        params.set('range', quickRange.value || 'custom');
+
+                        if (fromDate.value) {
+                            params.set('from', fromDate.value);
+                        }
+
+                        if (toDate.value) {
+                            params.set('to', toDate.value);
+                        }
+
+                        if (searchInput.value.trim()) {
+                            params.set('search', searchInput.value.trim());
+                        }
+
+                        return '/qa/rating?' + params.toString();
+                    }
+
+                    jumpButton.addEventListener('click', function () {
+                        var url = buildQueueUrl();
+                        if (url) {
+                            window.location.href = url;
+                        }
+                    });
+
+                    quickRange.addEventListener('change', function () {
+                        if (quickRange.value === 'custom') {
+                            setQueueFeedback('');
+                            return;
+                        }
+
+                        applyQuickRange();
+                        setQueueFeedback('');
+                    });
+
+                    searchInput.addEventListener('keydown', function (event) {
+                        if (event.key === 'Enter') {
+                            event.preventDefault();
+                            jumpButton.click();
+                        }
+                    });
+                })();
+            </script>
+
+            @if (hasActiveTicket)
+            {
+                <script>
+                    (function () {
+                        var currentSupportFaqId = @Model.SupportFaqId;
+                        var reviewerInlineAuthor = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(reviewerInlineAuthor));
+                        var inlineCommentThreads = @Html.Raw(inlineCommentsJson);
+                        var messageNodes = document.querySelectorAll('.chat-message[data-message-id]');
+                        var activeComposerMessageId = '';
+
+                        function escapeHtml(value) {
+                            return String(value == null ? '' : value)
+                                .replace(/&/g, '&amp;')
+                                .replace(/</g, '&lt;')
+                                .replace(/>/g, '&gt;')
+                                .replace(/"/g, '&quot;')
+                                .replace(/'/g, '&#39;');
+                        }
+
+                        function escapeWithBreaks(value) {
+                            return escapeHtml(value).replace(/\r?\n/g, '<br />');
+                        }
+
+                        function normalizeThreads(source) {
+                            if (!source || typeof source !== 'object') {
+                                return {};
+                            }
+
+                            var normalized = {};
+                            Object.keys(source).forEach(function (messageId) {
+                                if (!messageId) {
+                                    return;
+                                }
+
+                                var entries = Array.isArray(source[messageId]) ? source[messageId] : [];
+                                normalized[messageId] = entries
+                                    .filter(function (entry) {
+                                        return entry && typeof entry.comment === 'string' && entry.comment.trim().length > 0;
+                                    })
+                                    .map(function (entry) {
+                                        return {
+                                            by: String(entry.by || '').trim(),
+                                            on: String(entry.on || '').trim(),
+                                            comment: String(entry.comment || '').trim(),
+                                            images: Array.isArray(entry.images) ? entry.images : []
+                                        };
+                                    });
+                            });
+
+                            return normalized;
+                        }
+
+                        function cloneThreads(source) {
+                            return JSON.parse(JSON.stringify(source || {}));
+                        }
+
+                        function formatNowLabel() {
+                            return new Date().toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                            });
+                        }
+
+                        function getThreadForMessage(messageId) {
+                            return Array.isArray(window.qaInlineCommentThreads[messageId])
+                                ? window.qaInlineCommentThreads[messageId]
+                                : [];
+                        }
+
+                        function renderThreadForMessage(messageId) {
+                            var threadNode = document.querySelector('[data-inline-thread-for="' + messageId + '"]');
+                            var messageNode = document.querySelector('.chat-message[data-message-id="' + messageId + '"]');
+                            if (!threadNode || !messageNode) {
+                                return;
+                            }
+
+                            var entries = getThreadForMessage(messageId);
+                            if (!entries.length) {
+                                threadNode.innerHTML = '';
+                                messageNode.classList.remove('has-inline-comment');
+                                return;
+                            }
+
+                            threadNode.innerHTML = entries.map(function (entry) {
+                                var meta = escapeHtml(entry.by || 'QA') + (entry.on ? ' - ' + escapeHtml(entry.on) : '');
+                                return '' +
+                                    '<div class="inline-comment-card">' +
+                                    '<div class="inline-comment-meta">' + meta + '</div>' +
+                                    '<div class="inline-comment-body">' + escapeWithBreaks(entry.comment) + '</div>' +
+                                    '</div>';
+                            }).join('');
+
+                            messageNode.classList.add('has-inline-comment');
+                        }
+
+                        function renderAllThreads() {
+                            for (var i = 0; i < messageNodes.length; i++) {
+                                renderThreadForMessage(messageNodes[i].getAttribute('data-message-id'));
+                            }
+                        }
+
+                        function closeComposer(messageId) {
+                            var composerHost = document.querySelector('[data-inline-composer-for="' + messageId + '"]');
+                            var messageNode = document.querySelector('.chat-message[data-message-id="' + messageId + '"]');
+                            if (composerHost) {
+                                composerHost.innerHTML = '';
+                            }
+                            if (messageNode) {
+                                messageNode.classList.remove('composer-open');
+                            }
+                            if (activeComposerMessageId === messageId) {
+                                activeComposerMessageId = '';
+                            }
+                        }
+
+                        function closeAllComposers() {
+                            var composerHosts = document.querySelectorAll('[data-inline-composer-for]');
+                            for (var i = 0; i < composerHosts.length; i++) {
+                                composerHosts[i].innerHTML = '';
+                            }
+
+                            for (var j = 0; j < messageNodes.length; j++) {
+                                messageNodes[j].classList.remove('composer-open');
+                            }
+
+                            activeComposerMessageId = '';
+                        }
+
+                        function setComposerBusy(composerHost, isBusy) {
+                            var buttons = composerHost.querySelectorAll('button');
+                            for (var i = 0; i < buttons.length; i++) {
+                                buttons[i].disabled = isBusy;
+                            }
+                        }
+
+                        function setComposerFeedback(composerHost, message) {
+                            var feedback = composerHost.querySelector('.inline-composer-feedback');
+                            if (feedback) {
+                                feedback.textContent = message || '';
+                            }
+                        }
+
+                        function buildComposerMarkup(messageId) {
+                            var threadCount = getThreadForMessage(messageId).length;
+                            var title = threadCount > 0 ? 'Add to QA comment thread' : 'Add QA comment';
+                            return '' +
+                                '<div class="inline-composer">' +
+                                '<div class="inline-composer-title">' + escapeHtml(title) + '</div>' +
+                                '<textarea placeholder="Add QA guidance for this specific message..."></textarea>' +
+                                '<div class="inline-composer-actions">' +
+                                '<div class="inline-composer-feedback"></div>' +
+                                '<div class="inline-composer-buttons">' +
+                                '<button type="button" class="inline-comment-btn" data-inline-cancel="' + escapeHtml(messageId) + '">Cancel</button>' +
+                                '<button type="button" class="inline-comment-btn primary" data-inline-save="' + escapeHtml(messageId) + '">Save comment</button>' +
+                                '</div>' +
+                                '</div>' +
+                                '</div>';
+                        }
+
+                        function openComposer(messageId) {
+                            if (activeComposerMessageId === messageId) {
+                                return;
+                            }
+
+                            closeAllComposers();
+
+                            var composerHost = document.querySelector('[data-inline-composer-for="' + messageId + '"]');
+                            var messageNode = document.querySelector('.chat-message[data-message-id="' + messageId + '"]');
+                            if (!composerHost || !messageNode) {
+                                return;
+                            }
+
+                            composerHost.innerHTML = buildComposerMarkup(messageId);
+                            messageNode.classList.add('composer-open');
+                            activeComposerMessageId = messageId;
+
+                            var textarea = composerHost.querySelector('textarea');
+                            if (textarea) {
+                                textarea.focus();
+                            }
+
+                            var cancelButton = composerHost.querySelector('[data-inline-cancel]');
+                            if (cancelButton) {
+                                cancelButton.addEventListener('click', function () {
+                                    closeComposer(messageId);
+                                });
+                            }
+
+                            var saveButton = composerHost.querySelector('[data-inline-save]');
+                            if (saveButton) {
+                                saveButton.addEventListener('click', function () {
+                                    if (!textarea) {
+                                        return;
+                                    }
+
+                                    var commentText = textarea.value.trim();
+                                    if (!commentText) {
+                                        setComposerFeedback(composerHost, 'Enter a comment before saving.');
+                                        textarea.focus();
+                                        return;
+                                    }
+
+                                    var draftThreads = cloneThreads(window.qaInlineCommentThreads);
+                                    if (!Array.isArray(draftThreads[messageId])) {
+                                        draftThreads[messageId] = [];
+                                    }
+
+                                    draftThreads[messageId].push({
+                                        by: reviewerInlineAuthor,
+                                        on: formatNowLabel(),
+                                        comment: commentText,
+                                        images: []
+                                    });
+
+                                    setComposerBusy(composerHost, true);
+                                    setComposerFeedback(composerHost, '');
+
+                                    fetch('/qa/api/reviews/' + currentSupportFaqId + '/inline-comments', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Accept': 'application/json',
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({
+                                            inlineCommentThreads: draftThreads
+                                        })
+                                    })
+                                        .then(function (response) {
+                                            return response.json()
+                                                .catch(function () {
+                                                    return { success: false, message: 'Unable to save QA comment.' };
+                                                })
+                                                .then(function (result) {
+                                                    if (!response.ok || !result.success) {
+                                                        throw new Error(result.message || 'Unable to save QA comment.');
+                                                    }
+
+                                                    return result;
+                                                });
+                                        })
+                                        .then(function () {
+                                            window.qaInlineCommentThreads = draftThreads;
+                                            renderThreadForMessage(messageId);
+                                            closeComposer(messageId);
+                                        })
+                                        .catch(function (error) {
+                                            setComposerBusy(composerHost, false);
+                                            setComposerFeedback(composerHost, error && error.message ? error.message : 'Unable to save QA comment.');
+                                        });
+                                });
+                            }
+                        }
+
+                        window.qaInlineCommentThreads = normalizeThreads(inlineCommentThreads);
+                        renderAllThreads();
+
+                        for (var i = 0; i < messageNodes.length; i++) {
+                            (function (messageNode) {
+                                if (messageNode.getAttribute('data-selectable') !== 'true') {
+                                    return;
+                                }
+
+                                messageNode.addEventListener('click', function (event) {
+                                    var target = event.target;
+                                    if (target && (target.closest('textarea') || target.closest('button'))) {
+                                        return;
+                                    }
+
+                                    var messageId = messageNode.getAttribute('data-message-id');
+                                    if (!messageId) {
+                                        return;
+                                    }
+
+                                    if (activeComposerMessageId === messageId) {
+                                        closeComposer(messageId);
+                                        return;
+                                    }
+
+                                    openComposer(messageId);
+                                });
+                            })(messageNodes[i]);
+                        }
+                    })();
+                </script>
+            }
+
+            @if (hasActiveTicket && template is not null)
+            {
+                <script>
+                    (function () {
+                        var currentSupportFaqId = @Model.SupportFaqId;
+                        var totalQuestions = @totalQuestions;
+                        var autosaveStatus = document.getElementById('qa-autosave-status');
+                        var overallScore = document.getElementById('overall-score');
+                        var submitStatus = document.getElementById('submit-status');
+                        var submittedOn = document.getElementById('submitted-on');
+                        var notesField = document.getElementById('qa-notes');
+                        var persistedSignature = '';
+                        var autosaveTimer = 0;
+                        var autosaveDelayMs = 900;
+
+                        function setStatus(state, message) {
+                            if (!autosaveStatus) {
+                                return;
+                            }
+
+                            autosaveStatus.classList.remove('pending', 'saving', 'saved', 'error');
+                            if (state) {
+                                autosaveStatus.classList.add(state);
+                            }
+
+                            autosaveStatus.textContent = message;
+                        }
+
+                        function readSelectedScore(questionId) {
+                            var selected = document.querySelector('input[name="question-' + questionId + '"]:checked');
+                            return selected ? Number(selected.value) : 0;
+                        }
+
+                        function collectScores() {
+                            var inputs = document.querySelectorAll('.score-input[data-question-id]');
+                            var seen = {};
+                            var scores = [];
+
+                            for (var i = 0; i < inputs.length; i++) {
+                                var questionId = Number(inputs[i].getAttribute('data-question-id'));
+                                if (seen[questionId]) {
+                                    continue;
+                                }
+
+                                seen[questionId] = true;
+                                var score = readSelectedScore(questionId);
+                                if (score > 0) {
+                                    scores.push({ questionId: questionId, score: score });
+                                }
+                            }
+
+                            return scores;
+                        }
+
+                        function buildSignature() {
+                            return JSON.stringify({
+                                notes: notesField ? (notesField.value || '').trim() : '',
+                                scores: collectScores().sort(function (left, right) {
+                                    return left.questionId - right.questionId;
+                                })
+                            });
+                        }
+
+                        function updateMetrics() {
+                            var categoryBlocks = document.querySelectorAll('.category-card[data-category-id]');
+                            var weightedTotal = 0;
+
+                            for (var i = 0; i < categoryBlocks.length; i++) {
+                                var block = categoryBlocks[i];
+                                var categoryId = Number(block.getAttribute('data-category-id'));
+                                var weight = Number(block.getAttribute('data-category-weight')) || 0;
+                                var inputs = block.querySelectorAll('.score-input[data-question-id]');
+                                var seen = {};
+                                var values = [];
+
+                                for (var j = 0; j < inputs.length; j++) {
+                                    var questionId = Number(inputs[j].getAttribute('data-question-id'));
+                                    if (seen[questionId]) {
+                                        continue;
+                                    }
+
+                                    seen[questionId] = true;
+                                    var score = readSelectedScore(questionId);
+                                    if (score > 0) {
+                                        values.push(score);
+                                    }
+                                }
+
+                                var average = values.length === 0
+                                    ? 0
+                                    : values.reduce(function (sum, value) { return sum + value; }, 0) / values.length;
+                                var points = values.length === 0 ? 0 : (average / 5) * weight;
+                                weightedTotal += points;
+
+                                var categoryNode = document.getElementById('category-score-' + categoryId);
+                                if (categoryNode) {
+                                    categoryNode.textContent = points.toFixed(1) + ' / ' + weight.toFixed(weight % 1 === 0 ? 0 : 2);
+                                }
+                            }
+
+                            if (overallScore) {
+                                overallScore.textContent = weightedTotal.toFixed(1) + ' / 100';
+                            }
+                        }
+
+                        function isComplete() {
+                            return collectScores().length === totalQuestions;
+                        }
+
+                        function saveReview() {
+                            var templateId = document.getElementById('template-id');
+                            if (!templateId) {
+                                return Promise.reject(new Error('QA evaluation template is missing.'));
+                            }
+
+                            var payload = {
+                                templateId: Number(templateId.value),
+                                scores: collectScores(),
+                                notes: notesField ? (notesField.value || '').trim() : '',
+                                submitToAgentNow: true,
+                                inlineCommentThreads: window.qaInlineCommentThreads || {}
+                            };
+
+                            setStatus('saving', 'Saving QA review...');
+
+                            return fetch('/qa/api/reviews/' + currentSupportFaqId, {
+                                method: 'POST',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(payload)
+                            })
+                                .then(function (response) {
+                                    return response.json()
+                                        .catch(function () {
+                                            return { success: false, message: 'Unable to save QA review.' };
+                                        })
+                                        .then(function (result) {
+                                            if (!response.ok || !result.success) {
+                                                throw new Error(result.message || 'Unable to save QA review.');
+                                            }
+
+                                            return result;
+                                        });
+                                })
+                                .then(function (result) {
+                                    persistedSignature = buildSignature();
+                                    setStatus('saved', result.message || 'QA review saved.');
+
+                                    if (overallScore && typeof result.overallPercent === 'number') {
+                                        overallScore.textContent = result.overallPercent.toFixed(1) + ' / 100';
+                                    }
+
+                                    if (submitStatus) {
+                                        submitStatus.textContent = result.submittedToAgent ? 'Submitted to agent' : 'Pending';
+                                    }
+
+                                    if (submittedOn) {
+                                        submittedOn.textContent = result.submittedToAgentAtUtc || 'Not yet';
+                                    }
+                                })
+                                .catch(function (error) {
+                                    setStatus('error', error && error.message ? error.message : 'Unable to save QA review.');
+                                });
+                        }
+
+                        function scheduleAutosave() {
+                            window.clearTimeout(autosaveTimer);
+                            updateMetrics();
+
+                            if (!isComplete()) {
+                                if (submitStatus) {
+                                    submitStatus.textContent = 'Pending';
+                                }
+                                if (submittedOn) {
+                                    submittedOn.textContent = 'Not yet';
+                                }
+                                setStatus('pending', 'Complete all ' + totalQuestions + ' questions. Each question must be scored from 1 to 5.');
+                                return;
+                            }
+
+                            var nextSignature = buildSignature();
+                            if (nextSignature === persistedSignature) {
+                                setStatus('saved', 'QA review is up to date.');
+                                return;
+                            }
+
+                            setStatus('pending', 'Changes pending. Saving automatically...');
+                            autosaveTimer = window.setTimeout(function () {
+                                saveReview();
+                            }, autosaveDelayMs);
+                        }
+
+                        var inputs = document.querySelectorAll('.score-input');
+                        for (var i = 0; i < inputs.length; i++) {
+                            inputs[i].addEventListener('change', scheduleAutosave);
+                        }
+
+                        if (notesField) {
+                            notesField.addEventListener('input', scheduleAutosave);
+                        }
+
+                        updateMetrics();
+                        persistedSignature = buildSignature();
+                        if (isComplete()) {
+                            setStatus('saved', '@(Model.Review?.SubmittedToAgent == true ? "QA review saved and submitted to the agent." : "QA review is recorded and ready for automatic submit.")');
+                        } else {
+                            setStatus('pending', 'Complete all ' + totalQuestions + ' questions. Each question must be scored from 1 to 5.');
+                        }
+                    })();
+                </script>
+            }

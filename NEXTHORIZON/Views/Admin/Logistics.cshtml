@@ -1,0 +1,216 @@
+﻿﻿@{
+    ViewData["Title"] = "Admin Portal - Logistics";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid py-4 bg-light">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 gap-3">
+        <div>
+            <h4 class="fw-bold text-dark mb-1">Logistics Management</h4>
+            <p class="text-secondary small mb-0">Manage courier partners, track performance, and monitor delivery metrics.</p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <div class="search-container position-relative">
+                <input type="text" id="logisticsSearch" class="form-control rounded-pill border-0 shadow-sm px-4 py-2" placeholder="Search courier..." style="width: 250px;">
+                <i class="bi bi-search position-absolute" style="right: 15px; top: 10px; color: #aaa;"></i>
+            </div>
+            <button class="btn btn-dark rounded-pill px-4 shadow-sm py-2" onclick="openAddPartnerModal()">
+                <i class="bi bi-plus-lg me-2"></i>Add Logistics
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-3 mb-5">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center filter-card" id="stat-total" onclick="filterPartners('total')">
+                <span class="text-muted x-small d-block mb-1 text-uppercase fw-bold">Total Partners</span>
+                <h2 class="fw-bold mb-0" id="totalCount">0</h2>
+                <small class="text-muted mt-2">All logistics partners</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center filter-card active-filter" id="stat-active" onclick="filterPartners('active')">
+                <span class="text-muted x-small d-block mb-1 text-uppercase fw-bold">Active</span>
+                <h2 class="fw-bold mb-0 text-success" id="activeCount">0</h2>
+                <small class="text-muted mt-2">Currently active</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center filter-card" id="stat-inactive" onclick="filterPartners('inactive')">
+                <span class="text-muted x-small d-block mb-1 text-uppercase fw-bold">Inactive</span>
+                <h2 class="fw-bold mb-0 text-secondary" id="inactiveCount">0</h2>
+                <small class="text-muted mt-2">Temporarily offline</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 p-4 text-center filter-card" id="stat-archived" onclick="filterPartners('archived')">
+                <span class="text-muted x-small d-block mb-1 text-uppercase fw-bold">Archived</span>
+                <h2 class="fw-bold mb-0 text-danger" id="archivedCount">0</h2>
+                <small class="text-muted mt-2">Removed from service</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Partners Section -->
+    <div id="activeSection" class="mb-5">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="d-flex align-items-center">
+                <h5 class="fw-bold mb-0">Active Partners</h5>
+                <span class="badge bg-dark rounded-pill ms-2 px-3" id="activeBadge">0</span>
+            </div>
+            <button class="btn btn-sm btn-outline-dark rounded-pill refresh-stats-btn" onclick="refreshPerformance()">
+                <i class="bi bi-arrow-repeat me-1"></i>Refresh Stats
+            </button>
+        </div>
+        <div class="row g-4" id="activeContainer">
+            <div class="col-12 text-center py-5">
+                <div class="spinner-border text-dark" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inactive Partners Section -->
+    <div id="inactiveSection" class="inactive-section p-4 rounded-4 mb-5" style="display: none;">
+        <div class="d-flex align-items-center mb-3">
+            <h5 class="fw-bold mb-0 text-secondary">Inactive / Maintenance</h5>
+            <span class="badge bg-secondary rounded-pill ms-2 px-3" id="inactiveBadge">0</span>
+        </div>
+        <div class="row g-4" id="inactiveContainer">
+            <div class="col-12 text-center py-5 text-muted">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Archived Partners Section -->
+    <div id="archiveSection" class="archive-section p-4 rounded-4" style="display: none;">
+        <div class="d-flex align-items-center mb-3">
+            <h5 class="fw-bold mb-0 text-danger">Archived Logistics</h5>
+            <span class="badge bg-danger rounded-pill ms-2 px-3" id="archivedBadge">0</span>
+        </div>
+        <div class="row g-4" id="archiveContainer">
+            <div class="col-12 text-center py-5 text-muted">Loading...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Partner Modal -->
+<div class="modal fade" id="addPartnerModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header border-0 pt-4 px-4">
+                <h5 class="fw-bold" id="modalTitle">Add Logistics Partner</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4">
+                <form id="logisticsForm" onsubmit="return false;">
+                    <div class="text-center mb-4">
+                        <div class="position-relative d-inline-block">
+                            <img id="logoPreview" src="/images/default-logo.png" class="rounded-3 border logo-preview"
+                                 style="width: 100px; height: 100px; object-fit: cover; background: #f8f9fa;">
+                            <label for="logoUpload" class="btn btn-dark btn-sm position-absolute bottom-0 end-0 rounded-circle p-0 d-flex align-items-center justify-content-center logo-upload-label">
+                                <i class="bi bi-camera fs-6"></i>
+                            </label>
+                            <input type="file" id="logoUpload" hidden accept="image/*" onchange="previewImage(this)">
+                        </div>
+                        <p class="x-small text-muted mt-2 text-uppercase fw-bold">Upload Courier Logo</p>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="small fw-bold text-secondary">Courier Name *</label>
+                            <input type="text" id="courierName" class="form-control rounded-3" placeholder="e.g. J&T Express" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="small fw-bold text-secondary">Service Type *</label>
+                            <select id="serviceType" class="form-select rounded-3">
+                                <option>Standard Delivery</option>
+                                <option>Express Delivery</option>
+                                <option>Same Day Delivery</option>
+                                <option>International Shipping</option>
+                                <option>Economy Shipping</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Note: Performance metrics are AUTO-CALCULATED from orders -->
+                    <div class="alert alert-info py-2 mb-3 auto-calc-info">
+                        <small><i class="bi bi-info-circle me-1"></i> Success rate and delivery times are automatically calculated from actual order data.</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="small fw-bold text-secondary">Contact Person</label>
+                            <input type="text" id="contactPerson" class="form-control rounded-3" placeholder="Full name">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="small fw-bold text-secondary">Contact Email</label>
+                            <input type="email" id="contactEmail" class="form-control rounded-3" placeholder="email@example.com">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="small fw-bold text-secondary">Contact Phone</label>
+                            <input type="tel" id="contactPhone" class="form-control rounded-3" placeholder="+63 XXX XXX XXXX">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="small fw-bold text-secondary">Tracking URL Template</label>
+                        <input type="text" id="trackingUrl" class="form-control rounded-3" placeholder="https://www.jtexpress.ph/track-and-trace">
+                        <small class="text-muted">Use <code>{tracking_number}</code> as placeholder for the actual tracking number</small>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input type="checkbox" id="isPreferred" class="form-check-input">
+                                <label class="form-check-label small fw-bold text-secondary">Mark as Preferred Partner</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input type="checkbox" id="isActive" class="form-check-input" checked>
+                                <label class="form-check-label small fw-bold text-secondary">Active Immediately</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 pb-4 px-4">
+                <button class="btn btn-light border rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-dark rounded-pill px-4" onclick="saveLogisticsPartner()">
+                    <i class="bi bi-save me-2"></i>Save Partner
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Modal -->
+<div class="modal fade" id="performanceModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header border-0 pt-4 px-4">
+                <h5 class="fw-bold" id="perfName">Partner Performance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4" id="performanceContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-dark" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/admin_js/logistics.js" asp-append-version="true"></script>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_css/logistics.css" asp-append-version="true" />
+}

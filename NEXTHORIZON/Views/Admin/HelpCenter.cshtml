@@ -1,0 +1,2083 @@
+﻿@model NextHorizon.Models.Admin_Models.HelpCenterV2ViewModel
+@{
+    ViewData["Title"] = "Help Center";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
+    var sessionsJson = System.Text.Json.JsonSerializer.Serialize(Model.Sessions.Select(s => new
+    {
+        id = s.Id,
+        no = s.SessionNo,
+        name = s.CustomerName,
+        email = s.CustomerEmail,
+        role = s.Role,
+        av = s.Initials,
+        bg = s.AvatarColor,
+        waitSec = s.WaitSeconds,
+        pos = s.QueuePosition,
+        status = s.Status,
+        cat = s.Category,
+        agent = s.AssignedTo ?? "Unassigned"
+    }));
+
+    var agentsJson = System.Text.Json.JsonSerializer.Serialize(Model.Agents.Select(a => new
+    {
+        name = a.Name,
+        initials = a.Initials,
+        status = a.Status,
+        sessions = a.ActiveSessions,
+        max = a.MaxSessions,
+        slots = a.Slots.Select(sl => new
+        {
+            convId = sl.ConversationId,
+            client = sl.ClientName,
+            cat = sl.Category,
+            slotNum = sl.SlotNumber
+        })
+    }));
+
+    var faqsJson = System.Text.Json.JsonSerializer.Serialize(Model.Faqs.Select(f => new
+    {
+        id = f.Id,
+        q = f.Question,
+        a = f.Answer,
+        cat = f.Category,
+        userType = f.UserType
+    }));
+
+    var categoriesJson = System.Text.Json.JsonSerializer.Serialize(Model.Categories);
+}
+
+@section Styles {
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        .admin-content {
+            padding: 20px !important;
+            overflow-y: auto !important;
+            height: calc(100vh - 62px) !important;
+        }
+
+        /* ── STATS ── */
+        .q-stats {
+            display: grid;
+            grid-template-columns: repeat(5,1fr);
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .qs {
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            padding: 12px 16px;
+        }
+
+        .qs-lbl {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+
+        .qs-val {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a1a;
+            letter-spacing: -0.5px;
+            line-height: 1;
+        }
+
+        .qs-sub {
+            font-size: 10px;
+            color: #aaa;
+            margin-top: 4px;
+        }
+
+            .qs-sub.warn {
+                color: #854F0B;
+                display: flex;
+                align-items: center;
+                gap: 3px;
+            }
+
+        .up {
+            color: #27500A;
+            font-weight: 600;
+        }
+
+        .dn {
+            color: #A32D2D;
+            font-weight: 600;
+        }
+
+        /* ── LAYOUT ── */
+        .hc-shell {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 14px;
+        }
+
+        .hc-left {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-width: 0;
+        }
+
+        .hc-right {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-width: 0;
+        }
+
+        .panel {
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .ph {
+            padding: 12px 18px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .ph-title {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: #1a1a1a;
+        }
+
+        .ph-sub {
+            font-size: 11px;
+            color: #aaa;
+            font-weight: 400;
+            margin-top: 1px;
+        }
+
+        .pbtn {
+            background: #1a1a1a;
+            color: #fff;
+            border: none;
+            padding: 6px 13px;
+            font-size: 10.5px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Poppins',sans-serif;
+            letter-spacing: 0.3px;
+            transition: background .15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+            .pbtn:hover {
+                background: #333;
+            }
+
+            .pbtn.out {
+                background: #fff;
+                color: #1a1a1a;
+                border: 1px solid #e0e0e0;
+            }
+
+                .pbtn.out:hover {
+                    background: #f5f5f5;
+                }
+
+            .pbtn svg {
+                width: 12px;
+                height: 12px;
+                fill: none;
+                stroke: currentColor;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+
+        /* ── QUEUE ── */
+        .q-scroll {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+            .q-scroll::-webkit-scrollbar {
+                width: 3px;
+            }
+
+            .q-scroll::-webkit-scrollbar-thumb {
+                background: #e8e8e8;
+            }
+
+        .qtbl {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .qtbl th {
+                font-size: 9.5px;
+                font-weight: 700;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+                color: #aaa;
+                padding: 9px 16px;
+                text-align: left;
+                border-bottom: 1px solid #f0f0f0;
+                background: #fafafa;
+                position: sticky;
+                top: 0;
+                z-index: 1;
+            }
+
+            .qtbl td {
+                padding: 11px 16px;
+                border-bottom: 1px solid #f5f5f5;
+                vertical-align: middle;
+            }
+
+            .qtbl tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+        .q-cust {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .q-av {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .q-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .q-role {
+            font-size: 10.5px;
+            color: #aaa;
+            font-weight: 300;
+        }
+
+        .q-wait {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1a1a1a;
+            font-variant-numeric: tabular-nums;
+        }
+
+            .q-wait.over5 {
+                color: #791F1F;
+            }
+
+        .q-pos-badge {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: #888;
+        }
+
+            .q-pos-badge.p1 {
+                background: #1a1a1a;
+                color: #fff;
+            }
+
+            .q-pos-badge.p2 {
+                background: #444;
+                color: #fff;
+            }
+
+            .q-pos-badge.p3 {
+                background: #888;
+                color: #fff;
+            }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            font-size: 9.5px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .b-waiting {
+            background: #EAF3DE;
+            color: #27500A;
+        }
+
+        .b-active {
+            background: #e8f0fe;
+            color: #0c447c;
+        }
+
+        .b-idle {
+            background: #FAEEDA;
+            color: #633806;
+        }
+
+        .b-done {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .b-online {
+            background: #EAF3DE;
+            color: #27500A;
+        }
+
+        .b-busy {
+            background: #e8f0fe;
+            color: #0c447c;
+        }
+
+        .b-away {
+            background: #FAEEDA;
+            color: #633806;
+        }
+
+        .b-offline {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .b-full {
+            background: #FCEBEB;
+            color: #791F1F;
+        }
+
+        .b-occupied {
+            background: #e8f0fe;
+            color: #0c447c;
+        }
+
+        .wait-warn {
+            background: #FCEBEB;
+            border-left: 3px solid #e24b4a;
+            padding: 8px 14px;
+            display: none;
+            align-items: center;
+            font-size: 11.5px;
+            flex-shrink: 0;
+        }
+
+            .wait-warn.show {
+                display: flex;
+            }
+
+        .ww-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #791F1F;
+            font-weight: 500;
+        }
+
+            .ww-left svg {
+                width: 13px;
+                height: 13px;
+                stroke: #791F1F;
+                fill: none;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+                flex-shrink: 0;
+            }
+
+        /* ── ASSIGN DROPDOWN PORTAL ── */
+        #dd-portal {
+            position: fixed;
+            z-index: 9000;
+            display: none;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 4px 20px rgba(0,0,0,.14);
+            min-width: 220px;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+            #dd-portal.open {
+                display: block;
+            }
+
+            #dd-portal::-webkit-scrollbar {
+                width: 3px;
+            }
+
+            #dd-portal::-webkit-scrollbar-thumb {
+                background: #e8e8e8;
+            }
+
+        .assign-dd-hd {
+            padding: 8px 12px 6px;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #aaa;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .assign-agent-opt {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 9px 12px;
+            cursor: pointer;
+            transition: background .12s;
+            border-bottom: 1px solid #f8f8f8;
+        }
+
+            .assign-agent-opt:last-child {
+                border-bottom: none;
+            }
+
+            .assign-agent-opt:hover {
+                background: #f5f5f5;
+            }
+
+        .aao-av {
+            width: 26px;
+            height: 26px;
+            background: #1a1a1a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .aao-dot {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            border: 1.5px solid #fff;
+        }
+
+            .aao-dot.on {
+                background: #4ade80;
+            }
+
+            .aao-dot.busy {
+                background: #378ADD;
+            }
+
+            .aao-dot.away {
+                background: #f59e0b;
+            }
+
+        .aao-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .aao-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1a1a1a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .aao-slots {
+            font-size: 10px;
+            color: #aaa;
+            margin-top: 1px;
+        }
+
+        .assign-dd-empty {
+            padding: 14px;
+            font-size: 11px;
+            color: #bbb;
+            text-align: center;
+        }
+
+        /* ── AGENT 3-COL ── */
+        .agent-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .agent-col {
+            border-right: 1px solid #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+            .agent-col:last-child {
+                border-right: none;
+            }
+
+        .agent-col-hd {
+            padding: 8px 12px;
+            background: #fafafa;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 9.5px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #aaa;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .slot-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #e8e8e8;
+        }
+
+            .slot-dot.filled {
+                background: #1a1a1a;
+            }
+
+        .agent-col-body {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .agent-slot {
+            padding: 9px 12px;
+            border-bottom: 1px solid #f5f5f5;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+            .agent-slot:last-child {
+                border-bottom: none;
+            }
+
+        .ag-av {
+            width: 28px;
+            height: 28px;
+            background: #1a1a1a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9.5px;
+            font-weight: 700;
+            color: #fff;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .ag-dot {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+        }
+
+        .d-on {
+            background: #4ade80;
+        }
+
+        .d-busy {
+            background: #378ADD;
+        }
+
+        .d-away {
+            background: #f59e0b;
+        }
+
+        .d-off {
+            background: #ccc;
+        }
+
+        .ag-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .ag-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: #1a1a1a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ag-chat {
+            font-size: 10px;
+            color: #aaa;
+            margin-top: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ag-conv {
+            font-size: 10px;
+            color: #1a1a1a;
+            font-weight: 700;
+        }
+
+        .empty-slot {
+            padding: 9px 12px;
+            font-size: 11px;
+            color: #888;
+            font-style: italic;
+            border-bottom: 1px solid #f5f5f5;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+            .empty-slot:last-child {
+                border-bottom: none;
+            }
+
+        .empty-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            flex-shrink: 0;
+        }
+
+        /* ── FAQ FORM ── */
+        .faq-form {
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            flex-shrink: 0;
+        }
+
+        .form-body {
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .field-lbl {
+            font-size: 9.5px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #aaa;
+            margin-bottom: 4px;
+        }
+
+        .cat-add-row {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 8px;
+        }
+
+        .cat-text-inp {
+            flex: 1;
+            background: #f8f8f8;
+            border: 1.5px solid #e8e8e8;
+            padding: 7px 11px;
+            font-size: 12px;
+            font-family: 'Poppins',sans-serif;
+            color: #1a1a1a;
+            outline: none;
+            transition: border-color .2s;
+        }
+
+            .cat-text-inp:focus {
+                border-color: #1a1a1a;
+            }
+
+            .cat-text-inp::placeholder {
+                color: #ccc;
+            }
+
+        .cat-add-btn {
+            background: #1a1a1a;
+            color: #fff;
+            border: none;
+            padding: 7px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Poppins',sans-serif;
+            white-space: nowrap;
+            transition: background .15s;
+        }
+
+            .cat-add-btn:hover {
+                background: #333;
+            }
+
+        .cat-chips {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .cat-chip {
+            background: #f5f5f5;
+            border: 1px solid #e8e8e8;
+            color: #666;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-family: 'Poppins',sans-serif;
+            transition: all .15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+            .cat-chip.on {
+                background: #1a1a1a;
+                color: #fff;
+                border-color: #1a1a1a;
+            }
+
+        .cat-del {
+            width: 11px;
+            height: 11px;
+            cursor: pointer;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            display: none;
+        }
+
+        .cat-chip:hover .cat-del {
+            display: inline;
+        }
+
+        .cat-chip.on .cat-del {
+            display: inline;
+        }
+
+        .faq-inp {
+            width: 100%;
+            background: #f8f8f8;
+            border: 1.5px solid #e8e8e8;
+            padding: 8px 12px;
+            font-size: 12.5px;
+            font-family: 'Poppins',sans-serif;
+            color: #1a1a1a;
+            outline: none;
+            transition: border-color .2s;
+        }
+
+            .faq-inp:focus {
+                border-color: #1a1a1a;
+            }
+
+            .faq-inp::placeholder {
+                color: #ccc;
+            }
+
+        textarea.faq-inp {
+            resize: none;
+            height: 70px;
+            line-height: 1.5;
+        }
+
+        .radio-row {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .radio-opt {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+        }
+
+            .radio-opt input[type=radio] {
+                width: 14px;
+                height: 14px;
+                accent-color: #1a1a1a;
+                cursor: pointer;
+            }
+
+            .radio-opt span {
+                font-size: 12.5px;
+                font-weight: 500;
+                color: #1a1a1a;
+            }
+
+        .form-foot {
+            padding: 9px 16px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        /* ── FAQ LIST ── */
+        .faq-list-panel {
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 460px;
+        }
+
+        .faq-search {
+            padding: 9px 16px;
+            border-bottom: 1px solid #f5f5f5;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #fafafa;
+            flex-shrink: 0;
+        }
+
+            .faq-search svg {
+                width: 12px;
+                height: 12px;
+                stroke: #bbb;
+                fill: none;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+                flex-shrink: 0;
+            }
+
+            .faq-search input {
+                background: none;
+                border: none;
+                outline: none;
+                font-size: 12px;
+                font-family: 'Poppins',sans-serif;
+                color: #1a1a1a;
+                flex: 1;
+            }
+
+                .faq-search input::placeholder {
+                    color: #ccc;
+                }
+
+        .faq-filter {
+            display: flex;
+            gap: 5px;
+            padding: 8px 16px;
+            border-bottom: 1px solid #f5f5f5;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+
+        .ff {
+            background: #f5f5f5;
+            border: 1px solid #e8e8e8;
+            color: #666;
+            font-size: 10.5px;
+            font-weight: 600;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-family: 'Poppins',sans-serif;
+            transition: all .15s;
+        }
+
+            .ff.on {
+                background: #1a1a1a;
+                color: #fff;
+                border-color: #1a1a1a;
+            }
+
+        .faq-scroll {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+            .faq-scroll::-webkit-scrollbar {
+                width: 3px;
+            }
+
+            .faq-scroll::-webkit-scrollbar-thumb {
+                background: #e8e8e8;
+            }
+
+        .faq-item {
+            border-bottom: 1px solid #f5f5f5;
+            padding: 12px 16px;
+        }
+
+            .faq-item:last-child {
+                border-bottom: none;
+            }
+
+            .faq-item.editing {
+                background: #fafffe;
+                border-left: 2px solid #1a1a1a;
+            }
+
+        .faq-item-hd {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .faq-q {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #1a1a1a;
+            flex: 1;
+            line-height: 1.4;
+        }
+
+        .faq-actions {
+            display: flex;
+            gap: 3px;
+            flex-shrink: 0;
+        }
+
+        .faq-act {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            border-radius: 3px;
+            transition: background .15s;
+        }
+
+            .faq-act:hover {
+                background: #f5f5f5;
+            }
+
+            .faq-act svg {
+                width: 13px;
+                height: 13px;
+                fill: none;
+                stroke: #888;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+
+            .faq-act.del svg {
+                stroke: #e24b4a;
+            }
+
+        .faq-a {
+            font-size: 12px;
+            color: #555;
+            line-height: 1.5;
+            font-weight: 300;
+            margin-bottom: 6px;
+        }
+
+        .faq-meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .faq-cat-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 7px;
+            font-size: 9.5px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .ut-consumer {
+            background: #e8f0fe;
+            color: #0c447c;
+        }
+
+        .ut-seller {
+            background: #EAF3DE;
+            color: #27500A;
+        }
+
+        .edit-inp {
+            width: 100%;
+            background: #f8f8f8;
+            border: 1px solid #e8e8e8;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-family: 'Poppins',sans-serif;
+            color: #1a1a1a;
+            outline: none;
+            margin-bottom: 6px;
+        }
+
+            .edit-inp:focus {
+                border-color: #1a1a1a;
+            }
+
+        textarea.edit-inp {
+            resize: none;
+            height: 52px;
+            line-height: 1.5;
+        }
+
+        .edit-foot {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .faq-empty {
+            padding: 24px;
+            text-align: center;
+            color: #ccc;
+            font-size: 12px;
+        }
+
+        /* ── MODAL ── */
+        .nh-modal-bg {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .nh-modal-bg.show {
+                display: flex;
+            }
+
+        .nh-modal {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            padding: 0;
+            width: 380px;
+            max-width: 95vw;
+        }
+
+        .nh-modal-hd {
+            padding: 16px 20px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .nh-modal-icon {
+            width: 36px;
+            height: 36px;
+            background: #FCEBEB;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+            .nh-modal-icon svg {
+                width: 16px;
+                height: 16px;
+                fill: none;
+                stroke: #791F1F;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+
+        .nh-modal-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+        }
+
+        .nh-modal-msg {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.55;
+            font-weight: 400;
+        }
+
+        .nh-modal-body {
+            padding: 12px 20px 16px;
+        }
+
+        .nh-modal-warn {
+            background: #FAEEDA;
+            border: 1px solid #f5d08a;
+            padding: 8px 12px;
+            font-size: 11.5px;
+            color: #633806;
+            font-weight: 500;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+            .nh-modal-warn svg {
+                width: 13px;
+                height: 13px;
+                fill: none;
+                stroke: #854F0B;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+                flex-shrink: 0;
+            }
+
+        .nh-modal-foot {
+            padding: 12px 20px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .nh-modal-cancel {
+            background: #fff;
+            color: #1a1a1a;
+            border: 1px solid #e0e0e0;
+            padding: 7px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Poppins',sans-serif;
+            transition: background .15s;
+        }
+
+            .nh-modal-cancel:hover {
+                background: #f5f5f5;
+            }
+
+        .nh-modal-confirm {
+            background: #e24b4a;
+            color: #fff;
+            border: none;
+            padding: 7px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'Poppins',sans-serif;
+            transition: background .15s;
+        }
+
+            .nh-modal-confirm:hover {
+                background: #c73938;
+            }
+
+        .nh-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 10px 18px;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: 'Poppins',sans-serif;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity .3s;
+            pointer-events: none;
+        }
+
+            .nh-toast.show {
+                opacity: 1;
+            }
+    </style>
+}
+
+<!-- STATS ROW -->
+<div class="q-stats">
+    <div class="qs">
+        <div class="qs-lbl">In Queue</div>
+        <div class="qs-val" id="qsInQueue">@Model.Stats.InQueue</div>
+        <div class="qs-sub"><span class="dn">Live</span> waiting customers</div>
+    </div>
+    <div class="qs">
+        <div class="qs-lbl">Active Sessions</div>
+        <div class="qs-val">@Model.Stats.ActiveSessions</div>
+        <div class="qs-sub"><span class="up">@Model.Stats.AgentsOnline agents</span> online</div>
+    </div>
+    <div class="qs">
+        <div class="qs-lbl">Avg. Wait Time</div>
+        <div class="qs-val">@Model.Stats.AvgWaitTime</div>
+        <div class="qs-sub warn">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#854F0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            Target: 2:00
+        </div>
+    </div>
+    <div class="qs">
+        <div class="qs-lbl">Resolved Today</div>
+        <div class="qs-val">@Model.Stats.ResolvedToday</div>
+        <div class="qs-sub"><span class="up">Sessions</span> closed</div>
+    </div>
+    <div class="qs">
+        <div class="qs-lbl">Total FAQs</div>
+        <div class="qs-val" id="statFaqCount">@Model.Faqs.Count</div>
+        <div class="qs-sub">across @Model.Categories.Count categories</div>
+    </div>
+</div>
+
+<div class="hc-shell">
+    <!-- LEFT COLUMN: Live Queue + Agent Status stacked -->
+    <div class="hc-left">
+
+        <!-- LIVE QUEUE PANEL -->
+        <div class="panel">
+            <div class="ph">
+                <div>
+                    <div class="ph-title">Live Queue</div>
+                    <div class="ph-sub" id="qMeta">@Model.Stats.InQueue in queue</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:14px;">
+                    <div style="display:flex;align-items:center;gap:7px;">
+                        <span style="font-size:10.5px;color:#888;font-weight:500;">Auto-Assign</span>
+                        <div id="autoAssignToggle" onclick="toggleAutoAssign()" style="width:44px;height:24px;border-radius:12px;cursor:pointer;background:#e53e3e;position:relative;transition:background 0.3s;flex-shrink:0;">
+                            <div id="toggleKnob" style="width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:left 0.3s;box-shadow:0 1px 4px rgba(0,0,0,0.25);"></div>
+                        </div>
+                        <span id="autoAssignLabel" style="font-size:10.5px;color:#e53e3e;font-weight:700;min-width:20px;">OFF</span>
+                    </div>
+                    <span style="font-size:10.5px;color:#4ade80;font-weight:600;display:flex;align-items:center;gap:5px;">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        Live queue
+                    </span>
+                </div>
+            </div>
+            <div class="wait-warn" id="waitWarn">
+                <div class="ww-left">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                    <span id="warnTxt">Customers waiting over 5 minutes</span>
+                </div>
+            </div>
+            <div class="q-scroll" style="max-height:220px;">
+                <table class="qtbl">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Customer</th>
+                            <th>Wait Time</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="qBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- AGENT STATUS PANEL (below Live Queue) -->
+        <div class="panel">
+            <div class="ph">
+                <div>
+                    <div class="ph-title">Agent Status</div>
+                    <div class="ph-sub" id="agentMeta">@Model.Stats.AgentsOnline online &middot; max 3 chats each</div>
+                </div>
+                <div style="font-size:10px;color:#aaa;">Total capacity: <strong style="color:#1a1a1a;">9 sessions</strong></div>
+            </div>
+            <div class="agent-grid" id="agentGrid" style="min-height:140px;"></div>
+        </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: FAQ Manager + Published FAQs stacked -->
+    <div class="hc-right">
+
+        <!-- FAQ FORM -->
+        <div class="faq-form">
+            <div class="ph">
+                <div>
+                    <div class="ph-title">FAQ Manager</div>
+                    <div class="ph-sub">Add, edit, or remove FAQs in real time</div>
+                </div>
+            </div>
+            <div class="form-body">
+                <div>
+                    <div class="field-lbl">Category</div>
+                    <div class="cat-add-row">
+                        <input class="cat-text-inp" id="newCatInp" type="text" placeholder="Add new category..." maxlength="50"
+                               onkeydown="if(event.key==='Enter'){event.preventDefault();addCategory();}" />
+                        <button class="cat-add-btn" onclick="addCategory()">+ Add</button>
+                    </div>
+                    <div class="cat-chips" id="catChips"></div>
+                </div>
+                <div>
+                    <div class="field-lbl">Question</div>
+                    <input class="faq-inp" id="faqQ" type="text" placeholder="e.g. How do I track my order?" maxlength="500" />
+                </div>
+                <div>
+                    <div class="field-lbl">Answer</div>
+                    <textarea class="faq-inp" id="faqA" placeholder="Type the full response here..."></textarea>
+                </div>
+                <div>
+                    <div class="field-lbl">Visible to</div>
+                    <div class="radio-row">
+                        <label class="radio-opt"><input type="radio" name="userType" value="Consumer" checked /><span>Consumer</span></label>
+                        <label class="radio-opt"><input type="radio" name="userType" value="Seller" /><span>Seller</span></label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-foot">
+                <button class="pbtn" onclick="addFaq()">
+                    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                    Add FAQ
+                </button>
+            </div>
+        </div>
+
+        <!-- PUBLISHED FAQS -->
+        <div class="faq-list-panel">
+            <div class="ph">
+                <div class="ph-title">Published FAQs</div>
+                <span id="faqListCount" style="font-size:11px;color:#aaa;font-weight:500;">@Model.Faqs.Count FAQs</span>
+            </div>
+            <div class="faq-search">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+                <input type="text" placeholder="Search FAQs..." oninput="filterFaqs(this.value)" />
+            </div>
+            <div style="display:flex;gap:5px;padding:8px 16px;border-bottom:1px solid #f5f5f5;flex-shrink:0;flex-wrap:wrap;" id="utFilterBar">
+                <button class="ff on" onclick="setUtFilter(this,'all')">All</button>
+                <button class="ff" onclick="setUtFilter(this,'Consumer')">Consumer</button>
+                <button class="ff" onclick="setUtFilter(this,'Seller')">Seller</button>
+            </div>
+            <div class="faq-filter" id="faqFilterBar"></div>
+            <div class="faq-scroll" id="faqList"></div>
+        </div>
+
+    </div>
+</div>
+<div id="dd-portal"></div>
+
+<!-- DELETE CONFIRMATION MODAL -->
+<div class="nh-modal-bg" id="nhModalBg">
+    <div class="nh-modal">
+        <div class="nh-modal-hd">
+            <div class="nh-modal-icon">
+                <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" /></svg>
+            </div>
+            <div>
+                <div class="nh-modal-title" id="nhModalTitle">Deactivate?</div>
+            </div>
+        </div>
+        <div class="nh-modal-body">
+            <div class="nh-modal-msg" id="nhModalMsg">This action cannot be undone.</div>
+            <div class="nh-modal-warn">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                This will be set to <strong>Resolved</strong> in the database.
+            </div>
+        </div>
+        <div class="nh-modal-foot">
+            <button class="nh-modal-cancel" onclick="closeModal()">Cancel</button>
+            <button class="nh-modal-confirm" id="nhModalConfirm">Yes, Deactivate</button>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+<div class="nh-toast" id="nhToast"></div>
+
+@section Scripts {
+    <script>
+        var SESSIONS   = @Html.Raw(sessionsJson);
+        var AGENTS     = @Html.Raw(agentsJson);
+        var FAQS       = @Html.Raw(faqsJson);
+        var CATEGORIES = @Html.Raw(categoriesJson);
+
+        var selCat          = CATEGORIES.length ? CATEGORIES[0] : '';
+        var faqFilterActive = 'all';
+        var utFilterActive  = 'all';
+        var faqSearch       = '';
+        var nextId          = @(Model.Faqs.Count > 0 ? Model.Faqs.Max(f => f.Id) + 1 : 1);
+
+        var __af     = document.querySelector('input[name="__RequestVerificationToken"]');
+        var AF_TOKEN = __af ? __af.value : '';
+
+        // ── helpers ──────────────────────────────────────────────────────────
+        function postJson(url, data) {
+            return fetch(url, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': AF_TOKEN },
+                body:    JSON.stringify(data)
+            }).then(function(r) { return r.json(); });
+        }
+        function fmt(s)  { return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+        function titleCase(str) { return String(str||'').replace(/\b\w/g,function(c){ return c.toUpperCase(); }); }
+        function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+        function getUserType() { return document.querySelector('input[name="userType"]:checked').value; }
+        function showToast(msg) {
+            var t = document.getElementById('nhToast');
+            t.textContent = msg; t.classList.add('show');
+            setTimeout(function(){ t.classList.remove('show'); }, 2400);
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        // PORTAL-BASED DROPDOWN
+        // ════════════════════════════════════════════════════════════════════
+        var _ddPortal     = null;
+        var _ddSessionId  = null;
+        var _ddJustOpened = false;
+
+        function initPortal() {
+            _ddPortal = document.getElementById('dd-portal');
+        }
+
+        function closeDropdown() {
+            if (_ddPortal) { _ddPortal.classList.remove('open'); _ddPortal.innerHTML = ''; }
+            _ddSessionId = null;
+        }
+
+        document.addEventListener('click', function(e) {
+            if (_ddJustOpened) { _ddJustOpened = false; return; }
+            if (_ddPortal && !_ddPortal.contains(e.target)) closeDropdown();
+        });
+
+        document.addEventListener('scroll', function() { closeDropdown(); }, true);
+
+        function openAssignDropdown(sessionId, btnEl) {
+            if (_ddSessionId === sessionId && _ddPortal && _ddPortal.classList.contains('open')) {
+                closeDropdown(); return;
+            }
+
+            _ddJustOpened = true;
+            _ddSessionId  = sessionId;
+
+            var rect       = btnEl.getBoundingClientRect();
+            var ddWidth    = 220;
+            var spaceBelow = window.innerHeight - rect.bottom - 8;
+            var spaceAbove = rect.top - 8;
+
+            _ddPortal.style.width  = ddWidth + 'px';
+            var left = rect.right - ddWidth;
+            if (left < 8) left = 8;
+            _ddPortal.style.left   = left + 'px';
+            _ddPortal.style.bottom = '';
+            _ddPortal.style.top    = (rect.bottom + 4) + 'px';
+
+            _ddPortal.innerHTML = '<div class="assign-dd-hd">Select Agent</div>'
+                + '<div class="assign-agent-opt" style="justify-content:center;color:#aaa;font-size:11px;pointer-events:none;">Loading&hellip;</div>';
+            _ddPortal.classList.add('open');
+
+            fetch('/Admin/GetAvailableAgents')
+                .then(function(r) { return r.json(); })
+                .then(function(agents) {
+                    if (_ddSessionId !== sessionId) return;
+                    if (!agents || !agents.length) {
+                        _ddPortal.innerHTML = '<div class="assign-dd-hd">Select Agent</div>'
+                            + '<div class="assign-dd-empty">No agents available right now</div>';
+                        return;
+                    }
+                    var html = '<div class="assign-dd-hd">Select Agent</div>';
+                    agents.forEach(function(a) {
+                        var dotCls   = a.status === 'available' ? 'on' : a.status === 'busy' ? 'busy' : 'away';
+                        var agentId  = Number(a.id) || 0;
+                        var initials = (a.name||'').split(' ').filter(Boolean).slice(0,2)
+                                        .map(function(w){ return w[0].toUpperCase(); }).join('');
+                                var safeName = escH(a.name).replace(/'/g,"&#39;");
+        var bestSlot = Number(a.bestSlot) || 0;
+        html += '<div class="assign-agent-opt" onclick="confirmAssign('+sessionId+','+agentId+',\''+safeName+'\','+bestSlot+')">'
+              + '<div class="aao-av">'+initials+'<div class="aao-dot '+dotCls+'"></div></div>'
+              + '<div class="aao-info">'
+              +   '<div class="aao-name">'+escH(titleCase(a.name))+'</div>'
+              +   '<div class="aao-slots">Load: '+a.load+'/3 &middot; Best slot: Slot '+bestSlot+'</div>'
+              + '</div></div>';
+                    });
+                    _ddPortal.innerHTML = html;
+
+                    var portalH   = _ddPortal.offsetHeight;
+                    var needsFlip = (rect.bottom + 4 + portalH > window.innerHeight - 8) && (spaceAbove >= portalH);
+                    if (needsFlip) {
+                        _ddPortal.style.top    = '';
+                        _ddPortal.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+                    } else {
+                        _ddPortal.style.bottom = '';
+                        _ddPortal.style.top    = (rect.bottom + 4) + 'px';
+                    }
+                })
+                .catch(function() {
+                    _ddPortal.innerHTML = '<div class="assign-dd-hd">Select Agent</div>'
+                        + '<div class="assign-dd-empty">Could not load agents</div>';
+                });
+        }
+
+                function confirmAssign(sessionId, agentId, agentName, bestSlot) {
+            closeDropdown();
+            var s = SESSIONS.find(function(x){ return x.id === sessionId; });
+            if (!s) return;
+            if (!agentId || agentId <= 0) {
+                showToast('Selected agent has no valid ID.');
+                return;
+            }
+
+            postJson('/Admin/QueueAssign', {
+                sessionId:  sessionId,
+                agentId:    agentId,
+                agentName:  agentName,
+                slotNumber: bestSlot || 0
+            })
+            .then(function(data) {
+                if (data.success) {
+                    SESSIONS = SESSIONS.filter(function(x){ return x.id !== sessionId; });
+                    renderQueue();
+                    showToast(titleCase(s.name) + ' assigned to ' + titleCase(agentName)
+                        + ' (Slot ' + (data.slot || bestSlot || '?') + ').');
+                    refreshAgents();
+                } else {
+                    showToast(data.message || 'Assignment failed.');
+                }
+            })
+            .catch(function() { showToast('Could not reach server.'); });
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        // QUEUE RENDER
+        // ════════════════════════════════════════════════════════════════════
+        function renderQueue() {
+            var body = document.getElementById('qBody');
+            body.innerHTML = '';
+            var over5 = 0;
+
+            SESSIONS.forEach(function(s, i) {
+                if (s.waitSec >= 300) over5++;
+                var tr  = document.createElement('tr');
+                var wc  = s.waitSec >= 300 ? 'q-wait over5' : 'q-wait';
+                var pc  = i === 0 ? 'p1' : i === 1 ? 'p2' : i === 2 ? 'p3' : '';
+
+                // TEMP: restriction disabled for testing — original checked a.sessions < a.max (max = 3)
+                // var hasAvail = AGENTS.some(function(a) {
+                //     return (a.status === 'online' || a.status === 'busy') && a.sessions < a.max;
+                // });
+                var hasAvail = AGENTS.some(function(a) {
+                    return (a.status === 'online' || a.status === 'busy');
+                });
+
+                var actionCell = hasAvail
+                    ? '<button class="pbtn" style="font-size:10px;padding:4px 10px;" '
+                    +   'onclick="event.stopPropagation();openAssignDropdown('+s.id+',this)">'
+                    +   '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;margin-right:3px;vertical-align:-1px;">'
+                    +     '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'
+                    +   '</svg>Assign &#9660;</button>'
+                    : '<span style="font-size:11px;color:#aaa;">No agents</span>';
+
+                tr.innerHTML =
+                    '<td><div class="q-pos-badge '+pc+'">'+(i+1)+'</div></td>'
+                    + '<td><div class="q-cust">'
+                    +   '<div class="q-av" style="background:'+s.bg+'">'+s.av+'</div>'
+                    +   '<div><div class="q-name">'+escH(titleCase(s.name))+'</div>'
+                    +       '<div class="q-role">'+escH(titleCase(s.role))+'</div></div>'
+                    + '</div></td>'
+                    + '<td><div class="'+wc+'">'+fmt(s.waitSec)+'</div></td>'
+                    + '<td><span style="font-size:11px;color:#666;font-weight:500;">'+escH(titleCase(s.cat))+'</span></td>'
+                    + '<td><span class="badge b-waiting">Waiting</span></td>'
+                    + '<td>'+actionCell+'</td>';
+                body.appendChild(tr);
+            });
+
+            var w = document.getElementById('waitWarn');
+            w.classList.toggle('show', over5 > 0);
+            if (over5 > 0) document.getElementById('warnTxt').textContent = over5 + ' customer(s) waiting over 5 minutes';
+            var longest = SESSIONS.length ? Math.max.apply(null, SESSIONS.map(function(s){ return s.waitSec; })) : 0;
+            document.getElementById('qMeta').textContent     = SESSIONS.length + ' in queue · longest: ' + fmt(longest);
+            document.getElementById('qsInQueue').textContent = SESSIONS.length;
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        // AGENT STATUS RENDER
+        // ════════════════════════════════════════════════════════════════════
+        function renderAgents() {
+            var grid = document.getElementById('agentGrid');
+            grid.innerHTML = '';
+
+            for (var slotNum = 1; slotNum <= 3; slotNum++) {
+                var col    = document.createElement('div'); col.className = 'agent-col';
+                var hd     = document.createElement('div'); hd.className  = 'agent-col-hd';
+                var anyFilled = AGENTS.some(function(a) {
+                    return (a.slots||[]).some(function(sl){ return sl.slotNum === slotNum; });
+                });
+                hd.innerHTML = '<div class="slot-dot'+(anyFilled?' filled':'')+'"></div>Chat Slot ' + slotNum;
+                col.appendChild(hd);
+
+                var colBody = document.createElement('div'); colBody.className = 'agent-col-body';
+
+                AGENTS.forEach(function(a) {
+                    var slots    = a.slots || [];
+                    var slotData = slots.find(function(sl){ return sl.slotNum === slotNum; });
+                    var dotCls   = a.status === 'online' ? 'd-on' : a.status === 'busy' ? 'd-busy' : a.status === 'away' ? 'd-away' : 'd-off';
+                    var statusCls = 'b-' + a.status;
+                    var avBg     = (a.status === 'offline') ? '#ccc' : '#1a1a1a';
+                    var d        = document.createElement('div');
+
+                    if (a.status === 'offline') {
+                        if (slotNum !== 1) return;
+                        d.className = 'agent-slot';
+                        d.innerHTML =
+                            '<div class="ag-av" style="background:#ccc;">'
+                            + '<span>'+a.initials+'</span>'
+                            + '<div class="ag-dot d-off"></div></div>'
+                            + '<div class="ag-info">'
+                            +   '<div class="ag-name">'+escH(titleCase(a.name))+'</div>'
+                            +   '<div class="ag-chat">Offline</div>'
+                            + '</div>'
+                            + '<span class="badge b-offline" style="font-size:9px;padding:1px 6px;">offline</span>';
+
+                    } else if (slotData && slotData.convId && slotData.convId > 0) {
+                        d.className = 'agent-slot';
+                        d.innerHTML =
+                            '<div class="ag-av" style="background:'+avBg+';">'
+                            + '<span>'+a.initials+'</span>'
+                            + '<div class="ag-dot '+dotCls+'"></div></div>'
+                            + '<div class="ag-info">'
+                            +   '<div class="ag-name">'+escH(titleCase(a.name))+'</div>'
+                            +   '<div class="ag-chat">'
+                            +     escH(slotData.client||'Customer')
+                            +     ' &middot; <span class="ag-conv">Conv #'+slotData.convId+'</span>'
+                            +   '</div>'
+                            + '</div>'
+                            + '<span class="badge b-occupied" style="font-size:9px;padding:1px 6px;">active</span>';
+
+                    } else {
+                        d.className = 'empty-slot';
+                        d.innerHTML =
+                            '<div class="ag-av" style="background:'+avBg+';width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:#fff;flex-shrink:0;position:relative;">'
+                            + '<span>'+a.initials+'</span>'
+                            + '<div class="ag-dot '+dotCls+'" style="position:absolute;bottom:0;right:0;width:8px;height:8px;border-radius:50%;border:2px solid #fff;"></div>'
+                            + '</div>'
+                            + '<div style="flex:1;min-width:0;">'
+                            +   '<div style="font-size:11px;font-weight:600;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escH(titleCase(a.name))+'</div>'
+                            +   '<div style="font-size:10px;color:#888;font-style:italic;margin-top:1px;">Available</div>'
+                            + '</div>'
+                            + '<span class="badge '+statusCls+'" style="font-size:9px;padding:1px 6px;">'+a.status+'</span>';
+                    }
+                    colBody.appendChild(d);
+                });
+
+                col.appendChild(colBody);
+                grid.appendChild(col);
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        // FAQ CATEGORIES
+        // ════════════════════════════════════════════════════════════════════
+        function renderCatChips() {
+            var wrap = document.getElementById('catChips');
+            wrap.innerHTML = '';
+            CATEGORIES.forEach(function(c) {
+                var d = document.createElement('div');
+                d.className = 'cat-chip'+(c === selCat ? ' on' : '');
+                d.onclick   = function(){ selCat = c; renderCatChips(); };
+                d.innerHTML = escH(titleCase(c))
+                    + '<svg class="cat-del" viewBox="0 0 24 24" onclick="event.stopPropagation();deleteCategory(\''+escH(c).replace(/'/g,"&#39;")+'\')">'
+                    + '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+                wrap.appendChild(d);
+            });
+            renderFaqFilterBar();
+        }
+
+        function addCategory() {
+            var inp = document.getElementById('newCatInp');
+            var v   = inp.value.trim();
+            if (!v) { showToast('Enter a category name.'); return; }
+            var vTitle = titleCase(v);
+            if (CATEGORIES.find(function(c){ return c.toLowerCase() === vTitle.toLowerCase(); })) {
+                showToast('Category already exists.'); return;
+            }
+            postJson('/Admin/FaqCategoryAdd', { name: vTitle })
+                .then(function(data) {
+                    if (data.success) {
+                        CATEGORIES.push(vTitle); selCat = vTitle; inp.value = '';
+                        renderCatChips();
+                        showToast('"'+vTitle+'" category added!');
+                    } else { showToast(data.message || 'Failed to add category.'); }
+                })
+                .catch(function() { showToast('Could not reach server.'); });
+        }
+
+        function deleteCategory(cat) {
+            var count = FAQS.filter(function(f){ return f.cat === cat; }).length;
+            var msg   = count > 0
+                ? count + ' FAQ(s) under "'+titleCase(cat)+'" will also be set to Resolved.'
+                : '"'+titleCase(cat)+'" will be removed (no FAQs attached).';
+            showModal('Deactivate Category "'+titleCase(cat)+'"?', msg, function() {
+                postJson('/Admin/FaqCategoryDelete', { name: cat })
+                    .then(function(data) {
+                        if (data.success) {
+                            FAQS       = FAQS.filter(function(f){ return f.cat !== cat; });
+                            CATEGORIES = CATEGORIES.filter(function(c){ return c !== cat; });
+                            if (selCat === cat) selCat = CATEGORIES[0] || '';
+                            updateFaqCounts(); renderCatChips(); renderFaqs();
+                            showToast(data.message || 'Category deactivated.');
+                        } else { showToast(data.message || 'Delete failed.'); }
+                    })
+                    .catch(function() { showToast('Could not reach server.'); });
+            });
+        }
+
+        function renderFaqFilterBar() {
+            var bar = document.getElementById('faqFilterBar');
+            bar.innerHTML = '';
+            var allBtn = document.createElement('button');
+            allBtn.className   = 'ff'+(faqFilterActive === 'all' ? ' on' : '');
+            allBtn.textContent = 'All';
+            allBtn.onclick = function(){ faqFilterActive = 'all'; renderFaqFilterBar(); renderFaqs(); };
+            bar.appendChild(allBtn);
+            CATEGORIES.forEach(function(c) {
+                var b = document.createElement('button');
+                b.className   = 'ff'+(faqFilterActive === c ? ' on' : '');
+                b.textContent = titleCase(c);
+                b.onclick     = function(){ faqFilterActive = c; renderFaqFilterBar(); renderFaqs(); };
+                bar.appendChild(b);
+            });
+        }
+
+        function setUtFilter(el, val) {
+            utFilterActive = val;
+            document.querySelectorAll('#utFilterBar .ff').forEach(function(b){ b.classList.remove('on'); });
+            el.classList.add('on');
+            renderFaqs();
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        // FAQ CRUD
+        // ════════════════════════════════════════════════════════════════════
+        function addFaq() {
+            var qRaw = document.getElementById('faqQ').value.trim();
+            var a    = document.getElementById('faqA').value.trim();
+            var ut   = getUserType();
+            var q    = titleCase(qRaw);
+            if (!q || !a) { showToast('Please fill in both question and answer.'); return; }
+            if (!selCat)  { showToast('Please select a category first.'); return; }
+            postJson('/Admin/FaqAdd', { question: q, answer: a, category: selCat, userType: ut })
+                .then(function(data) {
+                    if (data.success) {
+                        FAQS.push({ id: data.id || nextId++, q: q, a: a, cat: selCat, userType: ut });
+                        document.getElementById('faqQ').value = '';
+                        document.getElementById('faqA').value = '';
+                        updateFaqCounts(); renderFaqs();
+                        showToast('FAQ added!');
+                    } else { showToast(data.message || 'Failed to add FAQ.'); }
+                })
+                .catch(function() { showToast('Could not reach server.'); });
+        }
+
+        function deleteFaq(id) {
+            var f = FAQS.find(function(x){ return x.id === id; });
+            if (!f) return;
+            showModal('Deactivate FAQ?', '"'+escH(f.q)+'" will be set to Resolved.', function() {
+                postJson('/Admin/FaqDelete', { id: id })
+                    .then(function(data) {
+                        if (data.success) {
+                            FAQS = FAQS.filter(function(x){ return x.id !== id; });
+                            updateFaqCounts(); renderFaqs();
+                            showToast('FAQ set to Resolved.');
+                        } else { showToast(data.message || 'Delete failed.'); }
+                    })
+                    .catch(function() { showToast('Could not reach server.'); });
+            });
+        }
+
+        function editFaq(id) {
+            var f = FAQS.find(function(x){ return x.id === id; });
+            if (!f) return;
+            var item = document.getElementById('faq-'+id);
+            item.classList.add('editing');
+            var catOpts = CATEGORIES.map(function(c) {
+                return '<option value="'+escH(c)+'"'+(c===f.cat?' selected':'')+'>'+escH(titleCase(c))+'</option>';
+            }).join('');
+            item.innerHTML =
+                '<div style="margin-bottom:6px;"><div class="field-lbl" style="margin-bottom:4px;">Category</div>'
+                + '<select class="edit-inp" id="ec-'+id+'">'+catOpts+'</select></div>'
+                + '<div style="margin-bottom:6px;"><div class="field-lbl" style="margin-bottom:4px;">Question</div>'
+                + '<input class="edit-inp" id="eq-'+id+'" type="text" value="'+escH(f.q)+'" /></div>'
+                + '<div style="margin-bottom:6px;"><div class="field-lbl" style="margin-bottom:4px;">Answer</div>'
+                + '<textarea class="edit-inp" id="ea-'+id+'">'+escH(f.a)+'</textarea></div>'
+                + '<div style="margin-bottom:6px;"><div class="field-lbl" style="margin-bottom:6px;">Visible to</div>'
+                + '<div style="display:flex;gap:16px;">'
+                +   '<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">'
+                +     '<input type="radio" name="eut-'+id+'" value="Consumer"'+(f.userType==='Consumer'?' checked':'')+' style="accent-color:#1a1a1a;"/> Consumer</label>'
+                +   '<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">'
+                +     '<input type="radio" name="eut-'+id+'" value="Seller"'+(f.userType==='Seller'?' checked':'')+' style="accent-color:#1a1a1a;"/> Seller</label>'
+                + '</div></div>'
+                + '<div class="edit-foot">'
+                +   '<button class="pbtn" style="font-size:10px;padding:5px 12px;" onclick="saveEdit('+id+')">Save</button>'
+                +   '<button class="pbtn out" style="font-size:10px;padding:5px 12px;" onclick="renderFaqs()">Cancel</button>'
+                + '</div>';
+        }
+
+        function saveEdit(id) {
+            var qRaw = document.getElementById('eq-'+id).value.trim();
+            var a    = document.getElementById('ea-'+id).value.trim();
+            var c    = document.getElementById('ec-'+id).value;
+            var ut   = document.querySelector('input[name="eut-'+id+'"]:checked').value;
+            var q    = titleCase(qRaw);
+            if (!q || !a) { showToast('Both fields are required.'); return; }
+            postJson('/Admin/FaqUpdate', { id: id, question: q, answer: a, category: c, userType: ut })
+                .then(function(data) {
+                    if (data.success) {
+                        var f = FAQS.find(function(x){ return x.id === id; });
+                        if (f) { f.q = q; f.a = a; f.cat = c; f.userType = ut; }
+                        renderFaqs();
+                        showToast('FAQ updated!');
+                    } else { showToast(data.message || 'Update failed.'); }
+                })
+                .catch(function() { showToast('Could not reach server.'); });
+        }
+
+        function filterFaqs(v) { faqSearch = v.toLowerCase(); renderFaqs(); }
+
+        function updateFaqCounts() {
+            document.getElementById('statFaqCount').textContent = FAQS.length;
+            document.getElementById('faqListCount').textContent = FAQS.length + ' FAQs';
+        }
+
+        function renderFaqs() {
+            var list = document.getElementById('faqList');
+            list.innerHTML = '';
+            var filtered = FAQS.filter(function(f) {
+                return (faqFilterActive === 'all' || f.cat === faqFilterActive)
+                    && (utFilterActive  === 'all' || f.userType === utFilterActive)
+                    && (!faqSearch || f.q.toLowerCase().includes(faqSearch) || f.a.toLowerCase().includes(faqSearch));
+            });
+            if (!filtered.length) { list.innerHTML = '<div class="faq-empty">No FAQs found.</div>'; return; }
+            filtered.forEach(function(f) {
+                var d = document.createElement('div');
+                d.className = 'faq-item'; d.id = 'faq-'+f.id;
+                d.innerHTML =
+                    '<div class="faq-item-hd">'
+                    +   '<div class="faq-q">'+escH(titleCase(f.q))+'</div>'
+                    +   '<div class="faq-actions">'
+                    +     '<button class="faq-act" onclick="editFaq('+f.id+')" title="Edit">'
+                    +       '<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>'
+                    +       '<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>'
+                    +     '<button class="faq-act del" onclick="deleteFaq('+f.id+')" title="Deactivate">'
+                    +       '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/>'
+                    +       '<path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>'
+                    +       '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>'
+                    +   '</div>'
+                    + '</div>'
+                    + '<div class="faq-a">'+escH(f.a)+'</div>'
+                    + '<div class="faq-meta">'
+                    +   '<span class="faq-cat-badge" style="background:#f0f0f0;color:#555;">'+escH(titleCase(f.cat))+'</span>'
+                    +   '<span class="faq-cat-badge '+(f.userType==='Seller'?'ut-seller':'ut-consumer')+'">'+escH(f.userType||'Consumer')+'</span>'
+                    + '</div>';
+                list.appendChild(d);
+            });
+        }
+
+        // ── MODAL ──────────────────────────────────────────────────────────
+        var _modalCallback = null;
+        function showModal(title, msg, onConfirm) {
+            document.getElementById('nhModalTitle').textContent = title;
+            document.getElementById('nhModalMsg').textContent   = msg;
+            _modalCallback = onConfirm;
+            document.getElementById('nhModalBg').classList.add('show');
+        }
+        function closeModal() {
+            document.getElementById('nhModalBg').classList.remove('show');
+            _modalCallback = null;
+        }
+
+        // ── INIT ──────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', function() {
+            initPortal();
+            document.getElementById('nhModalConfirm').onclick = function() {
+                var cb = _modalCallback; closeModal(); if (cb) cb();
+            };
+            document.getElementById('nhModalBg').addEventListener('click', function(e) {
+                if (e.target === this) closeModal();
+            });
+            var afEl = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (afEl) AF_TOKEN = afEl.value;
+        });
+
+        initPortal();
+
+        // ── TICK — increment wait timers every second (display only) ─────
+        setInterval(function () {
+            SESSIONS.forEach(function (s) { s.waitSec++; });
+            renderQueue();
+        }, 1000);
+
+        // ════════════════════════════════════════════════════════════════════
+        // LIVE POLLS
+        // ════════════════════════════════════════════════════════════════════
+        function refreshQueue() {
+            fetch('/Admin/GetQueueSessions')
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    var existing = {};
+                    SESSIONS.forEach(function (s) { existing[s.id] = s.waitSec; });
+                    SESSIONS = data.map(function (s) {
+                        if (existing[s.id] !== undefined) s.waitSec = existing[s.id];
+                        return s;
+                    });
+                    renderQueue();
+                })
+                .catch(function () { /* silent */ });
+        }
+
+        function refreshAgents() {
+            fetch('/Admin/GetAgentStatus')
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    AGENTS = data;
+                    renderAgents();
+                    renderQueue();
+                })
+                .catch(function () { /* silent */ });
+        }
+        setInterval(refreshQueue,  1000);
+        setInterval(refreshAgents, 1000);
+        refreshAgents();
+                // ── AUTO-ASSIGN TOGGLE ────────────────────────────────────────────
+        var AUTO_ASSIGN_ON  = false;
+        var autoAssignTimer = null;
+
+        function toggleAutoAssign() {
+            AUTO_ASSIGN_ON = !AUTO_ASSIGN_ON;
+            var toggle = document.getElementById('autoAssignToggle');
+            var knob   = document.getElementById('toggleKnob');
+            var label  = document.getElementById('autoAssignLabel');
+            if (AUTO_ASSIGN_ON) {
+                toggle.style.background = '#38a169';
+                knob.style.left         = '23px';
+                label.style.color       = '#38a169';
+                label.textContent       = 'ON';
+                startAutoAssign();
+            } else {
+                toggle.style.background = '#e53e3e';
+                knob.style.left         = '3px';
+                label.style.color       = '#e53e3e';
+                label.textContent       = 'OFF';
+                stopAutoAssign();
+            }
+        }
+
+        function startAutoAssign() {
+            runAutoAssign();
+            autoAssignTimer = setInterval(runAutoAssign, 30000);
+        }
+
+        function stopAutoAssign() {
+            if (autoAssignTimer) { clearInterval(autoAssignTimer); autoAssignTimer = null; }
+        }
+
+               function runAutoAssign() {
+            if (!AUTO_ASSIGN_ON) return;
+
+            // Fix: sessions from the server have status 'waiting' (lowercase)
+            var waiting = SESSIONS.filter(function(s){
+                var st = String(s.status || '').toLowerCase();
+                return st === 'waiting';
+            });
+            if (!waiting.length) return;
+
+            fetch('/Admin/GetAvailableAgents')
+                .then(function(r){ return r.json(); })
+                .then(function(agents){
+                    if (!agents || !agents.length) return;
+
+                    // Process one session at a time to avoid race conditions
+                    var session = waiting[0];
+                    var agent   = agents[0]; // Already sorted: least load + longest idle first
+
+                    postJson('/Admin/QueueAssign', {
+                        sessionId:  session.id,
+                        agentId:    Number(agent.id) || 0,
+                        agentName:  agent.name,
+                        slotNumber: Number(agent.bestSlot) || 0
+                    })
+                    .then(function(result){
+                        if (result.success) {
+                            SESSIONS = SESSIONS.filter(function(s){ return s.id !== session.id; });
+                            renderQueue();
+                            refreshAgents();
+                            showAutoAssignToast(session, agent.name, result.slot);
+
+                            // If more sessions waiting, process the next one after a short delay
+                            if (waiting.length > 1) {
+                                setTimeout(runAutoAssign, 1500);
+                            }
+                        }
+                    })
+                    .catch(function(){});
+                })
+                .catch(function(){});
+        }
+
+                function showAutoAssignToast(session, agentName, slot) {
+            var t = document.createElement('div');
+            t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1a1a1a;color:#fff;'
+                + 'padding:10px 16px;font-size:12px;font-family:Poppins,sans-serif;'
+                + 'box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:9999;border-left:3px solid #38a169;'
+                + 'max-width:280px;line-height:1.5;';
+            t.innerHTML = '<strong>Auto-Assigned</strong><br>Session #'+session.id
+                + ' &rarr; '+escH(titleCase(agentName))
+                + (slot ? ' &middot; Slot '+slot : '');
+            document.body.appendChild(t);
+            setTimeout(function(){
+                t.style.transition = 'opacity .4s';
+                t.style.opacity    = '0';
+                setTimeout(function(){ document.body.removeChild(t); }, 400);
+            }, 3000);
+        }
+        renderQueue();
+        renderAgents();
+        renderCatChips();
+        renderFaqs();
+    </script>
+}

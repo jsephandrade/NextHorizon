@@ -1,0 +1,280 @@
+Using launch settings from C:\Users\helen\BOOSTING SITE\NEXTHORIZON\NEXTHORIZON\Properties\launchSettings.json...
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5297
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\helen\BOOSTING SITE\NEXTHORIZON\NEXTHORIZON
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (310ms) [Parameters=[], CommandType='Text', CommandTimeout='60']
+      SELECT [p].[Id], [p].[BannerSize], [p].[BuyQuantity], [p].[CreatedAt], [p].[FreeItemRequirement], [p].[MinimumPurchaseAmount], [p].[MinimumRequirementType], [p].[Name], [p].[ReturnConditionRequirementsJson], [p].[ReturnReasonsJson], [p].[ReturnWindowDays], [p].[SelectedProductIdsJson], [p].[Status], [p].[TakeQuantity], [p].[TotalDiscountFix], [p].[TotalDiscountPercent], [p].[Type], [p].[UntilPromotionLast], [p].[UpdatedAt], [p].[UsageLimit]
+      FROM [Promotions] AS [p]
+      ORDER BY [p].[Id] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (270ms) [Parameters=[@p='?' (DbType = Int32), @scope='?' (Size = 50)], CommandType='Text', CommandTimeout='60']
+      SELECT TOP(@p) [l].[Id], [l].[AthleteName], [l].[AvatarUrl], [l].[DistanceKm], [l].[DurationSeconds], [l].[Scope], [l].[CategoryLabel], [l].[ActivityDate], [l].[RankChange]
+      FROM [leaderboard_records] AS [l]
+      WHERE [l].[IsActive] = CAST(1 AS bit) AND [l].[Scope] = @scope
+      ORDER BY [l].[DistanceKm] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (232ms) [Parameters=[@p='?' (DbType = Int32), @scope='?' (Size = 50)], CommandType='Text', CommandTimeout='60']
+      SELECT TOP(@p) [l].[Id], [l].[AthleteName], [l].[AvatarUrl], [l].[DistanceKm], [l].[DurationSeconds], [l].[Scope], [l].[CategoryLabel], [l].[ActivityDate], [l].[RankChange]
+      FROM [leaderboard_records] AS [l]
+      WHERE [l].[IsActive] = CAST(1 AS bit) AND [l].[Scope] = @scope
+      ORDER BY [l].[DistanceKm] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (208ms) [Parameters=[@p='?' (DbType = Int32), @scope='?' (Size = 50)], CommandType='Text', CommandTimeout='60']
+      SELECT TOP(@p) [l].[Id], [l].[AthleteName], [l].[AvatarUrl], [l].[DistanceKm], [l].[DurationSeconds], [l].[Scope], [l].[CategoryLabel], [l].[ActivityDate], [l].[RankChange]
+      FROM [leaderboard_records] AS [l]
+      WHERE [l].[IsActive] = CAST(1 AS bit) AND [l].[Scope] = @scope
+      ORDER BY [l].[DistanceKm] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (264ms) [Parameters=[@p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='60']
+      SELECT TOP(@p) [p].[ProductId], [p].[Brand], [p].[Category], [p].[Details], [p].[Gender], [p].[ProductName], [p].[seller_id], [p].[Status]
+      FROM [Products] AS [p]
+      ORDER BY [p].[ProductId]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (240ms) [Parameters=[@productIds1='?' (DbType = Int32), @productIds2='?' (DbType = Int32), @productIds3='?' (DbType = Int32), @productIds4='?' (DbType = Int32), @productIds5='?' (DbType = Int32), @productIds6='?' (DbType = Int32), @productIds7='?' (DbType = Int32), @productIds8='?' (DbType = Int32), @productIds9='?' (DbType = Int32), @productIds10='?' (DbType = Int32), @productIds11='?' (DbType = Int32), @productIds12='?' (DbType = Int32), @productIds13='?' (DbType = Int32), @productIds14='?' (DbType = Int32), @productIds15='?' (DbType = Int32), @productIds16='?' (DbType = Int32), @productIds17='?' (DbType = Int32), @productIds18='?' (DbType = Int32), @productIds19='?' (DbType = Int32), @productIds20='?' (DbType = Int32), @productIds21='?' (DbType = Int32), @productIds22='?' (DbType = Int32), @productIds23='?' (DbType = Int32), @productIds24='?' (DbType = Int32), @productIds25='?' (DbType = Int32), @productIds26='?' (DbType = Int32), @productIds27='?' (DbType = Int32), @productIds28='?' (DbType = Int32), @productIds29='?' (DbType = Int32), @productIds30='?' (DbType = Int32), @productIds31='?' (DbType = Int32), @productIds32='?' (DbType = Int32), @productIds33='?' (DbType = Int32), @productIds34='?' (DbType = Int32), @productIds35='?' (DbType = Int32), @productIds36='?' (DbType = Int32), @productIds37='?' (DbType = Int32), @productIds38='?' (DbType = Int32), @productIds39='?' (DbType = Int32), @productIds40='?' (DbType = Int32), @productIds41='?' (DbType = Int32), @productIds42='?' (DbType = Int32), @productIds43='?' (DbType = Int32), @productIds44='?' (DbType = Int32), @productIds45='?' (DbType = Int32), @productIds46='?' (DbType = Int32), @productIds47='?' (DbType = Int32), @productIds48='?' (DbType = Int32), @productIds49='?' (DbType = Int32), @productIds50='?' (DbType = Int32)], CommandType='Text', CommandTimeout='60']
+      SELECT [p].[VariantId], [p].[Availability], [p].[Height], [p].[ImageData], [p].[ImageMimeType], [p].[imagePath], [p].[Length], [p].[Price], [p].[ProductId], [p].[Quantity], [p].[SKU], [p].[Size], [p].[Style], [p].[Weight], [p].[Width]
+      FROM [ProductVariants] AS [p]
+      WHERE [p].[ProductId] IN (@productIds1, @productIds2, @productIds3, @productIds4, @productIds5, @productIds6, @productIds7, @productIds8, @productIds9, @productIds10, @productIds11, @productIds12, @productIds13, @productIds14, @productIds15, @productIds16, @productIds17, @productIds18, @productIds19, @productIds20, @productIds21, @productIds22, @productIds23, @productIds24, @productIds25, @productIds26, @productIds27, @productIds28, @productIds29, @productIds30, @productIds31, @productIds32, @productIds33, @productIds34, @productIds35, @productIds36, @productIds37, @productIds38, @productIds39, @productIds40, @productIds41, @productIds42, @productIds43, @productIds44, @productIds45, @productIds46, @productIds47, @productIds48, @productIds49, @productIds50)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (290ms) [Parameters=[@p='?' (DbType = Int32), @scope='?' (Size = 50)], CommandType='Text', CommandTimeout='60']
+      SELECT TOP(@p) [l].[Id], [l].[AthleteName], [l].[AvatarUrl], [l].[DistanceKm], [l].[DurationSeconds], [l].[Scope], [l].[CategoryLabel], [l].[ActivityDate], [l].[RankChange]
+      FROM [leaderboard_records] AS [l]
+      WHERE [l].[IsActive] = CAST(1 AS bit) AND [l].[Scope] = @scope
+      ORDER BY [l].[DistanceKm] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (240ms) [Parameters=[@p='?' (DbType = Int32), @scope='?' (Size = 50)], CommandType='Text', CommandTimeout='60']
+      SELECT TOP(@p) [l].[Id], [l].[AthleteName], [l].[AvatarUrl], [l].[DistanceKm], [l].[DurationSeconds], [l].[Scope], [l].[CategoryLabel], [l].[ActivityDate], [l].[RankChange]
+      FROM [leaderboard_records] AS [l]
+      WHERE [l].[IsActive] = CAST(1 AS bit) AND [l].[Scope] = @scope
+      ORDER BY [l].[DistanceKm] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (449ms) [Parameters=[@p='?' (DbType = Int32), @scope='?' (Size = 50)], CommandType='Text', CommandTimeout='60']
+      SELECT TOP(@p) [l].[Id], [l].[AthleteName], [l].[AvatarUrl], [l].[DistanceKm], [l].[DurationSeconds], [l].[Scope], [l].[CategoryLabel], [l].[ActivityDate], [l].[RankChange]
+      FROM [leaderboard_records] AS [l]
+      WHERE [l].[IsActive] = CAST(1 AS bit) AND [l].[Scope] = @scope
+      ORDER BY [l].[DistanceKm] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (466ms) [Parameters=[@input='?' (Size = 4000)], CommandType='Text', CommandTimeout='60']
+      SELECT TOP(1) [u].[user_id], [u].[created_at], [u].[email], [u].[password_hash], [u].[profile_picture], [u].[profile_picture_content_type], [u].[updated_at], [u].[user_type]
+      FROM [Users] AS [u]
+      WHERE [u].[email] = @input
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (418ms) [Parameters=[@user_UserId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='60']
+      SELECT TOP(1) [c].[consumer_id], [c].[address], [c].[birthday], [c].[created_at], [c].[first_name], [c].[gender], [c].[last_name], [c].[middle_name], [c].[phone_number], [c].[user_id], [c].[username]
+      FROM [Consumers] AS [c]
+      WHERE [c].[user_id] = @user_UserId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (233ms) [Parameters=[@userIds1='?' (DbType = Int32), @userIds2='?' (DbType = Int32), @userIds3='?' (DbType = Int32)], CommandType='Text', CommandTimeout='60']
+      SELECT [u].[user_id], CASE
+          WHEN [u].[profile_picture] IS NOT NULL THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END, [u].[profile_picture], COALESCE([u].[updated_at], [u].[created_at])
+      FROM [Users] AS [u]
+      WHERE [u].[user_id] IN (@userIds1, @userIds2, @userIds3)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (233ms) [Parameters=[@userId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='60']
+      SELECT TOP(1) [u].[profile_picture] AS [ProfilePicture], [u].[profile_picture_content_type] AS [ProfilePictureContentType]
+      FROM [Users] AS [u]
+      WHERE [u].[user_id] = @userId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (220ms) [Parameters=[], CommandType='Text', CommandTimeout='60']
+      SELECT [p].[ProductId], [p].[Brand], [p].[Category], [p].[Details], [p].[Gender], [p].[ProductName], [p].[seller_id], [p].[Status]
+      FROM [Products] AS [p]
+      WHERE 0 = 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (220ms) [Parameters=[@userId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='60']
+      SELECT TOP(1) [u].[user_id], [u].[created_at], [u].[email], [u].[password_hash], [u].[profile_picture], [u].[profile_picture_content_type], [u].[updated_at], [u].[user_type]
+      FROM [Users] AS [u]
+      WHERE [u].[user_id] = @userId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (214ms) [Parameters=[], CommandType='Text', CommandTimeout='60']
+      SELECT [p].[VariantId], [p].[Availability], [p].[Height], [p].[ImageData], [p].[ImageMimeType], [p].[imagePath], [p].[Length], [p].[Price], [p].[ProductId], [p].[Quantity], [p].[SKU], [p].[Size], [p].[Style], [p].[Weight], [p].[Width]
+      FROM [ProductVariants] AS [p]
+      WHERE 0 = 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (540ms) [Parameters=[], CommandType='Text', CommandTimeout='60']
+      SELECT [p].[ProductId], [p].[Brand], [p].[Category], [p].[Details], [p].[Gender], [p].[ProductName], [p].[seller_id], [p].[Status]
+      FROM [Products] AS [p]
+      WHERE [p].[Status] IN (N'active', N'approved')
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (580ms) [Parameters=[@productIds1='?' (DbType = Int32), @productIds2='?' (DbType = Int32), @productIds3='?' (DbType = Int32), @productIds4='?' (DbType = Int32), @productIds5='?' (DbType = Int32), @productIds6='?' (DbType = Int32), @productIds7='?' (DbType = Int32), @productIds8='?' (DbType = Int32), @productIds9='?' (DbType = Int32), @productIds10='?' (DbType = Int32), @productIds11='?' (DbType = Int32), @productIds12='?' (DbType = Int32), @productIds13='?' (DbType = Int32), @productIds14='?' (DbType = Int32), @productIds15='?' (DbType = Int32), @productIds16='?' (DbType = Int32), @productIds17='?' (DbType = Int32), @productIds18='?' (DbType = Int32), @productIds19='?' (DbType = Int32), @productIds20='?' (DbType = Int32), @productIds21='?' (DbType = Int32), @productIds22='?' (DbType = Int32), @productIds23='?' (DbType = Int32), @productIds24='?' (DbType = Int32), @productIds25='?' (DbType = Int32), @productIds26='?' (DbType = Int32), @productIds27='?' (DbType = Int32), @productIds28='?' (DbType = Int32), @productIds29='?' (DbType = Int32), @productIds30='?' (DbType = Int32), @productIds31='?' (DbType = Int32), @productIds32='?' (DbType = Int32), @productIds33='?' (DbType = Int32), @productIds34='?' (DbType = Int32), @productIds35='?' (DbType = Int32), @productIds36='?' (DbType = Int32), @productIds37='?' (DbType = Int32), @productIds38='?' (DbType = Int32), @productIds39='?' (DbType = Int32), @productIds40='?' (DbType = Int32), @productIds41='?' (DbType = Int32), @productIds42='?' (DbType = Int32), @productIds43='?' (DbType = Int32), @productIds44='?' (DbType = Int32), @productIds45='?' (DbType = Int32), @productIds46='?' (DbType = Int32), @productIds47='?' (DbType = Int32), @productIds48='?' (DbType = Int32), @productIds49='?' (DbType = Int32), @productIds50='?' (DbType = Int32), @productIds51='?' (DbType = Int32), @productIds52='?' (DbType = Int32), @productIds53='?' (DbType = Int32), @productIds54='?' (DbType = Int32), @productIds55='?' (DbType = Int32), @productIds56='?' (DbType = Int32), @productIds57='?' (DbType = Int32), @productIds58='?' (DbType = Int32), @productIds59='?' (DbType = Int32), @productIds60='?' (DbType = Int32)], CommandType='Text', CommandTimeout='60']
+      SELECT [p].[Id], [p].[ColorName], [p].[ImagePath], [p].[ProductId]
+      FROM [ProductColorImages] AS [p]
+      WHERE [p].[ProductId] IN (@productIds1, @productIds2, @productIds3, @productIds4, @productIds5, @productIds6, @productIds7, @productIds8, @productIds9, @productIds10, @productIds11, @productIds12, @productIds13, @productIds14, @productIds15, @productIds16, @productIds17, @productIds18, @productIds19, @productIds20, @productIds21, @productIds22, @productIds23, @productIds24, @productIds25, @productIds26, @productIds27, @productIds28, @productIds29, @productIds30, @productIds31, @productIds32, @productIds33, @productIds34, @productIds35, @productIds36, @productIds37, @productIds38, @productIds39, @productIds40, @productIds41, @productIds42, @productIds43, @productIds44, @productIds45, @productIds46, @productIds47, @productIds48, @productIds49, @productIds50, @productIds51, @productIds52, @productIds53, @productIds54, @productIds55, @productIds56, @productIds57, @productIds58, @productIds59, @productIds60)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (238ms) [Parameters=[@productIds1='?' (DbType = Int32), @productIds2='?' (DbType = Int32), @productIds3='?' (DbType = Int32), @productIds4='?' (DbType = Int32), @productIds5='?' (DbType = Int32), @productIds6='?' (DbType = Int32), @productIds7='?' (DbType = Int32), @productIds8='?' (DbType = Int32), @productIds9='?' (DbType = Int32), @productIds10='?' (DbType = Int32), @productIds11='?' (DbType = Int32), @productIds12='?' (DbType = Int32), @productIds13='?' (DbType = Int32), @productIds14='?' (DbType = Int32), @productIds15='?' (DbType = Int32), @productIds16='?' (DbType = Int32), @productIds17='?' (DbType = Int32), @productIds18='?' (DbType = Int32), @productIds19='?' (DbType = Int32), @productIds20='?' (DbType = Int32), @productIds21='?' (DbType = Int32), @productIds22='?' (DbType = Int32), @productIds23='?' (DbType = Int32), @productIds24='?' (DbType = Int32), @productIds25='?' (DbType = Int32), @productIds26='?' (DbType = Int32), @productIds27='?' (DbType = Int32), @productIds28='?' (DbType = Int32), @productIds29='?' (DbType = Int32), @productIds30='?' (DbType = Int32), @productIds31='?' (DbType = Int32), @productIds32='?' (DbType = Int32), @productIds33='?' (DbType = Int32), @productIds34='?' (DbType = Int32), @productIds35='?' (DbType = Int32), @productIds36='?' (DbType = Int32), @productIds37='?' (DbType = Int32), @productIds38='?' (DbType = Int32), @productIds39='?' (DbType = Int32), @productIds40='?' (DbType = Int32), @productIds41='?' (DbType = Int32), @productIds42='?' (DbType = Int32), @productIds43='?' (DbType = Int32), @productIds44='?' (DbType = Int32), @productIds45='?' (DbType = Int32), @productIds46='?' (DbType = Int32), @productIds47='?' (DbType = Int32), @productIds48='?' (DbType = Int32), @productIds49='?' (DbType = Int32), @productIds50='?' (DbType = Int32), @productIds51='?' (DbType = Int32), @productIds52='?' (DbType = Int32), @productIds53='?' (DbType = Int32), @productIds54='?' (DbType = Int32), @productIds55='?' (DbType = Int32), @productIds56='?' (DbType = Int32), @productIds57='?' (DbType = Int32), @productIds58='?' (DbType = Int32), @productIds59='?' (DbType = Int32), @productIds60='?' (DbType = Int32)], CommandType='Text', CommandTimeout='60']
+      SELECT [r].[Id], [r].[Comfort], [r].[Comment], [r].[Date], [r].[Email], [r].[ProductId], [r].[Quality], [r].[Rating], [r].[Recommend], [r].[SellerReply], [r].[SellerReplyDate], [r].[ShortReview], [r].[SizeFit], [r].[UserName], [r].[VerifiedPurchase], [r].[WidthFit]
+      FROM [dbo].[Reviews] AS [r]
+      WHERE [r].[ProductId] IN (@productIds1, @productIds2, @productIds3, @productIds4, @productIds5, @productIds6, @productIds7, @productIds8, @productIds9, @productIds10, @productIds11, @productIds12, @productIds13, @productIds14, @productIds15, @productIds16, @productIds17, @productIds18, @productIds19, @productIds20, @productIds21, @productIds22, @productIds23, @productIds24, @productIds25, @productIds26, @productIds27, @productIds28, @productIds29, @productIds30, @productIds31, @productIds32, @productIds33, @productIds34, @productIds35, @productIds36, @productIds37, @productIds38, @productIds39, @productIds40, @productIds41, @productIds42, @productIds43, @productIds44, @productIds45, @productIds46, @productIds47, @productIds48, @productIds49, @productIds50, @productIds51, @productIds52, @productIds53, @productIds54, @productIds55, @productIds56, @productIds57, @productIds58, @productIds59, @productIds60)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (257ms) [Parameters=[@userId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='60']
+      SELECT TOP(1) [c].[consumer_id], [c].[address], [c].[birthday], [c].[created_at], [c].[first_name], [c].[gender], [c].[last_name], [c].[middle_name], [c].[phone_number], [c].[user_id], [c].[username]
+      FROM [Consumers] AS [c]
+      WHERE [c].[user_id] = @userId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (256ms) [Parameters=[@productIds1='?' (DbType = Int32), @productIds2='?' (DbType = Int32), @productIds3='?' (DbType = Int32), @productIds4='?' (DbType = Int32), @productIds5='?' (DbType = Int32), @productIds6='?' (DbType = Int32), @productIds7='?' (DbType = Int32), @productIds8='?' (DbType = Int32), @productIds9='?' (DbType = Int32), @productIds10='?' (DbType = Int32), @productIds11='?' (DbType = Int32), @productIds12='?' (DbType = Int32), @productIds13='?' (DbType = Int32), @productIds14='?' (DbType = Int32), @productIds15='?' (DbType = Int32), @productIds16='?' (DbType = Int32), @productIds17='?' (DbType = Int32), @productIds18='?' (DbType = Int32), @productIds19='?' (DbType = Int32), @productIds20='?' (DbType = Int32), @productIds21='?' (DbType = Int32), @productIds22='?' (DbType = Int32), @productIds23='?' (DbType = Int32), @productIds24='?' (DbType = Int32), @productIds25='?' (DbType = Int32), @productIds26='?' (DbType = Int32), @productIds27='?' (DbType = Int32), @productIds28='?' (DbType = Int32), @productIds29='?' (DbType = Int32), @productIds30='?' (DbType = Int32), @productIds31='?' (DbType = Int32), @productIds32='?' (DbType = Int32), @productIds33='?' (DbType = Int32), @productIds34='?' (DbType = Int32), @productIds35='?' (DbType = Int32), @productIds36='?' (DbType = Int32), @productIds37='?' (DbType = Int32), @productIds38='?' (DbType = Int32), @productIds39='?' (DbType = Int32), @productIds40='?' (DbType = Int32), @productIds41='?' (DbType = Int32), @productIds42='?' (DbType = Int32), @productIds43='?' (DbType = Int32), @productIds44='?' (DbType = Int32), @productIds45='?' (DbType = Int32), @productIds46='?' (DbType = Int32), @productIds47='?' (DbType = Int32), @productIds48='?' (DbType = Int32), @productIds49='?' (DbType = Int32), @productIds50='?' (DbType = Int32), @productIds51='?' (DbType = Int32), @productIds52='?' (DbType = Int32), @productIds53='?' (DbType = Int32), @productIds54='?' (DbType = Int32), @productIds55='?' (DbType = Int32), @productIds56='?' (DbType = Int32), @productIds57='?' (DbType = Int32), @productIds58='?' (DbType = Int32), @productIds59='?' (DbType = Int32), @productIds60='?' (DbType = Int32)], CommandType='Text', CommandTimeout='60']
+      SELECT [p].[VariantId], [p].[Availability], [p].[Height], [p].[ImageData], [p].[ImageMimeType], [p].[imagePath], [p].[Length], [p].[Price], [p].[ProductId], [p].[Quantity], [p].[SKU], [p].[Size], [p].[Style], [p].[Weight], [p].[Width]
+      FROM [ProductVariants] AS [p]
+      WHERE [p].[ProductId] IN (@productIds1, @productIds2, @productIds3, @productIds4, @productIds5, @productIds6, @productIds7, @productIds8, @productIds9, @productIds10, @productIds11, @productIds12, @productIds13, @productIds14, @productIds15, @productIds16, @productIds17, @productIds18, @productIds19, @productIds20, @productIds21, @productIds22, @productIds23, @productIds24, @productIds25, @productIds26, @productIds27, @productIds28, @productIds29, @productIds30, @productIds31, @productIds32, @productIds33, @productIds34, @productIds35, @productIds36, @productIds37, @productIds38, @productIds39, @productIds40, @productIds41, @productIds42, @productIds43, @productIds44, @productIds45, @productIds46, @productIds47, @productIds48, @productIds49, @productIds50, @productIds51, @productIds52, @productIds53, @productIds54, @productIds55, @productIds56, @productIds57, @productIds58, @productIds59, @productIds60)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1,940ms) [Parameters=[@userId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='60']
+      SELECT TOP(1) [s].[seller_id]
+      FROM [Sellers] AS [s]
+      WHERE [s].[user_id] = @userId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (882ms) [Parameters=[@currentUser_UserId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='60']
+      SELECT TOP(1) [u].[email]
+      FROM [Users] AS [u]
+      WHERE [u].[user_id] = @currentUser_UserId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (462ms) [Parameters=[], CommandType='Text', CommandTimeout='60']
+      IF OBJECT_ID(N'dbo.Notifications', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Notifications
+    (
+        NotificationId INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        RecipientType NVARCHAR(20) NOT NULL,
+        RecipientId INT NOT NULL,
+        OrderId INT NULL,
+        Message NVARCHAR(500) NOT NULL,
+        Category NVARCHAR(100) NULL,
+        IsRead BIT NOT NULL CONSTRAINT DF_Notifications_IsRead DEFAULT(0),
+        CreatedAt DATETIME NOT NULL CONSTRAINT DF_Notifications_CreatedAt DEFAULT(GETDATE())
+    );
+END
+
+IF COL_LENGTH(N'dbo.Notifications', N'Category') IS NULL
+BEGIN
+    ALTER TABLE dbo.Notifications
+    ADD Category NVARCHAR(100) NULL;
+END
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (830ms) [Parameters=[@recipientId='?' (DbType = Int32), @currentUserId='?' (DbType = Int32), @currentUserIdText='?' (Size = 2), @consumerId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='60']
+      INSERT INTO dbo.Notifications
+(
+    RecipientType,
+    RecipientId,
+    OrderId,
+    Message,
+    IsRead,
+    CreatedAt,
+    Category
+)
+SELECT
+    N'User',
+    @recipientId,
+    o.OrderID,
+    CONCAT(N'Order successfully placed. Order number: ', CONVERT(NVARCHAR(20), o.OrderID)),
+    0,
+    COALESCE(o.OrderDate, GETDATE()),
+    N'order'
+FROM dbo.Orders o
+WHERE
+    (
+        (@currentUserId IS NOT NULL AND LTRIM(RTRIM(ISNULL(o.UserID, N''))) = @currentUserIdText)
+        OR (@consumerId IS NOT NULL AND o.ConsumerID = @consumerId)
+    )
+    AND NOT EXISTS
+    (
+        SELECT 1
+        FROM dbo.Notifications n
+        WHERE n.RecipientType = N'User'
+          AND n.RecipientId = @recipientId
+          AND n.OrderId = o.OrderID
+          AND n.Category = N'order'
+    );
+fail: Microsoft.EntityFrameworkCore.Database.Connection[20004]
+      An error occurred using the connection to database '' on server ''.
+fail: Microsoft.EntityFrameworkCore.Query[10100]
+      An exception occurred while iterating over the results of a query for context type 'MyAspNetApp.Data.AppDbContext'.
+      System.InvalidOperationException: The ConnectionString property has not been initialized.
+         at Microsoft.Data.SqlClient.SqlConnection.PermissionDemand()
+         at Microsoft.Data.SqlClient.SqlConnectionFactory.PermissionDemand(DbConnection outerConnection)
+         at Microsoft.Data.ProviderBase.DbConnectionInternal.TryOpenConnectionInternal(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+         at Microsoft.Data.ProviderBase.DbConnectionClosed.TryOpenConnection(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+         at Microsoft.Data.SqlClient.SqlConnection.TryOpen(TaskCompletionSource`1 retry, SqlConnectionOverrides overrides)
+         at Microsoft.Data.SqlClient.SqlConnection.InternalOpenAsync(SqlConnectionOverrides overrides, CancellationToken cancellationToken)
+      --- End of stack trace from previous location ---
+         at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.<>c__DisplayClass30_0`2.<<ExecuteAsync>b__0>d.MoveNext()
+      --- End of stack trace from previous location ---
+         at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+      System.InvalidOperationException: The ConnectionString property has not been initialized.
+         at Microsoft.Data.SqlClient.SqlConnection.PermissionDemand()
+         at Microsoft.Data.SqlClient.SqlConnectionFactory.PermissionDemand(DbConnection outerConnection)
+         at Microsoft.Data.ProviderBase.DbConnectionInternal.TryOpenConnectionInternal(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+         at Microsoft.Data.ProviderBase.DbConnectionClosed.TryOpenConnection(DbConnection outerConnection, DbConnectionFactory connectionFactory, TaskCompletionSource`1 retry, DbConnectionOptions userOptions)
+         at Microsoft.Data.SqlClient.SqlConnection.TryOpen(TaskCompletionSource`1 retry, SqlConnectionOverrides overrides)
+         at Microsoft.Data.SqlClient.SqlConnection.InternalOpenAsync(SqlConnectionOverrides overrides, CancellationToken cancellationToken)
+      --- End of stack trace from previous location ---
+         at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.<>c__DisplayClass30_0`2.<<ExecuteAsync>b__0>d.MoveNext()
+      --- End of stack trace from previous location ---
+         at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+fail: Microsoft.EntityFrameworkCore.Database.Command[20102]
+      Failed executing DbCommand (65,067ms) [Parameters=[], CommandType='Text', CommandTimeout='60']
+      SELECT [c].[challenge_id], [c].[activity_type], [c].[banner_image], [c].[banner_image_content_type], [c].[banner_image_name], [c].[created_at], [c].[created_by], [c].[description], [c].[end_date], [c].[goal_km], [c].[prizes], [c].[rules], [c].[start_date], [c].[status], [c].[title], [c].[total_completed], [c].[total_participants], [c].[updated_at], [c].[updated_by]
+      FROM [dbo].[challenges] AS [c]
+      ORDER BY [c].[start_date]
+info: Microsoft.EntityFrameworkCore.Infrastructure[10404]
+      A transient exception occurred during execution. The operation will be retried after 5000ms.
+      Microsoft.Data.SqlClient.SqlException (0x80131904): Execution Timeout Expired.  The timeout period elapsed prior to completion of the operation or the server is not responding.
+       ---> System.ComponentModel.Win32Exception (258): The wait operation timed out.
+         at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+         at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+         at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+      --- End of stack trace from previous location ---
+         at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+         at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+      --- End of stack trace from previous location ---
+         at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.<>c__DisplayClass30_0`2.<<ExecuteAsync>b__0>d.MoveNext()
+      --- End of stack trace from previous location ---
+         at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
+      ClientConnectionId:512448f6-dda8-4156-8bec-749af35b1820
+      Error Number:-2,State:0,Class:11
+      Microsoft.Data.SqlClient.SqlException (0x80131904): Execution Timeout Expired.  The timeout period elapsed prior to completion of the operation or the server is not responding.
+       ---> System.ComponentModel.Win32Exception (258): The wait operation timed out.
+         at Microsoft.Data.SqlClient.SqlCommand.<>c.<ExecuteDbDataReaderAsync>b__195_0(Task`1 result)
+         at System.Threading.Tasks.ContinuationResultTaskFromResultTask`2.InnerInvoke()
+         at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+      --- End of stack trace from previous location ---
+         at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+         at System.Threading.Tasks.Task.ExecuteWithThreadLocal(Task& currentTaskSlot, Thread threadPoolThread)
+      --- End of stack trace from previous location ---
+         at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.<>c__DisplayClass30_0`2.<<ExecuteAsync>b__0>d.MoveNext()
+      --- End of stack trace from previous location ---
+         at Microsoft.EntityFrameworkCore.Storage.ExecutionStrategy.ExecuteImplementationAsync[TState,TResult](Func`4 operation, Func`4 verifySucceeded, TState state, CancellationToken cancellationToken)
+      ClientConnectionId:512448f6-dda8-4156-8bec-749af35b1820
+      Error Number:-2,State:0,Class:11
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3,594ms) [Parameters=[], CommandType='Text', CommandTimeout='60']
+      SELECT [c].[challenge_id], [c].[activity_type], [c].[banner_image], [c].[banner_image_content_type], [c].[banner_image_name], [c].[created_at], [c].[created_by], [c].[description], [c].[end_date], [c].[goal_km], [c].[prizes], [c].[rules], [c].[start_date], [c].[status], [c].[title], [c].[total_completed], [c].[total_participants], [c].[updated_at], [c].[updated_by]
+      FROM [dbo].[challenges] AS [c]
+      ORDER BY [c].[start_date]

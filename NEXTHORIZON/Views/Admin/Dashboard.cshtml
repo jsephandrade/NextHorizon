@@ -1,0 +1,260 @@
+﻿@model NextHorizon.Models.Admin_Models.SuperAdminDashboardViewModel
+
+@{
+    ViewData["Title"] = "Admin Portal - Dashboard";
+    Layout = "_AdminLayout";
+}
+
+<div class="row g-3 mb-5">
+    <div class="col-md-3">
+        <div class="stat-card d-flex align-items-center justify-content-between p-3 border border-success h-100">
+            <div>
+                <p class="stat-label mb-1">Platform Revenue (Net)</p>
+                <div class="d-flex align-items-center">
+                    <h2 class="stat-value mb-0">₱@((Model.PlatformRevenue * 0.05m).ToString("N0"))</h2>
+                        <span class="ms-2 tiny text-muted">5% Commission</span>
+                </div>
+            </div>
+            <div class="stat-icon-wrapper text-success">
+                <i class="bi bi-piggy-bank fs-3"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <a href="@Url.Action("FinanceRequest", "Admin")" class="text-decoration-none text-dark">
+            <div class="stat-card d-flex align-items-center justify-content-between p-3 border border-primary h-100 shadow-hover">
+                <div>
+                    <p class="stat-label mb-1">Pending Payouts</p>
+                    <h2 class="stat-value mb-0">@Model.PendingPayouts.ToString("D2")</h2>
+                    <span class="text-primary tiny fw-bold">Withdrawal Requests</span>
+                </div>
+                <div class="stat-icon-wrapper text-primary">
+                    <i class="bi bi-cash-stack fs-3"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-3">
+        <a href="@Url.Action("Sellers", "Admin")" class="text-decoration-none text-dark">
+            <div class="stat-card d-flex align-items-center justify-content-between p-3 border-warning shadow-sm h-100 shadow-hover">
+                <div>
+                    <p class="stat-label mb-1 text-warning">Unverified Sellers</p>
+                    <h2 class="stat-value mb-0 text-dark">@Model.PendingSellers.ToString("D2")</h2>
+                    <span class="tiny fw-bold text-muted">Awaiting Approval</span>
+                </div>
+                <div class="stat-icon-wrapper text-warning">
+                    <i class="bi bi-person-badge fs-3"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-3">
+        <a href="@Url.Action("HelpCenter", "Admin")" class="text-decoration-none text-dark">
+            <div class="stat-card d-flex align-items-center justify-content-between p-3 border-danger shadow-sm h-100 shadow-hover">
+                <div>
+                    <p class="stat-label mb-1 text-danger">Help Center</p>
+                    <h2 class="stat-value mb-0 text-danger">@Model.PendingTickets.ToString("D2")</h2>
+                    <span class="tiny fw-bold text-muted">Pending Tickets</span>
+                </div>
+                <div class="stat-icon-wrapper text-danger">
+                    <i class="bi bi-chat-dots fs-3"></i>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row mb-5 g-4">
+    <div class="col-md-8">
+        <div class="bg-white border rounded-4 shadow-sm mb-4">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-light rounded-top-4">
+                <h6 class="m-0 fw-bold small text-uppercase"><i class="bi bi-shield-check me-2"></i>Admin Approval Hub</h6>
+                <a href="@Url.Action("FinanceRequest", "Admin")" class="text-decoration-none tiny fw-bold text-dark text-uppercase">See All <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="p-0">
+                <table class="table table-sm align-middle mb-0" style="font-size: 0.85rem;">
+                    <thead class="bg-white">
+                        <tr class="text-muted">
+                            <th class="ps-4">Request Type</th>
+                            <th>Entity/Seller</th>
+                            <th>Amount/Details</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.ApprovalHub.Any())
+                        {
+                            @foreach (var item in Model.ApprovalHub.Take(5))
+                            {
+                                string badgeClass = item.RequestType switch {
+                                    "New Seller" => "bg-soft-warning text-warning",
+                                    "Withdrawal" => "bg-soft-primary text-primary",
+                                    "Voucher App" => "bg-soft-success text-success",
+                                    _ => "bg-soft-secondary text-secondary"
+                                };
+                                string statusClass = item.Status switch {
+                                    "Pending"    => "bg-soft-secondary text-secondary",
+                                    "Processing" => "bg-soft-primary text-primary",
+                                    "Verification" => "bg-soft-success text-success",
+                                    _ => "bg-soft-secondary text-secondary"
+                                };
+                                <tr>
+                                    <td class="ps-4">
+                                        <span class="badge @badgeClass">@item.RequestType</span>
+                                    </td>
+                                    <td class="fw-bold">@item.EntityName</td>
+                                    <td>@item.Details</td>
+                                    <td><span class="badge @statusClass">@item.Status</span></td>
+                                    <td class="text-end pe-4">
+                                        <a href="@item.RedirectUrl" class="btn btn-sm btn-dark py-0" style="font-size: 10px;">
+                                            @item.ActionLabel
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-3 small">No pending approvals.</td>
+                        </tr>
+                    }
+                </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="leaderboard-container shadow-sm border rounded-4 overflow-hidden">
+ <div class="leaderboard-header bg-dark p-3 d-flex justify-content-between align-items-center">
+    <h6 class="m-0 fw-bold small text-uppercase text-white">Live Global Leaderboard</h6>
+    <div class="d-flex align-items-center gap-3">
+        <select id="leaderboardCategory" onchange="filterLeaderboard(this.value)"
+            class="form-select form-select-sm border-0 rounded-pill px-3"
+            style="font-size:11px; background:#333; color:white; width:140px; cursor:pointer;">
+            <option value="All"> All Categories</option>
+            <option value="Running">🏃 Running</option>
+            <option value="Cycling">🚴 Cycling</option>
+            <option value="Walking">🚶 Walking</option>
+        </select>
+        <a href="@Url.Action("Tasks", "Admin")" class="text-decoration-none tiny fw-bold text-white-50 text-uppercase">See All <i class="bi bi-arrow-right"></i></a>
+    </div>
+</div>
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Rank</th>
+                        <th>User</th>
+                        <th>Distance</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var runner in Model.ConsumerLeaderboard.Take(5))
+                    {
+                        <tr>
+                            <td class="ps-4">#@runner.Rank</td>
+                            <td class="fw-bold">@runner.UserName</td>
+                            <td>@runner.StravaKM KM</td>
+                            <td><span class="badge rounded-pill bg-soft-success text-success border border-success" style="font-size: 9px;">VERIFIED</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="side-card bg-white p-4 rounded-4 border shadow-sm mb-4">
+        <h6 class="fw-bold small text-uppercase mb-3">
+            Help Center: Pending Inbox 
+            @if (Model.PendingTicketsList.Any())
+            {
+                <span class="badge bg-danger rounded-pill ms-2">@Model.PendingTicketsList.Count</span>
+            }
+        </h6>
+        <div class="d-flex flex-column gap-3">
+            @if (Model.PendingTicketsList.Any())
+            {
+                @foreach (var ticket in Model.PendingTicketsList.Take(3))
+                {
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-light p-2 rounded @ticket.IconColor">
+                            <i class="@ticket.IconClass"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <p class="mb-0 small fw-bold">@(ticket.Category?.Length > 40 ? ticket.Category.Substring(0, 40) + "..." : ticket.Category)</p>
+                            <p class="tiny text-muted mb-0">
+                                @ticket.Question
+                                <span class="mx-1">•</span>
+                                <span class="text-muted">@ticket.TimeAgo</span>
+                            </p>
+                        </div>
+                    </div>
+                }
+                
+                @if (Model.PendingTicketsList.Count > 3)
+                {
+                    <div class="text-center small text-muted mt-1">
+                        +@(Model.PendingTicketsList.Count - 3) more pending tickets
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-3">
+                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                    <p class="small text-muted mb-0 mt-2">No pending tickets</p>
+                </div>
+            }
+        </div>
+        <a href="@Url.Action("HelpCenter", "Admin")" class="btn btn-outline-dark btn-sm w-100 rounded-pill mt-3 tiny fw-bold">
+            Go to Help Desk
+            @if (Model.PendingTickets > 0)
+            {
+                <span class="badge bg-danger rounded-pill ms-1">@Model.PendingTickets</span>
+            }
+        </a>
+    </div>
+
+        <div class="side-card bg-white p-4 rounded-4 border shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold small text-uppercase m-0 text-muted"> Audits Log</h6>
+                <a href="@Url.Action("Settings", "Admin")#tab-audit" class="text-decoration-none tiny fw-bold text-dark">View All</a>
+            </div>
+                <ul class="list-unstyled tiny">
+                 @foreach (var log in Model.AuditLogs)
+                 {
+                     <li class="mb-2 border-bottom pb-1">
+                          @if (log.Status == "Success")
+                 {
+                    <i class="bi bi-check-circle-fill text-success me-1"></i>
+                 }
+                     else
+                {
+                      <i class="bi bi-x-circle-fill text-danger me-1"></i>
+                }
+                     <strong>@log.Timestamp.ToString("HH:mm")</strong> - @log.AdminName @log.Action @log.Target
+                    </li>
+    }
+                 </ul>
+        </div>
+    </div>
+</div>
+
+ <script src="~/js/admin_js/dashboard.js" asp-append-version="true"></script>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin_css/dashboard.css" asp-append-version="true" />
+    <style>
+        .shadow-hover:hover {
+            transform: translateY(-3px);
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+            cursor: pointer;
+        }
+    </style>
+}

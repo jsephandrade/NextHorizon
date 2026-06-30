@@ -1,0 +1,86 @@
+Using launch settings from C:\Users\helen\BOOSTING SITE\NEXTHORIZON\NEXTHORIZON\Properties\launchSettings.json...
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5297
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\helen\BOOSTING SITE\NEXTHORIZON\NEXTHORIZON
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (251ms) [Parameters=[], CommandType='Text', CommandTimeout='60']
+      SELECT [c].[consumer_id], [c].[address], [c].[birthday], [c].[created_at], [c].[first_name], [c].[gender], [c].[last_name], [c].[middle_name], [c].[phone_number], [c].[user_id], [c].[username], [u].[user_id], [u].[created_at], [u].[email], [u].[password_hash], [u].[profile_picture], [u].[profile_picture_content_type], [u].[updated_at], [u].[user_type]
+      FROM [Consumers] AS [c]
+      INNER JOIN [Users] AS [u] ON [c].[user_id] = [u].[user_id]
+      ORDER BY [c].[created_at] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (295ms) [Parameters=[], CommandType='Text', CommandTimeout='60']
+      SELECT [s].[seller_id], [s].[business_address], [s].[business_email], [s].[business_name], [s].[business_phone], [s].[business_type], [s].[created_at], [s].[document_path], [s].[followers_count], [s].[logo_content_type], [s].[logo_data], [s].[logo_mime_type], [s].[logo_path], [s].[seller_status], [s].[tax_id], [s].[user_id], [u].[user_id], [u].[created_at], [u].[email], [u].[password_hash], [u].[profile_picture], [u].[profile_picture_content_type], [u].[updated_at], [u].[user_type]
+      FROM [Sellers] AS [s]
+      LEFT JOIN [Users] AS [u] ON [s].[user_id] = [u].[user_id]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (252ms) [Parameters=[@p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='60']
+      SELECT TOP(@p) [p].[ProductId], [p].[Brand], [p].[Category], [p].[Details], [p].[Gender], [p].[ProductName], [p].[seller_id], [p].[Status]
+      FROM [Products] AS [p]
+      ORDER BY [p].[ProductId]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (233ms) [Parameters=[@productIds1='?' (DbType = Int32), @productIds2='?' (DbType = Int32), @productIds3='?' (DbType = Int32), @productIds4='?' (DbType = Int32), @productIds5='?' (DbType = Int32), @productIds6='?' (DbType = Int32), @productIds7='?' (DbType = Int32), @productIds8='?' (DbType = Int32), @productIds9='?' (DbType = Int32), @productIds10='?' (DbType = Int32), @productIds11='?' (DbType = Int32), @productIds12='?' (DbType = Int32), @productIds13='?' (DbType = Int32), @productIds14='?' (DbType = Int32), @productIds15='?' (DbType = Int32), @productIds16='?' (DbType = Int32), @productIds17='?' (DbType = Int32), @productIds18='?' (DbType = Int32), @productIds19='?' (DbType = Int32), @productIds20='?' (DbType = Int32), @productIds21='?' (DbType = Int32), @productIds22='?' (DbType = Int32), @productIds23='?' (DbType = Int32), @productIds24='?' (DbType = Int32), @productIds25='?' (DbType = Int32), @productIds26='?' (DbType = Int32), @productIds27='?' (DbType = Int32), @productIds28='?' (DbType = Int32), @productIds29='?' (DbType = Int32), @productIds30='?' (DbType = Int32), @productIds31='?' (DbType = Int32), @productIds32='?' (DbType = Int32), @productIds33='?' (DbType = Int32), @productIds34='?' (DbType = Int32), @productIds35='?' (DbType = Int32), @productIds36='?' (DbType = Int32), @productIds37='?' (DbType = Int32), @productIds38='?' (DbType = Int32), @productIds39='?' (DbType = Int32), @productIds40='?' (DbType = Int32), @productIds41='?' (DbType = Int32), @productIds42='?' (DbType = Int32), @productIds43='?' (DbType = Int32), @productIds44='?' (DbType = Int32), @productIds45='?' (DbType = Int32), @productIds46='?' (DbType = Int32), @productIds47='?' (DbType = Int32), @productIds48='?' (DbType = Int32), @productIds49='?' (DbType = Int32), @productIds50='?' (DbType = Int32)], CommandType='Text', CommandTimeout='60']
+      SELECT [p].[VariantId], [p].[Availability], [p].[Height], [p].[ImageData], [p].[ImageMimeType], [p].[imagePath], [p].[Length], [p].[Price], [p].[ProductId], [p].[Quantity], [p].[SKU], [p].[Size], [p].[Style], [p].[Weight], [p].[Width]
+      FROM [ProductVariants] AS [p]
+      WHERE [p].[ProductId] IN (@productIds1, @productIds2, @productIds3, @productIds4, @productIds5, @productIds6, @productIds7, @productIds8, @productIds9, @productIds10, @productIds11, @productIds12, @productIds13, @productIds14, @productIds15, @productIds16, @productIds17, @productIds18, @productIds19, @productIds20, @productIds21, @productIds22, @productIds23, @productIds24, @productIds25, @productIds26, @productIds27, @productIds28, @productIds29, @productIds30, @productIds31, @productIds32, @productIds33, @productIds34, @productIds35, @productIds36, @productIds37, @productIds38, @productIds39, @productIds40, @productIds41, @productIds42, @productIds43, @productIds44, @productIds45, @productIds46, @productIds47, @productIds48, @productIds49, @productIds50)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (244ms) [Parameters=[], CommandType='Text', CommandTimeout='60']
+      SELECT [p].[Id], [p].[BannerSize], [p].[BuyQuantity], [p].[CreatedAt], [p].[FreeItemRequirement], [p].[MinimumPurchaseAmount], [p].[MinimumRequirementType], [p].[Name], [p].[ReturnConditionRequirementsJson], [p].[ReturnReasonsJson], [p].[ReturnWindowDays], [p].[SelectedProductIdsJson], [p].[Status], [p].[TakeQuantity], [p].[TotalDiscountFix], [p].[TotalDiscountPercent], [p].[Type], [p].[UntilPromotionLast], [p].[UpdatedAt], [p].[UsageLimit]
+      FROM [Promotions] AS [p]
+      WHERE [p].[Status] = N'Approved'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (241ms) [Parameters=[@p='?' (DbType = Int32), @scope='?' (Size = 50)], CommandType='Text', CommandTimeout='60']
+      SELECT TOP(@p) [l].[Id], [l].[AthleteName], [l].[AvatarUrl], [l].[DistanceKm], [l].[DurationSeconds], [l].[Scope], [l].[CategoryLabel], [l].[ActivityDate], [l].[RankChange]
+      FROM [leaderboard_records] AS [l]
+      WHERE [l].[IsActive] = CAST(1 AS bit) AND [l].[Scope] = @scope
+      ORDER BY [l].[DistanceKm] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (239ms) [Parameters=[], CommandType='Text', CommandTimeout='60']
+      SELECT [c].[consumer_id], [c].[address], [c].[birthday], [c].[created_at], [c].[first_name], [c].[gender], [c].[last_name], [c].[middle_name], [c].[phone_number], [c].[user_id], [c].[username], [u].[user_id], [u].[created_at], [u].[email], [u].[password_hash], [u].[profile_picture], [u].[profile_picture_content_type], [u].[updated_at], [u].[user_type]
+      FROM [Consumers] AS [c]
+      INNER JOIN [Users] AS [u] ON [c].[user_id] = [u].[user_id]
+      ORDER BY [c].[created_at] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (229ms) [Parameters=[], CommandType='Text', CommandTimeout='60']
+      SELECT [s].[seller_id], [s].[business_address], [s].[business_email], [s].[business_name], [s].[business_phone], [s].[business_type], [s].[created_at], [s].[document_path], [s].[followers_count], [s].[logo_content_type], [s].[logo_data], [s].[logo_mime_type], [s].[logo_path], [s].[seller_status], [s].[tax_id], [s].[user_id], [u].[user_id], [u].[created_at], [u].[email], [u].[password_hash], [u].[profile_picture], [u].[profile_picture_content_type], [u].[updated_at], [u].[user_type]
+      FROM [Sellers] AS [s]
+      LEFT JOIN [Users] AS [u] ON [s].[user_id] = [u].[user_id]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (300ms) [Parameters=[], CommandType='Text', CommandTimeout='60']
+      SELECT [c].[consumer_id], [c].[address], [c].[birthday], [c].[created_at], [c].[first_name], [c].[gender], [c].[last_name], [c].[middle_name], [c].[phone_number], [c].[user_id], [c].[username], [u].[user_id], [u].[created_at], [u].[email], [u].[password_hash], [u].[profile_picture], [u].[profile_picture_content_type], [u].[updated_at], [u].[user_type]
+      FROM [Consumers] AS [c]
+      INNER JOIN [Users] AS [u] ON [c].[user_id] = [u].[user_id]
+      ORDER BY [c].[created_at] DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (232ms) [Parameters=[], CommandType='Text', CommandTimeout='60']
+      SELECT [s].[seller_id], [s].[business_address], [s].[business_email], [s].[business_name], [s].[business_phone], [s].[business_type], [s].[created_at], [s].[document_path], [s].[followers_count], [s].[logo_content_type], [s].[logo_data], [s].[logo_mime_type], [s].[logo_path], [s].[seller_status], [s].[tax_id], [s].[user_id], [u].[user_id], [u].[created_at], [u].[email], [u].[password_hash], [u].[profile_picture], [u].[profile_picture_content_type], [u].[updated_at], [u].[user_type]
+      FROM [Sellers] AS [s]
+      LEFT JOIN [Users] AS [u] ON [s].[user_id] = [u].[user_id]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (214ms) [Parameters=[@p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='60']
+      SELECT TOP(@p) [p].[ProductId], [p].[Brand], [p].[Category], [p].[Details], [p].[Gender], [p].[ProductName], [p].[seller_id], [p].[Status]
+      FROM [Products] AS [p]
+      ORDER BY [p].[ProductId]
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (218ms) [Parameters=[@productIds1='?' (DbType = Int32), @productIds2='?' (DbType = Int32), @productIds3='?' (DbType = Int32), @productIds4='?' (DbType = Int32), @productIds5='?' (DbType = Int32), @productIds6='?' (DbType = Int32), @productIds7='?' (DbType = Int32), @productIds8='?' (DbType = Int32), @productIds9='?' (DbType = Int32), @productIds10='?' (DbType = Int32), @productIds11='?' (DbType = Int32), @productIds12='?' (DbType = Int32), @productIds13='?' (DbType = Int32), @productIds14='?' (DbType = Int32), @productIds15='?' (DbType = Int32), @productIds16='?' (DbType = Int32), @productIds17='?' (DbType = Int32), @productIds18='?' (DbType = Int32), @productIds19='?' (DbType = Int32), @productIds20='?' (DbType = Int32), @productIds21='?' (DbType = Int32), @productIds22='?' (DbType = Int32), @productIds23='?' (DbType = Int32), @productIds24='?' (DbType = Int32), @productIds25='?' (DbType = Int32), @productIds26='?' (DbType = Int32), @productIds27='?' (DbType = Int32), @productIds28='?' (DbType = Int32), @productIds29='?' (DbType = Int32), @productIds30='?' (DbType = Int32), @productIds31='?' (DbType = Int32), @productIds32='?' (DbType = Int32), @productIds33='?' (DbType = Int32), @productIds34='?' (DbType = Int32), @productIds35='?' (DbType = Int32), @productIds36='?' (DbType = Int32), @productIds37='?' (DbType = Int32), @productIds38='?' (DbType = Int32), @productIds39='?' (DbType = Int32), @productIds40='?' (DbType = Int32), @productIds41='?' (DbType = Int32), @productIds42='?' (DbType = Int32), @productIds43='?' (DbType = Int32), @productIds44='?' (DbType = Int32), @productIds45='?' (DbType = Int32), @productIds46='?' (DbType = Int32), @productIds47='?' (DbType = Int32), @productIds48='?' (DbType = Int32), @productIds49='?' (DbType = Int32), @productIds50='?' (DbType = Int32)], CommandType='Text', CommandTimeout='60']
+      SELECT [p].[VariantId], [p].[Availability], [p].[Height], [p].[ImageData], [p].[ImageMimeType], [p].[imagePath], [p].[Length], [p].[Price], [p].[ProductId], [p].[Quantity], [p].[SKU], [p].[Size], [p].[Style], [p].[Weight], [p].[Width]
+      FROM [ProductVariants] AS [p]
+      WHERE [p].[ProductId] IN (@productIds1, @productIds2, @productIds3, @productIds4, @productIds5, @productIds6, @productIds7, @productIds8, @productIds9, @productIds10, @productIds11, @productIds12, @productIds13, @productIds14, @productIds15, @productIds16, @productIds17, @productIds18, @productIds19, @productIds20, @productIds21, @productIds22, @productIds23, @productIds24, @productIds25, @productIds26, @productIds27, @productIds28, @productIds29, @productIds30, @productIds31, @productIds32, @productIds33, @productIds34, @productIds35, @productIds36, @productIds37, @productIds38, @productIds39, @productIds40, @productIds41, @productIds42, @productIds43, @productIds44, @productIds45, @productIds46, @productIds47, @productIds48, @productIds49, @productIds50)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (216ms) [Parameters=[], CommandType='Text', CommandTimeout='60']
+      SELECT [p].[Id], [p].[BannerSize], [p].[BuyQuantity], [p].[CreatedAt], [p].[FreeItemRequirement], [p].[MinimumPurchaseAmount], [p].[MinimumRequirementType], [p].[Name], [p].[ReturnConditionRequirementsJson], [p].[ReturnReasonsJson], [p].[ReturnWindowDays], [p].[SelectedProductIdsJson], [p].[Status], [p].[TakeQuantity], [p].[TotalDiscountFix], [p].[TotalDiscountPercent], [p].[Type], [p].[UntilPromotionLast], [p].[UpdatedAt], [p].[UsageLimit]
+      FROM [Promotions] AS [p]
+      WHERE [p].[Status] = N'Approved'
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (219ms) [Parameters=[@p='?' (DbType = Int32), @scope='?' (Size = 50)], CommandType='Text', CommandTimeout='60']
+      SELECT TOP(@p) [l].[Id], [l].[AthleteName], [l].[AvatarUrl], [l].[DistanceKm], [l].[DurationSeconds], [l].[Scope], [l].[CategoryLabel], [l].[ActivityDate], [l].[RankChange]
+      FROM [leaderboard_records] AS [l]
+      WHERE [l].[IsActive] = CAST(1 AS bit) AND [l].[Scope] = @scope
+      ORDER BY [l].[DistanceKm] DESC

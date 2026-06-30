@@ -1,0 +1,19 @@
+Using launch settings from C:\Users\helen\BOOSTING SITE\NEXTHORIZON\NEXTHORIZON\Properties\launchSettings.json...
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5297
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\helen\BOOSTING SITE\NEXTHORIZON\NEXTHORIZON
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (240ms) [Parameters=[@userIds1='?' (DbType = Int32), @userIds2='?' (DbType = Int32), @userIds3='?' (DbType = Int32)], CommandType='Text', CommandTimeout='60']
+      SELECT [u].[user_id], CASE
+          WHEN [u].[profile_picture] IS NOT NULL THEN CAST(1 AS bit)
+          ELSE CAST(0 AS bit)
+      END, [u].[profile_picture], COALESCE([u].[updated_at], [u].[created_at])
+      FROM [Users] AS [u]
+      WHERE [u].[user_id] IN (@userIds1, @userIds2, @userIds3)

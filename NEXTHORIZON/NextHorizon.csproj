@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="wwwroot\images\profilePics\"/>
+    <Folder Include="wwwroot\images\Products\"/>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Complete_Agent_Files\**\*.cs" />
+    <Compile Remove="Consumer-Seller\**\*.cs" />
+    <Compile Remove="helpcenteradminmerge\**\*.cs" />
+    <Compile Remove="Data\ConsumerSeller\**\*.cs" />
+    <Compile Remove="Models\ConsumerSeller\**\*.cs" />
+    <Compile Remove="Controllers\Faq.cs" />
+    <Compile Remove="Models\ConsumerUser.cs" />
+    <Compile Remove="Models\Order.cs" />
+    <Compile Remove="Services\AuthService.cs" />
+    <Compile Remove="Services\Helpcenter.cshtml.cs" />
+    <Compile Remove="Services\IAuthService.cs" />
+    <Compile Remove="Services\SupportInactivityMonitorService.cs" />
+    <Compile Remove="NextHorizon-AndradeBranch\**\*.cs" />
+    <Compile Remove="Models\Admin_Models\Agents.cs" />
+    <Content Remove="Complete_Agent_Files\**\*" />
+    <Content Remove="Consumer-Seller\**\*" />
+    <Content Remove="helpcenteradminmerge\**\*" />
+    <Content Remove="Data\ConsumerSeller\**\*" />
+    <Content Remove="Models\ConsumerSeller\**\*" />
+    <Content Remove="Views\Admin\ChallengeDetails.cshtml" />
+    <Content Remove="Views\Admin\Notifications.cshtml" />
+    <Content Remove="Views\Admin\SellerPerformance.cshtml" />
+    <Content Remove="Views\Home\Privacy.cshtml" />
+    <Content Remove="Views\Shared\_Footer.cshtml" />
+    <Content Remove="NextHorizon-AndradeBranch\**\*" />
+    <EmbeddedResource Remove="Complete_Agent_Files\**\*" />
+    <EmbeddedResource Remove="Consumer-Seller\**\*" />
+    <EmbeddedResource Remove="helpcenteradminmerge\**\*" />
+    <EmbeddedResource Remove="Data\ConsumerSeller\**\*" />
+    <EmbeddedResource Remove="Models\ConsumerSeller\**\*" />
+    <EmbeddedResource Remove="NextHorizon-AndradeBranch\**\*" />
+    <None Remove="Complete_Agent_Files\**\*" />
+    <None Remove="Consumer-Seller\**\*" />
+    <None Remove="helpcenteradminmerge\**\*" />
+    <None Remove="Data\ConsumerSeller\**\*" />
+    <None Remove="Models\ConsumerSeller\**\*" />
+    <None Remove="Views\Admin\ChallengeDetails.cshtml" />
+    <None Remove="Views\Admin\Notifications.cshtml" />
+    <None Remove="Views\Admin\SellerPerformance.cshtml" />
+    <None Remove="Views\Home\Privacy.cshtml" />
+    <None Remove="Views\Shared\_Footer.cshtml" />
+    <None Remove="NextHorizon-AndradeBranch\**\*" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.4"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0"/>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,944 @@
+@{
+    ViewData["Title"] = "QA Dashboard";
+    Layout = "~/Views/Shared/_QALayout.cshtml";
+    var defaultDashboardDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
+    var qaUserName = Context.Session.GetString("FullName");
+    qaUserName = string.IsNullOrWhiteSpace(qaUserName)
+        ? Context.Session.GetString("Username") ?? "QA User"
+        : qaUserName.Trim();
+}
+
+@section Styles {
+<style>
+    .qa-page {
+        display: grid;
+        gap: 16px;
+        animation: qaFade .35s ease;
+    }
+
+    @@keyframes qaFade {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero {
+        background: #111111;
+        border-radius: 16px;
+        color: #ffffff;
+        padding: 28px 24px;
+    }
+
+    .hero-top {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(244px, 296px);
+        align-items: start;
+        gap: 28px;
+    }
+
+    .hero-copy {
+        max-width: 640px;
+        display: grid;
+        gap: 18px;
+        padding-top: 4px;
+    }
+
+    .date-filter {
+        width: min(100%, 296px);
+        padding: 0;
+        display: grid;
+        gap: 12px;
+        justify-self: end;
+        align-self: start;
+    }
+
+    .date-filter input {
+        width: 100%;
+        min-height: 46px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(11, 11, 11, 0.72);
+        color: #ffffff;
+        padding: 0 42px 0 14px;
+        font-size: .94rem;
+        font-weight: 600;
+        letter-spacing: .02em;
+        color-scheme: dark;
+        cursor: pointer;
+        transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+
+    .date-filter input:hover {
+        border-color: rgba(255, 255, 255, 0.32);
+        background: rgba(16, 16, 16, 0.84);
+    }
+
+    .date-filter input:focus {
+        outline: none;
+        border-color: rgba(118, 162, 255, 0.9);
+        box-shadow: 0 0 0 3px rgba(63, 124, 255, 0.2);
+    }
+
+    .date-filter input::-webkit-calendar-picker-indicator {
+        opacity: 1;
+        cursor: pointer;
+        filter: none;
+    }
+
+    .date-range-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .date-field {
+        display: grid;
+        gap: 8px;
+    }
+
+    .date-field-label {
+        font-size: .68rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.72);
+    }
+
+    .date-context {
+        display: none;
+        font-size: .74rem;
+        line-height: 1.4;
+        color: #ffb4b4;
+    }
+
+    .date-context.is-visible {
+        display: block;
+    }
+
+    .hero-copy p {
+        max-width: 58ch;
+    }
+
+    .hero h1 {
+        font-size: clamp(1.3rem, 2vw, 1.7rem);
+        font-weight: 500;
+        margin: 0 0 6px;
+        color: #ffffff;
+    }
+
+    .hero p {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: .875rem;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    .metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 10px;
+    }
+
+    .insights-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(140px, 1fr));
+        gap: 10px;
+    }
+
+    .insight-card {
+        background: #ffffff;
+        border: 0.5px solid rgba(0, 0, 0, 0.12);
+        border-radius: 12px;
+        padding: 14px;
+    }
+
+    .insight-label {
+        font-size: .76rem;
+        color: #666666;
+        margin-bottom: 8px;
+    }
+
+    .insight-value {
+        font-size: 1.35rem;
+        font-weight: 600;
+        color: #111111;
+        line-height: 1;
+        margin-bottom: 6px;
+    }
+
+    .insight-sub {
+        font-size: .74rem;
+        color: #666666;
+        line-height: 1.4;
+    }
+
+    .insight-panel {
+        background: #ffffff;
+        border: 0.5px solid rgba(0, 0, 0, 0.12);
+        border-radius: 12px;
+        padding: 14px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    .panel-block {
+        background: #f7f7f7;
+        border: 0.5px solid rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        padding: 12px;
+        display: grid;
+        gap: 8px;
+    }
+
+    .panel-title {
+        font-size: .82rem;
+        font-weight: 600;
+        color: #111111;
+    }
+
+    .progress-track {
+        width: 100%;
+        height: 8px;
+        border-radius: 999px;
+        background: #e2e2e2;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        width: 20%;
+        background: #111111;
+        border-radius: 999px;
+    }
+
+    .mini-note {
+        font-size: .74rem;
+        color: #666666;
+        line-height: 1.45;
+    }
+
+    .insight-link {
+        text-decoration: none;
+        color: #111111;
+        font-size: .75rem;
+        font-weight: 600;
+        background: #ededed;
+        border: 0.5px solid rgba(0, 0, 0, 0.16);
+        border-radius: 8px;
+        padding: 6px 10px;
+        width: fit-content;
+    }
+
+    .insight-link:hover {
+        background: #111111;
+        color: #ffffff;
+    }
+
+    .metric-card {
+        background: #ffffff;
+        border: 0.5px solid rgba(0, 0, 0, 0.12);
+        border-radius: 12px;
+        padding: 16px;
+    }
+
+    .metric-label {
+        font-size: .78rem;
+        color: #666666;
+        margin-bottom: 8px;
+    }
+
+    .metric-value {
+        font-size: 1.9rem;
+        font-weight: 500;
+        color: #111111;
+        line-height: 1;
+    }
+
+    .boards {
+        display: grid;
+        grid-template-columns: 1.1fr .9fr;
+        gap: 14px;
+    }
+
+    .trend-card {
+        display: grid;
+        gap: 12px;
+    }
+
+    .trend-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .trend-title {
+        font-size: .92rem;
+        font-weight: 600;
+        color: #111111;
+        margin: 0;
+    }
+
+    .trend-sub {
+        font-size: .76rem;
+        color: #666666;
+        margin-top: 4px;
+    }
+
+    .trend-legend {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: .75rem;
+        color: #444444;
+        background: #f5f5f5;
+        border: 0.5px solid rgba(0, 0, 0, 0.12);
+        border-radius: 999px;
+        padding: 4px 8px;
+    }
+
+    .legend-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .legend-dot.resolved {
+        background: #111111;
+    }
+
+    .legend-dot.rated {
+        background: #3f7cff;
+    }
+
+    .trend-wrap {
+        background: #fafafa;
+        border: 0.5px solid rgba(0, 0, 0, 0.12);
+        border-radius: 12px;
+        padding: 8px;
+    }
+
+    .trend-svg {
+        width: 100%;
+        height: 260px;
+        display: block;
+    }
+
+    .trend-note-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .trend-note {
+        font-size: .75rem;
+        color: #444444;
+        background: #f5f5f5;
+        border: 0.5px solid rgba(0, 0, 0, 0.12);
+        border-radius: 999px;
+        padding: 5px 9px;
+    }
+
+    .card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 0.5px solid rgba(0, 0, 0, 0.12);
+        padding: 16px;
+    }
+
+    .card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .card-head h3 {
+        font-size: .9rem;
+        font-weight: 500;
+        color: #111111;
+        margin: 0;
+    }
+
+    .card-link {
+        text-decoration: none;
+        font-size: .75rem;
+        font-weight: 500;
+        color: #555555;
+        background: #f2f2f2;
+        border: 0.5px solid rgba(0, 0, 0, 0.12);
+        border-radius: 8px;
+        padding: 5px 10px;
+        transition: background .15s, color .15s;
+    }
+
+    .card-link:hover {
+        background: #111111;
+        color: #ffffff;
+    }
+
+    .agent-list,
+    .ticket-list {
+        display: grid;
+        gap: 8px;
+    }
+
+    .agent-item,
+    .ticket-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 11px 12px;
+        border-radius: 8px;
+        background: #f7f7f7;
+        border: 0.5px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .agent-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .rank-pill {
+        min-width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        border: 0.5px solid rgba(0, 0, 0, 0.18);
+        background: #ffffff;
+        font-size: .76rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .agent-name,
+    .ticket-id {
+        font-size: .85rem;
+        font-weight: 500;
+        color: #111111;
+        margin-bottom: 2px;
+    }
+
+    .agent-sub,
+    .ticket-sub {
+        font-size: .76rem;
+        color: #666666;
+    }
+
+    .score-pill {
+        font-size: .76rem;
+        font-weight: 500;
+        color: #111111;
+        background: #ffffff;
+        border: 0.5px solid rgba(0, 0, 0, 0.2);
+        border-radius: 999px;
+        padding: 4px 10px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .ticket-btn {
+        text-decoration: none;
+        font-size: .76rem;
+        font-weight: 500;
+        color: #ffffff;
+        background: #111111;
+        border-radius: 8px;
+        padding: 7px 11px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition: background .15s;
+    }
+
+    .ticket-btn:hover {
+        background: #333333;
+    }
+
+    @@media (max-width: 900px) {
+        .hero-top {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .insights-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .insight-panel {
+            grid-template-columns: 1fr;
+        }
+
+        .boards {
+            grid-template-columns: 1fr;
+        }
+
+        .date-filter {
+            justify-self: stretch;
+            width: 100%;
+        }
+
+        .date-range-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .insights-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .hero {
+            padding: 24px 18px;
+        }
+
+        .date-filter {
+            gap: 12px;
+        }
+
+        .date-range-grid {
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+    }
+</style>
+}
+
+<section class="qa-page">
+    <section class="hero">
+        <div class="hero-top">
+            <div class="hero-copy">
+                <h1>Welcome, @qaUserName</h1>
+                <p>Track agent quality, review resolved conversations, and send feedback ratings to improve response quality.</p>
+            </div>
+            <div class="date-filter">
+                <div class="date-range-grid">
+                    <label class="date-field" for="dashboard-from-filter">
+                        <span class="date-field-label">From date</span>
+                        <input id="dashboard-from-filter" type="date" value="@defaultDashboardDate" />
+                    </label>
+                    <label class="date-field" for="dashboard-to-filter">
+                        <span class="date-field-label">To date</span>
+                        <input id="dashboard-to-filter" type="date" value="@defaultDashboardDate" />
+                    </label>
+                </div>
+                <div id="dashboard-date-context" class="date-context" aria-live="polite"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="metrics">
+        <article class="metric-card">
+            <div class="metric-label">Agent metrics</div>
+            <div id="metric-agent-quality" class="metric-value">--</div>
+        </article>
+        <article class="metric-card">
+            <div class="metric-label">Total resolved tickets</div>
+            <div id="metric-total-resolved" class="metric-value">--</div>
+        </article>
+    </section>
+
+    <section class="insights-grid">
+        <article class="insight-card">
+            <div class="insight-label">Tickets rated</div>
+            <div id="insight-rated" class="insight-value">--</div>
+            <div id="insight-rated-sub" class="insight-sub">Loading QA review activity...</div>
+        </article>
+        <article class="insight-card">
+            <div class="insight-label">Pending QA ratings</div>
+            <div id="insight-pending" class="insight-value">--</div>
+            <div id="insight-pending-sub" class="insight-sub">Resolved in the selected range and still unrated</div>
+        </article>
+        <article class="insight-card">
+            <div class="insight-label">Average QA score</div>
+            <div id="insight-average" class="insight-value">--</div>
+            <div class="insight-sub">Across QA reviews created in the selected range</div>
+        </article>
+        <article class="insight-card">
+            <div class="insight-label">Ratings updated</div>
+            <div id="insight-updated" class="insight-value">--</div>
+            <div class="insight-sub">Edited in the selected range</div>
+        </article>
+    </section>
+
+    <section class="insight-panel">
+        <article class="panel-block">
+            <div class="panel-title">QA Throughput Insight</div>
+            <div id="throughput-note" class="mini-note">Loading throughput insight...</div>
+            <div class="progress-track"><div id="throughput-progress" class="progress-fill"></div></div>
+            <a class="insight-link" href="/qa/resolved-tickets">Open pending queue</a>
+        </article>
+        <article class="panel-block">
+            <div class="panel-title">Quality Control Insight</div>
+            <div id="quality-note" class="mini-note">Loading quality insight...</div>
+            <a class="insight-link" href="/qa/rated-history">Review rated history</a>
+        </article>
+    </section>
+
+    <section class="card trend-card">
+        <div class="trend-head">
+            <div>
+                <h3 class="trend-title">Tickets per day (end-date month trend)</h3>
+                <div class="trend-sub">Resolved tickets versus QA reviews created for the month of the selected To date, through that To date.</div>
+            </div>
+            <div class="trend-legend">
+                <span class="legend-item"><span class="legend-dot resolved"></span>Total resolved</span>
+                <span class="legend-item"><span class="legend-dot rated"></span>QA reviews created</span>
+            </div>
+        </div>
+        <div class="trend-wrap">
+            <svg id="tickets-trend-chart" class="trend-svg" viewBox="0 0 960 260" role="img" aria-label="Monthly ticket trend chart"></svg>
+        </div>
+        <div class="trend-note-row">
+            <span id="trend-peak" class="trend-note">Peak day: -</span>
+            <span id="trend-quiet" class="trend-note">Quiet day: -</span>
+        </div>
+    </section>
+
+    <section class="boards">
+        <article class="card">
+            <div class="card-head">
+                <h3>Top performing agents in end-date month</h3>
+            </div>
+            <div id="top-agent-list" class="agent-list"></div>
+        </article>
+
+        <article class="card">
+            <div class="card-head">
+                <h3>End-date month tickets awaiting QA</h3>
+            </div>
+            <div id="awaiting-ticket-list" class="ticket-list"></div>
+        </article>
+    </section>
+</section>
+
+
+<script>
+    (function () {
+        var fromInput = document.getElementById('dashboard-from-filter');
+        var toInput = document.getElementById('dashboard-to-filter');
+        var dateContext = document.getElementById('dashboard-date-context');
+        var metricAgentQuality = document.getElementById('metric-agent-quality');
+        var metricTotalResolved = document.getElementById('metric-total-resolved');
+        var insightRated = document.getElementById('insight-rated');
+        var insightRatedSub = document.getElementById('insight-rated-sub');
+        var insightPending = document.getElementById('insight-pending');
+        var insightPendingSub = document.getElementById('insight-pending-sub');
+        var insightAverage = document.getElementById('insight-average');
+        var insightUpdated = document.getElementById('insight-updated');
+        var throughputNote = document.getElementById('throughput-note');
+        var throughputProgress = document.getElementById('throughput-progress');
+        var qualityNote = document.getElementById('quality-note');
+        var agentList = document.getElementById('top-agent-list');
+        var ticketList = document.getElementById('awaiting-ticket-list');
+        var peakNode = document.getElementById('trend-peak');
+        var quietNode = document.getElementById('trend-quiet');
+        var svg = document.getElementById('tickets-trend-chart');
+
+        if (!fromInput || !toInput || !svg) return;
+
+        function escHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderAgents(items) {
+            if (!agentList) return;
+
+            if (!items || !items.length) {
+                agentList.innerHTML = '<div class="agent-item"><div><div class="agent-name">No agents yet</div><div class="agent-sub">No QA reviews were created in the month of the selected To date.</div></div></div>';
+                return;
+            }
+
+            var html = '';
+            for (var i = 0; i < items.length; i++) {
+                html += '<div class="agent-item">';
+                html += '<div class="agent-left">';
+                html += '<span class="rank-pill">' + (i + 1) + '</span>';
+                html += '<div><div class="agent-name">' + escHtml(items[i].name) + '</div>';
+                html += '<div class="agent-sub">' + escHtml(items[i].resolvedText) + '</div></div>';
+                html += '</div>';
+                html += '<span class="score-pill">' + escHtml(items[i].score) + '</span>';
+                html += '</div>';
+            }
+
+            agentList.innerHTML = html;
+        }
+
+        function renderTickets(items) {
+            if (!ticketList) return;
+
+            if (!items || !items.length) {
+                ticketList.innerHTML = '<div class="ticket-item"><div><div class="ticket-id">No tickets awaiting QA</div><div class="ticket-sub">All conversations resolved in the month of the selected To date already have a QA review.</div></div></div>';
+                return;
+            }
+
+            var html = '';
+            for (var i = 0; i < items.length; i++) {
+                var t = items[i];
+                html += '<div class="ticket-item">';
+                html += '<div>';
+                html += '<div class="ticket-id">Ticket #' + t.id + ' - Agent: ' + escHtml(t.agent) + ' - Concern from: ' + escHtml(t.concernFrom) + '</div>';
+                html += '<div class="ticket-sub">Resolved ' + escHtml(t.resolvedAt) + ' | awaiting QA rating</div>';
+                html += '</div>';
+                html += '<a class="ticket-btn" href="/qa/rating/' + t.id + '">Rate</a>';
+                html += '</div>';
+            }
+
+            ticketList.innerHTML = html;
+        }
+
+        function renderTrend(resolvedValues, ratedValues) {
+            var resolved = Array.isArray(resolvedValues) && resolvedValues.length ? resolvedValues.slice() : [0];
+            var rated = Array.isArray(ratedValues) && ratedValues.length ? ratedValues.slice() : resolved.map(function () { return 0; });
+            var totalDays = Math.max(resolved.length, rated.length);
+
+            while (resolved.length < totalDays) resolved.push(0);
+            while (rated.length < totalDays) rated.push(0);
+
+            svg.innerHTML = '';
+
+            var w = 960;
+            var h = 260;
+            var pLeft = 42;
+            var pRight = 14;
+            var pTop = 14;
+            var pBottom = 30;
+            var chartW = w - pLeft - pRight;
+            var chartH = h - pTop - pBottom;
+            var maxY = Math.max.apply(null, resolved.concat(rated).concat([1]));
+            var ySteps = 5;
+            var ns = 'http://www.w3.org/2000/svg';
+
+            function xAt(i) {
+                if (totalDays <= 1) return pLeft;
+                return pLeft + (i * chartW / (totalDays - 1));
+            }
+
+            function yAt(val) {
+                return pTop + ((maxY - val) / maxY) * chartH;
+            }
+
+            function linePath(values) {
+                var d = '';
+                for (var i = 0; i < values.length; i++) {
+                    var x = xAt(i);
+                    var y = yAt(values[i]);
+                    d += (i === 0 ? 'M ' : ' L ') + x.toFixed(2) + ' ' + y.toFixed(2);
+                }
+                return d;
+            }
+
+            function addNode(node) {
+                svg.appendChild(node);
+            }
+
+            for (var s = 0; s <= ySteps; s++) {
+                var yVal = Math.round((maxY / ySteps) * s);
+                var y = yAt(yVal);
+
+                var grid = document.createElementNS(ns, 'line');
+                grid.setAttribute('x1', pLeft);
+                grid.setAttribute('x2', w - pRight);
+                grid.setAttribute('y1', y);
+                grid.setAttribute('y2', y);
+                grid.setAttribute('stroke', '#d9d9d9');
+                grid.setAttribute('stroke-width', '1');
+                addNode(grid);
+
+                var label = document.createElementNS(ns, 'text');
+                label.setAttribute('x', pLeft - 8);
+                label.setAttribute('y', y + 4);
+                label.setAttribute('text-anchor', 'end');
+                label.setAttribute('font-size', '10');
+                label.setAttribute('fill', '#666');
+                label.textContent = String(yVal);
+                addNode(label);
+            }
+
+            for (var d = 0; d < totalDays; d++) {
+                if ((d + 1) % 5 !== 0 && d !== 0 && d !== totalDays - 1) continue;
+
+                var dayLabel = document.createElementNS(ns, 'text');
+                dayLabel.setAttribute('x', xAt(d));
+                dayLabel.setAttribute('y', h - 10);
+                dayLabel.setAttribute('text-anchor', 'middle');
+                dayLabel.setAttribute('font-size', '10');
+                dayLabel.setAttribute('fill', '#666');
+                dayLabel.textContent = String(d + 1);
+                addNode(dayLabel);
+            }
+
+            var resolvedPath = document.createElementNS(ns, 'path');
+            resolvedPath.setAttribute('d', linePath(resolved));
+            resolvedPath.setAttribute('fill', 'none');
+            resolvedPath.setAttribute('stroke', '#111111');
+            resolvedPath.setAttribute('stroke-width', '2.4');
+            addNode(resolvedPath);
+
+            var ratedPath = document.createElementNS(ns, 'path');
+            ratedPath.setAttribute('d', linePath(rated));
+            ratedPath.setAttribute('fill', 'none');
+            ratedPath.setAttribute('stroke', '#3f7cff');
+            ratedPath.setAttribute('stroke-width', '2.4');
+            addNode(ratedPath);
+
+            var peakValue = -1;
+            var peakDay = 1;
+            var quietValue = Number.MAX_SAFE_INTEGER;
+            var quietDay = 1;
+
+            for (var i = 0; i < resolved.length; i++) {
+                if (resolved[i] > peakValue) {
+                    peakValue = resolved[i];
+                    peakDay = i + 1;
+                }
+
+                if (resolved[i] < quietValue) {
+                    quietValue = resolved[i];
+                    quietDay = i + 1;
+                }
+            }
+
+            if (peakNode) peakNode.textContent = 'Peak day: Day ' + peakDay + ' (' + peakValue + ' resolved)';
+            if (quietNode) quietNode.textContent = 'Quiet day: Day ' + quietDay + ' (' + quietValue + ' resolved)';
+        }
+
+        function applyLoadingState() {
+            setDateContext('');
+            if (metricAgentQuality) metricAgentQuality.textContent = '--';
+            if (metricTotalResolved) metricTotalResolved.textContent = '--';
+            if (insightRated) insightRated.textContent = '--';
+            if (insightRatedSub) insightRatedSub.textContent = 'Loading QA review activity...';
+            if (insightPending) insightPending.textContent = '--';
+            if (insightPendingSub) insightPendingSub.textContent = 'Loading selected-range queue status...';
+            if (insightAverage) insightAverage.textContent = '--';
+            if (insightUpdated) insightUpdated.textContent = '--';
+            if (throughputNote) throughputNote.textContent = 'Loading throughput insight...';
+            if (throughputProgress) throughputProgress.style.width = '0%';
+            if (qualityNote) qualityNote.textContent = 'Loading quality insight...';
+        }
+
+        function clearBoardCollections() {
+            if (agentList) agentList.innerHTML = '';
+            if (ticketList) ticketList.innerHTML = '';
+            renderTrend([0], [0]);
+        }
+
+        function setDateContext(message) {
+            if (!dateContext) return;
+
+            dateContext.textContent = message || '';
+            dateContext.classList.toggle('is-visible', Boolean(message));
+        }
+
+        function applyValidationState(message) {
+            if (metricAgentQuality) metricAgentQuality.textContent = '--';
+            if (metricTotalResolved) metricTotalResolved.textContent = '--';
+            if (insightRated) insightRated.textContent = '--';
+            if (insightRatedSub) insightRatedSub.textContent = 'Select a valid date range to view QA review activity.';
+            if (insightPending) insightPending.textContent = '--';
+            if (insightPendingSub) insightPendingSub.textContent = 'Resolved in the selected range and still unrated';
+            if (insightAverage) insightAverage.textContent = '--';
+            if (insightUpdated) insightUpdated.textContent = '--';
+            if (throughputNote) throughputNote.textContent = 'Select a valid date range to load throughput insight.';
+            if (throughputProgress) throughputProgress.style.width = '0%';
+            if (qualityNote) qualityNote.textContent = 'Select a valid date range to load quality insight.';
+            setDateContext(message);
+            clearBoardCollections();
+        }
+
+        function applyPayload(payload) {
+            setDateContext('');
+            if (metricAgentQuality) metricAgentQuality.textContent = payload.agentMetric || '--';
+            if (metricTotalResolved) metricTotalResolved.textContent = String(payload.totalResolvedTickets || 0);
+            if (insightRated) insightRated.textContent = payload.ticketsRated || '--';
+            if (insightRatedSub) insightRatedSub.textContent = payload.ticketsRatedSub || 'No QA reviews created in the selected range';
+            if (insightPending) insightPending.textContent = String(payload.pendingRatings || 0);
+            if (insightPendingSub) insightPendingSub.textContent = 'Resolved in the selected range and still unrated';
+            if (insightAverage) insightAverage.textContent = payload.averageQaScore || '--';
+            if (insightUpdated) insightUpdated.textContent = String(payload.ratingsUpdated || 0);
+            if (throughputNote) throughputNote.textContent = payload.throughputNote || 'No throughput insight available.';
+            if (throughputProgress) throughputProgress.style.width = Math.max(0, Math.min(100, payload.throughputPercent || 0)) + '%';
+            if (qualityNote) qualityNote.textContent = payload.qualityNote || 'No quality insight available.';
+
+            renderAgents(payload.topAgents || []);
+            renderTickets(payload.awaitingTickets || []);
+            renderTrend(payload.resolvedTrend || [], payload.ratedTrend || []);
+        }
+
+        function applyErrorState() {
+            setDateContext('Unable to load dashboard data right now.');
+            renderAgents([]);
+            renderTickets([]);
+            renderTrend([0], [0]);
+        }
+
+        function validateRange() {
+            var fromValue = fromInput.value;
+            var toValue = toInput.value;
+
+            if (!fromValue || !toValue) {
+                return { valid: false, message: 'Select both From date and To date to load the dashboard.' };
+            }
+
+            if (fromValue > toValue) {
+                return { valid: false, message: 'The From date must be earlier than or equal to the To date.' };
+            }
+
+            return { valid: true, from: fromValue, to: toValue };
+        }
+
+        function loadDashboard(fromValue, toValue) {
+            applyLoadingState();
+
+            fetch('/qa/api/dashboard?from=' + encodeURIComponent(fromValue) + '&to=' + encodeURIComponent(toValue), {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('Dashboard request failed.');
+                    }
+
+                    return response.json();
+                })
+                .then(applyPayload)
+                .catch(applyErrorState);
+        }
+
+        function handleRangeChange() {
+            var validation = validateRange();
+            if (!validation.valid) {
+                applyValidationState(validation.message);
+                return;
+            }
+
+            loadDashboard(validation.from, validation.to);
+        }
+
+        fromInput.addEventListener('change', handleRangeChange);
+        toInput.addEventListener('change', handleRangeChange);
+
+        handleRangeChange();
+    })();
+</script>

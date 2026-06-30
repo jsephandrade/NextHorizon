@@ -1,0 +1,212 @@
+﻿/* 1. MONOCHROME BASE & NAVIGATION */
+.nav-pills .nav-link.active {
+    background-color: #000 !important;
+    color: #fff !important;
+}
+
+.nav-pills .nav-link {
+    color: #444;
+    transition: all 0.2s ease;
+}
+
+    .nav-pills .nav-link:hover:not(.active) {
+        background-color: #f8f9fa;
+        color: #000;
+    }
+
+/* SUB-TABS */
+#permissionSubTabs .nav-link {
+    color: #666;
+    background: transparent;
+    border: 1px solid #dee2e6 !important;
+    margin-right: 5px;
+    font-size: 0.85rem;
+}
+
+    #permissionSubTabs .nav-link.active {
+        background-color: #000 !important;
+        color: #fff !important;
+        border-color: #000 !important;
+    }
+
+/* 2. STICKY NAVIGATION & SCROLLABLES */
+.sticky-nav-wrapper {
+    position: sticky;
+    top: 20px;
+    z-index: 100;
+}
+
+.scrollable-card-body {
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #000 #f1f1f1;
+    display: block;
+}
+
+    .scrollable-card-body .sticky-top {
+        position: sticky;
+        top: -1px;
+        background-color: #f8f9fa !important;
+        z-index: 10;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    /* Scrollbar Customization */
+    .scrollable-card-body::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .scrollable-card-body::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    .scrollable-card-body::-webkit-scrollbar-thumb {
+        background: #000;
+        border-radius: 10px;
+    }
+
+/* 3. CUSTOM DROPDOWN MONOCHROME OVERRIDE (Fixes Blue Hover) */
+.dropdown-toggle-custom {
+    width: 100%;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 10px !important; /* Matches your input fields */
+    padding: 0.6rem 1rem;
+    background: #fff;
+    transition: all 0.2s;
+}
+
+    .dropdown-toggle-custom:hover,
+    .dropdown-toggle-custom:focus {
+        border-color: #000 !important;
+    }
+
+.dropdown-menu-custom {
+    border-radius: 12px !important;
+    border: 1px solid #eee !important;
+    padding: 0.5rem;
+    width: 100%;
+    margin-top: 5px !important;
+}
+
+/* Forces Black Background & White Text on Hover/Active */
+.dropdown-item-custom {
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    color: #333;
+    transition: all 0.1s ease;
+    cursor: pointer;
+}
+
+    .dropdown-item-custom:hover,
+    .dropdown-item-custom:focus,
+    .dropdown-item-custom:active {
+        background-color: #000 !important;
+        color: #fff !important;
+    }
+
+/* 4. MONOCHROME FORM ELEMENTS */
+.form-control:focus {
+    border-color: #000 !important;
+    box-shadow: 0 0 0 0.25rem rgba(0, 0, 0, 0.1) !important;
+}
+
+.form-check-input:checked {
+    background-color: #000 !important;
+    border-color: #000 !important;
+}
+
+/* 5. CONDITIONAL SECTIONS & UTILITIES */
+#supportAssignmentSection {
+    background-color: rgba(0, 0, 0, 0.03);
+    padding: 15px;
+    border-radius: 12px;
+    border-left: 4px solid #000;
+    margin-bottom: 1rem;
+    animation: slideDown 0.3s ease-out;
+}
+
+#credentialOverrideSection {
+    border: 1px dashed #000 !important;
+    background-color: #fff;
+    padding: 12px;
+    border-radius: 8px;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 6. LAYOUT & MOBILE FIXES */
+@media (max-width: 576px) {
+    .search-container-mobile {
+        flex-wrap: nowrap !important;
+    }
+
+    .search-input-group {
+        max-width: 150px !important;
+    }
+
+    .btn-add-user span {
+        display: none;
+    }
+}
+
+/* Table Header Padding Fix */
+.table thead th {
+    white-space: nowrap;
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+.x-small {
+    font-size: 0.75rem;
+    letter-spacing: 0.2px;
+}
+
+.text-poppins {
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Status Dots */
+.status-dot {
+    height: 8px;
+    width: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.bg-online {
+    background-color: #000;
+}
+
+.bg-offline {
+    background-color: #ccc;
+}
+
+/* 7. TOAST & MODAL */
+.modal-content {
+    border: none !important;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.btn:focus {
+    box-shadow: 0 0 0 0.25rem rgba(0, 0, 0, 0.1) !important;
+}

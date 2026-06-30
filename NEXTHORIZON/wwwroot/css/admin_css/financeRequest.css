@@ -1,0 +1,271 @@
+﻿/* --- FINANCE HUB STYLES --- */
+
+/* Tab Styling */
+#financeTabs {
+    background-color: #f8f9fa;
+    padding: 5px;
+    border-radius: 50px;
+}
+
+    #financeTabs .nav-link {
+        color: #6c757d;
+        transition: all 0.3s ease;
+        border: none;
+        font-size: 0.85rem;
+        padding: 10px 20px;
+    }
+
+        #financeTabs .nav-link.active {
+            background-color: #212529; /* Matches Dark Theme buttons */
+            color: #ffffff !important;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        #financeTabs .nav-link:hover:not(.active) {
+            background-color: #e9ecef;
+            color: #212529;
+        }
+
+/* Table Enhancements */
+.table thead th {
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    font-weight: 700;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table tbody td {
+    padding: 1rem 0.75rem;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+/* Utility Text */
+.tiny {
+    font-size: 0.7rem;
+}
+
+.x-small {
+    font-size: 0.75rem;
+}
+
+/* Custom Badges */
+.badge {
+    padding: 0.5em 0.8em;
+    font-weight: 600;
+}
+
+.bg-danger-subtle {
+    background-color: #ffeef0 !important;
+}
+
+.bg-success-subtle {
+    background-color: #e6fffa !important;
+}
+
+/* Modal Customization */
+#financeActionModal .modal-content,
+#discountReviewModal .modal-content {
+    border: none;
+    overflow: hidden;
+}
+
+#financeNote, #promoDesc, #discountReviewNote {
+    border: 1px solid #e9ecef;
+    font-size: 0.9rem;
+    resize: none;
+}
+
+    #financeNote:focus, #promoDesc:focus, #discountReviewNote:focus {
+        border-color: #212529;
+        box-shadow: none;
+    }
+
+/* Icon Containers */
+#financeIconContainer.bg-success-subtle {
+    background-color: #d1fae5;
+    color: #059669;
+}
+
+#financeIconContainer.bg-danger-subtle {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+/* Smooth Tab Transitions */
+.tab-pane {
+    animation: fadeIn 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Global Promotion Form Elements */
+.border-dashed {
+    border: 2px dashed #dee2e6 !important;
+    background-color: #fdfdfd;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+    .border-dashed:hover {
+        border-color: #212529 !important;
+        background-color: #f8f9fa;
+    }
+
+.form-switch .form-check-input:checked {
+    background-color: #212529;
+    border-color: #212529;
+}
+
+/* --- SCROLLABLE CAMPAIGN LIST --- */
+/* This allows the right-side list to scroll independently */
+#activePromoList {
+    max-height: 520px; /* Aligns roughly with the height of the left form */
+    overflow-y: auto;
+    padding-right: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: #e0e0e0 transparent;
+}
+
+    /* Custom Scrollbar for Chrome/Safari/Edge */
+    #activePromoList::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    #activePromoList::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    #activePromoList::-webkit-scrollbar-thumb {
+        background-color: #e0e0e0;
+        border-radius: 10px;
+    }
+
+        #activePromoList::-webkit-scrollbar-thumb:hover {
+            background-color: #adb5bd;
+        }
+
+/* Promo Card Animation */
+.active-promo-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .active-promo-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+    }
+
+
+
+/* Product Preview Modern Styles */
+.product-preview-modern {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+.product-preview-image {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.product-preview-image:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.product-placeholder {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    transition: all 0.3s ease;
+}
+
+.product-details {
+    animation: slideInUp 0.3s ease-out;
+}
+
+/* Modal Enhancements */
+#productActionModal .modal-content {
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+#productActionModal .modal-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding: 1.25rem 1.5rem;
+}
+
+#productActionModal .modal-body {
+    padding: 1.5rem;
+}
+
+#productActionModal .modal-footer {
+    padding: 1rem 1.5rem 1.5rem;
+    border-top: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Alert Styles */
+.alert-success {
+    background-color: #d1fae5;
+    border: none;
+    color: #065f46;
+}
+
+.alert-warning {
+    background-color: #fed7aa;
+    border: none;
+    color: #9b2c1d;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Textarea Styling */
+#productRejectReason {
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+#productRejectReason:focus {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+    outline: none;
+}

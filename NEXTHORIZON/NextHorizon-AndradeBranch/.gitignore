@@ -1,0 +1,5 @@
+/.codex_build_verify/
+**/.codex_obj_verify/
+**/bin_verify*/
+**/obj_verify*/
+*.log

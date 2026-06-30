@@ -1,0 +1,99 @@
+﻿<div class="py-4 d-flex flex-column h-100 sidebar-container">
+    <div class="px-4 mb-4 flex-shrink-0">
+        <a href="@Url.Action("Dashboard", "Admin")" class="d-block text-decoration-none">
+            <img src="~/images/new-logo.png" alt="Next Horizon" class="img-fluid" style="max-height: 40px;"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+            <span class="fw-bold text-dark fs-5" style="display: none;">NEXT HORIZON</span>
+        </a>
+    </div>
+
+    <div class="flex-grow-1 overflow-y-auto custom-scrollbar px-2">
+        <ul class="nav flex-column gap-1">
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "active" : "")"
+                   href="@Url.Action("Dashboard", "Admin")"> <i class="bi bi-grid-1x2-fill me-3"></i>DASHBOARD</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Analytics" ? "active" : "")"
+                   href="@Url.Action("Analytics", "Admin")"> <i class="bi bi-graph-up-arrow me-3"></i>ANALYTICS</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Consumers" ? "active" : "")"
+                   href="@Url.Action("Consumers", "Admin")"> <i class="bi bi-people-fill me-3"></i>CONSUMERS</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Sellers" ? "active" : "")"
+                   href="@Url.Action("Sellers", "Admin")"> <i class="bi bi-shop me-3"></i> SELLERS</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "FinanceRequest" ? "active" : "")"
+                   href="@Url.Action("FinanceRequest", "Admin")">
+                    <i class="bi bi-cash-stack me-3"></i>REQUESTS & FINANCE
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Logistics" ? "active" : "")"
+                   href="@Url.Action("Logistics", "Admin")"> <i class="bi bi-truck me-3"></i>LOGISTICS</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Tasks" ? "active" : "")"
+                   href="@Url.Action("Tasks", "Admin")"> <i class="bi bi-trophy-fill me-3"></i>TASKS AND CHALLENGES</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "HelpCenter" ? "active" : "")"
+                   href="@Url.Action("HelpCenter", "Admin")"> <i class="bi bi-question-circle-fill me-3"></i>HELP CENTER</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Settings" ? "active" : "")"
+                   href="@Url.Action("Settings", "Admin")"> <i class="bi bi-gear-fill me-3"></i>SETTINGS</a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="px-2 mt-auto border-top pt-3 flex-shrink-0">
+        <a class="nav-link logout-link" href="@Url.Action("AdminLogin", "Login")">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            LOGOUT
+        </a>
+    </div>
+</div>
+
+@section Styles {
+   
+     <style>
+        /* Sidebar scrolling behavior */
+        .custom-scrollbar {
+            scrollbar-width: thin; /* Firefox */
+            scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+        }
+
+        /* Chrome, Edge, and Safari scrollbar styling */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+        }
+
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.3); /* Darkens slightly on hover */
+        }
+
+        /* Ensure the sidebar wrapper stays full height */
+        .sidebar-container {
+            max-height: 100vh;
+        }
+        
+     </style>
+
+}
